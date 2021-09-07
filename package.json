@@ -10,6 +10,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@nomiclabs/hardhat-docker": "^2.0.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.10",
     "hardhat": "^2.6.2",
