@@ -3,21 +3,22 @@ import * as fs from "fs";
 import { task, extendEnvironment } from "hardhat/config";
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
+import { DockerWrapper } from "./types";
 
-function traverseFiles(
+async function traverseFiles(
     traversable: string,
     predicate: (path: string) => boolean,
-    action: (path: string) => void
-): void {
+    action: (path: string) => Promise<void>
+): Promise<void> {
     const stats = fs.lstatSync(traversable);
     if (stats.isDirectory()) {
         for (const childName of fs.readdirSync(traversable)) {
             const childPath = path.join(traversable, childName);
-            traverseFiles(childPath, predicate, action);
+            await traverseFiles(childPath, predicate, action);
         }
     } else if (stats.isFile()) {
         if (predicate(traversable)) {
-            action(traversable);
+            await action(traversable);
         }
     } else {
         throw new Error(`Can only interpret files and directories. ${traversable} is neither.`);
@@ -76,45 +77,42 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
     }
 }
 
-extendEnvironment(async (hre) => {
-    hre.docker = await HardhatDocker.create();
-    hre.dockerImage = { repository: "starknet", tag: "latest" };
-
-    if (!(await hre.docker.hasPulledImage(hre.dockerImage))) {
-        console.log("Pulling image:", hre.dockerImage);
-        await hre.docker.pullImage(hre.dockerImage);
-    }
+extendEnvironment(hre => {
+    hre.dockerWrapper = new DockerWrapper({ repository: "starknet", tag: "latest" });
 });
 
 task("cairo-compile", "Compiles programs written in Cairo")
     .setAction(async (_args, hre) => {
         const sourcesPath = hre.config.paths.sources;
         const artifactsPath = hre.config.paths.artifacts;
-        const compileFunction = getCompileFunction(hre.docker, hre.dockerImage, "cairo-compile", sourcesPath, artifactsPath);
-        traverseFiles(sourcesPath, isSimpleCairo, compileFunction);
+        const docker = await hre.dockerWrapper.getDocker();
+        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "cairo-compile", sourcesPath, artifactsPath);
+        await traverseFiles(sourcesPath, isSimpleCairo, compileFunction);
     });
 
 task("starknet-compile", "Compiles StarkNet contracts")
     .setAction(async (_args, hre) => {
         const sourcesPath = hre.config.paths.sources;
         const artifactsPath = hre.config.paths.artifacts;
-        const compileFunction = getCompileFunction(hre.docker, hre.dockerImage, "starknet-compile", sourcesPath, artifactsPath);
-        traverseFiles(sourcesPath, isStarknetContract, compileFunction);
+        const docker = await hre.dockerWrapper.getDocker();
+        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "starknet-compile", sourcesPath, artifactsPath);
+        await traverseFiles(sourcesPath, isStarknetContract, compileFunction);
     });
 
 task("starknet-deploy", "Deploys Starknet contracts")
     .addFlag("alpha", "Use the alpha version of testnet")
     .setAction(async (args, hre) => {
         const artifactsPath = hre.config.paths.artifacts;
-        traverseFiles(artifactsPath, hasCairoJsonExtension, async file => {
+        const docker = await hre.dockerWrapper.getDocker();
+        await traverseFiles(artifactsPath, hasCairoJsonExtension, async file => {
             // TODO check not to deploy simple cairo
             console.log("Deploying", file);
             const starknetArgs = ["deploy", "--contract", file];
             if (args.alpha) {
                 starknetArgs.push("--network=alpha");
             }
-            const executed = await hre.docker.runContainer(
-                hre.dockerImage,
+            const executed = await docker.runContainer(
+                hre.dockerWrapper.image,
                 ["starknet"].concat(starknetArgs),
                 {
                     binds: {
@@ -123,7 +121,15 @@ task("starknet-deploy", "Deploys Starknet contracts")
                 }
             );
 
+            if (executed.stdout.length) {
+                console.log(executed.stdout.toString());
+            }
+
+            if (executed.stderr.length) {
+                console.log(executed.stderr.toString());
+            }
+
             const finalMsg = executed.statusCode ? "Deployment failed" : "Deployment succeeded";
             console.log(`\t${finalMsg}\n`);
-        })
+        });
     });

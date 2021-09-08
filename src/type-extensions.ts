@@ -1,8 +1,7 @@
-import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import { DockerWrapper } from "./types";
 
 declare module "hardhat/types/runtime" {
     export interface HardhatRuntimeEnvironment {
-        docker: HardhatDocker;
-        dockerImage: Image;
+        dockerWrapper: DockerWrapper;
     }
 }
