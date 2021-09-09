@@ -1,72 +1,24 @@
-import { spawnSync } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
-import { task } from "hardhat/config";
+import { task, extendEnvironment } from "hardhat/config";
+import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import "./type-extensions";
+import { DockerWrapper } from "./types";
 
-function getPythonCommand() {
-    const reqMajor = 3;
-    const minMinor = 7;
-    const possibleCommands = ["python", "py", "python3", "python3.7", "python3.8", "python3.9"];
-
-    for (const possibleCommand of possibleCommands) {
-        const versionOutputBuffer = spawnSync(possibleCommand, ["--version"]).stdout;
-
-        if (versionOutputBuffer) {
-            const versionOutput = versionOutputBuffer.toString();
-            const outputParts = versionOutput.split(" ");
-
-            if (outputParts[0] === "Python") {
-                const versionParts = outputParts[1].split(".");
-
-                if (versionParts[0] === reqMajor.toString() && parseInt(versionParts[1]) >= minMinor) {
-                    return possibleCommand;
-                }
-            }
-        }
-    }
-
-    throw new Error(`Python version >= ${reqMajor}.${minMinor} required`);
-}
-
-function createVenv(pythonCommand: string, venvDir: string) {
-    const pipPath = path.join(venvDir, "bin", "pip3");
-    if (!fs.existsSync(pipPath)) {
-        console.log(`Creating venv in ${venvDir}`);
-        if (spawnSync(pythonCommand, ["-m", "venv", venvDir]).status) {
-            throw new Error("Could not create venv");
-        }
-    }
-
-    return {
-        pipPath,
-        cairoCompilePath: path.join(venvDir, "bin", "cairo-compile"),
-        cairoRunPath: path.join(venvDir, "bin", "cairo-run"),
-        starknetCompilePath: path.join(venvDir, "bin", "starknet-compile"),
-        starknetPath: path.join(venvDir, "bin", "starknet")
-    }
-}
-
-function installDependencies(pipPath: string, dependencies: string[]) {
-    console.log("Checking dependencies");
-    if (spawnSync(pipPath, ["install"].concat(dependencies)).status) {
-        throw new Error("Installing dependencies failed");
-    }
-}
-
-function traverseFiles(
+async function traverseFiles(
     traversable: string,
     predicate: (path: string) => boolean,
-    action: (path: string) => void
-): void {
+    action: (path: string) => Promise<void>
+): Promise<void> {
     const stats = fs.lstatSync(traversable);
     if (stats.isDirectory()) {
         for (const childName of fs.readdirSync(traversable)) {
             const childPath = path.join(traversable, childName);
-            traverseFiles(childPath, predicate, action);
+            await traverseFiles(childPath, predicate, action);
         }
     } else if (stats.isFile()) {
         if (predicate(traversable)) {
-            action(traversable);
+            await action(traversable);
         }
     } else {
         throw new Error(`Can only interpret files and directories. ${traversable} is neither.`);
@@ -99,74 +51,85 @@ function isStarknetContract(filePath: string) {
     return hasCairoExtension(filePath) && hasStarknetDeclaration(filePath);
 }
 
-function getCompileFunction(compilerPath: string, contractsPath: string, artifactsPath: string) {
+function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand: string, contractsPath: string, artifactsPath: string) {
     const root = path.dirname(contractsPath);
     const rootRegex = new RegExp("^" + root);
-    return (file: string) => {
+    return async (file: string) => {
         const suffix = file.replace(rootRegex, "");
         const outputPath = path.join(artifactsPath, suffix) + ".json";
         const compileArgs = [file, "--output", outputPath]; // TODO abi
 
         console.log("Compiling", file);
-        const executed = spawnSync(compilerPath, compileArgs);
-        for (const logLine of executed.output) {
-            if (logLine) {
-                console.log(logLine.toString());
+        const executed = await docker.runContainer(
+            image,
+            [compilerCommand].concat(compileArgs),
+            {
+                binds: {
+                    [contractsPath]: contractsPath,
+                    [artifactsPath]: artifactsPath
+                }
             }
-        }
+        );
+        console.log(executed.stdout.toString());
 
-        const finalMsg = executed.status ? "Compilation failed" : "Compilation succeeded";
+        const finalMsg = executed.statusCode ? "Compilation failed" : "Compilation succeeded";
         console.log(`\t${finalMsg}\n`);
     }
 }
 
-function main() {
-    const pythonCommand = getPythonCommand();
+extendEnvironment(hre => {
+    hre.dockerWrapper = new DockerWrapper({ repository: "starknet", tag: "latest" });
+});
 
-    const venvName = "starknet_plugin_venv";
-    const venvDir = path.join(__dirname, venvName);
+task("cairo-compile", "Compiles programs written in Cairo")
+    .setAction(async (_args, hre) => {
+        const sourcesPath = hre.config.paths.sources;
+        const artifactsPath = hre.config.paths.artifacts;
+        const docker = await hre.dockerWrapper.getDocker();
+        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "cairo-compile", sourcesPath, artifactsPath);
+        await traverseFiles(sourcesPath, isSimpleCairo, compileFunction);
+    });
 
-    const paths = createVenv(pythonCommand, venvDir);
+task("starknet-compile", "Compiles StarkNet contracts")
+    .setAction(async (_args, hre) => {
+        const sourcesPath = hre.config.paths.sources;
+        const artifactsPath = hre.config.paths.artifacts;
+        const docker = await hre.dockerWrapper.getDocker();
+        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "starknet-compile", sourcesPath, artifactsPath);
+        await traverseFiles(sourcesPath, isStarknetContract, compileFunction);
+    });
 
-    installDependencies(paths.pipPath, ["ecdsa", "fastecdsa", "sympy", "cairo-lang"]);
-
-    task("cairo-compile", "Compiles programs written in Cairo")
-        .setAction(async (_args, hre) => {
-            const sourcesPath = hre.config.paths.sources;
-            const artifactsPath = hre.config.paths.artifacts;
-            const compileFunction = getCompileFunction(paths.cairoCompilePath, sourcesPath, artifactsPath);
-            traverseFiles(sourcesPath, isSimpleCairo, compileFunction);
-        });
-
-    task("starknet-compile", "Compiles StarkNet contracts")
-        .setAction(async (_args, hre) => {
-            const sourcesPath = hre.config.paths.sources;
-            const artifactsPath = hre.config.paths.artifacts;
-            const compileFunction = getCompileFunction(paths.starknetCompilePath, sourcesPath, artifactsPath);
-            traverseFiles(sourcesPath, isStarknetContract, compileFunction);
-        });
-
-    task("starknet-deploy", "Deploys Starknet contracts")
-        .addFlag("alpha", "Use the alpha version of testnet")
-        .setAction(async (args, hre) => {
-            traverseFiles(hre.config.paths.artifacts, hasCairoJsonExtension, file => {
-                // TODO check not to deploy simple cairo
-                console.log("Deploying", file);
-                const starknetArgs = ["deploy", "--contract", file];
-                if (args.alpha) {
-                    starknetArgs.push("--network=alpha");
-                }
-                const executed = spawnSync(paths.starknetPath, starknetArgs);
-                for (const logLine of executed.output) {
-                    if (logLine) {
-                        console.log(logLine.toString());
+task("starknet-deploy", "Deploys Starknet contracts")
+    .addFlag("alpha", "Use the alpha version of testnet")
+    .setAction(async (args, hre) => {
+        const artifactsPath = hre.config.paths.artifacts;
+        const docker = await hre.dockerWrapper.getDocker();
+        await traverseFiles(artifactsPath, hasCairoJsonExtension, async file => {
+            // TODO check not to deploy simple cairo
+            console.log("Deploying", file);
+            const starknetArgs = ["deploy", "--contract", file];
+            if (args.alpha) {
+                starknetArgs.push("--network=alpha");
+            }
+            const executed = await docker.runContainer(
+                hre.dockerWrapper.image,
+                ["starknet"].concat(starknetArgs),
+                {
+                    binds: {
+                        [artifactsPath]: artifactsPath
                     }
                 }
+            );
 
-                const finalMsg = executed.status ? "Deployment failed" : "Deployment succeeded";
-                console.log(`\t${finalMsg}\n`);
-            })
+            if (executed.stdout.length) {
+                console.log(executed.stdout.toString());
+            }
+
+            if (executed.stderr.length) {
+                console.log(executed.stderr.toString());
+            }
+
+            const finalMsg = executed.statusCode ? "Deployment failed" : "Deployment succeeded";
+            console.log(`\t${finalMsg}\n`);
         });
-}
-
-main();
+    });
