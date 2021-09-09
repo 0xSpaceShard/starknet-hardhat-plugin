@@ -1,14 +1,14 @@
 import * as path from "path";
 import * as fs from "fs";
 import { task, extendEnvironment } from "hardhat/config";
-import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper } from "./types";
 
 async function traverseFiles(
     traversable: string,
     predicate: (path: string) => boolean,
-    action: (path: string) => Promise<void>
+    action: (path: string) => Promise<ProcessResult>
 ): Promise<void> {
     const stats = fs.lstatSync(traversable);
     if (stats.isDirectory()) {
@@ -18,7 +18,18 @@ async function traverseFiles(
         }
     } else if (stats.isFile()) {
         if (predicate(traversable)) {
-            await action(traversable);
+            console.log("File:", traversable);
+            const executed = await action(traversable);
+            if (executed.stdout.length) {
+                console.log(executed.stdout.toString());
+            }
+
+            if (executed.stderr.length) {
+                console.error(executed.stderr.toString());
+            }
+
+            const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
+            console.log(`\t${finalMsg}\n`);
         }
     } else {
         throw new Error(`Can only interpret files and directories. ${traversable} is neither.`);
@@ -43,6 +54,10 @@ function hasCairoJsonExtension(filePath: string) {
     return filePath.endsWith(".cairo.json");
 }
 
+function hasPythonExtension(filePath: string) {
+    return path.extname(filePath) === ".py";
+}
+
 function isSimpleCairo(filePath: string) {
     return hasCairoExtension(filePath) && !hasStarknetDeclaration(filePath);
 }
@@ -59,8 +74,7 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
         const outputPath = path.join(artifactsPath, suffix) + ".json";
         const compileArgs = [file, "--output", outputPath]; // TODO abi
 
-        console.log("Compiling", file);
-        const executed = await docker.runContainer(
+        return docker.runContainer(
             image,
             [compilerCommand].concat(compileArgs),
             {
@@ -70,10 +84,6 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
                 }
             }
         );
-        console.log(executed.stdout.toString());
-
-        const finalMsg = executed.statusCode ? "Compilation failed" : "Compilation succeeded";
-        console.log(`\t${finalMsg}\n`);
     }
 }
 
@@ -104,14 +114,13 @@ task("starknet-deploy", "Deploys Starknet contracts")
     .setAction(async (args, hre) => {
         const artifactsPath = hre.config.paths.artifacts;
         const docker = await hre.dockerWrapper.getDocker();
-        await traverseFiles(artifactsPath, hasCairoJsonExtension, async file => {
+        await traverseFiles(artifactsPath, hasCairoJsonExtension, file => {
             // TODO check not to deploy simple cairo
-            console.log("Deploying", file);
             const starknetArgs = ["deploy", "--contract", file];
             if (args.alpha) {
                 starknetArgs.push("--network=alpha");
             }
-            const executed = await docker.runContainer(
+            return docker.runContainer(
                 hre.dockerWrapper.image,
                 ["starknet"].concat(starknetArgs),
                 {
@@ -120,16 +129,26 @@ task("starknet-deploy", "Deploys Starknet contracts")
                     }
                 }
             );
+        });
+    });
 
-            if (executed.stdout.length) {
-                console.log(executed.stdout.toString());
-            }
-
-            if (executed.stderr.length) {
-                console.log(executed.stderr.toString());
-            }
-
-            const finalMsg = executed.statusCode ? "Deployment failed" : "Deployment succeeded";
-            console.log(`\t${finalMsg}\n`);
+task("starknet-test", "Tests Starknet contracts")
+    .setAction(async (_args, hre) => {
+        const contractsPath = hre.config.paths.sources;
+        const testsPath = hre.config.paths.tests;
+        const docker = await hre.dockerWrapper.getDocker();
+        // TODO predicate function currently always returning true
+        await traverseFiles(testsPath, hasPythonExtension, file => {
+            const starknetArgs = [file];
+            return docker.runContainer(
+                hre.dockerWrapper.image,
+                ["pytest"].concat(starknetArgs),
+                {
+                    binds: {
+                        [contractsPath]: contractsPath,
+                        [testsPath]: testsPath
+                    }
+                }
+            );
         });
     });

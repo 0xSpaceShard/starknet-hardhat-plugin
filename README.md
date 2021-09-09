@@ -17,7 +17,8 @@ require("<your_path>/starknet-hardhat-plugin/dist/index");
 ```
 
 ## Using
-The plugin adds the following tasks which target the default sources/artifacts directories:
+The plugin adds the following tasks which target the default source/artifact/test directories:
 - cairo-compile (`npx hardhat cairo-compile`)
 - starknet-compile (`npx hardhat starknet-compile`)
 - starknet-deploy (with optional flag) (`npx hardhat starknet-deploy --alpha`)
+- starknet-test (`npx hardhat starknet-test`)
