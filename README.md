@@ -1,12 +1,10 @@
 ## Building
-The Hardhat team still needs to publish [this fix](https://github.com/nomiclabs/hardhat/commit/0474e596a1235c80773fa9a31b80b50e068b589c), so until then, do it manually.
-
 As this is an early stage of the project, you need to build the plugin locally with:
 ```shell
 npm run build
 ```
 
-Since it is not yet published, building the image is required:
+The plugin uses a Docker image, and since it is not yet published, building it is required:
 ```shell
 docker build -t starknet .
 ```
