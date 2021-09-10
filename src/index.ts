@@ -1,9 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
 import { task, extendEnvironment } from "hardhat/config";
+import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper } from "./types";
+
+const PLUGIN_NAME = "Starknet";
 
 async function traverseFiles(
     traversable: string,
@@ -25,14 +28,19 @@ async function traverseFiles(
             }
 
             if (executed.stderr.length) {
-                console.error(executed.stderr.toString());
+                // synchronize param names reported by actual CLI with param names used by this plugin
+                const err = executed.stderr.toString()
+                    .replace("--network", "--starknet-network")
+                    .replace("--gateway_url", "--gateway-url")
+                console.error(err);
             }
 
             const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
             console.log(`\t${finalMsg}\n`);
         }
     } else {
-        throw new Error(`Can only interpret files and directories. ${traversable} is neither.`);
+        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }
 
@@ -64,6 +72,22 @@ function isSimpleCairo(filePath: string) {
 
 function isStarknetContract(filePath: string) {
     return hasCairoExtension(filePath) && hasStarknetDeclaration(filePath);
+}
+
+function isStarknetCompilationArtifact(filePath: string) {
+    if (!hasCairoJsonExtension(filePath)) {
+        return false;
+    }
+
+    const content = fs.readFileSync(filePath).toString();
+    let parsed = null;
+    try {
+        parsed = JSON.parse(content);
+    } catch(err) {
+        return false;
+    }
+
+    return !!parsed.entry_points_by_type;
 }
 
 function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand: string, contractsPath: string, artifactsPath: string) {
@@ -110,16 +134,26 @@ task("starknet-compile", "Compiles StarkNet contracts")
     });
 
 task("starknet-deploy", "Deploys Starknet contracts")
-    .addFlag("alpha", "Use the alpha version of testnet")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
     .setAction(async (args, hre) => {
         const artifactsPath = hre.config.paths.artifacts;
         const docker = await hre.dockerWrapper.getDocker();
-        await traverseFiles(artifactsPath, hasCairoJsonExtension, file => {
-            // TODO check not to deploy simple cairo
-            const starknetArgs = ["deploy", "--contract", file];
-            if (args.alpha) {
-                starknetArgs.push("--network=alpha");
-            }
+
+        const providedStarknetNetwork = args.starknetNetwork || process.env.STARKNET_NETWORK;
+        const optionalStarknetArgs: string[] = [];
+
+        if (providedStarknetNetwork) {
+            optionalStarknetArgs.push(`--network=${providedStarknetNetwork}`);
+        }
+
+        if (args.gatewayUrl) {
+            optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
+        }
+
+        await traverseFiles(artifactsPath, isStarknetCompilationArtifact, file => {
+            const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
+
             return docker.runContainer(
                 hre.dockerWrapper.image,
                 ["starknet"].concat(starknetArgs),
@@ -137,7 +171,6 @@ task("starknet-test", "Tests Starknet contracts")
         const contractsPath = hre.config.paths.sources;
         const testsPath = hre.config.paths.tests;
         const docker = await hre.dockerWrapper.getDocker();
-        // TODO predicate function currently always returning true
         await traverseFiles(testsPath, hasPythonExtension, file => {
             const starknetArgs = [file];
             return docker.runContainer(
