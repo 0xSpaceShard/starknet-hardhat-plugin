@@ -48,26 +48,12 @@ function hasCairoExtension(filePath: string) {
     return path.extname(filePath) === ".cairo";
 }
 
-function hasStarknetDeclaration(filePath: string) {
-    const content = fs.readFileSync(filePath).toString();
-    for (const line of content.split("\n")) {
-        if (line.trimRight() === "%lang starknet") {
-            return true;
-        }
-    }
-    return false;
-}
-
 function hasPythonExtension(filePath: string) {
     return path.extname(filePath) === ".py";
 }
 
-function isSimpleCairo(filePath: string) {
-    return hasCairoExtension(filePath) && !hasStarknetDeclaration(filePath);
-}
-
 function isStarknetContract(filePath: string) {
-    return hasCairoExtension(filePath) && hasStarknetDeclaration(filePath);
+    return hasCairoExtension(filePath);
 }
 
 function isStarknetCompilationArtifact(filePath: string) {
@@ -109,15 +95,6 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
 extendEnvironment(hre => {
     hre.dockerWrapper = new DockerWrapper({ repository: "starknet", tag: "latest" });
 });
-
-task("cairo-compile", "Compiles programs written in Cairo")
-    .setAction(async (_args, hre) => {
-        const sourcesPath = hre.config.paths.sources;
-        const artifactsPath = hre.config.paths.artifacts;
-        const docker = await hre.dockerWrapper.getDocker();
-        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "cairo-compile", sourcesPath, artifactsPath);
-        await traverseFiles(sourcesPath, isSimpleCairo, compileFunction);
-    });
 
 task("starknet-compile", "Compiles StarkNet contracts")
     .setAction(async (_args, hre) => {
