@@ -17,5 +17,5 @@ require("<your_path>/starknet-hardhat-plugin/dist/index");
 ## Using
 The plugin adds the following tasks which target the default source/artifact/test directories:
 - starknet-compile (`npx hardhat starknet-compile`)
-- starknet-deploy (with optional flag) (`npx hardhat starknet-deploy --alpha`)
+- starknet-deploy (with optional flags) (`npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>`)
 - starknet-test (`npx hardhat starknet-test`)
