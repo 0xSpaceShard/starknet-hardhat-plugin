@@ -58,10 +58,6 @@ function hasStarknetDeclaration(filePath: string) {
     return false;
 }
 
-function hasCairoJsonExtension(filePath: string) {
-    return filePath.endsWith(".cairo.json");
-}
-
 function hasPythonExtension(filePath: string) {
     return path.extname(filePath) === ".py";
 }
@@ -75,10 +71,6 @@ function isStarknetContract(filePath: string) {
 }
 
 function isStarknetCompilationArtifact(filePath: string) {
-    if (!hasCairoJsonExtension(filePath)) {
-        return false;
-    }
-
     const content = fs.readFileSync(filePath).toString();
     let parsed = null;
     try {
@@ -95,9 +87,12 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
     const rootRegex = new RegExp("^" + root);
     return async (file: string) => {
         const suffix = file.replace(rootRegex, "");
-        const outputPath = path.join(artifactsPath, suffix) + ".json";
+        const fileName = path.basename(suffix, path.extname(suffix));
+        const dirPath = path.join(artifactsPath, suffix);
+        const outputPath = path.join(dirPath, `${fileName}.json`);
         const compileArgs = [file, "--output", outputPath]; // TODO abi
 
+        fs.mkdirSync(dirPath, { recursive: true });
         return docker.runContainer(
             image,
             [compilerCommand].concat(compileArgs),
