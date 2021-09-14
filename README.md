@@ -1,10 +1,16 @@
-## Building
+## Requirements
+This plugin was tested with:
+- Node.js v12.22.4
+- npm/npx v7.21.1
+- Docker v20.10.8
+
+## Build
 As this is an early stage of the project, you need to build the plugin locally with:
 ```shell
 npm run build
 ```
 
-The plugin uses a Docker image, and since it is not yet published, building it is required:
+This plugin uses a Docker image, and since it is not yet published, building it is required:
 ```shell
 docker build -t starknet .
 ```
@@ -14,8 +20,19 @@ Assuming you have initialized a Hardhat project in which you wish to include thi
 require("<your_path>/starknet-hardhat-plugin/dist/index");
 ```
 
-## Using
-The plugin adds the following tasks which target the default source/artifact/test directories:
-- starknet-compile (`npx hardhat starknet-compile`)
-- starknet-deploy (with optional flags) (`npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>`)
-- starknet-test (`npx hardhat starknet-test`)
+## Use
+This plugin adds the following tasks which target the default source/artifact/test directories of your Hardhat project:
+### `starknet-compile`
+```shell
+npx hardhat starknet-compile
+```
+
+### `starknet-deploy` (with optional flags)
+```shell
+npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>
+```
+
+### `starknet-test`
+```shell
+npx hardhat starknet-test
+```
