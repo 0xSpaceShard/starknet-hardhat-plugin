@@ -4,15 +4,10 @@ This plugin was tested with:
 - npm/npx v7.21.1
 - Docker v20.10.8
 
-## Build
+## Install
 As this is an early stage of the project, you need to build the plugin locally with:
 ```shell
 npm run build
-```
-
-This plugin uses a Docker image, and since it is not yet published, building it is required:
-```shell
-docker build -t starknet .
 ```
 
 Assuming you have initialized a Hardhat project in which you wish to include this plugin, the next step would be to add to your project's `hardhat.config.js` (or .ts) the following line, targeting the path of the built plugin:

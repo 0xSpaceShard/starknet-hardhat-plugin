@@ -93,7 +93,7 @@ function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand
 }
 
 extendEnvironment(hre => {
-    hre.dockerWrapper = new DockerWrapper({ repository: "starknet", tag: "latest" });
+    hre.dockerWrapper = new DockerWrapper({ repository: "shardlabs/cairo-cli", tag: "latest" });
 });
 
 task("starknet-compile", "Compiles StarkNet contracts")

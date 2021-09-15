@@ -12,7 +12,7 @@ export class DockerWrapper {
         if (!this.docker) {
             this.docker = await HardhatDocker.create();
             if (!(await this.docker.hasPulledImage(this.image))) {
-                console.log("Pulling image:", this.image);
+                console.log(`Pulling image ${this.image.repository}:${this.image.tag}`);
                 await this.docker.pullImage(this.image);
             }
         }
