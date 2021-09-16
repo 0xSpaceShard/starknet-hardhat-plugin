@@ -2,16 +2,15 @@ import * as path from "path";
 import * as fs from "fs";
 import { task, extendEnvironment } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
+import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { DockerWrapper } from "./types";
-
-const PLUGIN_NAME = "Starknet";
+import { DockerWrapper, StarknetContract } from "./types";
+import { PLUGIN_NAME, ABI_SUFFIX } from "./constants";
 
 async function traverseFiles(
     traversable: string,
     predicate: (path: string) => boolean,
-    action: (path: string) => Promise<ProcessResult>
+    action: (path: string) => Promise<void>
 ): Promise<void> {
     const stats = fs.lstatSync(traversable);
     if (stats.isDirectory()) {
@@ -21,27 +20,29 @@ async function traverseFiles(
         }
     } else if (stats.isFile()) {
         if (predicate(traversable)) {
-            console.log("File:", traversable);
-            const executed = await action(traversable);
-            if (executed.stdout.length) {
-                console.log(executed.stdout.toString());
-            }
-
-            if (executed.stderr.length) {
-                // synchronize param names reported by actual CLI with param names used by this plugin
-                const err = executed.stderr.toString()
-                    .replace("--network", "--starknet-network")
-                    .replace("--gateway_url", "--gateway-url")
-                console.error(err);
-            }
-
-            const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
-            console.log(`\t${finalMsg}\n`);
+            await action(traversable);
         }
     } else {
         const msg = `Can only interpret files and directories. ${traversable} is neither.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
+}
+
+function logExecuted(executed: ProcessResult) {
+    if (executed.stdout.length) {
+        console.log(executed.stdout.toString());
+    }
+
+    if (executed.stderr.length) {
+        // synchronize param names reported by actual CLI with param names used by this plugin
+        const err = executed.stderr.toString()
+            .replace("--network", "--starknet-network")
+            .replace("--gateway_url", "--gateway-url")
+        console.error(err);
+    }
+
+    const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
+    console.log(`\t${finalMsg}\n`);
 }
 
 function hasCairoExtension(filePath: string) {
@@ -68,28 +69,8 @@ function isStarknetCompilationArtifact(filePath: string) {
     return !!parsed.entry_points_by_type;
 }
 
-function getCompileFunction(docker: HardhatDocker, image: Image, compilerCommand: string, contractsPath: string, artifactsPath: string) {
-    const root = path.dirname(contractsPath);
-    const rootRegex = new RegExp("^" + root);
-    return async (file: string) => {
-        const suffix = file.replace(rootRegex, "");
-        const fileName = path.basename(suffix, path.extname(suffix));
-        const dirPath = path.join(artifactsPath, suffix);
-        const outputPath = path.join(dirPath, `${fileName}.json`);
-        const compileArgs = [file, "--output", outputPath]; // TODO abi
-
-        fs.mkdirSync(dirPath, { recursive: true });
-        return docker.runContainer(
-            image,
-            [compilerCommand].concat(compileArgs),
-            {
-                binds: {
-                    [contractsPath]: contractsPath,
-                    [artifactsPath]: artifactsPath
-                }
-            }
-        );
-    }
+function getFileName(filePath: string) {
+    return path.basename(filePath, path.extname(filePath));
 }
 
 extendEnvironment(hre => {
@@ -101,8 +82,30 @@ task("starknet-compile", "Compiles StarkNet contracts")
         const sourcesPath = hre.config.paths.sources;
         const artifactsPath = hre.config.paths.artifacts;
         const docker = await hre.dockerWrapper.getDocker();
-        const compileFunction = getCompileFunction(docker, hre.dockerWrapper.image, "starknet-compile", sourcesPath, artifactsPath);
-        await traverseFiles(sourcesPath, isStarknetContract, compileFunction);
+        const root = path.dirname(sourcesPath);
+        const rootRegex = new RegExp("^" + root);
+        await traverseFiles(sourcesPath, isStarknetContract, async (file: string) => {
+            console.log("Compiling", file);
+            const suffix = file.replace(rootRegex, "");
+            const fileName = getFileName(suffix);
+            const dirPath = path.join(artifactsPath, suffix);
+            const outputPath = path.join(dirPath, `${fileName}.json`);
+            const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
+            const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
+
+            fs.mkdirSync(dirPath, { recursive: true });
+            const executed = await docker.runContainer(
+                hre.dockerWrapper.image,
+                ["starknet-compile"].concat(compileArgs),
+                {
+                    binds: {
+                        [sourcesPath]: sourcesPath,
+                        [artifactsPath]: artifactsPath
+                    }
+                }
+            );
+            logExecuted(executed);
+        });
     });
 
 task("starknet-deploy", "Deploys Starknet contracts")
@@ -123,10 +126,11 @@ task("starknet-deploy", "Deploys Starknet contracts")
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
 
-        await traverseFiles(artifactsPath, isStarknetCompilationArtifact, file => {
+        await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
+            console.log("Deploying", file);
             const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
 
-            return docker.runContainer(
+            const executed = await docker.runContainer(
                 hre.dockerWrapper.image,
                 ["starknet"].concat(starknetArgs),
                 {
@@ -135,6 +139,7 @@ task("starknet-deploy", "Deploys Starknet contracts")
                     }
                 }
             );
+            logExecuted(executed);
         });
     });
 
@@ -143,9 +148,11 @@ task("starknet-test", "Tests Starknet contracts")
         const contractsPath = hre.config.paths.sources;
         const testsPath = hre.config.paths.tests;
         const docker = await hre.dockerWrapper.getDocker();
-        await traverseFiles(testsPath, hasPythonExtension, file => {
+        await traverseFiles(testsPath, hasPythonExtension, async file => {
+            console.log("Testing", file);
             const starknetArgs = [file];
-            return docker.runContainer(
+
+            const executed = await docker.runContainer(
                 hre.dockerWrapper.image,
                 ["pytest"].concat(starknetArgs),
                 {
@@ -155,5 +162,36 @@ task("starknet-test", "Tests Starknet contracts")
                     }
                 }
             );
+            logExecuted(executed);
         });
     });
+
+extendEnvironment(hre => {
+    hre.getStarknetContract = async contractName => {
+        let metadataPath: any;
+        await traverseFiles(
+            hre.config.paths.artifacts,
+            file => path.basename(file) === `${contractName}.json`,
+            async file => {
+                metadataPath = file;
+            }
+        );
+        if (!metadataPath) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
+        }
+
+        let abiPath: any;
+        await traverseFiles(
+            hre.config.paths.artifacts,
+            file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
+            async file => {
+                abiPath = file;
+            }
+        )
+        if (!abiPath) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
+        }
+
+        return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath);
+    }
+});
