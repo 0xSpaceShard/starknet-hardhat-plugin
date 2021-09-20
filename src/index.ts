@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
-import { task, extendEnvironment } from "hardhat/config";
+import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_ARTIFACTS_PATH } from "./constants";
+import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
 async function traverseFiles(
     traversable: string,
@@ -73,6 +74,24 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    let newPath: string;
+    if (userConfig.paths && userConfig.paths.starknetArtifacts) {
+        const userPath = userConfig.paths.starknetArtifacts;
+        if (path.isAbsolute(userPath)) {
+            newPath = userPath;
+        } else {
+            newPath = path.normalize(path.join(config.paths.root, userPath));
+        }
+        config.paths.starknetArtifacts = userConfig.paths.starknetArtifacts;
+    } else {
+        const defaultPath = path.join(config.paths.root, DEFAULT_STARKNET_ARTIFACTS_PATH);
+        newPath = defaultPath;
+    }
+
+    config.paths.starknetArtifacts = newPath;
+});
+
 extendEnvironment(hre => {
     hre.dockerWrapper = new DockerWrapper({ repository: "shardlabs/cairo-cli", tag: "latest" });
 });
@@ -80,15 +99,18 @@ extendEnvironment(hre => {
 task("starknet-compile", "Compiles StarkNet contracts")
     .setAction(async (_args, hre) => {
         const sourcesPath = hre.config.paths.sources;
-        const artifactsPath = hre.config.paths.artifacts;
+        const artifactsPath = hre.config.paths.starknetArtifacts;
         const docker = await hre.dockerWrapper.getDocker();
-        const root = path.dirname(sourcesPath);
+
+        const root = hre.config.paths.root;
         const rootRegex = new RegExp("^" + root);
+
         await traverseFiles(sourcesPath, isStarknetContract, async (file: string) => {
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
             const fileName = getFileName(suffix);
             const dirPath = path.join(artifactsPath, suffix);
+
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
             const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
@@ -112,7 +134,7 @@ task("starknet-deploy", "Deploys Starknet contracts")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
     .setAction(async (args, hre) => {
-        const artifactsPath = hre.config.paths.artifacts;
+        const artifactsPath = hre.config.paths.starknetArtifacts;
         const docker = await hre.dockerWrapper.getDocker();
 
         const providedStarknetNetwork = args.starknetNetwork || process.env.STARKNET_NETWORK;
@@ -170,7 +192,7 @@ extendEnvironment(hre => {
     hre.getStarknetContract = async contractName => {
         let metadataPath: any;
         await traverseFiles(
-            hre.config.paths.artifacts,
+            hre.config.paths.starknetArtifacts,
             file => path.basename(file) === `${contractName}.json`,
             async file => {
                 metadataPath = file;
@@ -182,7 +204,7 @@ extendEnvironment(hre => {
 
         let abiPath: any;
         await traverseFiles(
-            hre.config.paths.artifacts,
+            hre.config.paths.starknetArtifacts,
             file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
             async file => {
                 abiPath = file;

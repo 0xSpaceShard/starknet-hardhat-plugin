@@ -31,3 +31,17 @@ npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>
 ```shell
 npx hardhat starknet-test
 ```
+
+## Config
+Specify custom configurations by editing your project's `hardhat.config.js` (or .ts).
+
+### Artifacts path
+- Defaults to `starknet-artifacts`
+- Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
+```javascript
+module.exports = {
+  paths: {
+    starknetArtifacts: "my-starknet-path"
+  }
+};
+```
