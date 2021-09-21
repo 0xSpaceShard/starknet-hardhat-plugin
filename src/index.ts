@@ -165,29 +165,6 @@ task("starknet-deploy", "Deploys Starknet contracts")
         });
     });
 
-task("starknet-test", "Tests Starknet contracts")
-    .setAction(async (_args, hre) => {
-        const contractsPath = hre.config.paths.sources;
-        const testsPath = hre.config.paths.tests;
-        const docker = await hre.dockerWrapper.getDocker();
-        await traverseFiles(testsPath, hasPythonExtension, async file => {
-            console.log("Testing", file);
-            const starknetArgs = [file];
-
-            const executed = await docker.runContainer(
-                hre.dockerWrapper.image,
-                ["pytest"].concat(starknetArgs),
-                {
-                    binds: {
-                        [contractsPath]: contractsPath,
-                        [testsPath]: testsPath
-                    }
-                }
-            );
-            logExecuted(executed);
-        });
-    });
-
 extendEnvironment(hre => {
     hre.getStarknetContract = async contractName => {
         let metadataPath: any;

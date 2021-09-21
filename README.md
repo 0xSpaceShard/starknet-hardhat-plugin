@@ -27,9 +27,31 @@ npx hardhat starknet-compile
 npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>
 ```
 
-### `starknet-test`
+## Test
+To test Starknet contracts with Mocha, use the regular Hardhat `test` task:
 ```shell
-npx hardhat starknet-test
+npx hardhat test
+```
+
+Inside the tests, use the following syntax:
+```javascript
+const { expect } = require("chai");
+const { getStarknetContract } = require("hardhat");
+
+describe("Starknet", function () {
+  this.timeout(300_000); // 5 min
+  it("Should work", async function () {
+    const contract = await getStarknetContract("MyContract"); // assumes there is a file MyContract.cairo
+    await contract.deploy();
+    console.log("Deployed at", contract.address);
+    await contract.invoke("increase_balance", [10]); // invoke method by name and pass arguments in an array
+    await contract.invoke("increase_balance", [20]);
+
+    const balanceStr = await contract.call("get_balance"); // call method by name and receive the result (string)
+    const balance = parseInt(balanceStr);
+    expect(balance).to.equal(30);
+  });
+});
 ```
 
 ## Config
