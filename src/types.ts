@@ -2,6 +2,8 @@ import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME } from "./constants";
 
+const NETWORK = "alpha";
+
 export class DockerWrapper {
     private docker: HardhatDocker;
     public image: Image;
@@ -41,7 +43,7 @@ export class StarknetContract {
             [
                 "starknet", "deploy",
                 "--contract", this.metadataPath,
-                "--network", "alpha" // TODO make variable
+                "--network", NETWORK
             ],
             {
                 binds: {
@@ -72,7 +74,7 @@ export class StarknetContract {
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
-            "--network", "alpha"
+            "--network", NETWORK
         ];
 
         if (functionArgs.length) {
@@ -105,7 +107,7 @@ export class StarknetContract {
             [
                 "starknet", "tx_status",
                 "--id", txID,
-                "--network", "alpha"
+                "--network", NETWORK
             ]
         );
 
@@ -122,13 +124,24 @@ export class StarknetContract {
         }
     }
 
-    async iterativelyCheckStatus(txID: string, resolve: () => void) {
-        const TIMEOUT = 1000; // ms
-        const status = await this.checkStatus(txID);
+    async iterativelyCheckStatus(txID: string, resolve: () => void, reject: (reason: any) => void) {
+        const docker = await this.dockerWrapper.getDocker();
+        const executed = await docker.runContainer(
+            this.dockerWrapper.image,
+            [
+                "./check-status.sh", txID, NETWORK, "1" // timeout in seconds
+            ]
+        );
+
+        if (executed.statusCode) {
+            throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
+        }
+
+        const status = executed.stdout.toString();
         if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
             resolve();
         } else {
-            setTimeout(this.iterativelyCheckStatus.bind(this), TIMEOUT, txID, resolve);
+            reject(`Error! Tx status: ${status}`);
         }
     }
 
@@ -138,13 +151,17 @@ export class StarknetContract {
         const matched = executed.stdout.toString().match(/^Transaction ID: (.*)$/m);
         const txID = matched[1];
 
-        return new Promise<void>((resolve) => {
-            this.iterativelyCheckStatus(txID, resolve);
+        return new Promise<void>((resolve, reject) => {
+            this.iterativelyCheckStatus(txID, resolve, reject);
         });
     }
 
     async call(functionName: string, functionArgs: string[]): Promise<string> {
         const executed = await this.invokeOrCall("call", functionName, functionArgs);
-        return executed.stdout.toString();
+        let ret = executed.stdout.toString();
+        if (ret.slice(-1) === "\n") {
+            ret = ret.slice(0, -1);
+        }
+        return ret;
     }
 }
