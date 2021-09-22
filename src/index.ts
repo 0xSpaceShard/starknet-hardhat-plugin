@@ -5,7 +5,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_ARTIFACTS_PATH } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
 async function traverseFiles(
@@ -92,8 +92,23 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     config.paths.starknetArtifacts = newPath;
 });
 
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    config.cairo = userConfig.cairo;
+    if (!config.cairo) {
+        config.cairo = {
+            version: DEFAULT_DOCKER_IMAGE_TAG
+        };
+    }
+
+    if (!config.cairo.version) {
+        config.cairo.version = DEFAULT_DOCKER_IMAGE_TAG;
+    }
+});
+
 extendEnvironment(hre => {
-    hre.dockerWrapper = new DockerWrapper({ repository: "shardlabs/cairo-cli", tag: "latest" });
+    const repository = DOCKER_REPOSITORY;
+    const tag = hre.config.cairo.version;
+    hre.dockerWrapper = new DockerWrapper({ repository, tag });
 });
 
 task("starknet-compile", "Compiles StarkNet contracts")
