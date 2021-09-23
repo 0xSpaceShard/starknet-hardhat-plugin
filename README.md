@@ -12,18 +12,18 @@ npm install @shardlabs/starknet-hardhat-plugin
 ## Use
 This plugin adds the following tasks which target the default source/artifact/test directories of your Hardhat project:
 ### `starknet-compile`
-```shell
+```
 npx hardhat starknet-compile
 ```
 
 ### `starknet-deploy` (with optional flags)
-```shell
+```
 npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>
 ```
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task:
-```shell
+```
 npx hardhat test
 ```
 
@@ -49,15 +49,33 @@ describe("Starknet", function () {
 ```
 
 ## Config
-Specify custom configurations by editing your project's `hardhat.config.js` (or .ts).
+Specify custom configuration by editing your project's `hardhat.config.js` (or .ts).
 
-### Artifacts path
-- Defaults to `starknet-artifacts`
-- Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
+### Paths
 ```javascript
 module.exports = {
+  ...
   paths: {
-    starknetArtifacts: "my-starknet-path"
+    // Defaults to "contracts" (the same as `paths.sources`).
+    starknetSources: "my-own-starknet-path",
+
+    // Defaults to "starknet-artifacts".
+    // Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
+    starknetArtifacts: "also-my-own-starknet-path",
   }
+  ...
+};
+```
+
+### Cairo version
+For a list of available versions, check [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+```javascript
+module.exports = {
+  ...
+  cairo: {
+    // Defaults to "latest"
+    version: "0.4.1"
+  }
+  ...
 };
 ```
