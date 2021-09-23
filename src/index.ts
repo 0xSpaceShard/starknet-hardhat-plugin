@@ -5,7 +5,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
 async function traverseFiles(
@@ -74,6 +74,26 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+// add sources path
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    let newPath: string;
+    if (userConfig.paths && userConfig.paths.starknetSources) {
+        const userPath = userConfig.paths.starknetSources;
+        if (path.isAbsolute(userPath)) {
+            newPath = userPath;
+        } else {
+            newPath = path.normalize(path.join(config.paths.root, userPath));
+        }
+        config.paths.starknetSources = userConfig.paths.starknetSources;
+    } else {
+        const defaultPath = path.join(config.paths.root, DEFAULT_STARKNET_SOURCES_PATH);
+        newPath = defaultPath;
+    }
+
+    config.paths.starknetSources = newPath;
+});
+
+// add artifacts path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
     let newPath: string;
     if (userConfig.paths && userConfig.paths.starknetArtifacts) {
@@ -92,6 +112,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     config.paths.starknetArtifacts = newPath;
 });
 
+// add image version
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
     config.cairo = userConfig.cairo;
     if (!config.cairo) {
@@ -113,7 +134,7 @@ extendEnvironment(hre => {
 
 task("starknet-compile", "Compiles StarkNet contracts")
     .setAction(async (_args, hre) => {
-        const sourcesPath = hre.config.paths.sources;
+        const sourcesPath = hre.config.paths.starknetSources;
         const artifactsPath = hre.config.paths.starknetArtifacts;
         const docker = await hre.dockerWrapper.getDocker();
 

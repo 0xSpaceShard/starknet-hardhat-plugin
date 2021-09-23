@@ -7,10 +7,12 @@ type CairoConfig = {
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
         starknetArtifacts?: string;
+        starknetSources?: string;
     }
 
     export interface ProjectPathsConfig {
         starknetArtifacts: string;
+        starknetSources?: string;
     }
 
     export interface HardhatConfig {
@@ -18,7 +20,7 @@ declare module "hardhat/types/config" {
     }
 
     export interface HardhatUserConfig {
-        cairo: CairoConfig;
+        cairo?: CairoConfig;
     }
 }
 

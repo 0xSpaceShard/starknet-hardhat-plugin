@@ -51,26 +51,29 @@ describe("Starknet", function () {
 ## Config
 Specify custom configuration by editing your project's `hardhat.config.js` (or .ts).
 
-### Artifacts path
-- Defaults to `starknet-artifacts`.
-- Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
+### Paths
 ```javascript
 module.exports = {
   ...
   paths: {
-    starknetArtifacts: "my-starknet-path"
+    // Defaults to "contracts" (the same as `paths.sources`).
+    starknetSources: "my-own-starknet-path",
+
+    // Defaults to "starknet-artifacts".
+    // Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
+    starknetArtifacts: "also-my-own-starknet-path",
   }
   ...
 };
 ```
 
 ### Cairo version
-- Defaults to `latest`.
-- For a list of available versions, check [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+For a list of available versions, check [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
 module.exports = {
   ...
   cairo: {
+    // Defaults to "latest"
     version: "0.4.1"
   }
   ...
