@@ -5,14 +5,14 @@ aliases:
     steps:
       - checkout
       - run:
-        name: Install
-        command: npm install
+          name: Install
+          command: npm install
       - run:
-        name: Build
-        command: npm run build
+          name: Build
+          command: npm run build
       - run:
-        name: Test
-        command: npm run test
+          name: Test
+          command: npm run test
 
 jobs:
   test_node_v12:
@@ -29,20 +29,20 @@ jobs:
     steps:
       - checkout
       - run:
-        name: Publish
-        command: ./scripts/npm-publish.sh
+          name: Publish
+          command: ./scripts/npm-publish.sh
 
 workflows:
-  version: 2.1
+  version: 2
   test_and_publish:
     jobs:
       - test_node_v12
       - test_node_v14
       - npm_publish:
-        filters:
-          branches:
-            only:
-              - master
-        requires:
-          test_node_v12
-          test_node_v14
+          filters:
+            branches:
+              only:
+                - master
+          requires:
+            - test_node_v12
+            - test_node_v14
