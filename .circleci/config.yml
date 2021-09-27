@@ -1,0 +1,48 @@
+version: 2.1
+
+aliases:
+  - &node-base
+    steps:
+      - checkout
+      - run:
+        name: Install
+        command: npm install
+      - run:
+        name: Build
+        command: npm run build
+      - run:
+        name: Test
+        command: npm run test
+
+jobs:
+  test_node_v12:
+    <<: *node-base
+    docker:
+      - image: circleci/node:12
+  test_node_v14:
+    <<: *node-base
+    docker:
+      - image: circleci/node:14
+  npm_publish:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+      - run:
+        name: Publish
+        command: ./scripts/npm-publish.sh
+
+workflows:
+  version: 2.1
+  test_and_publish:
+    jobs:
+      - test_node_v12
+      - test_node_v14
+      - npm_publish:
+        filters:
+          branches:
+            only:
+              - master
+        requires:
+          test_node_v12
+          test_node_v14
