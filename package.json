@@ -4,7 +4,7 @@
   "description": "Plugin for using Starknet tools within Hardhat projects",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No tests yet. Add them!\"",
     "build": "rm -rf dist && tsc",
     "build-image": "docker build -t shardlabs/cairo-cli --build-arg CAIRO_VERSION=$CAIRO_VERSION ."
   },
