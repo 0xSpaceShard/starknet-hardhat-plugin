@@ -15,21 +15,26 @@ async function traverseFiles(
 ): Promise<number> {
     let statusCode = 0;
 
-    const stats = fs.lstatSync(traversable);
-    if (stats.isDirectory()) {
-        for (const childName of fs.readdirSync(traversable)) {
-            const childPath = path.join(traversable, childName);
-            statusCode += await traverseFiles(childPath, predicate, action);
-        }
-    } else if (stats.isFile()) {
-        if (predicate(traversable)) {
-            statusCode += await action(traversable);
+    if (fs.existsSync(traversable)) {
+        const stats = fs.lstatSync(traversable);
+        if (stats.isDirectory()) {
+            for (const childName of fs.readdirSync(traversable)) {
+                const childPath = path.join(traversable, childName);
+                statusCode += await traverseFiles(childPath, predicate, action);
+            }
+        } else if (stats.isFile()) {
+            if (predicate(traversable)) {
+                statusCode += await action(traversable);
+            }
+        } else {
+            const msg = `Can only interpret files and directories. ${traversable} is neither.`;
+            console.warn(msg);
         }
     } else {
-        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-        console.warn(msg);
+        statusCode = 1;
+        console.error("Path doesn't exist:", traversable);
     }
-
+        
     return statusCode;
 }
 
@@ -154,38 +159,51 @@ extendEnvironment(hre => {
 });
 
 task("starknet-compile", "Compiles StarkNet contracts")
-    .setAction(async (_args, hre) => {
-        const sourcesPath = hre.config.paths.starknetSources;
-        const artifactsPath = hre.config.paths.starknetArtifacts;
+    .addOptionalVariadicPositionalParam("paths",
+        "The paths to be used for deployment. " +
+        "Each of the provided paths is recursively looked into while searching for compilation artifacts."
+    )
+    .setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
         const root = hre.config.paths.root;
         const rootRegex = new RegExp("^" + root);
 
-        const statusCode = await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
-            console.log("Compiling", file);
-            const suffix = file.replace(rootRegex, "");
-            const fileName = getFileName(suffix);
-            const dirPath = path.join(artifactsPath, suffix);
+        const defaultSourcesPath = hre.config.paths.starknetSources;
+        const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
+        const artifactsPath = hre.config.paths.starknetArtifacts;
 
-            const outputPath = path.join(dirPath, `${fileName}.json`);
-            const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
-            const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
+        let statusCode = 0;
+        for (let sourcesPath of sourcesPaths) {
+            if (!path.isAbsolute(sourcesPath)) {
+                sourcesPath = path.normalize(path.join(root, sourcesPath));
+            }
 
-            fs.mkdirSync(dirPath, { recursive: true });
-            const executed = await docker.runContainer(
-                hre.dockerWrapper.image,
-                ["starknet-compile"].concat(compileArgs),
-                {
-                    binds: {
-                        [sourcesPath]: sourcesPath,
-                        [artifactsPath]: artifactsPath
+            statusCode += await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
+                console.log("Compiling", file);
+                const suffix = file.replace(rootRegex, "");
+                const fileName = getFileName(suffix);
+                const dirPath = path.join(artifactsPath, suffix);
+
+                const outputPath = path.join(dirPath, `${fileName}.json`);
+                const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
+                const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
+
+                fs.mkdirSync(dirPath, { recursive: true });
+                const executed = await docker.runContainer(
+                    hre.dockerWrapper.image,
+                    ["starknet-compile"].concat(compileArgs),
+                    {
+                        binds: {
+                            [sourcesPath]: sourcesPath,
+                            [artifactsPath]: artifactsPath
+                        }
                     }
-                }
-            );
+                );
 
-            return processExecuted(executed);
-        });
+                return processExecuted(executed);
+            });
+        }
 
         if (statusCode) {
             const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
@@ -193,11 +211,13 @@ task("starknet-compile", "Compiles StarkNet contracts")
         }
     });
 
-task("starknet-deploy", "Deploys Starknet contracts")
+task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
-    .setAction(async (args, hre) => {
-        const artifactsPath = hre.config.paths.starknetArtifacts;
+    .addOptionalVariadicPositionalParam("paths",
+        "The paths to be used for deployment. " +
+        "Each of the provided paths is recursively looked into while searching for compilation artifacts."
+    ).setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
         const providedStarknetNetwork = args.starknetNetwork || process.env.STARKNET_NETWORK;
@@ -211,22 +231,33 @@ task("starknet-deploy", "Deploys Starknet contracts")
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
 
-        const statusCode = await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
-            console.log("Deploying", file);
-            const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
 
-            const executed = await docker.runContainer(
-                hre.dockerWrapper.image,
-                ["starknet"].concat(starknetArgs),
-                {
-                    binds: {
-                        [artifactsPath]: artifactsPath
+        const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
+        const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
+
+        let statusCode = 0;
+        for (let artifactsPath of artifactsPaths) {
+            if (!path.isAbsolute(artifactsPath)) {
+                artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
+            }
+
+            statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
+                console.log("Deploying", file);
+                const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
+
+                const executed = await docker.runContainer(
+                    hre.dockerWrapper.image,
+                    ["starknet"].concat(starknetArgs),
+                    {
+                        binds: {
+                            [artifactsPath]: artifactsPath
+                        }
                     }
-                }
-            );
+                );
 
-            return processExecuted(executed);
-        });
+                return processExecuted(executed);
+            });
+        }
 
         if (statusCode) {
             throw new HardhatPluginError(PLUGIN_NAME, `Failed deployment of ${statusCode} contracts`);

@@ -74,7 +74,8 @@ export class StarknetContract {
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
-            "--gateway_url", this.gatewayUrl
+            "--gateway_url", this.gatewayUrl,
+            "--feeder_gateway_url", this.gatewayUrl
         ];
 
         if (functionArgs.length) {
@@ -107,7 +108,8 @@ export class StarknetContract {
             [
                 "starknet", "tx_status",
                 "--id", txID,
-                "--gateway_url", this.gatewayUrl
+                "--gateway_url", this.gatewayUrl,
+                "--feeder_gateway_url", this.gatewayUrl
             ]
         );
 
