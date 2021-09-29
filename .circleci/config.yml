@@ -42,6 +42,7 @@ workflows:
       - test_node_v12
       - test_node_v14
       - npm_publish:
+          context: shardlabs
           filters:
             branches:
               only:
