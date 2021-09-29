@@ -27,11 +27,13 @@ export class StarknetContract {
     private metadataPath: string;
     private abiPath: string;
     private address: string;
+    private gatewayUrl: string;
 
-    constructor(dockerWrapper: DockerWrapper, metadataPath: string, abiPath: string) {
+    constructor(dockerWrapper: DockerWrapper, metadataPath: string, abiPath: string, gatewayUrl: string) {
         this.dockerWrapper = dockerWrapper;
         this.metadataPath = metadataPath;
         this.abiPath = abiPath;
+        this.gatewayUrl = gatewayUrl;
     }
 
     async deploy() {
@@ -41,7 +43,7 @@ export class StarknetContract {
             [
                 "starknet", "deploy",
                 "--contract", this.metadataPath,
-                "--network", "alpha" // TODO make variable
+                "--gateway_url", this.gatewayUrl
             ],
             {
                 binds: {
@@ -72,7 +74,7 @@ export class StarknetContract {
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
-            "--network", "alpha"
+            "--gateway_url", this.gatewayUrl
         ];
 
         if (functionArgs.length) {
@@ -105,7 +107,7 @@ export class StarknetContract {
             [
                 "starknet", "tx_status",
                 "--id", txID,
-                "--network", "alpha"
+                "--gateway_url", this.gatewayUrl
             ]
         );
 

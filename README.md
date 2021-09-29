@@ -80,5 +80,18 @@ module.exports = {
 };
 ```
 
+### TestGatewayUrl
+```javascript
+module.exports = {
+  ...
+  starknet: {
+    // Used for deployment in tests
+    // Defaults to "https://alpha2.starknet.io:443"
+    testGatewayUrl: "http://localhost:8080"
+  }
+  ...
+};
+```
+
 ## Example
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
