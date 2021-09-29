@@ -68,7 +68,7 @@ module.exports = {
 ```
 
 ### Cairo version
-For a list of available versions, check [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
 module.exports = {
   ...
@@ -79,3 +79,6 @@ module.exports = {
   ...
 };
 ```
+
+## Example
+An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).

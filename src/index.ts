@@ -50,10 +50,6 @@ function hasCairoExtension(filePath: string) {
     return path.extname(filePath) === ".cairo";
 }
 
-function hasPythonExtension(filePath: string) {
-    return path.extname(filePath) === ".py";
-}
-
 function isStarknetContract(filePath: string) {
     return hasCairoExtension(filePath);
 }
