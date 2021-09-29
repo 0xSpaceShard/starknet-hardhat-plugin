@@ -5,31 +5,41 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY,  } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 
 async function traverseFiles(
     traversable: string,
     predicate: (path: string) => boolean,
-    action: (path: string) => Promise<void>
-): Promise<void> {
+    action: (path: string) => Promise<number>
+): Promise<number> {
+    let statusCode = 0;
+
     const stats = fs.lstatSync(traversable);
     if (stats.isDirectory()) {
         for (const childName of fs.readdirSync(traversable)) {
             const childPath = path.join(traversable, childName);
-            await traverseFiles(childPath, predicate, action);
+            statusCode += await traverseFiles(childPath, predicate, action);
         }
     } else if (stats.isFile()) {
         if (predicate(traversable)) {
-            await action(traversable);
+            statusCode += await action(traversable);
         }
     } else {
         const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        console.warn(msg);
     }
+
+    return statusCode;
 }
 
-function logExecuted(executed: ProcessResult) {
+/**
+ * Transfers logs and generates a return status code.
+ * 
+ * @param executed The process result of running the container
+ * @returns 0 if succeeded, 1 otherwise
+ */
+function processExecuted(executed: ProcessResult): number {
     if (executed.stdout.length) {
         console.log(executed.stdout.toString());
     }
@@ -44,6 +54,7 @@ function logExecuted(executed: ProcessResult) {
 
     const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
     console.log(`\t${finalMsg}\n`);
+    return executed.statusCode ? 1 : 0;
 }
 
 function hasCairoExtension(filePath: string) {
@@ -137,7 +148,7 @@ task("starknet-compile", "Compiles StarkNet contracts")
         const root = hre.config.paths.root;
         const rootRegex = new RegExp("^" + root);
 
-        await traverseFiles(sourcesPath, isStarknetContract, async (file: string) => {
+        const statusCode = await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
             const fileName = getFileName(suffix);
@@ -158,8 +169,14 @@ task("starknet-compile", "Compiles StarkNet contracts")
                     }
                 }
             );
-            logExecuted(executed);
+
+            return processExecuted(executed);
         });
+
+        if (statusCode) {
+            const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
     });
 
 task("starknet-deploy", "Deploys Starknet contracts")
@@ -180,7 +197,7 @@ task("starknet-deploy", "Deploys Starknet contracts")
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
 
-        await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
+        const statusCode = await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
             console.log("Deploying", file);
             const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
 
@@ -193,30 +210,37 @@ task("starknet-deploy", "Deploys Starknet contracts")
                     }
                 }
             );
-            logExecuted(executed);
+
+            return processExecuted(executed);
         });
+
+        if (statusCode) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Failed deployment of ${statusCode} contracts`);
+        }
     });
 
 extendEnvironment(hre => {
     hre.getStarknetContract = async contractName => {
-        let metadataPath: any;
+        let metadataPath: string;
         await traverseFiles(
             hre.config.paths.starknetArtifacts,
             file => path.basename(file) === `${contractName}.json`,
             async file => {
                 metadataPath = file;
+                return 0;
             }
         );
         if (!metadataPath) {
             throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
         }
 
-        let abiPath: any;
+        let abiPath: string;
         await traverseFiles(
             hre.config.paths.starknetArtifacts,
             file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
             async file => {
                 abiPath = file;
+                return 0;
             }
         )
         if (!abiPath) {
