@@ -5,6 +5,9 @@ aliases:
     steps:
       - checkout
       - run:
+          name: Versions
+          command: ./scripts/versions.sh
+      - run:
           name: Install
           command: npm install
       - run:
@@ -17,12 +20,12 @@ aliases:
 jobs:
   test_node_v12:
     <<: *node-base
-    docker:
-      - image: circleci/node:12
+    machine:
+      image: ubuntu-2004:202010-01
   test_node_v14:
     <<: *node-base
-    docker:
-      - image: circleci/node:14
+    machine:
+      image: ubuntu-2004:202107-02
   npm_publish:
     docker:
       - image: circleci/node:14
