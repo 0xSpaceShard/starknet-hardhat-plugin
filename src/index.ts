@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { task, extendEnvironment, extendConfig, subtask } from "hardhat/config";
+import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
@@ -159,8 +159,9 @@ extendEnvironment(hre => {
 
 task("starknet-compile", "Compiles StarkNet contracts")
     .addOptionalVariadicPositionalParam("paths",
-        "The paths to be used for deployment. " +
-        "Each of the provided paths is recursively looked into while searching for compilation artifacts."
+        "The paths to be used for deployment.\n" +
+        "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+        "If no paths are provided, the default contracts directory is traversed."
     )
     .setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
@@ -214,8 +215,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
     .addOptionalVariadicPositionalParam("paths",
-        "The paths to be used for deployment. " +
-        "Each of the provided paths is recursively looked into while searching for compilation artifacts."
+        "The paths to be used for deployment.\n" +
+        "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+        "If no paths are provided, the default artifacts directory is traversed."
     ).setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
