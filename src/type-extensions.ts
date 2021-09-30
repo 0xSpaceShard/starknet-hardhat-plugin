@@ -22,11 +22,21 @@ declare module "hardhat/types/config" {
     export interface HardhatUserConfig {
         cairo?: CairoConfig;
     }
+
+    export interface NetworksConfig {
+        alpha: HttpNetworkConfig;
+    }
 }
 
 declare module "hardhat/types/runtime" {
     export interface HardhatRuntimeEnvironment {
         dockerWrapper: DockerWrapper;
         getStarknetContract: (name: string) => Promise<StarknetContract>;
+    }
+}
+
+declare module "mocha" {
+    export interface MochaOptions {
+        starknetNetwork?: string;
     }
 }

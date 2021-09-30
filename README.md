@@ -13,13 +13,15 @@ npm install @shardlabs/starknet-hardhat-plugin
 This plugin adds the following tasks which target the default source/artifact/test directories of your Hardhat project:
 ### `starknet-compile`
 ```
-npx hardhat starknet-compile
+npx hardhat starknet-compile [PATH...]
 ```
+If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 ### `starknet-deploy` (with optional flags)
 ```
-npx hardhat starknet-deploy --starknet-network <NAME> --gateway-url <URL>
+npx hardhat starknet-deploy [--starknet-network <NAME>] [--gateway-url <URL>] [ARTIFACT_PATH...]
 ```
+If no paths are provided, all Starknet artifacts in the default artifacts directory are deployed. Paths can be files and directories.
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task:
@@ -75,6 +77,24 @@ module.exports = {
   cairo: {
     // Defaults to "latest"
     version: "0.4.1"
+  }
+  ...
+};
+```
+
+### Testing network
+```javascript
+module.exports = {
+  ...
+  networks: {
+    myNetwork: {
+      url: "http://my.network:8080"
+    }
+  },
+  mocha: {
+    // Used for deployment in tests
+    // Defaults to "alpha"
+    starknetNetwork: "myNetwork"
   }
   ...
 };

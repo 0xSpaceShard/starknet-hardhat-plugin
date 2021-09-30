@@ -11,7 +11,7 @@ SUCCESS=0
 for TEST_CASE in ../test/*; do
     TOTAL=$((TOTAL + 1))
     echo "Test $TOTAL) $TEST_CASE"
-    cp "$TEST_CASE/hardhat.config.js" hardhat.config.js
+    /bin/cp "$TEST_CASE/hardhat.config.js" hardhat.config.js
 
     INIT_SCRIPT="$TEST_CASE/init.sh"
     if [ -f "$INIT_SCRIPT" ]; then
@@ -20,6 +20,9 @@ for TEST_CASE in ../test/*; do
 
     "$TEST_CASE/check.sh" && SUCCESS=$((SUCCESS + 1)) || echo "Test failed!"
     git checkout --force
+    git clean -fd
+    echo "----------------------------------------------"
+    echo
 done
 
 echo "Tests passing: $SUCCESS / $TOTAL"

@@ -1,3 +1,6 @@
-    npx hardhat starknet-compile
-    npx hardhat starknet-deploy --starknet-network alpha
+#!/bin/bash
+set -e
+
+npx hardhat starknet-compile contracts/contract.cairo
+npx hardhat starknet-deploy --starknet-network alpha my-starknet-artifacts/contracts/contract.cairo/
     
