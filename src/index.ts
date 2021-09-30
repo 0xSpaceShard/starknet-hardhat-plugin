@@ -1,12 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
-import { task, extendEnvironment, extendConfig } from "hardhat/config";
+import { task, extendEnvironment, extendConfig, subtask } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_TEST_GATEWAY_URL } from "./constants";
-import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
+import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 
 async function traverseFiles(
     traversable: string,
@@ -138,18 +138,17 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     }
 });
 
-// add starknet gateway
-extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.starknet = userConfig.starknet;
-    if (!config.starknet) {
-        config.starknet = {
-            testGatewayUrl: DEFAULT_TEST_GATEWAY_URL
-        };
-    }
-
-    if (!config.starknet.testGatewayUrl) {
-        config.starknet.testGatewayUrl = DEFAULT_TEST_GATEWAY_URL;
-    }
+// add url to alpha network
+extendConfig((config: HardhatConfig) => {
+    config.networks.alpha = {
+        url: ALPHA_URL,
+        gas: undefined,
+        gasPrice: undefined,
+        accounts: undefined,
+        timeout: undefined,
+        gasMultiplier: undefined,
+        httpHeaders: undefined
+    };
 });
 
 extendEnvironment(hre => {
@@ -292,7 +291,11 @@ extendEnvironment(hre => {
             throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
         }
 
-        const gatewayUrl = hre.config.starknet.testGatewayUrl;
-        return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath, gatewayUrl);
+        const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
+        const testNetwork: HttpNetworkConfig = <HttpNetworkConfig> hre.config.networks[testNetworkName];
+        if (!testNetwork.url) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
+        }
+        return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath, testNetwork.url);
     }
 });

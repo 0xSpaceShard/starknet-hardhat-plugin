@@ -80,14 +80,19 @@ module.exports = {
 };
 ```
 
-### TestGatewayUrl
+### Testing network
 ```javascript
 module.exports = {
   ...
-  starknet: {
+  networks: {
+    myNetwork: {
+      url: "http://my.network:8080"
+    }
+  },
+  mocha: {
     // Used for deployment in tests
-    // Defaults to "https://alpha2.starknet.io:443"
-    testGatewayUrl: "http://localhost:8080"
+    // Defaults to "alpha"
+    starknetNetwork: "myNetwork"
   }
   ...
 };

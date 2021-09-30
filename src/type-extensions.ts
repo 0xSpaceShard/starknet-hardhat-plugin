@@ -4,10 +4,6 @@ type CairoConfig = {
     version: string;
 }
 
-type StarknetConfig = {
-    testGatewayUrl: string;
-}
-
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
         starknetArtifacts?: string;
@@ -21,12 +17,14 @@ declare module "hardhat/types/config" {
 
     export interface HardhatConfig {
         cairo: CairoConfig;
-        starknet: StarknetConfig;
     }
 
     export interface HardhatUserConfig {
         cairo?: CairoConfig;
-        starknet?: StarknetConfig;
+    }
+
+    export interface NetworksConfig {
+        alpha: HttpNetworkConfig;
     }
 }
 
@@ -34,5 +32,11 @@ declare module "hardhat/types/runtime" {
     export interface HardhatRuntimeEnvironment {
         dockerWrapper: DockerWrapper;
         getStarknetContract: (name: string) => Promise<StarknetContract>;
+    }
+}
+
+declare module "mocha" {
+    export interface MochaOptions {
+        starknetNetwork?: string;
     }
 }
