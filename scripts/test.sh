@@ -9,9 +9,16 @@ npm install
 TOTAL=0
 SUCCESS=0
 for TEST_CASE in ../test/*; do
+    CONFIG_FILE="$TEST_CASE/hardhat.config.js"
+    if [ ! -f "$CONFIG_FILE" ]; then
+        echo "Skipping; no config file provided"
+        continue
+    fi
+    /bin/cp "$CONFIG_FILE" hardhat.config.js
+
+    TEST_NAME=$(basename $TEST_CASE)
     TOTAL=$((TOTAL + 1))
-    echo "Test $TOTAL) $TEST_CASE"
-    /bin/cp "$TEST_CASE/hardhat.config.js" hardhat.config.js
+    echo "Test $TOTAL) $TEST_NAME"
 
     INIT_SCRIPT="$TEST_CASE/init.sh"
     if [ -f "$INIT_SCRIPT" ]; then
@@ -19,6 +26,7 @@ for TEST_CASE in ../test/*; do
     fi
 
     "$TEST_CASE/check.sh" && SUCCESS=$((SUCCESS + 1)) || echo "Test failed!"
+
     git checkout --force
     git clean -fd
     echo "----------------------------------------------"
