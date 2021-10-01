@@ -7,6 +7,7 @@ import "./type-extensions";
 import { DockerWrapper, StarknetContract } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
 import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
+import { adaptLog } from "./utils";
 
 async function traverseFiles(
     traversable: string,
@@ -51,10 +52,9 @@ function processExecuted(executed: ProcessResult): number {
 
     if (executed.stderr.length) {
         // synchronize param names reported by actual CLI with param names used by this plugin
-        const err = executed.stderr.toString()
-            .replace("--network", "--starknet-network")
-            .replace("--gateway_url", "--gateway-url")
-        console.error(err);
+        const err = executed.stderr.toString();
+        const replacedErr = adaptLog(err);
+        console.error(replacedErr);
     }
 
     const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
@@ -295,9 +295,15 @@ extendEnvironment(hre => {
 
         const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
         const testNetwork: HttpNetworkConfig = <HttpNetworkConfig> hre.config.networks[testNetworkName];
+        if (!testNetwork) {
+            const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks".`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
         if (!testNetwork.url) {
             throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
         }
+
         return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath, testNetwork.url);
     }
 });
