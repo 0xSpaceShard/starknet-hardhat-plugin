@@ -29,7 +29,9 @@ To test Starknet contracts with Mocha, use the regular Hardhat `test` task:
 npx hardhat test
 ```
 
-Inside the tests, use the following syntax:
+Read more about the network used in tests in the [Testing network](#testing-network) section.
+
+Inside the tests, use the following *modus operandi* (comparable to the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html)):
 ```javascript
 const { expect } = require("chai");
 const { getStarknetContract } = require("hardhat");
@@ -83,6 +85,9 @@ module.exports = {
 ```
 
 ### Testing network
+A [Ganache](https://github.com/trufflesuite/ganache)-like localhost devnet for Starknet is under development.
+
+Until then, your best bet will probably be relying on the alpha testnet (which is the default if you don't specify anything).
 ```javascript
 module.exports = {
   ...
@@ -93,7 +98,7 @@ module.exports = {
   },
   mocha: {
     // Used for deployment in tests
-    // Defaults to "alpha"
+    // Defaults to "alpha", which is preconfigured even if you don't see it under `networks:`
     starknetNetwork: "myNetwork"
   }
   ...

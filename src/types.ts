@@ -1,6 +1,7 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME } from "./constants";
+import { adaptLog } from "./utils";
 
 export class DockerWrapper {
     private docker: HardhatDocker;
@@ -53,9 +54,10 @@ export class StarknetContract {
         );
 
         if (executed.statusCode) {
-            throw new HardhatPluginError(PLUGIN_NAME, "Could not deploy");
+            const msg = "Could not deploy contract. Check the network url in config and if it's responsive.";
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
-        
+
         const matched = executed.stdout.toString().match(/^Contract address: (.*)$/m);
         this.address = matched[1];
         if (!this.address) {
@@ -94,8 +96,9 @@ export class StarknetContract {
             );
             
             if (executed.statusCode) {
-                // TODO edit err msg (replace strings)
-                throw new HardhatPluginError(PLUGIN_NAME, `Could not ${kind} ${functionName}:\n` + executed.stderr.toString());
+                const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
+                const replacedMsg = adaptLog(msg);
+                throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
             }
             
             return executed;
