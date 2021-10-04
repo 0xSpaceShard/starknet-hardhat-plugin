@@ -304,6 +304,15 @@ extendEnvironment(hre => {
             throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
         }
 
-        return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath, testNetwork.url);
+        return new StarknetContract({
+            dockerWrapper: hre.dockerWrapper,
+            metadataPath,
+            abiPath,
+            gatewayUrl: testNetwork.url,
+            feederGatewayUrl: testNetwork.url
+        });
     }
 });
+
+export { getStarknetContract } from "hardhat";
+export * from "./types";

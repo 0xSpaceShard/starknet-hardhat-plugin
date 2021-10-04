@@ -77,7 +77,7 @@ A list of available versions can be found [here](https://hub.docker.com/r/shardl
 module.exports = {
   ...
   cairo: {
-    // Defaults to "latest"
+    // Defaults to the latest version
     version: "0.4.1"
   }
   ...

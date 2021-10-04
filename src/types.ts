@@ -1,6 +1,6 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
 
 export class DockerWrapper {
@@ -23,20 +23,33 @@ export class DockerWrapper {
     }
 }
 
+export interface StarknetContractConfig {
+    dockerWrapper: DockerWrapper;
+    metadataPath: string;
+    abiPath: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+}
+
 export class StarknetContract {
     private dockerWrapper: DockerWrapper;
     private metadataPath: string;
     private abiPath: string;
-    private address: string;
+    public address: string;
     private gatewayUrl: string;
+    private feederGatewayUrl: string;
 
-    constructor(dockerWrapper: DockerWrapper, metadataPath: string, abiPath: string, gatewayUrl: string) {
-        this.dockerWrapper = dockerWrapper;
-        this.metadataPath = metadataPath;
-        this.abiPath = abiPath;
-        this.gatewayUrl = gatewayUrl;
+    constructor(config: StarknetContractConfig) {
+        this.dockerWrapper = config.dockerWrapper;
+        this.metadataPath = config.metadataPath;
+        this.abiPath = config.abiPath;
+        this.gatewayUrl = config.gatewayUrl;
+        this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
+    /**
+     * Deploy the contract to a new address.
+     */
     async deploy() {
         const docker = await this.dockerWrapper.getDocker();
         const executed = await docker.runContainer(
@@ -77,7 +90,7 @@ export class StarknetContract {
             "--abi", this.abiPath,
             "--function", functionName,
             "--gateway_url", this.gatewayUrl,
-            "--feeder_gateway_url", this.gatewayUrl
+            "--feeder_gateway_url", this.feederGatewayUrl
         ];
 
         if (functionArgs.length) {
@@ -104,7 +117,7 @@ export class StarknetContract {
             return executed;
     }
 
-    async checkStatus(txID: string) {
+    private async checkStatus(txID: string) {
         const docker = await this.dockerWrapper.getDocker();
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
@@ -112,7 +125,7 @@ export class StarknetContract {
                 "starknet", "tx_status",
                 "--id", txID,
                 "--gateway_url", this.gatewayUrl,
-                "--feeder_gateway_url", this.gatewayUrl
+                "--feeder_gateway_url", this.feederGatewayUrl
             ]
         );
 
@@ -129,17 +142,23 @@ export class StarknetContract {
         }
     }
 
-    async iterativelyCheckStatus(txID: string, resolve: () => void) {
-        const TIMEOUT = 1000; // ms
+    private async iterativelyCheckStatus(txID: string, resolve: () => void) {
+        const timeout = CHECK_STATUS_TIMEOUT; // ms
         const status = await this.checkStatus(txID);
         if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
             resolve();
         } else {
-            setTimeout(this.iterativelyCheckStatus.bind(this), TIMEOUT, txID, resolve);
+            setTimeout(this.iterativelyCheckStatus.bind(this), timeout, txID, resolve);
         }
     }
 
-    async invoke(functionName: string, functionArgs: string[]): Promise<void> {
+    /**
+     * Invoke the function by name and optionally provide arguments in an array.
+     * @param functionName
+     * @param functionArgs
+     * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
+     */
+    async invoke(functionName: string, functionArgs: any[] = []): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
 
         const matched = executed.stdout.toString().match(/^Transaction ID: (.*)$/m);
@@ -150,7 +169,13 @@ export class StarknetContract {
         });
     }
 
-    async call(functionName: string, functionArgs: string[]): Promise<string> {
+    /**
+     * Call the function by name and optionally provide arguments in an array.
+     * @param functionName
+     * @param functionArgs
+     * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
+     */
+    async call(functionName: string, functionArgs: any[] = []): Promise<string> {
         const executed = await this.invokeOrCall("call", functionName, functionArgs);
         return executed.stdout.toString();
     }
