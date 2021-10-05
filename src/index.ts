@@ -313,6 +313,3 @@ extendEnvironment(hre => {
         });
     }
 });
-
-export { getStarknetContract } from "hardhat";
-export * from "./types";
