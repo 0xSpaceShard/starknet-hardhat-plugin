@@ -40,7 +40,7 @@ describe("Starknet", function () {
   this.timeout(300_000); // 5 min
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract"); // assumes there is a file MyContract.cairo
-    const contract = await contract.deploy();
+    const contract = await contractFactory.deploy();
     console.log("Deployed at", contract.address);
     await contract.invoke("increase_balance", [10]); // invoke method by name and pass arguments in an array
     await contract.invoke("increase_balance", [20]);
