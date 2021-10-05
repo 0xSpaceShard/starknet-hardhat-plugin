@@ -1,4 +1,4 @@
-require("../dist/index.js");
+import "../dist/index.js";
 
 module.exports = {
     networks: {
