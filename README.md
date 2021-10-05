@@ -34,13 +34,13 @@ Read more about the network used in tests in the [Testing network](#testing-netw
 Inside the tests, use the following *modus operandi* (comparable to the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html)):
 ```javascript
 const { expect } = require("chai");
-const { getStarknetContract } = require("hardhat");
+const { starknet } = require("hardhat");
 
 describe("Starknet", function () {
   this.timeout(300_000); // 5 min
-  it("Should work", async function () {
-    const contract = await getStarknetContract("MyContract"); // assumes there is a file MyContract.cairo
-    await contract.deploy();
+  it("should work for a fresh deployment", async function () {
+    const contractFactory = await starknet.getContractFactory("MyContract"); // assumes there is a file MyContract.cairo
+    const contract = await contract.deploy();
     console.log("Deployed at", contract.address);
     await contract.invoke("increase_balance", [10]); // invoke method by name and pass arguments in an array
     await contract.invoke("increase_balance", [20]);
@@ -48,6 +48,12 @@ describe("Starknet", function () {
     const balanceStr = await contract.call("get_balance"); // call method by name and receive the result (string)
     const balance = parseInt(balanceStr);
     expect(balance).to.equal(30);
+  });
+
+  it("should work for a previously deployed contract", async function () {
+    const contractFactory = await starknet.getContractFactory("MyContract"); // assumes there is a file MyContract.cairo
+    const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
+    await contract.invoke(...);
   });
 });
 ```
@@ -78,7 +84,7 @@ module.exports = {
   ...
   cairo: {
     // Defaults to the latest version
-    version: "0.4.1"
+    version: "0.4.2"
   }
   ...
 };

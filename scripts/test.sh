@@ -9,12 +9,12 @@ npm install
 TOTAL=0
 SUCCESS=0
 for TEST_CASE in ../test/*; do
-    CONFIG_FILE="$TEST_CASE/hardhat.config.js"
+    CONFIG_FILE="$TEST_CASE/hardhat.config.ts"
     if [ ! -f "$CONFIG_FILE" ]; then
         echo "Skipping; no config file provided"
         continue
     fi
-    /bin/cp "$CONFIG_FILE" hardhat.config.js
+    /bin/cp "$CONFIG_FILE" hardhat.config.ts
 
     TEST_NAME=$(basename $TEST_CASE)
     TOTAL=$((TOTAL + 1))

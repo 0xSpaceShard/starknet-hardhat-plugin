@@ -23,34 +23,37 @@ export class DockerWrapper {
     }
 }
 
+export type StarknetContractFactoryConfig = StarknetContractConfig & {
+    metadataPath: string;
+};
+
 export interface StarknetContractConfig {
     dockerWrapper: DockerWrapper;
-    metadataPath: string;
     abiPath: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
 
-export class StarknetContract {
+export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
-    private metadataPath: string;
     private abiPath: string;
-    public address: string;
+    private metadataPath: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
-    constructor(config: StarknetContractConfig) {
+    constructor(config: StarknetContractFactoryConfig) {
         this.dockerWrapper = config.dockerWrapper;
-        this.metadataPath = config.metadataPath;
         this.abiPath = config.abiPath;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
+        this.metadataPath = config.metadataPath;
     }
 
     /**
-     * Deploy the contract to a new address.
+     * Deploy a contract instance to a new address.
+     * @returns the newly created instance
      */
-    async deploy() {
+     async deploy(): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
@@ -72,10 +75,51 @@ export class StarknetContract {
         }
 
         const matched = executed.stdout.toString().match(/^Contract address: (.*)$/m);
-        this.address = matched[1];
-        if (!this.address) {
+        const address = matched[1];
+        if (!address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Could not extract the address from the deployment response.");
         }
+
+        const contract = new StarknetContract({
+            abiPath: this.abiPath,
+            dockerWrapper: this.dockerWrapper,
+            feederGatewayUrl: this.feederGatewayUrl,
+            gatewayUrl: this.gatewayUrl
+        });
+        contract.address = address;
+        return contract;
+    }
+
+    /**
+     * Returns a contract instance with set address.
+     * No address validity checks are performed.
+     * @param address the address of a previously deployed contract
+     * @returns a contract instance
+     */
+    getContractAt(address: string) {
+        const contract = new StarknetContract({
+            abiPath: this.abiPath,
+            dockerWrapper: this.dockerWrapper,
+            feederGatewayUrl: this.feederGatewayUrl,
+            gatewayUrl: this.gatewayUrl
+        });
+        contract.address = address;
+        return contract;
+    }
+}
+
+export class StarknetContract {
+    private dockerWrapper: DockerWrapper;
+    private abiPath: string;
+    public address: string;
+    private gatewayUrl: string;
+    private feederGatewayUrl: string;
+
+    constructor(config: StarknetContractConfig) {
+        this.dockerWrapper = config.dockerWrapper;
+        this.abiPath = config.abiPath;
+        this.gatewayUrl = config.gatewayUrl;
+        this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
     private async invokeOrCall(kind: "invoke" | "call", functionName: string, functionArgs: string[] = []) {
