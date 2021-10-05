@@ -1,6 +1,6 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { DockerWrapper, StarknetContractFactory } from "./types";
+import { DockerWrapper, StarknetContract, StarknetContractFactory } from "./types";
 
 type CairoConfig = {
     version: string;
@@ -30,6 +30,9 @@ declare module "hardhat/types/config" {
     }
 }
 
+type StarknetContractType = StarknetContract;
+type StarknetContractFactoryType = StarknetContractFactory;
+
 declare module "hardhat/types/runtime" {
     interface HardhatRuntimeEnvironment {
         dockerWrapper: DockerWrapper;
@@ -42,6 +45,9 @@ declare module "hardhat/types/runtime" {
             getContractFactory: (name: string) => Promise<StarknetContractFactory>;
         }
     }
+
+    type StarknetContract = StarknetContractType;
+    type StarknetContractFactory = StarknetContractFactoryType;
 }
 
 declare module "mocha" {
