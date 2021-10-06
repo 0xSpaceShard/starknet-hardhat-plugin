@@ -1,10 +1,10 @@
 import * as path from "path";
 import * as fs from "fs";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError } from "hardhat/plugins";
+import { HardhatPluginError, lazyObject } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { DockerWrapper, StarknetContract } from "./types";
+import { DockerWrapper, StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
 import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog } from "./utils";
@@ -266,44 +266,52 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     });
 
 extendEnvironment(hre => {
-    hre.getStarknetContract = async contractName => {
-        let metadataPath: string;
-        await traverseFiles(
-            hre.config.paths.starknetArtifacts,
-            file => path.basename(file) === `${contractName}.json`,
-            async file => {
-                metadataPath = file;
-                return 0;
+    hre.starknet = lazyObject(() => ({
+        getContractFactory: async contractName => {
+            let metadataPath: string;
+            await traverseFiles(
+                hre.config.paths.starknetArtifacts,
+                file => path.basename(file) === `${contractName}.json`,
+                async file => {
+                    metadataPath = file;
+                    return 0;
+                }
+            );
+            if (!metadataPath) {
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
             }
-        );
-        if (!metadataPath) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
-        }
 
-        let abiPath: string;
-        await traverseFiles(
-            hre.config.paths.starknetArtifacts,
-            file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
-            async file => {
-                abiPath = file;
-                return 0;
+            let abiPath: string;
+            await traverseFiles(
+                hre.config.paths.starknetArtifacts,
+                file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
+                async file => {
+                    abiPath = file;
+                    return 0;
+                }
+            );
+            if (!abiPath) {
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
             }
-        );
-        if (!abiPath) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
-        }
 
-        const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-        const testNetwork: HttpNetworkConfig = <HttpNetworkConfig> hre.config.networks[testNetworkName];
-        if (!testNetwork) {
-            const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks".`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+            const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
+            const testNetwork: HttpNetworkConfig = <HttpNetworkConfig> hre.config.networks[testNetworkName];
+            if (!testNetwork) {
+                const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks".`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        if (!testNetwork.url) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
-        }
+            if (!testNetwork.url) {
+                throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
+            }
 
-        return new StarknetContract(hre.dockerWrapper, metadataPath, abiPath, testNetwork.url);
-    }
+            return new StarknetContractFactory({
+                dockerWrapper: hre.dockerWrapper,
+                metadataPath,
+                abiPath,
+                gatewayUrl: testNetwork.url,
+                feederGatewayUrl: testNetwork.url
+            });
+        }
+    }));
 });

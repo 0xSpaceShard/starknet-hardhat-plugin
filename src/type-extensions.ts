@@ -1,4 +1,6 @@
-import { DockerWrapper, StarknetContract } from "./types";
+import "hardhat/types/config";
+import "hardhat/types/runtime";
+import { DockerWrapper, StarknetContract, StarknetContractFactory } from "./types";
 
 type CairoConfig = {
     version: string;
@@ -28,11 +30,24 @@ declare module "hardhat/types/config" {
     }
 }
 
+type StarknetContractType = StarknetContract;
+type StarknetContractFactoryType = StarknetContractFactory;
+
 declare module "hardhat/types/runtime" {
-    export interface HardhatRuntimeEnvironment {
+    interface HardhatRuntimeEnvironment {
         dockerWrapper: DockerWrapper;
-        getStarknetContract: (name: string) => Promise<StarknetContract>;
+        /**
+         * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
+         * the provided string should be `MyContract`.
+         * @param name the case-sensitive contract name
+         */
+        starknet: {
+            getContractFactory: (name: string) => Promise<StarknetContractFactory>;
+        }
     }
+
+    type StarknetContract = StarknetContractType;
+    type StarknetContractFactory = StarknetContractFactoryType;
 }
 
 declare module "mocha" {
