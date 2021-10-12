@@ -1,25 +1,142 @@
-import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import { default as Docker, ContainerCreateOptions } from "dockerode";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
+import * as fs from "fs";
+import { generateWritableStreams } from "./streams";
+import { IncomingMessage } from "http";
+
+interface Image {
+    repository: string;
+    tag: string;
+}
+
+function imageToString(image: Image) {
+    return `${image.repository}:${image.tag}`;
+}
+
+function imageToRepositoryPath(image: Image): string {
+    return image.repository.includes("/")
+      ? image.repository
+      : `library/${image.repository}`;
+  }
+
+function validateBindsMap(map?: BindsMap) {
+    if (map === undefined) {
+        return;
+    }
+
+    for (const hostPath of Object.keys(map)) {
+        if (!(fs.existsSync(hostPath))) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Path doesn't exist: ${hostPath}`);
+        }
+    }
+}
+
+function bindsMapToArray(map?: BindsMap) {
+    if (map === undefined) {
+        return [];
+    }
+    validateBindsMap(map);
+
+    return Object.entries(map).map(
+        ([host, container]) => `${host}:${container}`
+    );
+}
+
+export function generateDockerHostOptions(config: {
+    workingDirectory?: string,
+    binds?: { [hostPath: string]: string },
+} = {}): ContainerCreateOptions {
+    return {
+        Tty: false,
+        WorkingDir: config.workingDirectory,
+        Entrypoint: "",
+        HostConfig: {
+          AutoRemove: true,
+          Binds: bindsMapToArray(config.binds),
+        },
+    };
+}
+
+interface BindsMap {
+    [hostPath: string]: string;
+}
+
+export interface ProcessResult {
+    statusCode: number,
+    stdout: Buffer,
+    stderr: Buffer,
+}
 
 export class DockerWrapper {
-    private docker: HardhatDocker;
+    private docker: Docker;
     public image: Image;
+    public imageStringified: string;
 
     constructor(image: Image) {
         this.image = image;
+        this.imageStringified = imageToString(image);
     }
 
     public async getDocker() {
         if (!this.docker) {
-            this.docker = await HardhatDocker.create();
-            if (!(await this.docker.hasPulledImage(this.image))) {
-                console.log(`Pulling image ${this.image.repository}:${this.image.tag}`);
-                await this.docker.pullImage(this.image);
+            this.docker = new Docker();
+            if (!(await this.hasPulledImage())) {
+                await this.pullImage();
             }
         }
         return this.docker;
+    }
+
+    private async hasPulledImage(): Promise<boolean> {
+        const images = await this.docker.listImages();
+
+        return images.some(
+          (img) =>
+            img.RepoTags !== null &&
+            img.RepoTags.some(
+                (repoAndTag: string) => repoAndTag === this.imageStringified
+            )
+        );
+    }
+
+    private async pullImage(): Promise<void> {
+        if (!(await this.imageExists())) {
+             throw new HardhatPluginError(PLUGIN_NAME, `Image doesn't exist: ${this.imageStringified}`);
+        }
+
+        console.log(`Pulling image ${this.imageStringified}`);
+        const im: IncomingMessage = await this.docker.pull(
+            this.imageStringified, {}
+        );
+
+        return new Promise((resolve, reject) => {
+            im.on("end", resolve);
+            im.on("error", reject);
+
+            // Not having the data handler causes the process to exit
+            im.on("data", () => {});
+        });
+    }
+
+    public async imageExists(): Promise<boolean> {
+        const repositoryPath = imageToRepositoryPath(this.image);
+        const tag = this.image.tag;
+        const imageEndpoint = `https://registry.hub.docker.com/v2/repositories/${repositoryPath}/tags/${tag}/`;
+
+        try {
+            const fetch = require("node-fetch");
+            const res = await fetch(imageEndpoint);
+
+            // Consume the response stream and discard its result
+            // See: https://github.com/node-fetch/node-fetch/issues/83
+            const _discarded = await res.text();
+
+            return res.ok;
+        } catch (error: any) {
+            throw new HardhatPluginError(PLUGIN_NAME, error.message);
+        }
     }
 }
 
@@ -55,26 +172,28 @@ export class StarknetContractFactory {
      */
      async deploy(): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
+        const streams = generateWritableStreams();
+        const executed = await docker.run(
+            this.dockerWrapper.imageStringified,
             [
                 "starknet", "deploy",
                 "--contract", this.metadataPath,
                 "--gateway_url", this.gatewayUrl
             ],
-            {
+            [streams.stdout, streams.stderr],
+            generateDockerHostOptions({
                 binds: {
                     [this.metadataPath]: this.metadataPath
                 }
-            }
+            })
         );
 
-        if (executed.statusCode) {
+        if (executed[0].StatusCode) {
             const msg = "Could not deploy contract. Check the network url in config and if it's responsive.";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
-        const matched = executed.stdout.toString().match(/^Contract address: (.*)$/m);
+        const matched = streams.stdout.buffer.toString().match(/^Contract address: (.*)$/m);
         const address = matched[1];
         if (!address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Could not extract the address from the deployment response.");
@@ -122,7 +241,11 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, functionArgs: string[] = []) {
+    private async invokeOrCall(
+        kind: "invoke" | "call",
+        functionName: string,
+        functionArgs: string[] = []
+    ): Promise<ProcessResult> {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -139,45 +262,56 @@ export class StarknetContract {
 
         if (functionArgs.length) {
             starknetArgs.push("--inputs");
-            functionArgs.forEach(arg => starknetArgs.push(arg.toString()));
+            functionArgs.forEach(arg => starknetArgs.push(arg.toString())); // TODO why is this toString?
         }
 
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
+        const streams = generateWritableStreams();
+
+        const executed = await docker.run(
+            this.dockerWrapper.imageStringified,
             starknetArgs,
-            {
+            [streams.stdout, streams.stderr],
+            generateDockerHostOptions({
                 binds: {
                     [this.abiPath]: this.abiPath
                 }
-            }
-            );
-            
-            if (executed.statusCode) {
-                const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
-                const replacedMsg = adaptLog(msg);
-                throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
-            }
-            
-            return executed;
+            })
+        );
+
+        const statusCode = executed[0].StatusCode;
+        if (statusCode) {
+            const msg = `Could not ${kind} ${functionName}:\n` + streams.stderr.buffer.toString();
+            const replacedMsg = adaptLog(msg);
+            throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+        }
+
+        return {
+            statusCode: statusCode,
+            stdout: streams.stdout.buffer,
+            stderr: streams.stderr.buffer
+        };
     }
 
     private async checkStatus(txID: string) {
         const docker = await this.dockerWrapper.getDocker();
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
+        const streams = generateWritableStreams();
+        const executed = await docker.run(
+            this.dockerWrapper.imageStringified,
             [
                 "starknet", "tx_status",
                 "--id", txID,
                 "--gateway_url", this.gatewayUrl,
                 "--feeder_gateway_url", this.feederGatewayUrl
-            ]
+            ],
+            [streams.stdout, streams.stderr],
+            generateDockerHostOptions()
         );
 
-        if (executed.statusCode) {
-            throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
+        if (executed[0].StatusCode) {
+            throw new HardhatPluginError(PLUGIN_NAME, streams.stderr.buffer.toString());
         }
 
-        const response = executed.stdout.toString();
+        const response = streams.stdout.buffer.toString();
         try {
             const responseParsed = JSON.parse(response);
             return responseParsed.tx_status;

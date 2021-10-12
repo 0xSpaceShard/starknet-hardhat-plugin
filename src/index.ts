@@ -2,12 +2,12 @@ import * as path from "path";
 import * as fs from "fs";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError, lazyObject } from "hardhat/plugins";
-import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { DockerWrapper, StarknetContractFactory } from "./types";
+import { DockerWrapper, StarknetContractFactory, ProcessResult, generateDockerHostOptions } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
 import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog } from "./utils";
+import { generateWritableStreams } from "./streams";
 
 async function traverseFiles(
     traversable: string,
@@ -45,7 +45,7 @@ async function traverseFiles(
  * @param executed The process result of running the container
  * @returns 0 if succeeded, 1 otherwise
  */
-function processExecuted(executed: ProcessResult): number {
+function postProcess(executed: ProcessResult): number {
     if (executed.stdout.length) {
         console.log(executed.stdout.toString());
     }
@@ -189,19 +189,25 @@ task("starknet-compile", "Compiles StarkNet contracts")
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
                 const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
 
+                const streams = generateWritableStreams();
                 fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
+                const executed = await docker.run(
+                    hre.dockerWrapper.imageStringified,
                     ["starknet-compile"].concat(compileArgs),
-                    {
+                    [streams.stdout, streams.stderr],
+                    generateDockerHostOptions({
                         binds: {
                             [sourcesPath]: sourcesPath,
                             [artifactsPath]: artifactsPath
                         }
-                    }
+                    })
                 );
 
-                return processExecuted(executed);
+                return postProcess({
+                    statusCode: executed[0].StatusCode,
+                    stdout: streams.stdout.buffer,
+                    stderr: streams.stderr.buffer
+                });
             });
         }
 
@@ -232,7 +238,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
 
-
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
 
@@ -246,17 +251,23 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 console.log("Deploying", file);
                 const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
 
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
+                const streams = generateWritableStreams();
+                const executed = await docker.run(
+                    hre.dockerWrapper.imageStringified,
                     ["starknet"].concat(starknetArgs),
-                    {
+                    [streams.stdout, streams.stderr],
+                    generateDockerHostOptions({
                         binds: {
                             [artifactsPath]: artifactsPath
                         }
-                    }
+                    })
                 );
 
-                return processExecuted(executed);
+                return postProcess({
+                    statusCode: executed[0].StatusCode,
+                    stdout: streams.stdout.buffer,
+                    stderr: streams.stderr.buffer
+                });
             });
         }
 
