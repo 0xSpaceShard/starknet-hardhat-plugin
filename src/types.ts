@@ -55,6 +55,7 @@ export function generateDockerHostOptions(config: {
         HostConfig: {
           AutoRemove: true,
           Binds: bindsMapToArray(config.binds),
+          NetworkMode: "host"
         },
     };
 }
