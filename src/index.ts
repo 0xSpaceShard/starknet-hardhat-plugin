@@ -252,7 +252,8 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     {
                         binds: {
                             [artifactsPath]: artifactsPath
-                        }
+                        },
+                        networkMode: "host"
                     }
                 );
 

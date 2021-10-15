@@ -65,7 +65,8 @@ export class StarknetContractFactory {
             {
                 binds: {
                     [this.metadataPath]: this.metadataPath
-                }
+                },
+                networkMode: "host"
             }
         );
 
@@ -94,9 +95,12 @@ export class StarknetContractFactory {
      * Returns a contract instance with set address.
      * No address validity checks are performed.
      * @param address the address of a previously deployed contract
-     * @returns a contract instance
+     * @returns the contract instance at the provided address
      */
     getContractAt(address: string) {
+        if (!address) {
+            throw new HardhatPluginError(PLUGIN_NAME, "No address provided");
+        }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             dockerWrapper: this.dockerWrapper,
@@ -148,7 +152,8 @@ export class StarknetContract {
             {
                 binds: {
                     [this.abiPath]: this.abiPath
-                }
+                },
+                networkMode: "host"
             }
             );
             
