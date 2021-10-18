@@ -91,15 +91,16 @@ module.exports = {
 ```
 
 ### Testing network
-A [Ganache](https://github.com/trufflesuite/ganache)-like localhost devnet for Starknet is under development.
+If you don't specify a `mocha.starknetNetwork`, the program defaults to using the alpha testnet.
 
-Until then, your best bet will probably be relying on the alpha testnet (which is the default if you don't specify anything).
+A faster approach, but still in beta-phase, is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
+
 ```javascript
 module.exports = {
   ...
   networks: {
     myNetwork: {
-      url: "http://my.network:8080"
+      url: "http://localhost:5000"
     }
   },
   mocha: {

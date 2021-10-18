@@ -17,8 +17,8 @@
   "author": "Shard-Labs",
   "license": "ISC",
   "dependencies": {
-    "hardhat": "^2.6.2",
-    "@nomiclabs/hardhat-docker": "^2.0.1"
+    "@nomiclabs/hardhat-docker": "^2.0.2",
+    "hardhat": "^2.6.2"
   },
   "devDependencies": {
     "@types/mocha": "^9.0.0",
