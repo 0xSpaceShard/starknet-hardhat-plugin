@@ -155,15 +155,15 @@ export class StarknetContract {
                 },
                 networkMode: "host"
             }
-            );
-            
-            if (executed.statusCode) {
-                const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
-                const replacedMsg = adaptLog(msg);
-                throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
-            }
-            
-            return executed;
+        );
+
+        if (executed.statusCode) {
+            const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
+            const replacedMsg = adaptLog(msg);
+            throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+        }
+
+        return executed;
     }
 
     private async checkStatus(txID: string) {
@@ -175,7 +175,10 @@ export class StarknetContract {
                 "--id", txID,
                 "--gateway_url", this.gatewayUrl,
                 "--feeder_gateway_url", this.feederGatewayUrl
-            ]
+            ],
+            {
+                networkMode: "host"
+            }
         );
 
         if (executed.statusCode) {
