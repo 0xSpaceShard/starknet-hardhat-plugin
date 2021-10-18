@@ -91,7 +91,7 @@ module.exports = {
 ```
 
 ### Testing network
-If you don't specify a `mocha.starknetNetwork`, the program defaults to using the alpha testnet, which takes around a minute to confirm transactions.
+If you don't specify a `mocha.starknetNetwork`, the program defaults to using the alpha testnet.
 
 A faster approach, but still in beta-phase, is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
