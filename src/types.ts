@@ -229,6 +229,6 @@ export class StarknetContract {
      */
     async call(functionName: string, functionArgs: any[] = []): Promise<string> {
         const executed = await this.invokeOrCall("call", functionName, functionArgs);
-        return executed.stdout.toString();
+        return executed.stdout.toString().trimEnd();
     }
 }
