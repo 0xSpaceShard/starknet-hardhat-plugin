@@ -164,8 +164,8 @@ task("starknet-compile", "Compiles StarkNet contracts")
         "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam("libPath",
-        "Additional paths to be used by the compiler as library sources." +
-        "Separate them with colon (:), e.g. --lib-path='path/to/lib1:path/to/lib2'"
+        "Allows specifying the locations of imported files, if necessary.\n" +
+        "Separate them with a colon (:), e.g. --lib-path='path/to/lib1:path/to/lib2'"
     )
     .setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
