@@ -163,9 +163,9 @@ task("starknet-compile", "Compiles StarkNet contracts")
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default contracts directory is traversed."
     )
-    .addOptionalParam("libPath",
+    .addOptionalParam("cairoPath",
         "Allows specifying the locations of imported files, if necessary.\n" +
-        "Separate them with a colon (:), e.g. --lib-path='path/to/lib1:path/to/lib2'"
+        "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
@@ -191,12 +191,12 @@ task("starknet-compile", "Compiles StarkNet contracts")
 
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-                const libPath = hre.config.paths.starknetSources + (args.libPath ? ":" + args.libPath : "");
+                const cairoPath = hre.config.paths.starknetSources + (args.cairoPath ? ":" + args.cairoPath : "");
                 const compileArgs = [
                     file,
                     "--output", outputPath,
                     "--abi", abiPath,
-                    "--cairo_path", libPath,
+                    "--cairo_path", cairoPath,
                 ];
 
                 const binds = {
@@ -204,7 +204,7 @@ task("starknet-compile", "Compiles StarkNet contracts")
                     [artifactsPath]: artifactsPath
                 }
 
-                for (const p of libPath.split(":")) {
+                for (const p of cairoPath.split(":")) {
                     binds[p] = p;
                 }
 

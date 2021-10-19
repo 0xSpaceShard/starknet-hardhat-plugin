@@ -13,11 +13,11 @@ npm install @shardlabs/starknet-hardhat-plugin
 This plugin adds the following tasks which target the default source/artifact/test directories of your Hardhat project:
 ### `starknet-compile`
 ```
-npx hardhat starknet-compile [PATH...] [--lib-path "<PATH1>:<PATH2>:..."]
+npx hardhat starknet-compile [PATH...] [--cairo-path "<PATH1>:<PATH2>:..."]
 ```
 If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
-`--lib-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--lib-path='path/to/lib1:path/to/lib2'`
+`--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
 ### `starknet-deploy` (with optional flags)
 ```
