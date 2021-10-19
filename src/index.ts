@@ -221,13 +221,13 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     ).setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
-        const providedStarknetNetwork = args.starknetNetwork || process.env.STARKNET_NETWORK;
-        const optionalStarknetArgs: string[] = [];
-
+        const providedStarknetNetwork: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
         if (providedStarknetNetwork) {
-            optionalStarknetArgs.push(`--network=${providedStarknetNetwork}`);
+            const httpNetwork = <HttpNetworkConfig> hre.config.networks[providedStarknetNetwork];
+            args.gatewayUrl = args.gatewayUrl || httpNetwork.url;
         }
 
+        const optionalStarknetArgs: string[] = [];
         if (args.gatewayUrl) {
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
