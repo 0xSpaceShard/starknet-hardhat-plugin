@@ -1,6 +1,6 @@
 {
   "name": "@shardlabs/starknet-hardhat-plugin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Plugin for using Starknet tools within Hardhat projects",
   "main": "dist/index.js",
   "files": [
