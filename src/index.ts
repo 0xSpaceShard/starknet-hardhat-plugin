@@ -163,6 +163,10 @@ task("starknet-compile", "Compiles StarkNet contracts")
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default contracts directory is traversed."
     )
+    .addOptionalParam("libPath",
+        "Additional paths to be used by the compiler as library sources." +
+        "Separate them with colon (:), e.g. --lib-path='path/to/lib1:path/to/lib2'"
+    )
     .setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
@@ -186,18 +190,30 @@ task("starknet-compile", "Compiles StarkNet contracts")
                 const dirPath = path.join(artifactsPath, suffix);
 
                 const outputPath = path.join(dirPath, `${fileName}.json`);
-                const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`)
-                const compileArgs = [file, "--output", outputPath, "--abi", abiPath];
+                const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
+                const libPath = hre.config.paths.starknetSources + (args.libPath ? ":" + args.libPath : "");
+                const compileArgs = [
+                    file,
+                    "--output", outputPath,
+                    "--abi", abiPath,
+                    "--cairo_path", libPath,
+                ];
+
+                const binds = {
+                    [sourcesPath]: sourcesPath,
+                    [artifactsPath]: artifactsPath
+                }
+
+                for (const p of libPath.split(":")) {
+                    binds[p] = p;
+                }
 
                 fs.mkdirSync(dirPath, { recursive: true });
                 const executed = await docker.runContainer(
                     hre.dockerWrapper.image,
                     ["starknet-compile"].concat(compileArgs),
                     {
-                        binds: {
-                            [sourcesPath]: sourcesPath,
-                            [artifactsPath]: artifactsPath
-                        }
+                        binds
                     }
                 );
 
