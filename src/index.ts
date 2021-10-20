@@ -86,6 +86,23 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+function addPaths(pathsObj: any, colonSeparatedStr: string): void {
+    for (let p of colonSeparatedStr.split(":")) {
+        if (!path.isAbsolute(p)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+        }
+
+        // strip trailing slash(es)
+        p = p.replace(/\/*$/, "");
+
+        // duplicate paths will cause errors
+        if (`${p}/` in pathsObj) {
+            continue;
+        }
+        pathsObj[p] = p;
+    }
+}
+
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
     let newPath: string;
@@ -191,7 +208,8 @@ task("starknet-compile", "Compiles StarkNet contracts")
 
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-                const cairoPath = hre.config.paths.starknetSources + (args.cairoPath ? ":" + args.cairoPath : "");
+                const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
+
                 const compileArgs = [
                     file,
                     "--output", outputPath,
@@ -201,12 +219,9 @@ task("starknet-compile", "Compiles StarkNet contracts")
 
                 const binds = {
                     [sourcesPath]: sourcesPath,
-                    [artifactsPath]: artifactsPath
-                }
-
-                for (const p of cairoPath.split(":")) {
-                    binds[p] = p;
-                }
+                    [artifactsPath]: artifactsPath,
+                };
+                addPaths(binds, cairoPath);
 
                 fs.mkdirSync(dirPath, { recursive: true });
                 const executed = await docker.runContainer(
