@@ -74,6 +74,8 @@ describe("Starknet", function () {
 });
 ```
 
+For more usage examples, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) from [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
+
 ## Config
 Specify custom configuration by editing your project's `hardhat.config.js` (or .ts).
 
