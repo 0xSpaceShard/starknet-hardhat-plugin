@@ -28,7 +28,7 @@ jobs:
       image: ubuntu-2004:202107-02
   npm_publish:
     docker:
-      - image: circleci/node:14
+      - image: cimg/node:14
     steps:
       - checkout
       - run:
