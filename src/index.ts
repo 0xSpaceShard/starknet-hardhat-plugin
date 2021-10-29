@@ -299,31 +299,28 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
     });
 
+async function findPath(traversable: string, name: string) {
+    let foundPath: string;
+    await traverseFiles(
+        traversable,
+        file => path.basename(file) === name,
+        async file => {
+            foundPath = file;
+            return 0;
+        }
+    );
+    return foundPath;
+}
+
 extendEnvironment(hre => {
     hre.starknet = lazyObject(() => ({
         getContractFactory: async contractName => {
-            let metadataPath: string;
-            await traverseFiles(
-                hre.config.paths.starknetArtifacts,
-                file => path.basename(file) === `${contractName}.json`,
-                async file => {
-                    metadataPath = file;
-                    return 0;
-                }
-            );
+            const metadataPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}.json`);
             if (!metadataPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
             }
 
-            let abiPath: string;
-            await traverseFiles(
-                hre.config.paths.starknetArtifacts,
-                file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
-                async file => {
-                    abiPath = file;
-                    return 0;
-                }
-            );
+            const abiPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}${ABI_SUFFIX}`);
             if (!abiPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
             }
