@@ -166,13 +166,13 @@ export class StarknetContract {
         return executed;
     }
 
-    private async checkStatus(txID: string) {
+    private async checkStatus(txHash: string) {
         const docker = await this.dockerWrapper.getDocker();
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
             [
                 "starknet", "tx_status",
-                "--id", txID,
+                "--hash", txHash,
                 "--gateway_url", this.gatewayUrl,
                 "--feeder_gateway_url", this.feederGatewayUrl
             ],
@@ -194,13 +194,13 @@ export class StarknetContract {
         }
     }
 
-    private async iterativelyCheckStatus(txID: string, resolve: () => void) {
+    private async iterativelyCheckStatus(txHash: string, resolve: () => void) {
         const timeout = CHECK_STATUS_TIMEOUT; // ms
-        const status = await this.checkStatus(txID);
+        const status = await this.checkStatus(txHash);
         if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
             resolve();
         } else {
-            setTimeout(this.iterativelyCheckStatus.bind(this), timeout, txID, resolve);
+            setTimeout(this.iterativelyCheckStatus.bind(this), timeout, txHash, resolve);
         }
     }
 
@@ -212,12 +212,14 @@ export class StarknetContract {
      */
     async invoke(functionName: string, functionArgs: any[] = []): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
-
-        const matched = executed.stdout.toString().match(/^Transaction ID: (.*)$/m);
-        const txID = matched[1];
+        const matched = executed.stdout.toString().match(/^Transaction hash: (.*)$/m);
+        if (!matched || !matched[1]) {
+            throw new HardhatPluginError(PLUGIN_NAME, "Could not parse invoke response. Check that you're using the correct network.");
+        }
+        const txHash = matched[1];
 
         return new Promise<void>((resolve) => {
-            this.iterativelyCheckStatus(txID, resolve);
+            this.iterativelyCheckStatus(txHash, resolve);
         });
     }
 
