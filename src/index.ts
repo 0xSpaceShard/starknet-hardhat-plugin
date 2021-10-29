@@ -157,6 +157,9 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
+    if (config.networks.alpha) {
+        return;
+    }
     config.networks.alpha = {
         url: ALPHA_URL,
         gas: undefined,
@@ -244,7 +247,7 @@ task("starknet-compile", "Compiles StarkNet contracts")
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL}`)
     .addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
@@ -262,7 +265,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         if (args.gatewayUrl) {
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
-
 
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];

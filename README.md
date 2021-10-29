@@ -101,8 +101,8 @@ A list of available versions can be found [here](https://hub.docker.com/r/shardl
 module.exports = {
   ...
   cairo: {
-    // Defaults to the latest version
-    version: "0.4.2"
+    // The default in this version of the plugin
+    version: "0.5.0"
   }
   ...
 };
