@@ -2,6 +2,6 @@ import "../dist/index.js";
 
 module.exports = {
     cairo: {
-        version: "0.4.1"
+        version: "0.5.1"
     }
 };
