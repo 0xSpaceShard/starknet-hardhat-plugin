@@ -1,9 +1,10 @@
 import "../dist/index.js";
+import { ALPHA_URL } from "../dist/constants.js"
 
 module.exports = {
     networks: {
         myNetwork: {
-            url: "https://alpha2.starknet.io:443" // TODO change in future
+            url: ALPHA_URL
         }
     },
     mocha: {

@@ -157,6 +157,9 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
+    if (config.networks.alpha) {
+        return;
+    }
     config.networks.alpha = {
         url: ALPHA_URL,
         gas: undefined,
@@ -244,7 +247,7 @@ task("starknet-compile", "Compiles StarkNet contracts")
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", "The URL of the gateway to be used (e.g. https://alpha2.starknet.io:443)")
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL}`)
     .addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
@@ -262,7 +265,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         if (args.gatewayUrl) {
             optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
         }
-
 
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -297,31 +299,28 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
     });
 
+async function findPath(traversable: string, name: string) {
+    let foundPath: string;
+    await traverseFiles(
+        traversable,
+        file => path.basename(file) === name,
+        async file => {
+            foundPath = file;
+            return 0;
+        }
+    );
+    return foundPath;
+}
+
 extendEnvironment(hre => {
     hre.starknet = lazyObject(() => ({
         getContractFactory: async contractName => {
-            let metadataPath: string;
-            await traverseFiles(
-                hre.config.paths.starknetArtifacts,
-                file => path.basename(file) === `${contractName}.json`,
-                async file => {
-                    metadataPath = file;
-                    return 0;
-                }
-            );
+            const metadataPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}.json`);
             if (!metadataPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
             }
 
-            let abiPath: string;
-            await traverseFiles(
-                hre.config.paths.starknetArtifacts,
-                file => path.basename(file) === `${contractName}${ABI_SUFFIX}`,
-                async file => {
-                    abiPath = file;
-                    return 0;
-                }
-            );
+            const abiPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}${ABI_SUFFIX}`);
             if (!abiPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
             }

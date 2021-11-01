@@ -31,6 +31,7 @@ for TEST_CASE in ../test/*; do
 
     "$TEST_CASE/check.sh" && SUCCESS=$((SUCCESS + 1)) || echo "Test failed!"
 
+    rm -rf starknet-artifacts
     git checkout --force
     git clean -fd
     echo "----------------------------------------------"
