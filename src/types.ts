@@ -1,4 +1,6 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import * as fs from "fs";
+import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
@@ -101,6 +103,7 @@ async function iterativelyCheckStatus(
 
 export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
+    private abi: starknet.Abi;
     private abiPath: string;
     private metadataPath: string;
     private gatewayUrl: string;
@@ -109,6 +112,8 @@ export class StarknetContractFactory {
     constructor(config: StarknetContractFactoryConfig) {
         this.dockerWrapper = config.dockerWrapper;
         this.abiPath = config.abiPath;
+        const abiRaw = fs.readFileSync(config.abiPath).toString();
+        this.abi = JSON.parse(abiRaw);
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -187,6 +192,7 @@ export class StarknetContractFactory {
 
 export class StarknetContract {
     private dockerWrapper: DockerWrapper;
+    private abi: starknet.Abi;
     private abiPath: string;
     public address: string;
     private gatewayUrl: string;
@@ -202,6 +208,12 @@ export class StarknetContract {
     private async invokeOrCall(kind: "invoke" | "call", functionName: string, ...args: any[]) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
+        }
+
+        const func = <starknet.Function> this.abi[functionName];
+        if (!func) {
+            const msg = `Function '${functionName}' doesn't exist on this contract.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
         const docker = await this.dockerWrapper.getDocker();
@@ -267,8 +279,100 @@ export class StarknetContract {
      * @param functionArgs
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, ...args: any[]): Promise<string> {
+    async call(functionName: string, ...args: any[]): Promise<any> {
         const executed = await this.invokeOrCall("call", functionName, ...args);
-        return executed.stdout.toString().trimEnd();
+        const func = <starknet.Function> this.abi[functionName];
+        const parsedOutput = adaptFunctionResult(executed.stdout.toString(), func.outputs, this.abi);
+        return parsedOutput;
     }
+}
+
+/**
+ * Adapts the string resulting from a Starknet CLI function call.
+ * This is done according to the actual output type specifed by the called function.
+ * 
+ * @param result the actual result, basically an unparsed string
+ * @param expectedOutput array of starknet types in the expected function output
+ * @param abi the ABI of the contract whose function was called
+ */
+ export function adaptFunctionResult(rawResult: string, expectedOutput: starknet.Argument[], abi: starknet.Abi): any {
+    const splitStr = rawResult.split(" ");
+    const result = [];
+    for (const num of splitStr) {
+        result.push(parseInt(num));
+    }
+
+    let resultIndex = 0;
+    let lastName: string = null;
+    let lastValue: number = null;
+    const adapted: any[] = [];
+
+    for (const expectedEntry of expectedOutput) {
+        const currentValue = result[resultIndex];
+        if (expectedEntry.type === "felt") {
+            adapted.push(currentValue);
+            resultIndex++;
+        }
+
+        else if (expectedEntry.type === "felt*") {
+            if (lastName !== `${expectedEntry.name}_len`) {
+                const msg = `Array size argument ${lastName} must appear right before`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            const arrLength = lastValue;
+            const arr = result.slice(resultIndex, resultIndex + arrLength);
+            adapted[adapted.length-1] = arr;
+            resultIndex += arrLength;
+        }
+
+        else {
+            const ret = generateComplex(result, resultIndex, expectedEntry.type, abi);
+            adapted.push(ret.generatedComplex);
+            resultIndex = ret.newRawIndex;
+        }
+
+        lastName = expectedEntry.name;
+        lastValue = currentValue;
+    }
+}
+
+// TODO comment
+function generateComplex(raw: any[], rawIndex: number, type: string, abi: starknet.Abi) {
+    if (type === "felt") {
+        return {
+            generatedComplex: <number> raw[rawIndex],
+            newRawIndex: rawIndex + 1
+        }
+    }
+
+    let generatedComplex: any = null;
+    let members: string[] = null;
+    if (type[0] === "(" && type[type.length-1] === ")") {
+        members = type.slice(1, -1).split(", ");
+
+        generatedComplex = [];
+        for (const member of members) {
+            const ret = generateComplex(raw, rawIndex, member, abi);
+            generatedComplex.push(ret.generatedComplex);
+            rawIndex = ret.newRawIndex;
+        }
+
+    } else {// struct
+        if (!(type in abi)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI`);
+        }
+
+        generatedComplex = {};
+        const struct = <starknet.Struct> abi[type]
+        for (const member of struct.members) {
+            const ret = generateComplex(raw, rawIndex, member.type, abi);
+            generatedComplex[member.name] = ret.generatedComplex;
+            rawIndex = ret.newRawIndex;
+        }
+    }
+
+    return {
+        generatedComplex,
+        newRawIndex: rawIndex
+    };
 }
