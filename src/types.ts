@@ -199,7 +199,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, functionArgs: string[] = []) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, ...args: any[]) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -214,9 +214,9 @@ export class StarknetContract {
             "--feeder_gateway_url", this.feederGatewayUrl
         ];
 
-        if (functionArgs.length) {
+        if (args.length) {
             starknetArgs.push("--inputs");
-            functionArgs.forEach(arg => starknetArgs.push(arg.toString()));
+            args.forEach(arg => starknetArgs.push(arg.toString()));
         }
 
         const executed = await docker.runContainer(
@@ -245,8 +245,8 @@ export class StarknetContract {
      * @param functionArgs
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, functionArgs: any[] = []): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
+    async invoke(functionName: string, ...args: any[]): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, ...args);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -267,8 +267,8 @@ export class StarknetContract {
      * @param functionArgs
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, functionArgs: any[] = []): Promise<string> {
-        const executed = await this.invokeOrCall("call", functionName, functionArgs);
+    async call(functionName: string, ...args: any[]): Promise<string> {
+        const executed = await this.invokeOrCall("call", functionName, ...args);
         return executed.stdout.toString().trimEnd();
     }
 }
