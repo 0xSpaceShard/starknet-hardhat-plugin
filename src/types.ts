@@ -34,6 +34,59 @@ export interface StarknetContractConfig {
     feederGatewayUrl: string;
 }
 
+function extractFromResponse(response: string, regex: RegExp) {
+    const matched = response.match(regex);
+    if (!matched || !matched[1]) {
+        throw new HardhatPluginError(PLUGIN_NAME, "Could not parse response. Check that you're using the correct network.");
+    }
+    return matched[1];
+}
+
+function extractTxHash(response: string) {
+    return extractFromResponse(response, /^Transaction hash: (.*)$/m);
+}
+
+function extractAddress(response: string) {
+    return extractFromResponse(response, /^Contract address: (.*)$/m);
+}
+
+async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string) {
+    const docker = await dockerWrapper.getDocker();
+    const executed = await docker.runContainer(
+        dockerWrapper.image,
+        [
+            "starknet", "tx_status",
+            "--hash", txHash,
+            "--gateway_url", gatewayUrl,
+            "--feeder_gateway_url", feederGatewayUrl
+        ],
+        {
+            networkMode: "host"
+        }
+    );
+
+    if (executed.statusCode) {
+        throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
+    }
+
+    const response = executed.stdout.toString();
+    try {
+        const responseParsed = JSON.parse(response);
+        return responseParsed.tx_status;
+    } catch (err) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Cannot interpret the following: ${response}`);
+    }
+}
+
+async function iterativelyCheckStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string, resolve: () => void) {
+    const timeout = CHECK_STATUS_TIMEOUT; // ms
+    const status = await checkStatus(txHash, dockerWrapper, gatewayUrl, feederGatewayUrl);
+    if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
+        resolve();
+    } else {
+        setTimeout(iterativelyCheckStatus, timeout, txHash, dockerWrapper, gatewayUrl, feederGatewayUrl, resolve);
+    }
+}
 export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
     private abiPath: string;
@@ -75,11 +128,9 @@ export class StarknetContractFactory {
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
-        const matched = executed.stdout.toString().match(/^Contract address: (.*)$/m);
-        const address = matched[1];
-        if (!address) {
-            throw new HardhatPluginError(PLUGIN_NAME, "Could not extract the address from the deployment response.");
-        }
+        const executedOutput = executed.stdout.toString();
+        const address = extractAddress(executedOutput);
+        const txHash = extractTxHash(executedOutput);
 
         const contract = new StarknetContract({
             abiPath: this.abiPath,
@@ -88,7 +139,10 @@ export class StarknetContractFactory {
             gatewayUrl: this.gatewayUrl
         });
         contract.address = address;
-        return contract;
+
+        return new Promise<StarknetContract>(resolve => {
+            iterativelyCheckStatus(txHash, this.dockerWrapper, this.gatewayUrl, this.feederGatewayUrl, () => resolve(contract));
+        });
     }
 
     /**
@@ -166,44 +220,6 @@ export class StarknetContract {
         return executed;
     }
 
-    private async checkStatus(txHash: string) {
-        const docker = await this.dockerWrapper.getDocker();
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
-            [
-                "starknet", "tx_status",
-                "--hash", txHash,
-                "--gateway_url", this.gatewayUrl,
-                "--feeder_gateway_url", this.feederGatewayUrl
-            ],
-            {
-                networkMode: "host"
-            }
-        );
-
-        if (executed.statusCode) {
-            throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
-        }
-
-        const response = executed.stdout.toString();
-        try {
-            const responseParsed = JSON.parse(response);
-            return responseParsed.tx_status;
-        } catch (err) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Cannot interpret the following: ${response}`);
-        }
-    }
-
-    private async iterativelyCheckStatus(txHash: string, resolve: () => void) {
-        const timeout = CHECK_STATUS_TIMEOUT; // ms
-        const status = await this.checkStatus(txHash);
-        if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
-            resolve();
-        } else {
-            setTimeout(this.iterativelyCheckStatus.bind(this), timeout, txHash, resolve);
-        }
-    }
-
     /**
      * Invoke the function by name and optionally provide arguments in an array.
      * @param functionName
@@ -212,14 +228,10 @@ export class StarknetContract {
      */
     async invoke(functionName: string, functionArgs: any[] = []): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
-        const matched = executed.stdout.toString().match(/^Transaction hash: (.*)$/m);
-        if (!matched || !matched[1]) {
-            throw new HardhatPluginError(PLUGIN_NAME, "Could not parse invoke response. Check that you're using the correct network.");
-        }
-        const txHash = matched[1];
+        const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve) => {
-            this.iterativelyCheckStatus(txHash, resolve);
+            iterativelyCheckStatus(txHash, this.dockerWrapper, this.gatewayUrl, this.feederGatewayUrl, resolve);
         });
     }
 
