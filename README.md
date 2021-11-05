@@ -2,7 +2,10 @@
 This plugin was tested with:
 - Node.js v12.22.4
 - npm/npx v7.21.1
-- Docker v20.10.8
+- Docker v20.10.8:
+  - Make sure you have a running Docker daemon.
+- Linux OS:
+  - For developers using Windows, the recommended way is to use WSL 2.
 
 ## Install
 ```
