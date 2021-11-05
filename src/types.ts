@@ -91,7 +91,7 @@ async function iterativelyCheckStatus(
     if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
         resolve();
     } else if (["REJECTED"].includes(status)) {
-        reject("Transaction rejected.");
+        reject(new Error("Transaction rejected."));
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
