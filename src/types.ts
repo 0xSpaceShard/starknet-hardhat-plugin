@@ -78,15 +78,27 @@ async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gateway
     }
 }
 
-async function iterativelyCheckStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string, resolve: () => void) {
+async function iterativelyCheckStatus(
+    txHash: string,
+    dockerWrapper: DockerWrapper,
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+    resolve: () => void,
+    reject: (reason?: any) => void
+) {
     const timeout = CHECK_STATUS_TIMEOUT; // ms
     const status = await checkStatus(txHash, dockerWrapper, gatewayUrl, feederGatewayUrl);
     if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
         resolve();
+    } else if (["REJECTED"].includes(status)) {
+        reject("Transaction rejected.");
     } else {
-        setTimeout(iterativelyCheckStatus, timeout, txHash, dockerWrapper, gatewayUrl, feederGatewayUrl, resolve);
+        // Make a recursive call, but with a delay.
+        // Local var `arguments` holds what was passed in the current call
+        setTimeout(iterativelyCheckStatus, timeout, ...arguments);
     }
 }
+
 export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
     private abiPath: string;
@@ -140,8 +152,15 @@ export class StarknetContractFactory {
         });
         contract.address = address;
 
-        return new Promise<StarknetContract>(resolve => {
-            iterativelyCheckStatus(txHash, this.dockerWrapper, this.gatewayUrl, this.feederGatewayUrl, () => resolve(contract));
+        return new Promise<StarknetContract>((resolve, reject) => {
+            iterativelyCheckStatus(
+                txHash,
+                this.dockerWrapper,
+                this.gatewayUrl,
+                this.feederGatewayUrl,
+                () => resolve(contract),
+                reject
+            );
         });
     }
 
@@ -230,8 +249,15 @@ export class StarknetContract {
         const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
         const txHash = extractTxHash(executed.stdout.toString());
 
-        return new Promise<void>((resolve) => {
-            iterativelyCheckStatus(txHash, this.dockerWrapper, this.gatewayUrl, this.feederGatewayUrl, resolve);
+        return new Promise<void>((resolve, reject) => {
+            iterativelyCheckStatus(
+                txHash,
+                this.dockerWrapper,
+                this.gatewayUrl,
+                this.feederGatewayUrl,
+                resolve,
+                reject
+            );
         });
     }
 
