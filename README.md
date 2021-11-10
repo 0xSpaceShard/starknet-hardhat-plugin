@@ -105,7 +105,7 @@ module.exports = {
   ...
   cairo: {
     // The default in this version of the plugin
-    version: "0.5.1"
+    version: "0.5.2"
   }
   ...
 };
