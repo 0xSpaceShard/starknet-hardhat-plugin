@@ -101,6 +101,21 @@ async function iterativelyCheckStatus(
     }
 }
 
+function readAbi(abiPath: string): starknet.Abi {
+    const abiRaw = fs.readFileSync(abiPath).toString();
+    const abiArray = JSON.parse(abiRaw);
+    const abi: starknet.Abi = {};
+    for (const abiEntry of abiArray) {
+        if (!abiEntry.name) {
+            const msg = `Abi entry has no name: ${abiEntry}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        abi[abiEntry.name] = abiEntry;
+    }
+
+    return abi;
+}
+
 export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
     private abi: starknet.Abi;
@@ -112,8 +127,7 @@ export class StarknetContractFactory {
     constructor(config: StarknetContractFactoryConfig) {
         this.dockerWrapper = config.dockerWrapper;
         this.abiPath = config.abiPath;
-        const abiRaw = fs.readFileSync(config.abiPath).toString();
-        this.abi = JSON.parse(abiRaw);
+        this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -201,6 +215,7 @@ export class StarknetContract {
     constructor(config: StarknetContractConfig) {
         this.dockerWrapper = config.dockerWrapper;
         this.abiPath = config.abiPath;
+        this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
@@ -228,7 +243,10 @@ export class StarknetContract {
 
         if (args.length) {
             starknetArgs.push("--inputs");
-            args.forEach(arg => starknetArgs.push(arg.toString()));
+            for (const arg of args) {
+                const adapted = adaptInput(arg);
+                starknetArgs.push(...adapted);
+            }
         }
 
         const executed = await docker.runContainer(
@@ -288,6 +306,31 @@ export class StarknetContract {
 }
 
 /**
+ * If `value` is a single number, the returned array contains only that number.
+ * If `value` is an array, the returned array contains adapted elements of the input array.
+ * 
+ * @param value value to be adapted
+ * @returns array of nested values
+ */
+function adaptInput(value: any) {
+    const ret: any[] = [];
+    adaptInputRec(value, ret);
+    return ret;
+}
+
+function adaptInputRec(value: any, storage: any[]) {
+    if (typeof value === "number") {
+        storage.push(value.toString());
+    } else if (Array.isArray(value)) {
+        for (const element of value) {
+            adaptInputRec(element, storage);
+        }
+    } else {
+        throw new HardhatPluginError(PLUGIN_NAME, `Unknown type used in input: ${value}`);
+    }
+}
+
+/**
  * Adapts the string resulting from a Starknet CLI function call.
  * This is done according to the actual output type specifed by the called function.
  * 
@@ -295,7 +338,7 @@ export class StarknetContract {
  * @param expectedOutput array of starknet types in the expected function output
  * @param abi the ABI of the contract whose function was called
  */
- export function adaptFunctionResult(rawResult: string, expectedOutput: starknet.Argument[], abi: starknet.Abi): any {
+ function adaptFunctionResult(rawResult: string, expectedOutput: starknet.Argument[], abi: starknet.Abi): any {
     const splitStr = rawResult.split(" ");
     const result = [];
     for (const num of splitStr) {
@@ -334,6 +377,8 @@ export class StarknetContract {
         lastName = expectedEntry.name;
         lastValue = currentValue;
     }
+
+    return adapted;
 }
 
 // TODO comment
