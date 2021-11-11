@@ -4,7 +4,7 @@ import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
-import { adaptInput, adaptFunctionResult } from "./adapt";
+import { adaptInput, adaptOutput } from "./adapt";
 
 export class DockerWrapper {
     private docker: HardhatDocker;
@@ -221,7 +221,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, ...args: any[]) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args: any) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -242,12 +242,10 @@ export class StarknetContract {
             "--feeder_gateway_url", this.feederGatewayUrl
         ];
 
-        if (args.length) {
+        if (args && Object.keys(args).length) {
             starknetArgs.push("--inputs");
-            for (const arg of args) {
-                const adapted = adaptInput(arg);
-                starknetArgs.push(...adapted);
-            }
+            const adapted = adaptInput(functionName, args, func.inputs, this.abi);
+            starknetArgs.push(...adapted);
         }
 
         const executed = await docker.runContainer(
@@ -273,11 +271,11 @@ export class StarknetContract {
     /**
      * Invoke the function by name and optionally provide arguments in an array.
      * @param functionName
-     * @param functionArgs
+     * @param args
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, ...args: any[]): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, ...args);
+    async invoke(functionName: string, args?: any): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -295,13 +293,13 @@ export class StarknetContract {
     /**
      * Call the function by name and optionally provide arguments in an array.
      * @param functionName
-     * @param functionArgs
+     * @param args
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, ...args: any[]): Promise<any> {
-        const executed = await this.invokeOrCall("call", functionName, ...args);
+    async call(functionName: string, args?: any): Promise<any> {
+        const executed = await this.invokeOrCall("call", functionName, args);
         const func = <starknet.Function> this.abi[functionName];
-        const parsedOutput = adaptFunctionResult(executed.stdout.toString(), func.outputs, this.abi);
-        return parsedOutput;
+        const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
+        return adaptedOutput;
     }
 }
