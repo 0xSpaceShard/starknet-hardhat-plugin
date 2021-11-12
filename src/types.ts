@@ -37,6 +37,8 @@ export interface StarknetContractConfig {
     feederGatewayUrl: string;
 }
 
+export type Numeric = number | bigint;
+
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -127,7 +129,7 @@ function readAbi(abiPath: string): starknet.Abi {
  * @param signature array of transaction signature elements
  * @param starknetArgs destination array
  */
-function handleSignature(signature: Array<string|number>, starknetArgs: string[]) {
+function handleSignature(signature: Array<Numeric>, starknetArgs: string[]) {
     if (signature) {
         starknetArgs.push("--signature");
         signature.forEach(part => starknetArgs.push(part.toString()));
@@ -184,7 +186,7 @@ export class StarknetContractFactory {
      * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: any, signature?: Array<string | number>): Promise<StarknetContract> {
+    async deploy(constructorArguments?: any, signature?: Array<Numeric>): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
 
         const starknetArgs = [
@@ -293,7 +295,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: any, signature?: Array<string | number>) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: any, signature?: Array<Numeric>) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -353,7 +355,7 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: any, signature?: Array<number|string>): Promise<void> {
+    async invoke(functionName: string, args?: any, signature?: Array<Numeric>): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, args, signature);
         const txHash = extractTxHash(executed.stdout.toString());
 
@@ -393,7 +395,7 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: any, signature?: Array<number|string>): Promise<any> {
+    async call(functionName: string, args?: any, signature?: Array<Numeric>): Promise<any> {
         const executed = await this.invokeOrCall("call", functionName, args, signature);
         const func = <starknet.Function> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);

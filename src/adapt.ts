@@ -1,8 +1,9 @@
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
+import { Numeric } from "./types";
 
-function isNumeric(value: number | string) {
+function isNumeric(value: Numeric) {
     if (value === undefined || value === null) {
         return false;
     }
@@ -159,7 +160,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
     const splitStr = rawResult.split(" ");
     const result = [];
     for (const num of splitStr) {
-        result.push(parseInt(num));
+        result.push(BigInt(num));
     }
 
     let resultIndex = 0;
@@ -179,7 +180,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
                 const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (felt*).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            const arrLength = adapted[lenName];
+            const arrLength = parseInt(adapted[lenName]);
             const arr = result.slice(resultIndex, resultIndex + arrLength);
             adapted[outputSpec.name] = arr;
             resultIndex += arrLength;
@@ -209,7 +210,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
 function generateComplexOutput(raw: any[], rawIndex: number, type: string, abi: starknet.Abi) {
     if (type === "felt") {
         return {
-            generatedComplex: <number> raw[rawIndex],
+            generatedComplex: BigInt(raw[rawIndex]),
             newRawIndex: rawIndex + 1
         }
     }
