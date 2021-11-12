@@ -10,7 +10,7 @@ export function adaptLog(msg: string): string {
         .replace("--gateway_url", "--gateway-url");
 }
 
-const DOCKER_HOST = "host.internal.docker";
+const DOCKER_HOST = "host.docker.internal";
 /**
  * Adapts `url` by replacing localhost and 127.0.0.1 with `host.internal.docker`
  * @param url string representing the url to be adapted
