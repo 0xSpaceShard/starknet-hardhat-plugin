@@ -156,7 +156,7 @@ export class StarknetContractFactory {
         );
 
         if (executed.statusCode) {
-            const msg = "Could not deploy contract. Check the network url in config and if it's responsive.";
+            const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 

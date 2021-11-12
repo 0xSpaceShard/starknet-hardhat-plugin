@@ -2,39 +2,33 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 
-function checkKeyMatchOneSided(keys1: string[], keys2: string[], messageStart: string) {
-    const expectedKeys: { [key: string]: boolean } = {};
-    for (const key of keys1) {
-        expectedKeys[key] = true;
-    }
-
-    const extraKeys = [];
-    for (const key of keys2) {
-        if (!(key in expectedKeys)) {
-            extraKeys.push(key);
-        }
-    }
-
-    if (extraKeys.length) {
-        const msg = `${messageStart}: ${extraKeys.join(", ")}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-}
-
-function checkKeyMatch(input: any, inputSpecs: starknet.Argument[], name: string) {
-    const inputKeys = Object.keys(input);
-    const expectedKeys = inputSpecs.map(spec => spec.name);
-    checkKeyMatchOneSided(inputKeys, expectedKeys, `Extra arguments for ${name}`);
-    checkKeyMatchOneSided(expectedKeys, inputKeys, `Missing arguments for ${name}`);
-}
-
 /**
- * TODO
- * @param input
- * @param inputSpecs
- * @returns 
+ * Adapts an object of named input arguments to an array of stringified arguments in the correct order.
+ * E.g. If there is a function
+ * ```text
+ * func double_sum(x: felt, y: felt) -> (res: felt):
+ *     return (res=(x + y) * 2)
+ * end
+ * ```
+ * then running
+ * ```typescript
+ * const abi = readAbi(...);
+ * const funcName = "double_sum";
+ * const inputSpecs = abi[funcName].inputs;
+ * const adapted = adaptInput(funcName, {x: 1, y: 2}, inputSpecs, abi);
+ * console.log(adapted);
+ * ```
+ * will yield
+ * ```
+ * > ["1", "2"]
+ * ```
+ * @param functionName the name of the function whose input is adapted
+ * @param input the input object containing function arguments under their names
+ * @param inputSpecs extracted from inputs
+ * @param abi the ABI artifact of compilation, parsed into an object
+ * @returns array containing stringified function arguments in the correct order
  */
-export function adaptInput(functionName: string, input: any, inputSpecs: starknet.Argument[], abi: starknet.Abi) {
+export function adaptInput(functionName: string, input: any, inputSpecs: starknet.Argument[], abi: starknet.Abi): string[] {
     const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
 
@@ -86,6 +80,15 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     return adapted;
 }
 
+/**
+ * Similar to `adaptComplexOutput`, but for input. Collects `input` parts into `adaptedArray`.
+ * @param input object to be adapted; containing either a struct, a tuple
+ * or in the final case that stops the recursion - a number (felt)
+ * @param inputSpec specification on how `input` should be interpreted
+ * @param abi the ABI resulting form contract compilation
+ * @param adaptedArray the array where stringified args are accumulated
+ * @returns nothing; everything is accumulated into `adaptedArray`
+ */
 function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starknet.Abi, adaptedArray: string[]): void {
     const type = inputSpec.type;
 

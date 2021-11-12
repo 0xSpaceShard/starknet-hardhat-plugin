@@ -23,7 +23,7 @@ export function adaptUrl(url: string): string {
                 if (url === `${protocol}${host}`) {
                     return `${protocol}${DOCKER_HOST}`;
                 }
-    
+
                 const prefix = `${protocol}${host}:`;
                 if (url.startsWith(prefix)) {
                     return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
