@@ -102,6 +102,11 @@ async function iterativelyCheckStatus(
     }
 }
 
+/**
+ * Reads ABI from `abiPath` and converts it to an object for lookup by name.
+ * @param abiPath the path where ABI is stored on disk
+ * @returns an object mapping ABI entry names with their values
+ */
 function readAbi(abiPath: string): starknet.Abi {
     const abiRaw = fs.readFileSync(abiPath).toString();
     const abiArray = JSON.parse(abiRaw);
@@ -115,6 +120,18 @@ function readAbi(abiPath: string): starknet.Abi {
     }
 
     return abi;
+}
+
+/**
+ * Add `signature` elements to to `starknetArgs`, if there are any.
+ * @param signature array of transaction signature elements
+ * @param starknetArgs destination array
+ */
+function handleSignature(signature: Array<string|number>, starknetArgs: string[]) {
+    if (signature) {
+        starknetArgs.push("--signature");
+        signature.forEach(part => starknetArgs.push(part.toString()));
+    }
 }
 
 export class StarknetContractFactory {
@@ -167,7 +184,7 @@ export class StarknetContractFactory {
      * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: any): Promise<StarknetContract> {
+    async deploy(constructorArguments?: any, signature?: Array<string | number>): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
 
         const starknetArgs = [
@@ -176,23 +193,8 @@ export class StarknetContractFactory {
             "--gateway_url", adaptUrl(this.gatewayUrl)
         ];
 
-        if (this.constructorAbi) {
-            if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
-                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
-            }
-            const construtorArguments = adaptInput(
-                this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
-            );
-            starknetArgs.push("--inputs");
-            construtorArguments.forEach(arg => starknetArgs.push(arg));
-        }
-
-        if (constructorArguments && Object.keys(constructorArguments).length) {
-            if (!this.constructorAbi) {
-                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments provided but not required.");
-            }
-            // other case already handled
-        }
+        this.handleConstructorArguments(constructorArguments, starknetArgs);
+        handleSignature(signature, starknetArgs);
 
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
@@ -234,6 +236,26 @@ export class StarknetContractFactory {
         });
     }
 
+    private handleConstructorArguments(constructorArguments: any, starknetArgs: string[]): void {
+        if (this.constructorAbi) {
+            if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
+            }
+            const construtorArguments = adaptInput(
+                this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
+            );
+            starknetArgs.push("--inputs");
+            construtorArguments.forEach(arg => starknetArgs.push(arg));
+        }
+
+        if (constructorArguments && Object.keys(constructorArguments).length) {
+            if (!this.constructorAbi) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments provided but not required.");
+            }
+            // other case already handled
+        }
+    }
+
     /**
      * Returns a contract instance with set address.
      * No address validity checks are performed.
@@ -271,7 +293,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args: any) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: any, signature?: Array<string | number>) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -296,6 +318,11 @@ export class StarknetContract {
             starknetArgs.push("--inputs");
             const adapted = adaptInput(functionName, args, func.inputs, this.abi);
             starknetArgs.push(...adapted);
+        }
+
+        if (signature) {
+            starknetArgs.push("--signature");
+            signature.forEach(part => starknetArgs.push(part.toString()));
         }
 
         const executed = await docker.runContainer(
@@ -323,10 +350,11 @@ export class StarknetContract {
      * For a usage example @see {@link call}
      * @param functionName
      * @param args
+     * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: any): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, args);
+    async invoke(functionName: string, args?: any, signature?: Array<number|string>): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args, signature);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -357,15 +385,16 @@ export class StarknetContract {
      * console.log(sum);
      * ```
      * which would result in:
-     * ```
+     * ```text
      * > 10
      * ```
      * @param functionName
      * @param args
+     * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: any): Promise<any> {
-        const executed = await this.invokeOrCall("call", functionName, args);
+    async call(functionName: string, args?: any, signature?: Array<number|string>): Promise<any> {
+        const executed = await this.invokeOrCall("call", functionName, args, signature);
         const func = <starknet.Function> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;

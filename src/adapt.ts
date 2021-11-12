@@ -2,6 +2,13 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 
+function isNumeric(value: number | string) {
+    if (value === undefined || value === null) {
+        return false;
+    }
+    return /^-?\d+$/.test(value.toString());
+}
+
 /**
  * Adapts an object of named input arguments to an array of stringified arguments in the correct order.
  *
@@ -20,7 +27,7 @@ import * as starknet from "./starknet-types";
  * console.log(adapted);
  * ```
  * will yield
- * ```
+ * ```text
  * > ["1", "2"]
  * ```
  * @param functionName the name of the function whose input is adapted
@@ -38,7 +45,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
         const currentValue = input[inputSpec.name];
         if (inputSpec.type === "felt") {
             const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
-            if (Number.isInteger(currentValue)) {
+            if (isNumeric(currentValue)) {
                 adapted.push(currentValue.toString());
 
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
@@ -98,7 +105,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
     }
 
     if (type === "felt") {
-        if (Number.isInteger(input)) {
+        if (isNumeric(input)) {
             adaptedArray.push(input.toString());
             return;
         }
