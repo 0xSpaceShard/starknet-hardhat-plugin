@@ -320,6 +320,7 @@ export class StarknetContract {
 
     /**
      * Invoke the function by name and optionally provide arguments in an array.
+     * For a usage example @see {@link call}
      * @param functionName
      * @param args
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
@@ -342,6 +343,23 @@ export class StarknetContract {
 
     /**
      * Call the function by name and optionally provide arguments in an array.
+     *
+     * E.g. If your contract has a function
+     * ```text
+     * func double_sum(x: felt, y: felt) -> (res: felt):
+     *     return (res=(x + y) * 2)
+     * end
+     * ```
+     * then you would call it like:
+     * ```typescript
+     * const contract = ...;
+     * const { res: sum } = await contract.call("double_sum", { x: 2, y: 3 });
+     * console.log(sum);
+     * ```
+     * which would result in:
+     * ```
+     * > 10
+     * ```
      * @param functionName
      * @param args
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`

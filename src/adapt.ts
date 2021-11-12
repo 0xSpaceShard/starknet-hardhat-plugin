@@ -4,7 +4,8 @@ import * as starknet from "./starknet-types";
 
 /**
  * Adapts an object of named input arguments to an array of stringified arguments in the correct order.
- * E.g. If there is a function
+ *
+ * E.g. If your contract has a function
  * ```text
  * func double_sum(x: felt, y: felt) -> (res: felt):
  *     return (res=(x + y) * 2)
