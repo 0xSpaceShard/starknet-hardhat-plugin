@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
-import { adaptLog } from "./utils";
+import { adaptLog, adaptUrl } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 
 export class DockerWrapper {
@@ -60,8 +60,8 @@ async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gateway
         [
             "starknet", "tx_status",
             "--hash", txHash,
-            "--gateway_url", gatewayUrl,
-            "--feeder_gateway_url", feederGatewayUrl
+            "--gateway_url", adaptUrl(gatewayUrl),
+            "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
         ],
         {
             networkMode: "host"
@@ -145,7 +145,7 @@ export class StarknetContractFactory {
             [
                 "starknet", "deploy",
                 "--contract", this.metadataPath,
-                "--gateway_url", this.gatewayUrl
+                "--gateway_url", adaptUrl(this.gatewayUrl)
             ],
             {
                 binds: {
@@ -238,8 +238,8 @@ export class StarknetContract {
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
-            "--gateway_url", this.gatewayUrl,
-            "--feeder_gateway_url", this.feederGatewayUrl
+            "--gateway_url", adaptUrl(this.gatewayUrl),
+            "--feeder_gateway_url", adaptUrl(this.feederGatewayUrl)
         ];
 
         if (args && Object.keys(args).length) {
