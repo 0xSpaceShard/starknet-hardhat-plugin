@@ -50,7 +50,11 @@ npx hardhat test
 
 Read more about the network used in tests in the [Testing network](#testing-network) section.
 
-Inside the tests, use the following *modus operandi* (comparable to the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html)):
+Inside the tests, use the following *modus operandi* (comparable to the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html)).
+
+All function names, argument names and return value names should be referred to as specified in contract source files.
+
+`BigInt` is used because `felt` may be too big for javascript. Use BigInt like `BigInt(10)` or `10n`.
 ```javascript
 const { expect } = require("chai");
 const { starknet } = require("hardhat");
@@ -59,20 +63,37 @@ describe("Starknet", function () {
   this.timeout(300_000); // 5 min
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract"); // assumes there is a file MyContract.cairo
-    const contract = await contractFactory.deploy();
+    const contract = await contractFactory.deploy({ initial_balance: 10 });
     console.log("Deployed at", contract.address);
-    await contract.invoke("increase_balance", [10]); // invoke method by name and pass arguments in an array
-    await contract.invoke("increase_balance", [20]);
 
-    const balanceStr = await contract.call("get_balance"); // call method by name and receive the result (string)
-    const balance = parseInt(balanceStr);
-    expect(balance).to.equal(30);
+    await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
+    await contract.invoke("increase_balance", { amount: 20 });
+
+    const { res: balance } = await contract.call("get_balance"); // call method by name and receive the result by name
+    expect(balance).to.deep.equal(BigInt(40)); // depending on es version, you could also use 40n instead of BigInt(40)
   });
 
   it("should work for a previously deployed contract", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract"); // assumes there is a file MyContract.cairo
     const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
     await contract.invoke(...);
+  });
+
+  it("should work with signed transactions", async function() {
+    const authContractFactory = await starknet.getContractFactory("MyAuthContract"); // assumes there is a file MyAuthContract.cairo
+    const publicKey = BigInt("987...");
+    const contract = await authContractFactory.deploy({ lucky_user: publicKey, initial_balance: 10 });
+
+    // signature is calculated for each transaction according to `publicKey` used and `amount` passed
+    const signature = [
+      BigInt("123..."),
+      BigInt("456...")
+    ]
+
+    await contract.invoke("increase_balance", { user: publicKey, amount: 20 }, signature);
+
+    const { res: balance } = await contract.call("get_balance", { user: publicKey });
+    expect(balance).to.deep.equal(BigInt(30));
   });
 });
 ```
