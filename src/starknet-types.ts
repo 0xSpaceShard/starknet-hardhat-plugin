@@ -19,7 +19,7 @@ export interface Argument {
 export interface Function {
     stateMutability?: string;
     name: string;
-    type: string;
+    type: "function" | "constructor";
     inputs: Argument[];
     outputs: Argument[];
 }

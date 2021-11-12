@@ -121,6 +121,7 @@ export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
     private abi: starknet.Abi;
     private abiPath: string;
+    private constructorAbi: starknet.Function;
     private metadataPath: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
@@ -132,21 +133,70 @@ export class StarknetContractFactory {
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
+
+        // find constructor
+        for (const abiEntryName in this.abi) {
+            const abiEntry = this.abi[abiEntryName];
+            if (abiEntry.type === "constructor") {
+                this.constructorAbi = <starknet.Function> abiEntry;
+            }
+        }
     }
 
     /**
      * Deploy a contract instance to a new address.
+     * Optionally pass constructor arguments.
+     *
+     * E.g. if there is a function
+     * ```text
+     * @constructor
+     * func constructor{
+     *     syscall_ptr : felt*,
+     *     pedersen_ptr : HashBuiltin*,
+     *     range_check_ptr
+     * } (initial_balance : felt):
+     *     balance.write(initial_balance)
+     *     return ()
+     * end
+     * ```
+     * this plugin allows you to call it like:
+     * ```
+     * const contractFactory = ...;
+     * const instance = await contractFactory.deploy({ initial_balance: 100 });
+     * ```
+     * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-     async deploy(): Promise<StarknetContract> {
+    async deploy(constructorArguments?: any): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
+
+        const starknetArgs = [
+            "starknet", "deploy",
+            "--contract", this.metadataPath,
+            "--gateway_url", adaptUrl(this.gatewayUrl)
+        ];
+
+        if (this.constructorAbi) {
+            if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
+            }
+            const construtorArguments = adaptInput(
+                this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
+            );
+            starknetArgs.push("--inputs");
+            construtorArguments.forEach(arg => starknetArgs.push(arg));
+        }
+
+        if (constructorArguments && Object.keys(constructorArguments).length) {
+            if (!this.constructorAbi) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments provided but not required.");
+            }
+            // other case already handled
+        }
+
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
-            [
-                "starknet", "deploy",
-                "--contract", this.metadataPath,
-                "--gateway_url", adaptUrl(this.gatewayUrl)
-            ],
+            starknetArgs,
             {
                 binds: {
                     [this.metadataPath]: this.metadataPath
