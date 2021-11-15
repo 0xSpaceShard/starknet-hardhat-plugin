@@ -1,7 +1,10 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import * as fs from "fs";
+import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
-import { adaptLog } from "./utils";
+import { adaptLog, adaptUrl } from "./utils";
+import { adaptInput, adaptOutput } from "./adapt";
 
 export class DockerWrapper {
     private docker: HardhatDocker;
@@ -34,6 +37,8 @@ export interface StarknetContractConfig {
     feederGatewayUrl: string;
 }
 
+export type Numeric = number | bigint;
+
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -57,8 +62,8 @@ async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gateway
         [
             "starknet", "tx_status",
             "--hash", txHash,
-            "--gateway_url", gatewayUrl,
-            "--feeder_gateway_url", feederGatewayUrl
+            "--gateway_url", adaptUrl(gatewayUrl),
+            "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
         ],
         {
             networkMode: "host"
@@ -99,9 +104,43 @@ async function iterativelyCheckStatus(
     }
 }
 
+/**
+ * Reads ABI from `abiPath` and converts it to an object for lookup by name.
+ * @param abiPath the path where ABI is stored on disk
+ * @returns an object mapping ABI entry names with their values
+ */
+function readAbi(abiPath: string): starknet.Abi {
+    const abiRaw = fs.readFileSync(abiPath).toString();
+    const abiArray = JSON.parse(abiRaw);
+    const abi: starknet.Abi = {};
+    for (const abiEntry of abiArray) {
+        if (!abiEntry.name) {
+            const msg = `Abi entry has no name: ${abiEntry}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        abi[abiEntry.name] = abiEntry;
+    }
+
+    return abi;
+}
+
+/**
+ * Add `signature` elements to to `starknetArgs`, if there are any.
+ * @param signature array of transaction signature elements
+ * @param starknetArgs destination array
+ */
+function handleSignature(signature: Array<Numeric>, starknetArgs: string[]) {
+    if (signature) {
+        starknetArgs.push("--signature");
+        signature.forEach(part => starknetArgs.push(part.toString()));
+    }
+}
+
 export class StarknetContractFactory {
     private dockerWrapper: DockerWrapper;
+    private abi: starknet.Abi;
     private abiPath: string;
+    private constructorAbi: starknet.Function;
     private metadataPath: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
@@ -109,24 +148,59 @@ export class StarknetContractFactory {
     constructor(config: StarknetContractFactoryConfig) {
         this.dockerWrapper = config.dockerWrapper;
         this.abiPath = config.abiPath;
+        this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
+
+        // find constructor
+        for (const abiEntryName in this.abi) {
+            const abiEntry = this.abi[abiEntryName];
+            if (abiEntry.type === "constructor") {
+                this.constructorAbi = <starknet.Function> abiEntry;
+            }
+        }
     }
 
     /**
      * Deploy a contract instance to a new address.
+     * Optionally pass constructor arguments.
+     *
+     * E.g. if there is a function
+     * ```text
+     * @constructor
+     * func constructor{
+     *     syscall_ptr : felt*,
+     *     pedersen_ptr : HashBuiltin*,
+     *     range_check_ptr
+     * } (initial_balance : felt):
+     *     balance.write(initial_balance)
+     *     return ()
+     * end
+     * ```
+     * this plugin allows you to call it like:
+     * ```
+     * const contractFactory = ...;
+     * const instance = await contractFactory.deploy({ initial_balance: 100 });
+     * ```
+     * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-     async deploy(): Promise<StarknetContract> {
+    async deploy(constructorArguments?: any, signature?: Array<Numeric>): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
+
+        const starknetArgs = [
+            "starknet", "deploy",
+            "--contract", this.metadataPath,
+            "--gateway_url", adaptUrl(this.gatewayUrl)
+        ];
+
+        this.handleConstructorArguments(constructorArguments, starknetArgs);
+        handleSignature(signature, starknetArgs);
+
         const executed = await docker.runContainer(
             this.dockerWrapper.image,
-            [
-                "starknet", "deploy",
-                "--contract", this.metadataPath,
-                "--gateway_url", this.gatewayUrl
-            ],
+            starknetArgs,
             {
                 binds: {
                     [this.metadataPath]: this.metadataPath
@@ -136,7 +210,7 @@ export class StarknetContractFactory {
         );
 
         if (executed.statusCode) {
-            const msg = "Could not deploy contract. Check the network url in config and if it's responsive.";
+            const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -164,6 +238,26 @@ export class StarknetContractFactory {
         });
     }
 
+    private handleConstructorArguments(constructorArguments: any, starknetArgs: string[]): void {
+        if (this.constructorAbi) {
+            if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
+            }
+            const construtorArguments = adaptInput(
+                this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
+            );
+            starknetArgs.push("--inputs");
+            construtorArguments.forEach(arg => starknetArgs.push(arg));
+        }
+
+        if (constructorArguments && Object.keys(constructorArguments).length) {
+            if (!this.constructorAbi) {
+                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments provided but not required.");
+            }
+            // other case already handled
+        }
+    }
+
     /**
      * Returns a contract instance with set address.
      * No address validity checks are performed.
@@ -187,6 +281,7 @@ export class StarknetContractFactory {
 
 export class StarknetContract {
     private dockerWrapper: DockerWrapper;
+    private abi: starknet.Abi;
     private abiPath: string;
     public address: string;
     private gatewayUrl: string;
@@ -195,13 +290,20 @@ export class StarknetContract {
     constructor(config: StarknetContractConfig) {
         this.dockerWrapper = config.dockerWrapper;
         this.abiPath = config.abiPath;
+        this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, functionArgs: string[] = []) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: any, signature?: Array<Numeric>) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
+        }
+
+        const func = <starknet.Function> this.abi[functionName];
+        if (!func) {
+            const msg = `Function '${functionName}' doesn't exist on this contract.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
         const docker = await this.dockerWrapper.getDocker();
@@ -210,13 +312,19 @@ export class StarknetContract {
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
-            "--gateway_url", this.gatewayUrl,
-            "--feeder_gateway_url", this.feederGatewayUrl
+            "--gateway_url", adaptUrl(this.gatewayUrl),
+            "--feeder_gateway_url", adaptUrl(this.feederGatewayUrl)
         ];
 
-        if (functionArgs.length) {
+        if (args && Object.keys(args).length) {
             starknetArgs.push("--inputs");
-            functionArgs.forEach(arg => starknetArgs.push(arg.toString()));
+            const adapted = adaptInput(functionName, args, func.inputs, this.abi);
+            starknetArgs.push(...adapted);
+        }
+
+        if (signature) {
+            starknetArgs.push("--signature");
+            signature.forEach(part => starknetArgs.push(part.toString()));
         }
 
         const executed = await docker.runContainer(
@@ -241,12 +349,14 @@ export class StarknetContract {
 
     /**
      * Invoke the function by name and optionally provide arguments in an array.
+     * For a usage example @see {@link call}
      * @param functionName
-     * @param functionArgs
+     * @param args
+     * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, functionArgs: any[] = []): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, functionArgs);
+    async invoke(functionName: string, args?: any, signature?: Array<Numeric>): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args, signature);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -263,12 +373,32 @@ export class StarknetContract {
 
     /**
      * Call the function by name and optionally provide arguments in an array.
+     *
+     * E.g. If your contract has a function
+     * ```text
+     * func double_sum(x: felt, y: felt) -> (res: felt):
+     *     return (res=(x + y) * 2)
+     * end
+     * ```
+     * then you would call it like:
+     * ```typescript
+     * const contract = ...;
+     * const { res: sum } = await contract.call("double_sum", { x: 2, y: 3 });
+     * console.log(sum);
+     * ```
+     * which would result in:
+     * ```text
+     * > 10
+     * ```
      * @param functionName
-     * @param functionArgs
+     * @param args
+     * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, functionArgs: any[] = []): Promise<string> {
-        const executed = await this.invokeOrCall("call", functionName, functionArgs);
-        return executed.stdout.toString().trimEnd();
+    async call(functionName: string, args?: any, signature?: Array<Numeric>): Promise<any> {
+        const executed = await this.invokeOrCall("call", functionName, args, signature);
+        const func = <starknet.Function> this.abi[functionName];
+        const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
+        return adaptedOutput;
     }
 }

@@ -7,7 +7,7 @@ import "./type-extensions";
 import { DockerWrapper, StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
 import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
-import { adaptLog } from "./utils";
+import { adaptLog, adaptUrl } from "./utils";
 
 async function traverseFiles(
     traversable: string,
@@ -263,7 +263,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
         const optionalStarknetArgs: string[] = [];
         if (args.gatewayUrl) {
-            optionalStarknetArgs.push(`--gateway_url=${args.gatewayUrl}`);
+            optionalStarknetArgs.push(`--gateway_url=${adaptUrl(args.gatewayUrl)}`);
         }
 
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;

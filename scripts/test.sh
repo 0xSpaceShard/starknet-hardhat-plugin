@@ -2,7 +2,7 @@
 set -e
 
 rm -rf starknet-hardhat-example
-git clone git@github.com:Shard-Labs/starknet-hardhat-example.git
+git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
 cd starknet-hardhat-example
 npm install
 
