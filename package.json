@@ -6,6 +6,16 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "starknet",
+    "hardhat",
+    "plugin",
+    "starkware",
+    "cairo",
+    "compile",
+    "deploy",
+    "test"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Shard-Labs/starknet-hardhat-plugin.git"
