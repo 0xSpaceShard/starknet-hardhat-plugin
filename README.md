@@ -4,8 +4,8 @@ This plugin was tested with:
 - npm/npx v7.21.1
 - Docker v20.10.8:
   - Make sure you have a running Docker daemon.
-- Linux OS / macOS:
-  - For developers using Windows, the recommended way is to use WSL 2.
+- Linux / macOS:
+  - on Windows, we recommend using WSL 2.
 
 ## Install
 ```
@@ -40,7 +40,7 @@ module.exports = {
 ```
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The `alpha` testnet is available by default, you don't need to specify it.
+The Alpha testnet is available by default, you don't need to specify it.
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
@@ -50,9 +50,9 @@ npx hardhat test
 
 Read more about the network used in tests in the [Testing network](#testing-network) section.
 
-Test your contracts in the following manner (comparable to the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html)).
+These examples are inspired by the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
-All function names, argument names and return value names should be referred to by names specified in contract source files.
+All function names, argument names and return value names should be referred to by the names specified in contract source files.
 
 `BigInt` is used because `felt` may be too big for javascript. Use `BigInt` like `BigInt("10")` or `10n`.
 
@@ -83,6 +83,12 @@ describe("My Test", function () {
     expect(res).to.deep.equal(BigInt(40)); // since ECMAScript 2020, you can also use 40n instead of BigInt(40)
   });
 
+  it("should work for a previously deployed contract", async function () {
+    const contractFactory = await starknet.getContractFactory("MyContract");
+    const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
+    await contract.invoke(...);
+  });
+
   /**
    * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
    * The contract is assumed to have:
@@ -106,12 +112,6 @@ describe("My Test", function () {
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
-  });
-
-  it("should work for a previously deployed contract", async function () {
-    const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
-    await contract.invoke(...);
   });
 
   /**
@@ -178,7 +178,7 @@ module.exports = {
 ```
 
 ### Testing network
-If you don't specify a `mocha.starknetNetwork`, the program defaults to using the alpha testnet for Mocha tests.
+If you don't specify a `mocha.starknetNetwork`, the program defaults to using the Alpha testnet for Mocha tests.
 
 A faster approach, but still in beta-phase, is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
