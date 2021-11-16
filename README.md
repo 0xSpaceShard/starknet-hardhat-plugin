@@ -11,6 +11,10 @@ This plugin was tested with:
 ```
 npm install @shardlabs/starknet-hardhat-plugin
 ```
+Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
+```typescript
+import "@shardlabs/starknet-hardhat-plugin";
+```
 
 ## Use
 This plugin adds the following tasks which target the source/artifact/test directories of your Hardhat project:
