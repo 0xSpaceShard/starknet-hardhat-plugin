@@ -56,7 +56,7 @@ Read more about the network used in tests in the [Testing network](#testing-netw
 These examples are inspired by the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important note
-- `BigInt` is used because `felt` may be too big for javascript. Use `BigInt` like `BigInt("10")` or `10n`.
+- `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
 - All function names, argument names and return value names should be referred to by the names specified in contract source files.
 
 ```typescript
@@ -83,7 +83,7 @@ describe("My Test", function () {
     await contract.invoke("increase_balance", { amount: BigInt("20") });
 
     const { res } = await contract.call("get_balance"); // call method by name and receive the result by name
-    expect(res).to.deep.equal(BigInt(40)); // since ECMAScript 2020, you can also use 40n instead of BigInt(40)
+    expect(res).to.deep.equal(BigInt(40)); // you can also use 40n instead of BigInt(40)
   });
 
   it("should work for a previously deployed contract", async function () {
