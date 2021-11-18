@@ -5,7 +5,7 @@ This plugin was tested with:
 - Docker v20.10.8:
   - Make sure you have a running Docker daemon.
 - Linux / macOS:
-  - on Windows, we recommend using WSL 2.
+  - On Windows, we recommend using WSL 2.
 
 ## Install
 ```
@@ -53,12 +53,11 @@ npx hardhat test
 ```
 
 Read more about the network used in tests in the [Testing network](#testing-network) section.
-
 These examples are inspired by the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
-All function names, argument names and return value names should be referred to by the names specified in contract source files.
-
-`BigInt` is used because `felt` may be too big for javascript. Use `BigInt` like `BigInt("10")` or `10n`.
+### Important note
+- `BigInt` is used because `felt` may be too big for javascript. Use `BigInt` like `BigInt("10")` or `10n`.
+- All function names, argument names and return value names should be referred to by the names specified in contract source files.
 
 ```typescript
 import { expect } from "chai";
@@ -133,11 +132,7 @@ describe("My Test", function () {
     const contract = await authContractFactory.deploy({ lucky_user: publicKey, initial_balance: 10 });
 
     // signature is calculated for each transaction according to `publicKey` used and `amount` passed
-    const signature = [
-      BigInt("123..."),
-      BigInt("456...")
-    ];
-
+    const signature = [BigInt("123..."), BigInt("456...")];
     await contract.invoke("increase_balance", { user: publicKey, amount: 20 }, signature);
 
     // notice how `res` is mapped to `balance`
