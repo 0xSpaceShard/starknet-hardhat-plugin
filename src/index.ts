@@ -47,7 +47,7 @@ async function traverseFiles(
  */
 function processExecuted(executed: ProcessResult): number {
     if (executed.stdout.length) {
-        console.log(executed.stdout.toString());
+        console.log(adaptLog(executed.stdout.toString()));
     }
 
     if (executed.stderr.length) {
