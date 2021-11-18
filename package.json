@@ -1,10 +1,20 @@
 {
   "name": "@shardlabs/starknet-hardhat-plugin",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Plugin for using Starknet tools within Hardhat projects",
   "main": "dist/index.js",
   "files": [
     "dist"
+  ],
+  "keywords": [
+    "starknet",
+    "hardhat",
+    "plugin",
+    "starkware",
+    "cairo",
+    "compile",
+    "deploy",
+    "test"
   ],
   "repository": {
     "type": "git",

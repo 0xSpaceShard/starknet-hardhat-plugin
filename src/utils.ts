@@ -7,7 +7,7 @@
 export function adaptLog(msg: string): string {
     return msg
         .replace("--network", "--starknet-network")
-        .replace("--gateway_url", "--gateway-url");
+        .replace("gateway_url", "gateway-url");
 }
 
 const DOCKER_HOST = "host.docker.internal";

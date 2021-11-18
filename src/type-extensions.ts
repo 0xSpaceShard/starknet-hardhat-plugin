@@ -36,13 +36,20 @@ type StarknetContractFactoryType = StarknetContractFactory;
 declare module "hardhat/types/runtime" {
     interface HardhatRuntimeEnvironment {
         dockerWrapper: DockerWrapper;
-        /**
-         * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
-         * the provided string should be `MyContract`.
-         * @param name the case-sensitive contract name
-         */
+
         starknet: {
+            /**
+             * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
+             * the provided string should be `MyContract`.
+             * @param name the case-sensitive contract name
+             * @returns a factory for generating instances of the desired contract
+             */
             getContractFactory: (name: string) => Promise<StarknetContractFactory>;
+
+            /**
+             * The selected starknet-network, present when specified with --starknet-network.
+             */
+            network?: string;
         }
     }
 
