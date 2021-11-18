@@ -257,6 +257,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
         const providedStarknetNetwork: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
         if (providedStarknetNetwork) {
+            hre.starknet.network = providedStarknetNetwork;
             const httpNetwork = <HttpNetworkConfig> hre.config.networks[providedStarknetNetwork];
             args.gatewayUrl = args.gatewayUrl || httpNetwork.url;
         }
@@ -313,7 +314,7 @@ async function findPath(traversable: string, name: string) {
 }
 
 extendEnvironment(hre => {
-    hre.starknet = lazyObject(() => ({
+    hre.starknet = {
         getContractFactory: async contractName => {
             const metadataPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}.json`);
             if (!metadataPath) {
@@ -344,5 +345,5 @@ extendEnvironment(hre => {
                 feederGatewayUrl: testNetwork.url
             });
         }
-    }));
+    };
 });
