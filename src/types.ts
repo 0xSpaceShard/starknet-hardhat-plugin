@@ -388,7 +388,7 @@ export class StarknetContract {
      * ```
      * which would result in:
      * ```text
-     * > 10
+     * > 10n
      * ```
      * @param functionName
      * @param args

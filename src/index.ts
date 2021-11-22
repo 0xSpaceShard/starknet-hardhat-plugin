@@ -177,7 +177,7 @@ extendEnvironment(hre => {
     hre.dockerWrapper = new DockerWrapper({ repository, tag });
 });
 
-task("starknet-compile", "Compiles StarkNet contracts")
+task("starknet-compile", "Compiles Starknet contracts")
     .addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
