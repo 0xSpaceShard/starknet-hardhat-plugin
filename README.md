@@ -32,7 +32,7 @@ npx hardhat starknet-deploy [--starknet-network <NAME>] [--gateway-url <URL>] [A
 ```
 If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
 
-Notice that this plugin relies on `--starknet-network` and not on Hardhat's `--network`. So if you specify
+Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 ```javascript
 module.exports = {
   networks: {
@@ -44,7 +44,7 @@ module.exports = {
 ```
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha testnet is available by default, you don't need to specify it.
+The Alpha testnet is available by default, you don't need to define it in the config file.
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
