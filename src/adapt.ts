@@ -1,9 +1,8 @@
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
-import { Numeric } from "./types";
 
-function isNumeric(value: Numeric) {
+function isNumeric(value: any) {
     if (value === undefined || value === null) {
         return false;
     }
@@ -158,7 +157,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
  */
 export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[], abi: starknet.Abi): any {
     const splitStr = rawResult.split(" ");
-    const result = [];
+    const result: bigint[] = [];
     for (const num of splitStr) {
         result.push(BigInt(num));
     }
@@ -180,7 +179,8 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
                 const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (felt*).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            const arrLength = parseInt(adapted[lenName]);
+
+            const arrLength = Number(adapted[lenName]);
             const arr = result.slice(resultIndex, resultIndex + arrLength);
             adapted[outputSpec.name] = arr;
             resultIndex += arrLength;
@@ -207,10 +207,10 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
  * @param abi the ABI from which types are taken
  * @returns an object consisting of the next unused index and the generated tuple/struct itself
  */
-function generateComplexOutput(raw: any[], rawIndex: number, type: string, abi: starknet.Abi) {
+function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
     if (type === "felt") {
         return {
-            generatedComplex: BigInt(raw[rawIndex]),
+            generatedComplex: raw[rawIndex],
             newRawIndex: rawIndex + 1
         }
     }
