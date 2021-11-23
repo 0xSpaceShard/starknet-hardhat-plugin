@@ -277,14 +277,17 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    const adaptedUrl = adaptUrl(httpNetwork.url);
-    return adaptedUrl;
+    return httpNetwork.url;
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
-    .addOptionalVariadicPositionalParam("paths",
+    .addOptionalParam("inputs",
+        "Space separated values forming constructor input.\n" +
+        "Pass them as a single string. E.g. --inputs \"1 2 3\"\n" +
+        "If there are multiple contracts deployed, they all use the same input."
+    ).addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."
@@ -294,6 +297,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         const gatewayUrl = getGatewayUrl(args, hre);
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
+
+        const inputs: string[] = [];
+        if (args.inputs) {
+            inputs.push("--inputs", ...args.inputs.split(/\s+/));
+        }
 
         let statusCode = 0;
         for (let artifactsPath of artifactsPaths) {
@@ -308,7 +316,8 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     [
                         "starknet", "deploy",
                         "--contract", file,
-                        "--gateway_url", gatewayUrl
+                        "--gateway_url", adaptUrl(gatewayUrl),
+                        ...inputs
                     ],
                     {
                         binds: {
