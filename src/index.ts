@@ -277,7 +277,8 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    return httpNetwork.url;
+    const adaptedUrl = adaptUrl(httpNetwork.url);
+    return adaptedUrl;
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
@@ -291,8 +292,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         const docker = await hre.dockerWrapper.getDocker();
 
         const gatewayUrl = getGatewayUrl(args, hre);
-        const optionalStarknetArgs: string[] = [`--gateway_url=${adaptUrl(gatewayUrl)}`];
-
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
 
@@ -304,11 +303,13 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
-                const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
-
                 const executed = await docker.runContainer(
                     hre.dockerWrapper.image,
-                    ["starknet"].concat(starknetArgs),
+                    [
+                        "starknet", "deploy",
+                        "--contract", file,
+                        "--gateway_url", gatewayUrl
+                    ],
                     {
                         binds: {
                             [artifactsPath]: artifactsPath
