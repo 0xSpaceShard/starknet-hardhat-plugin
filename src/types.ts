@@ -39,6 +39,13 @@ export interface StarknetContractConfig {
 
 export type Numeric = number | bigint;
 
+/**
+ * Object whose keys are strings (names) and values are any object.
+ */
+export interface StringMap {
+    [key: string]: any;
+}
+
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -186,7 +193,7 @@ export class StarknetContractFactory {
      * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: any, signature?: Array<Numeric>): Promise<StarknetContract> {
+    async deploy(constructorArguments?: StringMap, signature?: Array<Numeric>): Promise<StarknetContract> {
         const docker = await this.dockerWrapper.getDocker();
 
         const starknetArgs = [
@@ -238,7 +245,7 @@ export class StarknetContractFactory {
         });
     }
 
-    private handleConstructorArguments(constructorArguments: any, starknetArgs: string[]): void {
+    private handleConstructorArguments(constructorArguments: StringMap, starknetArgs: string[]): void {
         if (this.constructorAbi) {
             if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
                 throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
@@ -295,7 +302,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: any, signature?: Array<Numeric>) {
+    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: StringMap, signature?: Array<Numeric>) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -315,6 +322,10 @@ export class StarknetContract {
             "--gateway_url", adaptUrl(this.gatewayUrl),
             "--feeder_gateway_url", adaptUrl(this.feederGatewayUrl)
         ];
+
+        if (Array.isArray(args)) {
+            throw new HardhatPluginError(PLUGIN_NAME, "Arguments should be passed in the form of an object.");
+        }
 
         if (args && Object.keys(args).length) {
             starknetArgs.push("--inputs");
@@ -355,7 +366,7 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: any, signature?: Array<Numeric>): Promise<void> {
+    async invoke(functionName: string, args?: StringMap, signature?: Array<Numeric>): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, args, signature);
         const txHash = extractTxHash(executed.stdout.toString());
 
@@ -395,7 +406,7 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: any, signature?: Array<Numeric>): Promise<any> {
+    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>): Promise<StringMap> {
         const executed = await this.invokeOrCall("call", functionName, args, signature);
         const func = <starknet.Function> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);

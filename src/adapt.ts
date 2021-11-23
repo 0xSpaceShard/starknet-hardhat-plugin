@@ -1,6 +1,7 @@
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
+import { StringMap } from "./types";
 
 function isNumeric(value: any) {
     if (value === undefined || value === null) {
@@ -155,7 +156,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
  * @param outputSpecs array of starknet types in the expected function output
  * @param abi the ABI of the contract whose function was called
  */
-export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[], abi: starknet.Abi): any {
+export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[], abi: starknet.Abi): StringMap {
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
@@ -164,7 +165,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
 
     let resultIndex = 0;
     let lastSpec: starknet.Argument = { type: null, name: null };
-    const adapted: { [key: string]: any } = {};
+    const adapted: StringMap = {};
 
     for (const outputSpec of outputSpecs) {
         const currentValue = result[resultIndex];
