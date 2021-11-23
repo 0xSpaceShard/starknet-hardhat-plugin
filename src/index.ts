@@ -33,7 +33,7 @@ async function traverseFiles(
         }
     } else {
         statusCode = 1;
-        console.error("Path doesn't exist:", traversable);
+        console.error(`Path doesn't exist: ${traversable}. Consider recompiling the source.`);
     }
         
     return statusCode;
