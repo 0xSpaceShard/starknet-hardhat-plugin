@@ -285,8 +285,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addOptionalParam("inputs",
         "Space separated values forming constructor input.\n" +
-        "Pass them as a single string. E.g. --inputs \"1 2 3\"\n" +
-        "If there are multiple contracts deployed, they all use the same input."
+        "Pass them as a single string; e.g. --inputs \"1 2 3\"\n" +
+        "You would typically use this feature when deploying a single contract.\n" +
+        "If you're deploying multiple contracts, they'll all use the same input."
     ).addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +

@@ -50,7 +50,7 @@ If you're passing constructor arguments, pass them space separated, but as a sin
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
 ```
-Also note that if multiple contracts are deployed with the same command, they will all use the same arguments.
+You would typically use the input feature when deploying a single contract requiring constructor arguments. If you are deploying multiple contracts, they'll all use the same input.
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
