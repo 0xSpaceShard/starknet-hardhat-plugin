@@ -6,7 +6,7 @@ import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL } from "./constants";
-import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
+import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl } from "./utils";
 
 async function traverseFiles(
@@ -33,7 +33,7 @@ async function traverseFiles(
         }
     } else {
         statusCode = 1;
-        console.error("Path doesn't exist:", traversable);
+        console.error(`Path doesn't exist: ${traversable}. Consider recompiling the source.`);
     }
         
     return statusCode;
@@ -177,7 +177,7 @@ extendEnvironment(hre => {
     hre.dockerWrapper = new DockerWrapper({ repository, tag });
 });
 
-task("starknet-compile", "Compiles StarkNet contracts")
+task("starknet-compile", "Compiles Starknet contracts")
     .addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
@@ -245,30 +245,64 @@ task("starknet-compile", "Compiles StarkNet contracts")
         }
     });
 
+/**
+ * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
+ *
+ * @param args the object containing CLI args
+ * @param hre environment whose networks and starknet.network are accessed
+ * @returns the URL of the gateway to be used
+ */
+function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
+    let gatewayUrl: string = args.gatewayUrl;
+    const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
+
+    if (gatewayUrl && !networkName) {
+        return gatewayUrl;
+    }
+
+    if (gatewayUrl && networkName) {
+        const msg = "Only one of starknet-network and gateway-url should be provided.";
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    if (!networkName) { // we already know no gatewayUrl is provided
+        const msg = "No starknet-network or gateway-url provided."
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    hre.starknet.network = networkName;
+    const httpNetwork = <HttpNetworkConfig> hre.config.networks[networkName];
+    if (!httpNetwork) {
+        const msg = `Unknown starknet-network provided: ${networkName}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    return httpNetwork.url;
+}
+
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL}`)
-    .addOptionalVariadicPositionalParam("paths",
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
+    .addOptionalParam("inputs",
+        "Space separated values forming constructor input.\n" +
+        "Pass them as a single string; e.g. --inputs \"1 2 3\"\n" +
+        "You would typically use this feature when deploying a single contract.\n" +
+        "If you're deploying multiple contracts, they'll all use the same input."
+    ).addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."
     ).setAction(async (args, hre) => {
         const docker = await hre.dockerWrapper.getDocker();
 
-        const providedStarknetNetwork: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
-        if (providedStarknetNetwork) {
-            hre.starknet.network = providedStarknetNetwork;
-            const httpNetwork = <HttpNetworkConfig> hre.config.networks[providedStarknetNetwork];
-            args.gatewayUrl = args.gatewayUrl || httpNetwork.url;
-        }
-
-        const optionalStarknetArgs: string[] = [];
-        if (args.gatewayUrl) {
-            optionalStarknetArgs.push(`--gateway_url=${adaptUrl(args.gatewayUrl)}`);
-        }
-
+        const gatewayUrl = getGatewayUrl(args, hre);
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
+
+        const inputs: string[] = [];
+        if (args.inputs) {
+            inputs.push("--inputs", ...args.inputs.split(/\s+/));
+        }
 
         let statusCode = 0;
         for (let artifactsPath of artifactsPaths) {
@@ -278,11 +312,14 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
-                const starknetArgs = ["deploy", "--contract", file].concat(optionalStarknetArgs);
-
                 const executed = await docker.runContainer(
                     hre.dockerWrapper.image,
-                    ["starknet"].concat(starknetArgs),
+                    [
+                        "starknet", "deploy",
+                        "--contract", file,
+                        "--gateway_url", adaptUrl(gatewayUrl),
+                        ...inputs
+                    ],
                     {
                         binds: {
                             [artifactsPath]: artifactsPath
