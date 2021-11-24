@@ -86,6 +86,12 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+/**
+ * Populate `pathsObj` with paths from `colonSeparatedStr`.
+ * `pathsObj` maps a path to itself.
+ * @param pathsObj
+ * @param colonSeparatedStr
+ */
 function addPaths(pathsObj: any, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
@@ -167,9 +173,10 @@ extendConfig((config: HardhatConfig) => {
 });
 
 extendEnvironment(hre => {
+    // TODO select whether to use docker or venv
     const repository = DOCKER_REPOSITORY;
     const tag = hre.config.cairo.version;
-    hre.dockerWrapper = new DockerWrapper({ repository, tag });
+    hre.starknetEngine = new DockerWrapper({ repository, tag });
 });
 
 task("starknet-compile", "Compiles Starknet contracts")
@@ -183,8 +190,6 @@ task("starknet-compile", "Compiles Starknet contracts")
         "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .setAction(async (args, hre) => {
-        const docker = await hre.dockerWrapper.getDocker();
-
         const root = hre.config.paths.root;
         const rootRegex = new RegExp("^" + root);
 
@@ -222,12 +227,9 @@ task("starknet-compile", "Compiles Starknet contracts")
                 addPaths(binds, cairoPath);
 
                 fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
+                const executed = await hre.starknetEngine.runCommand(
                     ["starknet-compile"].concat(compileArgs),
-                    {
-                        binds
-                    }
+                    Object.keys(binds)
                 );
 
                 return processExecuted(executed);
@@ -288,8 +290,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."
     ).setAction(async (args, hre) => {
-        const docker = await hre.dockerWrapper.getDocker();
-
         const gatewayUrl = getGatewayUrl(args, hre);
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -307,20 +307,14 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
+                const executed = await hre.starknetEngine.runCommand(
                     [
                         "starknet", "deploy",
                         "--contract", file,
                         "--gateway_url", adaptUrl(gatewayUrl),
                         ...inputs
                     ],
-                    {
-                        binds: {
-                            [artifactsPath]: artifactsPath
-                        },
-                        networkMode: "host"
-                    }
+                    [artifactsPath]
                 );
 
                 return processExecuted(executed);
@@ -370,7 +364,7 @@ extendEnvironment(hre => {
             }
 
             return new StarknetContractFactory({
-                dockerWrapper: hre.dockerWrapper,
+                starknetEngine: hre.starknetEngine,
                 metadataPath,
                 abiPath,
                 gatewayUrl: testNetwork.url,

@@ -1,4 +1,4 @@
-import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
@@ -27,7 +27,11 @@ export type TxStatus =
     | "ACCEPTED_ONCHAIN"
 ;
 
-export class DockerWrapper {
+export interface StarknetEngine {
+    runCommand(command: string[], paths?: string[]): Promise<ProcessResult>;
+}
+
+export class DockerWrapper implements StarknetEngine {
     private docker: HardhatDocker;
     public image: Image;
 
@@ -35,7 +39,7 @@ export class DockerWrapper {
         this.image = image;
     }
 
-    public async getDocker() {
+    private async getDocker() {
         if (!this.docker) {
             this.docker = await HardhatDocker.create();
             if (!(await this.docker.hasPulledImage(this.image))) {
@@ -45,6 +49,23 @@ export class DockerWrapper {
         }
         return this.docker;
     }
+
+    public async runCommand(command: string[], paths?: string[]) {
+        const docker = await this.getDocker();
+        const binds: { [path: string]: string } = {};
+
+        if (paths) {
+            for (const path of paths) {
+                binds[path] = path;
+            }
+        }
+
+        const options = {
+            binds,
+            networkMode: "host"
+        }
+        return docker.runContainer(this.image, command, options);
+    }
 }
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
@@ -52,7 +73,7 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
 }
 
 export interface StarknetContractConfig {
-    dockerWrapper: DockerWrapper;
+    starknetEngine: StarknetEngine;
     abiPath: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
@@ -86,25 +107,18 @@ function extractAddress(response: string) {
 /**
  * The object returned by starknet tx_status.
  */
-type StatusObject = {
+ type StatusObject = {
     block_hash: string,
     tx_status: TxStatus
 }
 
-async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
-    const docker = await dockerWrapper.getDocker();
-    const executed = await docker.runContainer(
-        dockerWrapper.image,
-        [
-            "starknet", "tx_status",
-            "--hash", txHash,
-            "--gateway_url", adaptUrl(gatewayUrl),
-            "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
-        ],
-        {
-            networkMode: "host"
-        }
-    );
+async function checkStatus(txHash: string, starknetEngine: StarknetEngine, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
+    const executed = await starknetEngine.runCommand([
+        "starknet", "tx_status",
+        "--hash", txHash,
+        "--gateway_url", adaptUrl(gatewayUrl),
+        "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
+    ]);
 
     if (executed.statusCode) {
         throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
@@ -133,13 +147,13 @@ function isTxRejected(statusObject: StatusObject): boolean {
 
 async function iterativelyCheckStatus(
     txHash: string,
-    dockerWrapper: DockerWrapper,
+    starknetEngine: StarknetEngine,
     gatewayUrl: string,
     feederGatewayUrl: string,
     resolve: () => void,
     reject: (reason?: any) => void
 ) {
-    const statusObject = await checkStatus(txHash, dockerWrapper, gatewayUrl, feederGatewayUrl);
+    const statusObject = await checkStatus(txHash, starknetEngine, gatewayUrl, feederGatewayUrl);
     if (isTxAccepted(statusObject)) {
         resolve();
     } else if (isTxRejected(statusObject)) {
@@ -185,7 +199,7 @@ function handleSignature(signature: Array<Numeric>, starknetArgs: string[]) {
 }
 
 export class StarknetContractFactory {
-    private dockerWrapper: DockerWrapper;
+    private starknetEngine: StarknetEngine;
     private abi: starknet.Abi;
     private abiPath: string;
     private constructorAbi: starknet.Function;
@@ -194,7 +208,7 @@ export class StarknetContractFactory {
     private feederGatewayUrl: string;
 
     constructor(config: StarknetContractFactoryConfig) {
-        this.dockerWrapper = config.dockerWrapper;
+        this.starknetEngine = config.starknetEngine;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
@@ -235,8 +249,6 @@ export class StarknetContractFactory {
      * @returns the newly created instance
      */
     async deploy(constructorArguments?: StringMap, signature?: Array<Numeric>): Promise<StarknetContract> {
-        const docker = await this.dockerWrapper.getDocker();
-
         const starknetArgs = [
             "starknet", "deploy",
             "--contract", this.metadataPath,
@@ -246,17 +258,7 @@ export class StarknetContractFactory {
         this.handleConstructorArguments(constructorArguments, starknetArgs);
         handleSignature(signature, starknetArgs);
 
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
-            starknetArgs,
-            {
-                binds: {
-                    [this.metadataPath]: this.metadataPath
-                },
-                networkMode: "host"
-            }
-        );
-
+        const executed = await this.starknetEngine.runCommand(starknetArgs, [this.metadataPath]);
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -268,7 +270,7 @@ export class StarknetContractFactory {
 
         const contract = new StarknetContract({
             abiPath: this.abiPath,
-            dockerWrapper: this.dockerWrapper,
+            starknetEngine: this.starknetEngine,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -277,7 +279,7 @@ export class StarknetContractFactory {
         return new Promise<StarknetContract>((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.dockerWrapper,
+                this.starknetEngine,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(contract),
@@ -318,7 +320,7 @@ export class StarknetContractFactory {
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
-            dockerWrapper: this.dockerWrapper,
+            starknetEngine: this.starknetEngine,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -328,7 +330,7 @@ export class StarknetContractFactory {
 }
 
 export class StarknetContract {
-    private dockerWrapper: DockerWrapper;
+    private starknetEngine: StarknetEngine;
     private abi: starknet.Abi;
     private abiPath: string;
     public address: string;
@@ -336,7 +338,7 @@ export class StarknetContract {
     private feederGatewayUrl: string;
 
     constructor(config: StarknetContractConfig) {
-        this.dockerWrapper = config.dockerWrapper;
+        this.starknetEngine = config.starknetEngine;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.gatewayUrl = config.gatewayUrl;
@@ -354,7 +356,6 @@ export class StarknetContract {
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
-        const docker = await this.dockerWrapper.getDocker();
         const starknetArgs = [
             "starknet", kind,
             "--address", this.address,
@@ -379,17 +380,7 @@ export class StarknetContract {
             signature.forEach(part => starknetArgs.push(part.toString()));
         }
 
-        const executed = await docker.runContainer(
-            this.dockerWrapper.image,
-            starknetArgs,
-            {
-                binds: {
-                    [this.abiPath]: this.abiPath
-                },
-                networkMode: "host"
-            }
-        );
-
+        const executed = await this.starknetEngine.runCommand(starknetArgs, [this.abiPath]);
         if (executed.statusCode) {
             const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
@@ -414,7 +405,7 @@ export class StarknetContract {
         return new Promise<void>((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.dockerWrapper,
+                this.starknetEngine,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 resolve,

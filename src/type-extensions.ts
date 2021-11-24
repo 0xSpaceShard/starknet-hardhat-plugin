@@ -1,6 +1,6 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { DockerWrapper, StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import { StarknetContract, StarknetContractFactory, StarknetEngine, StringMap } from "./types";
 
 type CairoConfig = {
     version: string;
@@ -37,7 +37,7 @@ type StringMapType = StringMap;
 
 declare module "hardhat/types/runtime" {
     interface HardhatRuntimeEnvironment {
-        dockerWrapper: DockerWrapper;
+        starknetEngine: StarknetEngine;
 
         starknet: {
             /**
