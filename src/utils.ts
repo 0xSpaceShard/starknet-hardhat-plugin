@@ -1,3 +1,5 @@
+import { HttpNetworkConfig } from "hardhat/types";
+
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
  * 
@@ -33,4 +35,16 @@ export function adaptUrl(url: string): string {
     }
 
     return url;
+}
+
+export function getDefaultHttpNetworkConfig(url: string): HttpNetworkConfig {
+    return {
+        url,
+        accounts: undefined,
+        gas: undefined,
+        gasMultiplier: undefined,
+        gasPrice: undefined,
+        httpHeaders: undefined,
+        timeout: undefined,
+    };
 }
