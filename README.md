@@ -44,7 +44,7 @@ module.exports = {
 ```
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha testnet and mainnet are available by default, you don't need to define them in the config file.
+The Alpha testnet and mainnet are available by default, you don't need to define them in the config file; just pass them with `--starknet-network alpha` or `--starknet-network alphaMainnet`.
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 ```
