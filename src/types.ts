@@ -6,6 +6,27 @@ import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog, adaptUrl } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 
+/**
+ * According to: https://www.cairo-lang.org/docs/hello_starknet/intro.html#interact-with-the-contract
+ * Not using an enum to avoid code duplication and reverse mapping.
+ */
+export type TxStatus =
+    /** The transaction passed the validation and is waiting to be sent on-chain. */
+    "PENDING"
+
+    /** The transaction has not been received yet (i.e., not written to storage). */
+    | "NOT_RECEIVED"
+
+    /** The transaction was received by the operator. */
+    | "RECEIVED"
+
+    /** The transaction failed validation and thus was skipped. */
+    | "REJECTED"
+
+    /** The transaction was accepted on-chain. */
+    | "ACCEPTED_ONCHAIN"
+;
+
 export class DockerWrapper {
     private docker: HardhatDocker;
     public image: Image;
@@ -28,7 +49,7 @@ export class DockerWrapper {
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
-};
+}
 
 export interface StarknetContractConfig {
     dockerWrapper: DockerWrapper;
@@ -62,7 +83,15 @@ function extractAddress(response: string) {
     return extractFromResponse(response, /^Contract address: (.*)$/m);
 }
 
-async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string) {
+/**
+ * The object returned by starknet tx_status.
+ */
+type StatusObject = {
+    block_hash: string,
+    tx_status: TxStatus
+}
+
+async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
     const docker = await dockerWrapper.getDocker();
     const executed = await docker.runContainer(
         dockerWrapper.image,
@@ -84,10 +113,22 @@ async function checkStatus(txHash: string, dockerWrapper: DockerWrapper, gateway
     const response = executed.stdout.toString();
     try {
         const responseParsed = JSON.parse(response);
-        return responseParsed.tx_status;
+        return responseParsed;
     } catch (err) {
         throw new HardhatPluginError(PLUGIN_NAME, `Cannot interpret the following: ${response}`);
     }
+}
+
+const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ONCHAIN"];
+function isTxAccepted(statusObject: StatusObject): boolean {
+    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status)
+        && statusObject.block_hash
+        && statusObject.block_hash !== "pending";
+}
+
+const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];
+function isTxRejected(statusObject: StatusObject): boolean {
+    return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
 async function iterativelyCheckStatus(
@@ -98,15 +139,15 @@ async function iterativelyCheckStatus(
     resolve: () => void,
     reject: (reason?: any) => void
 ) {
-    const timeout = CHECK_STATUS_TIMEOUT; // ms
-    const status = await checkStatus(txHash, dockerWrapper, gatewayUrl, feederGatewayUrl);
-    if (["PENDING", "ACCEPTED_ONCHAIN"].includes(status)) {
+    const statusObject = await checkStatus(txHash, dockerWrapper, gatewayUrl, feederGatewayUrl);
+    if (isTxAccepted(statusObject)) {
         resolve();
-    } else if (["REJECTED"].includes(status)) {
+    } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected."));
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
+        const timeout = CHECK_STATUS_TIMEOUT; // ms
         setTimeout(iterativelyCheckStatus, timeout, ...arguments);
     }
 }

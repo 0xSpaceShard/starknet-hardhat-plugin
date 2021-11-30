@@ -44,9 +44,9 @@ module.exports = {
 ```
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha testnet is available by default, you don't need to define it in the config file.
+The Alpha testnet and mainnet are available by default, you don't need to define them in the config file; just pass them with `--starknet-network alpha` or `--starknet-network alphaMainnet`.
 
-If you're passing constructor arguments, pass them space separated, but as a single string.
+If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
 ```
@@ -176,7 +176,7 @@ module.exports = {
   ...
   cairo: {
     // The default in this version of the plugin
-    version: "0.6.0"
+    version: "0.6.1"
   }
   ...
 };
@@ -197,7 +197,7 @@ module.exports = {
   },
   mocha: {
     // Used for deployment in Mocha tests
-    // Defaults to "alpha", which is preconfigured even if you don't see it under `networks:`
+    // Defaults to "alpha" (for Alpha testnet), which is preconfigured even if you don't see it under `networks:`
     starknetNetwork: "myNetwork"
   }
   ...
