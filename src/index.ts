@@ -4,10 +4,11 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { DockerWrapper, StarknetContractFactory } from "./types";
+import { StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
+import { DockerWrapper } from "./starknet-wrappers";
 
 async function traverseFiles(
     traversable: string,
@@ -176,7 +177,7 @@ extendEnvironment(hre => {
     // TODO select whether to use docker or venv
     const repository = DOCKER_REPOSITORY;
     const tag = hre.config.cairo.version;
-    hre.starknetEngine = new DockerWrapper({ repository, tag });
+    hre.starknetWrapper = new DockerWrapper({ repository, tag });
 });
 
 task("starknet-compile", "Compiles Starknet contracts")
@@ -227,7 +228,7 @@ task("starknet-compile", "Compiles Starknet contracts")
                 addPaths(binds, cairoPath);
 
                 fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await hre.starknetEngine.runCommand(
+                const executed = await hre.starknetWrapper.runCommand(
                     ["starknet-compile"].concat(compileArgs),
                     Object.keys(binds)
                 );
@@ -307,7 +308,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
-                const executed = await hre.starknetEngine.runCommand(
+                const executed = await hre.starknetWrapper.runCommand(
                     [
                         "starknet", "deploy",
                         "--contract", file,
@@ -364,7 +365,7 @@ extendEnvironment(hre => {
             }
 
             return new StarknetContractFactory({
-                starknetEngine: hre.starknetEngine,
+                starknetWrapper: hre.starknetWrapper,
                 metadataPath,
                 abiPath,
                 gatewayUrl: testNetwork.url,
