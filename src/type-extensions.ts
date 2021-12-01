@@ -4,7 +4,8 @@ import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 
 type CairoConfig = {
-    version: string;
+    version?: string;
+    venv?: string;
 }
 
 declare module "hardhat/types/config" {

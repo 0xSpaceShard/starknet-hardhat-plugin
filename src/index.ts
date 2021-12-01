@@ -8,7 +8,7 @@ import { StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
-import { DockerWrapper } from "./starknet-wrappers";
+import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 
 async function traverseFiles(
     traversable: string,
@@ -150,7 +150,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add image version
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.cairo = userConfig.cairo;
+    config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
     if (!config.cairo) {
         config.cairo = {
             version: DEFAULT_DOCKER_IMAGE_TAG
@@ -174,10 +174,16 @@ extendConfig((config: HardhatConfig) => {
 });
 
 extendEnvironment(hre => {
-    // TODO select whether to use docker or venv
-    const repository = DOCKER_REPOSITORY;
-    const tag = hre.config.cairo.version;
-    hre.starknetWrapper = new DockerWrapper({ repository, tag });
+    const venvPath = hre.config.cairo.venv;
+    if (venvPath) {
+        console.log(`${PLUGIN_NAME} plugin using virtual environment at ${venvPath}`);
+        hre.starknetWrapper = new VenvWrapper(venvPath);
+    } else {
+        const repository = DOCKER_REPOSITORY;
+        const tag = hre.config.cairo.version;
+        console.log(`${PLUGIN_NAME} plugin using dockerized environment`);
+        hre.starknetWrapper = new DockerWrapper({ repository, tag });
+    }
 });
 
 task("starknet-compile", "Compiles Starknet contracts")
@@ -229,7 +235,8 @@ task("starknet-compile", "Compiles Starknet contracts")
 
                 fs.mkdirSync(dirPath, { recursive: true });
                 const executed = await hre.starknetWrapper.runCommand(
-                    ["starknet-compile"].concat(compileArgs),
+                    "starknet-compile",
+                    compileArgs,
                     Object.keys(binds)
                 );
 
@@ -309,8 +316,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
                 const executed = await hre.starknetWrapper.runCommand(
+                    "starknet",
                     [
-                        "starknet", "deploy",
+                        "deploy",
                         "--contract", file,
                         "--gateway_url", adaptUrl(gatewayUrl),
                         ...inputs

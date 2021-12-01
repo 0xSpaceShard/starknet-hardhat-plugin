@@ -1,12 +1,19 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
+import { spawnSync } from "child_process";
+import * as fs from "fs";
+import { HardhatPluginError } from "hardhat/plugins";
+import * as path from "path";
+import { PLUGIN_NAME } from "./constants";
+
+export type StarknetCommand = "starknet" | "starknet-compile";
 
 export interface StarknetWrapper {
-    runCommand(command: string[], paths?: string[]): Promise<ProcessResult>;
+    runCommand(command: StarknetCommand, args: string[], paths?: string[]): Promise<ProcessResult>;
 }
 
 export class DockerWrapper implements StarknetWrapper {
     private docker: HardhatDocker;
-    public image: Image;
+    private image: Image;
 
     constructor(image: Image) {
         this.image = image;
@@ -23,7 +30,7 @@ export class DockerWrapper implements StarknetWrapper {
         return this.docker;
     }
 
-    public async runCommand(command: string[], paths?: string[]) {
+    public async runCommand(command: StarknetCommand, args: string[], paths?: string[]) {
         const docker = await this.getDocker();
         const binds: { [path: string]: string } = {};
 
@@ -37,6 +44,37 @@ export class DockerWrapper implements StarknetWrapper {
             binds,
             networkMode: "host"
         }
-        return docker.runContainer(this.image, command, options);
+
+        return docker.runContainer(this.image, [command, ...args], options);
+    }
+}
+
+function checkCommandPath(commandPath: string): void {
+    if (!fs.existsSync(commandPath)) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Command ${commandPath} not found.`);
+    }
+}
+
+export class VenvWrapper implements StarknetWrapper {
+    private starknetCompilePath: string;
+    private starknetPath: string;
+
+    constructor(venvPath: string) {
+        this.starknetCompilePath = path.join(venvPath, "bin", "starknet-compile");
+        checkCommandPath(this.starknetCompilePath);
+
+        this.starknetPath = path.join(venvPath, "bin", "starknet");
+        if (!fs.existsSync(this.starknetPath)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Command ${this.starknetPath} not found.`)
+        }
+    }
+
+    public async runCommand(command: StarknetCommand, args: string[], _paths?: string[]): Promise<ProcessResult> {
+        const process = spawnSync(command, args);
+        return {
+            statusCode: process.status,
+            stdout: process.stdout,
+            stderr: process.stderr
+        };
     }
 }

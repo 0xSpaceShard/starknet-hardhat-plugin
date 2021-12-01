@@ -72,8 +72,8 @@ function extractAddress(response: string) {
 }
 
 async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
-    const executed = await starknetWrapper.runCommand([
-        "starknet", "tx_status",
+    const executed = await starknetWrapper.runCommand("starknet", [
+        "tx_status",
         "--hash", txHash,
         "--gateway_url", adaptUrl(gatewayUrl),
         "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
@@ -209,7 +209,7 @@ export class StarknetContractFactory {
      */
     async deploy(constructorArguments?: StringMap, signature?: Array<Numeric>): Promise<StarknetContract> {
         const starknetArgs = [
-            "starknet", "deploy",
+            "deploy",
             "--contract", this.metadataPath,
             "--gateway_url", adaptUrl(this.gatewayUrl)
         ];
@@ -217,7 +217,7 @@ export class StarknetContractFactory {
         this.handleConstructorArguments(constructorArguments, starknetArgs);
         handleSignature(signature, starknetArgs);
 
-        const executed = await this.starknetWrapper.runCommand(starknetArgs, [this.metadataPath]);
+        const executed = await this.starknetWrapper.runCommand("starknet", starknetArgs, [this.metadataPath]);
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -316,7 +316,7 @@ export class StarknetContract {
         }
 
         const starknetArgs = [
-            "starknet", kind,
+            kind,
             "--address", this.address,
             "--abi", this.abiPath,
             "--function", functionName,
@@ -339,7 +339,7 @@ export class StarknetContract {
             signature.forEach(part => starknetArgs.push(part.toString()));
         }
 
-        const executed = await this.starknetWrapper.runCommand(starknetArgs, [this.abiPath]);
+        const executed = await this.starknetWrapper.runCommand("starknet", starknetArgs, [this.abiPath]);
         if (executed.statusCode) {
             const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
