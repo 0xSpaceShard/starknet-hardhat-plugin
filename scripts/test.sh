@@ -11,7 +11,7 @@ git log -n 1
 npm install
 
 # used by some cases
-./setup-venv.sh
+../scripts/setup-venv.sh
 
 total=0
 success=0
