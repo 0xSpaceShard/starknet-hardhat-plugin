@@ -155,9 +155,7 @@ For more usage examples, including tuple, array and struct support, check [sampl
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
 ### Cairo version
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify anything, the latest dockerized version is used by default.
-
-Using the `venv` key, as described in [the next paragraph](#existing-virtual-environment), will override `version`.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify neither `version` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
 A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
@@ -173,9 +171,7 @@ module.exports = {
 ### Existing virtual environment
 If you want to use an existing Python virtual environment, specify it using `cairo.venv`.
 
-To use the currently activated environment (or if you have the starknet commands globally installed), set `<VENV_PATH>` to be `"active"`.
-
-Specifying `venv` will ignore `version` from [the previous paragraph](#cairo-version).
+To use the currently activated environment (or if you have the starknet commands globally installed), set `<VENV_PATH>` to `"active"`.
 ```typescript
 module.exports = {
   cairo: {

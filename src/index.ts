@@ -163,13 +163,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
         config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
     }
     if (!config.cairo) {
-        config.cairo = {
-            version: DEFAULT_DOCKER_IMAGE_TAG
-        };
-    }
-
-    if (!config.cairo.version) {
-        config.cairo.version = DEFAULT_DOCKER_IMAGE_TAG;
+        config.cairo = {};
     }
 });
 
@@ -184,13 +178,18 @@ extendConfig((config: HardhatConfig) => {
     }
 });
 
+// add venv wrapper or docker wrapper of starknet
 extendEnvironment(hre => {
     const venvPath = hre.config.cairo.venv;
     if (venvPath) {
+        if (hre.config.cairo.version) {
+            const msg = "Error in config file. Only one of (cairo.version, cairo.venv) can be specified.";
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = DOCKER_REPOSITORY;
-        const tag = hre.config.cairo.version;
+        const tag = hre.config.cairo.version || DEFAULT_DOCKER_IMAGE_TAG;
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
