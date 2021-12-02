@@ -68,8 +68,8 @@ export class VenvWrapper implements StarknetWrapper {
 
     constructor(venvPath: string) {
         let venvPrefix = "";
-        if (venvPath === "ACTIVE") {
-            console.log(`${PLUGIN_NAME} plugin using ACTIVE environment`);
+        if (venvPath === "active") {
+            console.log(`${PLUGIN_NAME} plugin using the active environment`);
         } else {
             venvPrefix = path.join(venvPath, "bin");
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);

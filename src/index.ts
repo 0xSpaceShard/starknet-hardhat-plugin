@@ -243,8 +243,9 @@ task("starknet-compile", "Compiles Starknet contracts")
                 };
                 addPaths(binds, cairoPath);
 
+                // unlinking/deleting is necessary if user switched from docker to venv
                 if (fs.existsSync(outputPath)) {
-                    fs.unlinkSync(outputPath); // necessary if switching from docker to venv
+                    fs.unlinkSync(outputPath);
                 }
                 if (fs.existsSync(abiPath)) {
                     fs.unlinkSync(abiPath);
