@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source my-venv
+source my-venv/bin/activate
 
 INITIAL_VALUE=10
 
