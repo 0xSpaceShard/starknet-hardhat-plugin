@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-VENV=my-venv
+VENV=../my-venv
 
-echo "Creating venv $VENV in $(pwd)"
+echo "Creating venv $(pwd)/$VENV"
 python3 -m venv "$VENV"
 source "$VENV/bin/activate"
 echo "python at: $(which python)"
