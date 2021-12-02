@@ -69,16 +69,21 @@ export class VenvWrapper implements StarknetWrapper {
     constructor(venvPath: string) {
         let venvPrefix = "";
         if (venvPath === "active") {
-            console.log(`${PLUGIN_NAME} plugin using the active environment`);
+            console.log(`${PLUGIN_NAME} plugin using the active environment.`);
+            this.starknetCompilePath = "starknet-compile";
+            this.starknetPath = "starknet";
         } else {
-            venvPrefix = path.join(venvPath, "bin");
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
+
+            venvPrefix = path.join(venvPath, "bin");
+
+            this.starknetCompilePath = path.join(venvPrefix, "starknet-compile");
+            checkCommandPath(this.starknetCompilePath);
+
+            this.starknetPath = path.join(venvPrefix, "starknet");
+            checkCommandPath(this.starknetPath);
         }
 
-        this.starknetCompilePath = path.join(venvPrefix, "starknet-compile");
-        this.starknetPath = path.join(venvPrefix, "starknet");
-        checkCommandPath(this.starknetCompilePath);
-        checkCommandPath(this.starknetPath);
         this.command2path = new Map([
             ["starknet", this.starknetPath],
             ["starknet-compile", this.starknetCompilePath]
