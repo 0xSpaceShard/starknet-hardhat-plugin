@@ -2,4 +2,4 @@
 set -e
 
 npx hardhat starknet-compile contracts/contract.cairo contracts/auth_contract.cairo
-npx hardhat test
+npx hardhat test test/quick-test.ts
