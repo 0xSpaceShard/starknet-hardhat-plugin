@@ -11,19 +11,24 @@ export interface StarknetWrapper {
     runCommand(command: StarknetCommand, args: string[], paths?: string[]): Promise<ProcessResult>;
 }
 
+function getFullImageName(image: Image): string {
+    return `${image.repository}:${image.tag}`;
+}
+
 export class DockerWrapper implements StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
 
     constructor(image: Image) {
         this.image = image;
+        console.log(`${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`);
     }
 
     private async getDocker() {
         if (!this.docker) {
             this.docker = await HardhatDocker.create();
             if (!(await this.docker.hasPulledImage(this.image))) {
-                console.log(`Pulling image ${this.image.repository}:${this.image.tag}`);
+                console.log(`Pulling image ${getFullImageName(this.image)}`);
                 await this.docker.pullImage(this.image);
             }
         }
@@ -62,12 +67,18 @@ export class VenvWrapper implements StarknetWrapper {
     private command2path: Map<StarknetCommand, string>;
 
     constructor(venvPath: string) {
-        this.starknetCompilePath = path.join(venvPath, "bin", "starknet-compile");
+        let venvPrefix = "";
+        if (venvPath === "ACTIVE") {
+            console.log(`${PLUGIN_NAME} plugin using ACTIVE environment`);
+        } else {
+            venvPrefix = path.join(venvPath, "bin");
+            console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
+        }
+
+        this.starknetCompilePath = path.join(venvPrefix, "starknet-compile");
+        this.starknetPath = path.join(venvPrefix, "starknet");
         checkCommandPath(this.starknetCompilePath);
-
-        this.starknetPath = path.join(venvPath, "bin", "starknet");
         checkCommandPath(this.starknetPath);
-
         this.command2path = new Map([
             ["starknet", this.starknetPath],
             ["starknet-compile", this.starknetCompilePath]

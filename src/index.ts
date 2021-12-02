@@ -187,12 +187,10 @@ extendConfig((config: HardhatConfig) => {
 extendEnvironment(hre => {
     const venvPath = hre.config.cairo.venv;
     if (venvPath) {
-        console.log(`${PLUGIN_NAME} plugin using virtual environment at ${venvPath}`);
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = DOCKER_REPOSITORY;
         const tag = hre.config.cairo.version;
-        console.log(`${PLUGIN_NAME} plugin using dockerized environment`);
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
