@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
+import axios from "axios";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { DockerWrapper, StarknetContractFactory } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA } from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 
@@ -378,4 +379,80 @@ extendEnvironment(hre => {
             });
         }
     };
+
+
+
 });
+
+
+task("starknet-verify", "Verifies the contract in the Starknet network.")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addParam("path", `The path of the cairo contract (e.g. contracts/conract.cairo)`)
+    .addParam("address", `The address where the contract is deployed`)
+    .setAction(async (args, hre) => {
+        var voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
+        
+        if(args.starknetNetwork && args.starknetNetwork !== ALPHA){
+            if(args.starknetNetwork === ALPHA_MAINNET)
+                voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
+            else{
+                const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+        }
+        voyagerUrl+=args.address + "/code";
+        var isVerified = false;
+        await axios.get(voyagerUrl,{
+            headers: {
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+              'Content-Type': 'application/json'
+            }
+           })
+        .then(response => {
+            if(response.data.contract != null && response.data.contract.length > 0){
+                console.log(`Contract at address ${args.address} has already been verified`);
+                isVerified = true;
+            }
+        })
+        .catch(error => {
+            const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+            console.log(error);
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        });
+        
+        if(isVerified)
+        return;
+        //If contract hasn't been verified yet, do it
+        var contract_path = args.path;
+        if (!path.isAbsolute(contract_path)) {
+            contract_path = path.normalize(path.join(hre.config.paths.root, contract_path));
+        }
+        if (fs.existsSync(contract_path)) {
+            const content = {code:fs.readFileSync(contract_path).toString().split(/\r?\n|\r/)};
+            await axios.post(voyagerUrl,JSON.stringify(content))
+            .then(response => {
+                console.log(`Contract has been successfuly verified at address ${args.address}`)
+                return;
+            })
+            .catch(error => {
+                switch(error.response.status){
+                    case 400:{
+                        console.error(`Contract at address ${args.address} does not match the provided code`);
+                        break;
+                    }
+                    case 500:{
+                        console.error(`There is no contract deployed at address ${args.address}, or the transaction was not finished`);
+                        break;
+                    }
+                    default:{
+                        const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    }
+                } 
+            });
+
+        } else {
+            throw new HardhatPluginError(PLUGIN_NAME, `File ${contract_path} does not exist`);
+        }
+        
+    });
