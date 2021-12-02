@@ -155,7 +155,7 @@ For more usage examples, including tuple, array and struct support, check [sampl
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
 ### Cairo version
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify anything, the latest is used by default.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify anything, the latest dockerized version is used by default.
 
 Using the `venv` key, as described in [the next paragraph](#existing-virtual-environment), will override `version`.
 
