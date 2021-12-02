@@ -150,7 +150,9 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add image version
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
+    if (userConfig.cairo) {
+        config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
+    }
     if (!config.cairo) {
         config.cairo = {
             version: DEFAULT_DOCKER_IMAGE_TAG
