@@ -17,27 +17,36 @@ async function traverseFiles(
 ): Promise<number> {
     let statusCode = 0;
 
-    if (fs.existsSync(traversable)) {
-        const stats = fs.lstatSync(traversable);
-        if (stats.isDirectory()) {
-            for (const childName of fs.readdirSync(traversable)) {
-                const childPath = path.join(traversable, childName);
-                statusCode += await traverseFiles(childPath, predicate, action);
-            }
-        } else if (stats.isFile()) {
-            if (predicate(traversable)) {
-                statusCode += await action(traversable);
-            }
-        } else {
-            const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-            console.warn(msg);
+    const stats = fs.lstatSync(traversable);
+    if (stats.isDirectory()) {
+        for (const childName of fs.readdirSync(traversable)) {
+            const childPath = path.join(traversable, childName);
+            statusCode += await traverseFiles(childPath, predicate, action);
+        }
+    } else if (stats.isFile()) {
+        if (predicate(traversable)) {
+            statusCode += await action(traversable);
         }
     } else {
-        statusCode = 1;
-        console.error(`Path doesn't exist: ${traversable}. Consider recompiling the source.`);
+        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
+        console.warn(msg);
     }
-        
+
     return statusCode;
+}
+
+function checkSourceExists(sourcePath: string): void {
+    if (!fs.existsSync(sourcePath)) {
+        const msg = `Source expected to be at ${sourcePath}, but not found.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+}
+
+function checkArtifactExists(artifactsPath: string): void {
+    if (!fs.existsSync(artifactsPath)) {
+        const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
 }
 
 /**
@@ -212,6 +221,7 @@ task("starknet-compile", "Compiles Starknet contracts")
                 sourcesPath = path.normalize(path.join(root, sourcesPath));
             }
 
+            checkSourceExists(sourcesPath);
             statusCode += await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
                 console.log("Compiling", file);
                 const suffix = file.replace(rootRegex, "");
@@ -321,6 +331,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
             }
 
+            checkArtifactExists(artifactsPath);
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
                 const executed = await hre.starknetWrapper.runCommand(
@@ -359,12 +370,15 @@ async function findPath(traversable: string, name: string) {
 extendEnvironment(hre => {
     hre.starknet = {
         getContractFactory: async contractName => {
-            const metadataPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}.json`);
+            const artifactsPath = hre.config.paths.starknetArtifacts;
+            checkArtifactExists(artifactsPath);
+
+            const metadataPath = await findPath(artifactsPath, `${contractName}.json`);
             if (!metadataPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
             }
 
-            const abiPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}${ABI_SUFFIX}`);
+            const abiPath = await findPath(artifactsPath, `${contractName}${ABI_SUFFIX}`);
             if (!abiPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
             }
