@@ -59,18 +59,24 @@ export class VenvWrapper implements StarknetWrapper {
     private starknetCompilePath: string;
     private starknetPath: string;
 
+    private command2path: Map<StarknetCommand, string>;
+
     constructor(venvPath: string) {
         this.starknetCompilePath = path.join(venvPath, "bin", "starknet-compile");
         checkCommandPath(this.starknetCompilePath);
 
         this.starknetPath = path.join(venvPath, "bin", "starknet");
-        if (!fs.existsSync(this.starknetPath)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Command ${this.starknetPath} not found.`)
-        }
+        checkCommandPath(this.starknetPath);
+
+        this.command2path = new Map([
+            ["starknet", this.starknetPath],
+            ["starknet-compile", this.starknetCompilePath]
+        ]);
     }
 
     public async runCommand(command: StarknetCommand, args: string[], _paths?: string[]): Promise<ProcessResult> {
-        const process = spawnSync(command, args);
+        const commandPath = this.command2path.get(command);
+        const process = spawnSync(commandPath, args);
         return {
             statusCode: process.status,
             stdout: process.stdout,
