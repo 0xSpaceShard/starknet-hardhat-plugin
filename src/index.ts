@@ -233,6 +233,12 @@ task("starknet-compile", "Compiles Starknet contracts")
                 };
                 addPaths(binds, cairoPath);
 
+                if (fs.existsSync(outputPath)) {
+                    fs.unlinkSync(outputPath); // necessary if switching from docker to venv
+                }
+                if (fs.existsSync(abiPath)) {
+                    fs.unlinkSync(abiPath);
+                }
                 fs.mkdirSync(dirPath, { recursive: true });
                 const executed = await hre.starknetWrapper.runCommand(
                     "starknet-compile",
