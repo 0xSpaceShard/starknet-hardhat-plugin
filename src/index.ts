@@ -6,7 +6,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { StarknetContractFactory } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA, TX_STATUS_ACCEPTED, TX_STATUS_PENDING } from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -303,6 +303,7 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
+    .addFlag("wait", "Wait for deployment to be finished")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addOptionalParam("inputs",
@@ -325,6 +326,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
 
         let statusCode = 0;
+        var tx_hashes: string[] = [];
         for (let artifactsPath of artifactsPaths) {
             if (!path.isAbsolute(artifactsPath)) {
                 artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
@@ -343,9 +345,55 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     ],
                     [artifactsPath]
                 );
-
-                return processExecuted(executed);
+                if(args.wait){
+                    const execResult = processExecuted(executed);
+                    
+                    if(execResult == 0)
+                        tx_hashes.push(executed.stdout.toString().match(".*Transaction hash: (?<tx_hash>\\w*).*").groups["tx_hash"]);
+                    
+                    return execResult;
+                } 
+                else
+                    return processExecuted(executed);
             });
+        }
+
+        if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
+            let done = false;
+            var hash_done:boolean [] = [];
+            for(var i = 0; i<tx_hashes.length;i++){
+                hash_done.push(false);
+            }
+            while(!done){   // Run loop until all transactions are PENDING or ACCEPTED
+                for(var i = 0; i<tx_hashes.length;i++){
+                    if(!hash_done[i]){  // Only check transaction status for the ones that haven't been marked as done
+                        const waitExecuted = await hre.starknetWrapper.runCommand(
+                            "starknet",
+                            [
+                                "tx_status",
+                                "--hash", tx_hashes[i],
+                                "--feeder_gateway_url", adaptUrl(gatewayUrl),
+                                
+                            ]
+                        );
+                        const waitExecResult = processExecuted(waitExecuted);
+                        if(waitExecResult == 0){
+                            const result = waitExecuted.stdout.toString().match('.*\"tx_status\": \"(?<tx_status>\\w*)\".*').groups["tx_status"];
+                            if([TX_STATUS_ACCEPTED,TX_STATUS_PENDING].includes(result)) // Mark transaction as done because it is either PENDING or ACCEPTED
+                                hash_done[i]=true;
+                        }
+                        else{ // If an error occurs, something might be wrong with the "tx_status" call, but the deployment still went through, so just mark it as done to prevent an infinite loop
+                            hash_done[i]=true;
+                            console.log("Issue verifying the deployment transaction status, transaction still went through");
+                        }
+                    }
+                }
+                if(!hash_done.includes(false))
+                    done=true;
+                if(!done)
+                    await new Promise(resolve => setTimeout(resolve, 5000));    //Wait 5 seconds before checking tx_status again
+            }
+            
         }
 
         if (statusCode) {
