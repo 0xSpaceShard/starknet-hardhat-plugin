@@ -4,10 +4,11 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { DockerWrapper, StarknetContractFactory } from "./types";
+import { StarknetContractFactory } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
+import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 
 async function traverseFiles(
     traversable: string,
@@ -16,27 +17,36 @@ async function traverseFiles(
 ): Promise<number> {
     let statusCode = 0;
 
-    if (fs.existsSync(traversable)) {
-        const stats = fs.lstatSync(traversable);
-        if (stats.isDirectory()) {
-            for (const childName of fs.readdirSync(traversable)) {
-                const childPath = path.join(traversable, childName);
-                statusCode += await traverseFiles(childPath, predicate, action);
-            }
-        } else if (stats.isFile()) {
-            if (predicate(traversable)) {
-                statusCode += await action(traversable);
-            }
-        } else {
-            const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-            console.warn(msg);
+    const stats = fs.lstatSync(traversable);
+    if (stats.isDirectory()) {
+        for (const childName of fs.readdirSync(traversable)) {
+            const childPath = path.join(traversable, childName);
+            statusCode += await traverseFiles(childPath, predicate, action);
+        }
+    } else if (stats.isFile()) {
+        if (predicate(traversable)) {
+            statusCode += await action(traversable);
         }
     } else {
-        statusCode = 1;
-        console.error(`Path doesn't exist: ${traversable}. Consider recompiling the source.`);
+        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
+        console.error(msg);
     }
-        
+
     return statusCode;
+}
+
+function checkSourceExists(sourcePath: string): void {
+    if (!fs.existsSync(sourcePath)) {
+        const msg = `Source expected to be at ${sourcePath}, but not found.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+}
+
+function checkArtifactExists(artifactsPath: string): void {
+    if (!fs.existsSync(artifactsPath)) {
+        const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
 }
 
 /**
@@ -86,6 +96,12 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+/**
+ * Populate `pathsObj` with paths from `colonSeparatedStr`.
+ * `pathsObj` maps a path to itself.
+ * @param pathsObj
+ * @param colonSeparatedStr
+ */
 function addPaths(pathsObj: any, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
@@ -141,17 +157,13 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     config.paths.starknetArtifacts = newPath;
 });
 
-// add image version
+// add user-defined cairo settings
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.cairo = userConfig.cairo;
-    if (!config.cairo) {
-        config.cairo = {
-            version: DEFAULT_DOCKER_IMAGE_TAG
-        };
+    if (userConfig.cairo) {
+        config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
     }
-
-    if (!config.cairo.version) {
-        config.cairo.version = DEFAULT_DOCKER_IMAGE_TAG;
+    if (!config.cairo) {
+        config.cairo = {};
     }
 });
 
@@ -166,10 +178,20 @@ extendConfig((config: HardhatConfig) => {
     }
 });
 
+// add venv wrapper or docker wrapper of starknet
 extendEnvironment(hre => {
-    const repository = DOCKER_REPOSITORY;
-    const tag = hre.config.cairo.version;
-    hre.dockerWrapper = new DockerWrapper({ repository, tag });
+    const venvPath = hre.config.cairo.venv;
+    if (venvPath) {
+        if (hre.config.cairo.version) {
+            const msg = "Error in config file. Only one of (cairo.version, cairo.venv) can be specified.";
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        hre.starknetWrapper = new VenvWrapper(venvPath);
+    } else {
+        const repository = DOCKER_REPOSITORY;
+        const tag = hre.config.cairo.version || DEFAULT_DOCKER_IMAGE_TAG;
+        hre.starknetWrapper = new DockerWrapper({ repository, tag });
+    }
 });
 
 task("starknet-compile", "Compiles Starknet contracts")
@@ -183,8 +205,6 @@ task("starknet-compile", "Compiles Starknet contracts")
         "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .setAction(async (args, hre) => {
-        const docker = await hre.dockerWrapper.getDocker();
-
         const root = hre.config.paths.root;
         const rootRegex = new RegExp("^" + root);
 
@@ -198,6 +218,7 @@ task("starknet-compile", "Compiles Starknet contracts")
                 sourcesPath = path.normalize(path.join(root, sourcesPath));
             }
 
+            checkSourceExists(sourcesPath);
             statusCode += await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
                 console.log("Compiling", file);
                 const suffix = file.replace(rootRegex, "");
@@ -221,13 +242,18 @@ task("starknet-compile", "Compiles Starknet contracts")
                 };
                 addPaths(binds, cairoPath);
 
+                // unlinking/deleting is necessary if user switched from docker to venv
+                if (fs.existsSync(outputPath)) {
+                    fs.unlinkSync(outputPath);
+                }
+                if (fs.existsSync(abiPath)) {
+                    fs.unlinkSync(abiPath);
+                }
                 fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
-                    ["starknet-compile"].concat(compileArgs),
-                    {
-                        binds
-                    }
+                const executed = await hre.starknetWrapper.runCommand(
+                    "starknet-compile",
+                    compileArgs,
+                    Object.keys(binds)
                 );
 
                 return processExecuted(executed);
@@ -288,8 +314,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."
     ).setAction(async (args, hre) => {
-        const docker = await hre.dockerWrapper.getDocker();
-
         const gatewayUrl = getGatewayUrl(args, hre);
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -305,22 +329,18 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
             }
 
+            checkArtifactExists(artifactsPath);
             statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
                 console.log("Deploying", file);
-                const executed = await docker.runContainer(
-                    hre.dockerWrapper.image,
+                const executed = await hre.starknetWrapper.runCommand(
+                    "starknet",
                     [
-                        "starknet", "deploy",
+                        "deploy",
                         "--contract", file,
                         "--gateway_url", adaptUrl(gatewayUrl),
                         ...inputs
                     ],
-                    {
-                        binds: {
-                            [artifactsPath]: artifactsPath
-                        },
-                        networkMode: "host"
-                    }
+                    [artifactsPath]
                 );
 
                 return processExecuted(executed);
@@ -348,12 +368,15 @@ async function findPath(traversable: string, name: string) {
 extendEnvironment(hre => {
     hre.starknet = {
         getContractFactory: async contractName => {
-            const metadataPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}.json`);
+            const artifactsPath = hre.config.paths.starknetArtifacts;
+            checkArtifactExists(artifactsPath);
+
+            const metadataPath = await findPath(artifactsPath, `${contractName}.json`);
             if (!metadataPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
             }
 
-            const abiPath = await findPath(hre.config.paths.starknetArtifacts, `${contractName}${ABI_SUFFIX}`);
+            const abiPath = await findPath(artifactsPath, `${contractName}${ABI_SUFFIX}`);
             if (!abiPath) {
                 throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
             }
@@ -370,7 +393,7 @@ extendEnvironment(hre => {
             }
 
             return new StarknetContractFactory({
-                dockerWrapper: hre.dockerWrapper,
+                starknetWrapper: hre.starknetWrapper,
                 metadataPath,
                 abiPath,
                 gatewayUrl: testNetwork.url,

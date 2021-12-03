@@ -2,8 +2,9 @@
 This plugin was tested with:
 - Node.js v12.22.4
 - npm/npx v7.21.1
-- Docker v20.10.8:
-  - Make sure you have a running Docker daemon.
+- Docker v20.10.8 (optional):
+  - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
+  - If you opt for the containerized version, make sure you have a running Docker daemon.
 - Linux / macOS:
   - On Windows, we recommend using WSL 2.
 
@@ -153,30 +154,44 @@ For more usage examples, including tuple, array and struct support, check [sampl
 ## Config
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
-### Paths
-```typescript
-module.exports = {
-  ...
-  paths: {
-    // Defaults to "contracts" (the same as `paths.sources`).
-    starknetSources: "my-own-starknet-path",
+### Cairo version
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify neither `version` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
-    // Defaults to "starknet-artifacts".
-    // Has to be different from the value used by `paths.artifacts` (which is `artifacts` by default).
-    starknetArtifacts: "also-my-own-starknet-path",
+A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+```javascript
+module.exports = {
+  cairo: {
+    // The default in this version of the plugin
+    version: "0.6.1"
   }
   ...
 };
 ```
 
-### Cairo version
-A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
-```javascript
+### Existing virtual environment
+If you want to use an existing Python virtual environment, specify it by using `cairo.venv`.
+
+To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
+```typescript
 module.exports = {
-  ...
   cairo: {
-    // The default in this version of the plugin
-    version: "0.6.1"
+    // venv: "active" <- for the active virtual environment
+    // venv: "path/to/my/venv" <- otherwise
+    venv: "<VENV_PATH>"
+  }
+}
+```
+
+### Paths
+```typescript
+module.exports = {
+  paths: {
+    // Defaults to "contracts" (the same as `paths.sources`).
+    starknetSources: "my-own-starknet-path",
+
+    // Defaults to "starknet-artifacts".
+    // Has to be different from the value set in `paths.artifacts` (which is used by core Hardhat and has a default value of `artifacts`).
+    starknetArtifacts: "also-my-own-starknet-path",
   }
   ...
 };
@@ -189,7 +204,6 @@ A faster approach, but still in beta-phase, is to use [starknet-devnet](https://
 
 ```javascript
 module.exports = {
-  ...
   networks: {
     myNetwork: {
       url: "http://localhost:5000"
