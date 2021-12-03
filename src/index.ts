@@ -5,8 +5,8 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { StarknetContractFactory } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA, TX_STATUS_ACCEPTED, TX_STATUS_PENDING } from "./constants";
+import { StarknetContractFactory, checkStatus, isTxAccepted } from "./types";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -303,7 +303,7 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
-    .addFlag("wait", "Wait for deployment to be finished")
+    .addFlag("wait", "Wait for deployment transaction to be either PENDING or ACCEPTED_ONCHAIN")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addOptionalParam("inputs",
@@ -326,7 +326,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
 
         let statusCode = 0;
-        var tx_hashes: string[] = [];
+        const tx_hashes: string[] = [];
         for (let artifactsPath of artifactsPaths) {
             if (!path.isAbsolute(artifactsPath)) {
                 artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
@@ -359,47 +359,40 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
 
         if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
-            let done = false;
-            var hash_done:boolean [] = [];
-            for(var i = 0; i<tx_hashes.length;i++){
-                hash_done.push(false);
-            }
-            while(!done){   // Run loop until all transactions are PENDING or ACCEPTED
-                for(var i = 0; i<tx_hashes.length;i++){
-                    if(!hash_done[i]){  // Only check transaction status for the ones that haven't been marked as done
-                        const waitExecuted = await hre.starknetWrapper.runCommand(
-                            "starknet",
-                            [
-                                "tx_status",
-                                "--hash", tx_hashes[i],
-                                "--feeder_gateway_url", adaptUrl(gatewayUrl),
-                                
-                            ]
-                        );
-                        const waitExecResult = processExecuted(waitExecuted);
-                        if(waitExecResult == 0){
-                            const result = waitExecuted.stdout.toString().match('.*\"tx_status\": \"(?<tx_status>\\w*)\".*').groups["tx_status"];
-                            if([TX_STATUS_ACCEPTED,TX_STATUS_PENDING].includes(result)) // Mark transaction as done because it is either PENDING or ACCEPTED
-                                hash_done[i]=true;
-                        }
-                        else{ // If an error occurs, something might be wrong with the "tx_status" call, but the deployment still went through, so just mark it as done to prevent an infinite loop
-                            hash_done[i]=true;
-                            console.log("Issue verifying the deployment transaction status, transaction still went through");
-                        }
-                    }
-                }
-                if(!hash_done.includes(false))
-                    done=true;
-                if(!done)
-                    await new Promise(resolve => setTimeout(resolve, 5000));    //Wait 5 seconds before checking tx_status again
-            }
-            
+            await deploymentWait(tx_hashes, hre, gatewayUrl);
         }
 
         if (statusCode) {
             throw new HardhatPluginError(PLUGIN_NAME, `Failed deployment of ${statusCode} contracts`);
         }
     });
+
+async function deploymentWait(tx_hashes: string[], hre: HardhatRuntimeEnvironment, gatewayUrl: string) {
+    console.log(tx_hashes);
+    let done = false;
+    const hash_done: boolean[] = [];
+    for (var i = 0; i < tx_hashes.length; i++) {
+        hash_done.push(false);
+    }
+    while (!done) { // Run loop until all transactions are PENDING or ACCEPTED
+        for (var i = 0; i < tx_hashes.length; i++) {
+            if (!hash_done[i]) { // Only check transaction status for the ones that haven't been marked as done
+                try {
+                    const tx_status = await checkStatus(tx_hashes[i], hre.starknetWrapper, gatewayUrl, gatewayUrl);
+                    if (isTxAccepted(tx_status)) // Mark transaction as done because it is either PENDING or ACCEPTED
+                        hash_done[i] = true;
+                } catch (err) { // If an error occurs, something might be wrong with the "tx_status" call, but the deployment still went through, so just mark it as done to prevent an infinite loop
+                    hash_done[i] = true;
+                    console.log("Issue verifying the deployment transaction status, transaction still went through");
+                }
+            }
+        }
+        if (!hash_done.includes(false))
+            done = true;
+        if (!done)
+            await new Promise(resolve => setTimeout(resolve, 5000));
+    }
+}
 
 async function findPath(traversable: string, name: string) {
     let foundPath: string;
@@ -469,26 +462,27 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
         }
         voyagerUrl+=args.address + "/code";
         var isVerified = false;
-        await axios.get(voyagerUrl,{
-            headers: {
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-              'Content-Type': 'application/json'
-            }
-           })
-        .then(response => {
-            if(response.data.contract != null && response.data.contract.length > 0){
-                console.log(`Contract at address ${args.address} has already been verified`);
+        try{
+            const resp = await axios.get(voyagerUrl,{
+                headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Content-Type': 'application/json'
+                }
+            });
+            const data = resp.data;
+            
+            if(data.contract != null && data.contract.length > 0){
                 isVerified = true;
             }
-        })
-        .catch(error => {
+        }catch(error){
             const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-            console.log(error);
             throw new HardhatPluginError(PLUGIN_NAME, msg);
-        });
+        }
         
-        if(isVerified)
-        return;
+        if(isVerified){
+            const msg =`Contract at address ${args.address} has already been verified`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
         //If contract hasn't been verified yet, do it
         var contract_path = args.path;
         if (!path.isAbsolute(contract_path)) {
@@ -496,20 +490,15 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
         }
         if (fs.existsSync(contract_path)) {
             const content = {code:fs.readFileSync(contract_path).toString().split(/\r?\n|\r/)};
-            await axios.post(voyagerUrl,JSON.stringify(content))
-            .then(response => {
-                console.log(`Contract has been successfuly verified at address ${args.address}`)
-                return;
-            })
-            .catch(error => {
+            await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
                 switch(error.response.status){
                     case 400:{
-                        console.error(`Contract at address ${args.address} does not match the provided code`);
-                        break;
+                        const msg = `Contract at address ${args.address} does not match the provided code`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
                     }
                     case 500:{
-                        console.error(`There is no contract deployed at address ${args.address}, or the transaction was not finished`);
-                        break;
+                        const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
                     }
                     default:{
                         const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
@@ -517,7 +506,8 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
                     }
                 } 
             });
-
+            console.log(`Contract has been successfuly verified at address ${args.address}`);
+            return;
         } else {
             throw new HardhatPluginError(PLUGIN_NAME, `File ${contract_path} does not exist`);
         }

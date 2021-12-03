@@ -47,6 +47,7 @@ export interface StringMap {
     [key: string]: any;
 }
 
+
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -71,7 +72,7 @@ function extractAddress(response: string) {
     tx_status: TxStatus
 }
 
-async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
+export async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
     const executed = await starknetWrapper.runCommand("starknet", [
         "tx_status",
         "--hash", txHash,
@@ -93,7 +94,7 @@ async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gat
 }
 
 const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ONCHAIN"];
-function isTxAccepted(statusObject: StatusObject): boolean {
+export function isTxAccepted(statusObject: StatusObject): boolean {
     return ACCEPTABLE_STATUSES.includes(statusObject.tx_status)
         && statusObject.block_hash
         && statusObject.block_hash !== "pending";
