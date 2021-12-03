@@ -176,7 +176,7 @@ To use the currently activated environment (or if you have the starknet commands
 module.exports = {
   cairo: {
     // venv: "active" <- for the active virtual environment
-    // venv: "path/to/my/venv" <- otherwise
+    // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
     venv: "<VENV_PATH>"
   }
 }
