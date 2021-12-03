@@ -2,7 +2,7 @@
 set -e
 
 npx hardhat starknet-compile
-output=$(npx hardhat starknet-deploy --starknet-network alpha my-starknet-artifacts/contracts/test.cairo/)
+output=$(npx hardhat starknet-deploy --starknet-network alpha starknet-artifacts/contracts/test.cairo/)
 echo $output
 address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
 
