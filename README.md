@@ -3,7 +3,7 @@ This plugin was tested with:
 - Node.js v12.22.4
 - npm/npx v7.21.1
 - Docker v20.10.8 (optional):
-  - Since version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
+  - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
   - If you opt for the containerized version, make sure you have a running Docker daemon.
 - Linux / macOS:
   - On Windows, we recommend using WSL 2.
@@ -169,9 +169,9 @@ module.exports = {
 ```
 
 ### Existing virtual environment
-If you want to use an existing Python virtual environment, specify it using `cairo.venv`.
+If you want to use an existing Python virtual environment, specify it by using `cairo.venv`.
 
-To use the currently activated environment (or if you have the starknet commands globally installed), set `<VENV_PATH>` to `"active"`.
+To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
 ```typescript
 module.exports = {
   cairo: {

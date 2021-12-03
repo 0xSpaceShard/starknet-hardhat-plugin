@@ -29,7 +29,7 @@ async function traverseFiles(
         }
     } else {
         const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-        console.warn(msg);
+        console.error(msg);
     }
 
     return statusCode;
@@ -157,7 +157,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     config.paths.starknetArtifacts = newPath;
 });
 
-// add image version
+// add user-defined cairo settings
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
     if (userConfig.cairo) {
         config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
