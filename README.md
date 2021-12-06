@@ -29,9 +29,11 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 ### `starknet-deploy`
 ```
-npx hardhat starknet-deploy [--starknet-network <NAME>] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <SINGLE_STRING_OF_SPACE_SEPARATED_VALUES>]
+npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <SINGLE_STRING_OF_SPACE_SEPARATED_VALUES>]
 ```
 If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
+
+If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 ```javascript
@@ -52,6 +54,16 @@ If you're passing constructor arguments, pass them space separated, but as a sin
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
 ```
 You would typically use the input feature when deploying a single contract requiring constructor arguments. If you are deploying multiple contracts, they'll all use the same input.
+
+### `starknet-verify`
+```
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path PATH/TO/CONTRACT] [--address CONTRACT_ADDRESS]
+```
+
+Queries Voyager to verify `PATH/TO/CONTRACT.cairo` deployed at `CONTRACT_ADDRESS`
+
+Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
+
 
 ## Test
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:

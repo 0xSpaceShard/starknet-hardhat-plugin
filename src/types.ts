@@ -47,6 +47,7 @@ export interface StringMap {
     [key: string]: any;
 }
 
+
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -55,7 +56,7 @@ function extractFromResponse(response: string, regex: RegExp) {
     return matched[1];
 }
 
-function extractTxHash(response: string) {
+export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 
@@ -78,11 +79,9 @@ async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gat
         "--gateway_url", adaptUrl(gatewayUrl),
         "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
     ]);
-
     if (executed.statusCode) {
         throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
     }
-
     const response = executed.stdout.toString();
     try {
         const responseParsed = JSON.parse(response);
@@ -93,7 +92,7 @@ async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gat
 }
 
 const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ONCHAIN"];
-function isTxAccepted(statusObject: StatusObject): boolean {
+export function isTxAccepted(statusObject: StatusObject): boolean {
     return ACCEPTABLE_STATUSES.includes(statusObject.tx_status)
         && statusObject.block_hash
         && statusObject.block_hash !== "pending";
@@ -104,7 +103,7 @@ function isTxRejected(statusObject: StatusObject): boolean {
     return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
-async function iterativelyCheckStatus(
+export async function iterativelyCheckStatus(
     txHash: string,
     starknetWrapper: StarknetWrapper,
     gatewayUrl: string,
@@ -121,6 +120,7 @@ async function iterativelyCheckStatus(
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
         const timeout = CHECK_STATUS_TIMEOUT; // ms
+
         setTimeout(iterativelyCheckStatus, timeout, ...arguments);
     }
 }

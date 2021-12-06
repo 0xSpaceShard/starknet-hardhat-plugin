@@ -1,11 +1,12 @@
 import * as path from "path";
 import * as fs from "fs";
+import axios from "axios";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { StarknetContractFactory } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
+import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -302,6 +303,7 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
+    .addFlag("wait", "Wait for deployment transaction to be either PENDING or ACCEPTED_ONCHAIN")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addOptionalParam("inputs",
@@ -324,6 +326,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
 
         let statusCode = 0;
+        const txHashes: string[] = [];
         for (let artifactsPath of artifactsPaths) {
             if (!path.isAbsolute(artifactsPath)) {
                 artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
@@ -342,15 +345,44 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     ],
                     [artifactsPath]
                 );
-
-                return processExecuted(executed);
+               
+                if(args.wait){
+                    const execResult = processExecuted(executed);
+                    if(execResult == 0){
+                        txHashes.push(extractTxHash(executed.stdout.toString()));
+                    }
+                    return execResult;
+                } 
+                else
+                    return processExecuted(executed);
             });
+        }
+
+        if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
+            console.log("Checking deployment transactions...");
+            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => {iterativelyCheckStatus(
+                hash, 
+                hre.starknetWrapper, 
+                gatewayUrl, 
+                gatewayUrl, 
+                () => {
+                    console.log("Deployment transaction " + hash + " status is now PENDING");
+                    resolve();
+                },
+                (error) => {
+                    console.log("Deployment transaction " + hash + " status is REJECTED");
+                    reject(error);
+                }
+                )
+            }));
+            await Promise.allSettled(promises);
         }
 
         if (statusCode) {
             throw new HardhatPluginError(PLUGIN_NAME, `Failed deployment of ${statusCode} contracts`);
         }
     });
+
 
 async function findPath(traversable: string, name: string) {
     let foundPath: string;
@@ -402,3 +434,72 @@ extendEnvironment(hre => {
         }
     };
 });
+
+task("starknet-verify", "Verifies the contract in the Starknet network.")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addParam("path", `The path of the cairo contract (e.g. contracts/conract.cairo)`)
+    .addParam("address", `The address where the contract is deployed`)
+    .setAction(async (args, hre) => {
+        let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
+        
+        if(args.starknetNetwork && args.starknetNetwork !== ALPHA){
+            if(args.starknetNetwork === ALPHA_MAINNET)
+                voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
+            else{
+                const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+        }
+        voyagerUrl+=args.address + "/code";
+        let isVerified = false;
+        try{
+            const resp = await axios.get(voyagerUrl,{
+                headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Content-Type': 'application/json'
+                }
+            });
+            const data = resp.data;
+            
+            if(data.contract != null && data.contract.length > 0){
+                isVerified = true;
+            }
+        }catch(error){
+            const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        
+        if(isVerified){
+            const msg =`Contract at address ${args.address} has already been verified`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        //If contract hasn't been verified yet, do it
+        let contractPath = args.path;
+        if (!path.isAbsolute(contractPath)) {
+            contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
+        }
+        if (fs.existsSync(contractPath)) {
+            const content = {code:fs.readFileSync(contractPath).toString().split(/\r?\n|\r/)};
+            await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
+                switch(error.response.status){
+                    case 400:{
+                        const msg = `Contract at address ${args.address} does not match the provided code`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    }
+                    case 500:{
+                        const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    }
+                    default:{
+                        const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    }
+                } 
+            });
+            console.log(`Contract has been successfuly verified at address ${args.address}`);
+            return;
+        } else {
+            throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
+        }
+        
+    });
