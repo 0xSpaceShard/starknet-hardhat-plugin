@@ -5,7 +5,7 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
-import { StarknetContractFactory, iterativelyCheckStatus } from "./types";
+import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
@@ -345,11 +345,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     ],
                     [artifactsPath]
                 );
+               
                 if(args.wait){
                     const execResult = processExecuted(executed);
-                    
                     if(execResult == 0){
-                        txHashes.push(executed.stdout.toString().match(".*Transaction hash: (?<tx_hash>\\w*).*").groups["tx_hash"]);
+                        txHashes.push(extractTxHash(executed.stdout.toString()));
                     }
                     return execResult;
                 } 
@@ -359,8 +359,22 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
 
         if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
-            console.log("Checking deployment transactions...")
-            const promises = txHashes.map(hash => iterativelyCheckStatus(hash, hre.starknetWrapper, gatewayUrl, gatewayUrl,() => {console.log("Deployment " + hash + " was accepted")},() => {console.log("Deployment " + hash + " was rejected")}));
+            console.log("Checking deployment transactions...");
+            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => {iterativelyCheckStatus(
+                hash, 
+                hre.starknetWrapper, 
+                gatewayUrl, 
+                gatewayUrl, 
+                () => {
+                    console.log("Deployment transaction " + hash + " status is now PENDING");
+                    resolve();
+                },
+                (error) => {
+                    console.log("Deployment transaction " + hash + " status is REJECTED");
+                    reject(error);
+                }
+                )
+            }));
             await Promise.allSettled(promises);
         }
 

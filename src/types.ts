@@ -56,7 +56,7 @@ function extractFromResponse(response: string, regex: RegExp) {
     return matched[1];
 }
 
-function extractTxHash(response: string) {
+export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 
@@ -79,11 +79,9 @@ async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gat
         "--gateway_url", adaptUrl(gatewayUrl),
         "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
     ]);
-
     if (executed.statusCode) {
         throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
     }
-
     const response = executed.stdout.toString();
     try {
         const responseParsed = JSON.parse(response);
@@ -122,6 +120,7 @@ export async function iterativelyCheckStatus(
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
         const timeout = CHECK_STATUS_TIMEOUT; // ms
+
         setTimeout(iterativelyCheckStatus, timeout, ...arguments);
     }
 }
