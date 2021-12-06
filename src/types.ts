@@ -5,6 +5,7 @@ import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog, adaptUrl } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
+import { Console } from "console";
 
 /**
  * According to: https://www.cairo-lang.org/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -72,7 +73,7 @@ function extractAddress(response: string) {
     tx_status: TxStatus
 }
 
-export async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
+async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
     const executed = await starknetWrapper.runCommand("starknet", [
         "tx_status",
         "--hash", txHash,
@@ -105,7 +106,7 @@ function isTxRejected(statusObject: StatusObject): boolean {
     return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
-async function iterativelyCheckStatus(
+export async function iterativelyCheckStatus(
     txHash: string,
     starknetWrapper: StarknetWrapper,
     gatewayUrl: string,
