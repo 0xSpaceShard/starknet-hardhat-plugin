@@ -9,7 +9,7 @@ import { StarknetContractFactory, iterativelyCheckStatus } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
-import { DockerWrapper, StarknetWrapper, VenvWrapper } from "./starknet-wrappers";
+import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 
 async function traverseFiles(
     traversable: string,
@@ -348,9 +348,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 if(args.wait){
                     const execResult = processExecuted(executed);
                     
-                    if(execResult == 0)
-                    txHashes.push(executed.stdout.toString().match(".*Transaction hash: (?<tx_hash>\\w*).*").groups["tx_hash"]);
-                    
+                    if(execResult == 0){
+                        txHashes.push(executed.stdout.toString().match(".*Transaction hash: (?<tx_hash>\\w*).*").groups["tx_hash"]);
+                    }
                     return execResult;
                 } 
                 else

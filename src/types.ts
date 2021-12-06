@@ -5,7 +5,6 @@ import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog, adaptUrl } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { Console } from "console";
 
 /**
  * According to: https://www.cairo-lang.org/docs/hello_starknet/intro.html#interact-with-the-contract
