@@ -29,9 +29,11 @@
   "dependencies": {
     "@nomiclabs/hardhat-docker": "^2.0.2",
     "axios": "^0.24.0",
+    "glob": "^7.2.0",
     "hardhat": "^2.6.2"
   },
   "devDependencies": {
+    "@types/glob": "^7.2.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.10",
     "typescript": "^4.4.2"
