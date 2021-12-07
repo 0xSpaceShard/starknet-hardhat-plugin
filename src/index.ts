@@ -10,31 +10,8 @@ import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNE
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
+import { glob } from "hardhat/internal/util/glob";
 
-async function traverseFiles(
-    traversable: string,
-    predicate: (path: string) => boolean,
-    action: (path: string) => Promise<number>
-): Promise<number> {
-    let statusCode = 0;
-
-    const stats = fs.lstatSync(traversable);
-    if (stats.isDirectory()) {
-        for (const childName of fs.readdirSync(traversable)) {
-            const childPath = path.join(traversable, childName);
-            statusCode += await traverseFiles(childPath, predicate, action);
-        }
-    } else if (stats.isFile()) {
-        if (predicate(traversable)) {
-            statusCode += await action(traversable);
-        }
-    } else {
-        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-        console.error(msg);
-    }
-
-    return statusCode;
-}
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -220,29 +197,28 @@ task("starknet-compile", "Compiles Starknet contracts")
             }
 
             checkSourceExists(sourcesPath);
-            statusCode += await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
+            
+            const paths = await glob(path.join(sourcesPath,"**"));
+            const files = paths.filter(isStarknetContract);
+            for(let file of files){
                 console.log("Compiling", file);
                 const suffix = file.replace(rootRegex, "");
                 const fileName = getFileName(suffix);
                 const dirPath = path.join(artifactsPath, suffix);
-
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
                 const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
-
                 const compileArgs = [
                     file,
                     "--output", outputPath,
                     "--abi", abiPath,
                     "--cairo_path", cairoPath,
                 ];
-
                 const binds = {
                     [sourcesPath]: sourcesPath,
                     [artifactsPath]: artifactsPath,
                 };
                 addPaths(binds, cairoPath);
-
                 // unlinking/deleting is necessary if user switched from docker to venv
                 if (fs.existsSync(outputPath)) {
                     fs.unlinkSync(outputPath);
@@ -257,8 +233,8 @@ task("starknet-compile", "Compiles Starknet contracts")
                     Object.keys(binds)
                 );
 
-                return processExecuted(executed);
-            });
+                statusCode +=processExecuted(executed);
+            }
         }
 
         if (statusCode) {
@@ -333,7 +309,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             }
 
             checkArtifactExists(artifactsPath);
-            statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
+            const paths = await glob(path.join(artifactsPath,"**","*.json"));
+            const files = paths.filter(isStarknetCompilationArtifact);
+            for(let file of files){
                 console.log("Deploying", file);
                 const executed = await hre.starknetWrapper.runCommand(
                     "starknet",
@@ -345,17 +323,16 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     ],
                     [artifactsPath]
                 );
-               
                 if(args.wait){
                     const execResult = processExecuted(executed);
                     if(execResult == 0){
                         txHashes.push(extractTxHash(executed.stdout.toString()));
                     }
-                    return execResult;
+                    statusCode += execResult;
                 } 
                 else
-                    return processExecuted(executed);
-            });
+                    statusCode += processExecuted(executed);
+            }
         }
 
         if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
@@ -386,14 +363,14 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
 async function findPath(traversable: string, name: string) {
     let foundPath: string;
-    await traverseFiles(
-        traversable,
-        file => path.basename(file) === name,
-        async file => {
-            foundPath = file;
-            return 0;
-        }
-    );
+    const paths = await glob(traversable);
+    paths.filter(file => {
+        return path.basename(file) === name;
+    }).forEach(file => {
+        foundPath = file;
+        return 0;
+    });
+    
     return foundPath;
 }
 
