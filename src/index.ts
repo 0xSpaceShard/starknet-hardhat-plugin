@@ -197,8 +197,13 @@ task("starknet-compile", "Compiles Starknet contracts")
             }
 
             checkSourceExists(sourcesPath);
-            
-            const paths = await glob(path.join(sourcesPath,"**"));
+            let paths : string[] = [];
+            if(fs.lstatSync(sourcesPath).isDirectory()){
+                paths = await glob(path.join(sourcesPath,"**","*"));
+            }
+            else{
+                paths.push(sourcesPath);
+            }
             const files = paths.filter(isStarknetContract);
             for(let file of files){
                 console.log("Compiling", file);
@@ -309,7 +314,13 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             }
 
             checkArtifactExists(artifactsPath);
-            const paths = await glob(path.join(artifactsPath,"**","*.json"));
+            let paths : string[] = [];
+            if(fs.lstatSync(artifactsPath).isDirectory()){
+                paths = await glob(path.join(artifactsPath,"**","*"));
+            }
+            else{
+                paths.push(artifactsPath);
+            }
             const files = paths.filter(isStarknetCompilationArtifact);
             for(let file of files){
                 console.log("Deploying", file);
