@@ -374,7 +374,13 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
 async function findPath(traversable: string, name: string) {
     let foundPath: string;
-    const paths = await glob(path.join(traversable,"**"));
+    let paths : string[] = [];
+    if(fs.lstatSync(traversable).isDirectory()){
+        paths = await glob(path.join(traversable,"**","*"));
+    }
+    else{
+        paths.push(traversable);
+    }
     paths.filter(file => {
         return path.basename(file) === name;
     }).forEach(file => {
