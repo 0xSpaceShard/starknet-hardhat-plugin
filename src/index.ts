@@ -10,7 +10,8 @@ import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNE
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { glob } from "hardhat/internal/util/glob";
+import { glob } from "glob";
+import { promisify } from "util";
 
 
 function checkSourceExists(sourcePath: string): void {
@@ -34,6 +35,10 @@ function checkArtifactExists(artifactsPath: string): void {
  * @returns 0 if succeeded, 1 otherwise
  */
 function processExecuted(executed: ProcessResult): number {
+    if(!executed.stdout){
+        const msg = "Command does not exist. Check if 'cairo-lang' is installed in your active environment.";
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
     if (executed.stdout.length) {
         console.log(adaptLog(executed.stdout.toString()));
     }
@@ -197,15 +202,8 @@ task("starknet-compile", "Compiles Starknet contracts")
             }
 
             checkSourceExists(sourcesPath);
-            let paths : string[] = [];
-            if(fs.lstatSync(sourcesPath).isDirectory()){
-                paths = await glob(path.join(sourcesPath,"**","*"));
-            }
-            else{
-                paths.push(sourcesPath);
-            }
-            const files = paths.filter(isStarknetContract);
-            for(let file of files){
+            const files = await traverseFiles(sourcesPath,"*.cairo");
+            for(const file of files){
                 console.log("Compiling", file);
                 const suffix = file.replace(rootRegex, "");
                 const fileName = getFileName(suffix);
@@ -247,6 +245,19 @@ task("starknet-compile", "Compiles Starknet contracts")
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
     });
+
+async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+    let paths: string[] = [];
+    if (fs.lstatSync(traversable).isDirectory()) {
+        const globPromise = promisify(glob);
+        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+    }
+    else {
+        paths.push(traversable);
+    }
+    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+    return files;
+}
 
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
@@ -314,15 +325,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             }
 
             checkArtifactExists(artifactsPath);
-            let paths : string[] = [];
-            if(fs.lstatSync(artifactsPath).isDirectory()){
-                paths = await glob(path.join(artifactsPath,"**","*"));
-            }
-            else{
-                paths.push(artifactsPath);
-            }
+            const paths = await traverseFiles(artifactsPath,"*.json");
             const files = paths.filter(isStarknetCompilationArtifact);
-            for(let file of files){
+            for(const file of files){
                 console.log("Deploying", file);
                 const executed = await hre.starknetWrapper.runCommand(
                     "starknet",
@@ -373,22 +378,19 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
 
 async function findPath(traversable: string, name: string) {
-    let foundPath: string;
-    let paths : string[] = [];
-    if(fs.lstatSync(traversable).isDirectory()){
-        paths = await glob(path.join(traversable,"**","*"));
-    }
-    else{
-        paths.push(traversable);
-    }
-    paths.filter(file => {
+    let files = await traverseFiles(traversable);
+    files = files.filter(file => {
         return path.basename(file) === name;
-    }).forEach(file => {
-        foundPath = file;
-        return 0;
     });
-    
-    return foundPath;
+    if(files.length == 0){
+        return null;
+    }
+    else if(files.length == 1){
+        return files[0];
+    }
+    else {
+        throw new HardhatPluginError(PLUGIN_NAME, `More than one file was found because the path provided is ambiguous, please specify a relative path`);
+    }
 }
 
 extendEnvironment(hre => {
