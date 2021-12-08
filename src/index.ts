@@ -29,6 +29,18 @@ function checkArtifactExists(artifactsPath: string): void {
     }
 }
 
+async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+    let paths: string[] = [];
+    if (fs.lstatSync(traversable).isDirectory()) {
+        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+    }
+    else {
+        paths.push(traversable);
+    }
+    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+    return files;
+}
+
 /**
  * Transfers logs and generates a return status code.
  * 
@@ -362,11 +374,10 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
     });
 
-var test = false;
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
     files = files.filter(file => {
-        return file.includes(name);
+        return file.endsWith(name);
     });
     if(files.length == 0){
         return null;
@@ -492,15 +503,5 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     });
 
 
-    async function traverseFiles(traversable: string, fileCriteria: string = "*") {
-        let paths: string[] = [];
-        if (fs.lstatSync(traversable).isDirectory()) {
-            paths = await globPromise(path.join(traversable, "**", fileCriteria));
-        }
-        else {
-            paths.push(traversable);
-        }
-        const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
-        return files;
-    }
+    
     

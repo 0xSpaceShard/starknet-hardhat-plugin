@@ -77,6 +77,9 @@ These examples are inspired by the [official Python tutorial](https://www.cairo-
 ### Important note
 - `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
 - All function names, argument names and return value names should be referred to by the names specified in contract source files.
+- The argument of `getContractFactory` is the name or the path of the source of the target contract: 
+  - the extension can be omitted const `starknet.getContractFactory("MyContract")`
+  - if providing a path, it should be relative to the project root `starknet.getContractFactory("contracts/MyContract")`
 
 ```typescript
 import { expect } from "chai";
