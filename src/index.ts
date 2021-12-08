@@ -13,6 +13,7 @@ import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { glob } from "glob";
 import { promisify } from "util";
 
+const globPromise = promisify(glob);
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -35,10 +36,7 @@ function checkArtifactExists(artifactsPath: string): void {
  * @returns 0 if succeeded, 1 otherwise
  */
 function processExecuted(executed: ProcessResult): number {
-    if(!executed.stdout){
-        const msg = "Command does not exist. Check if 'cairo-lang' is installed in your active environment.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
+    
     if (executed.stdout.length) {
         console.log(adaptLog(executed.stdout.toString()));
     }
@@ -246,18 +244,6 @@ task("starknet-compile", "Compiles Starknet contracts")
         }
     });
 
-async function traverseFiles(traversable: string, fileCriteria: string = "*") {
-    let paths: string[] = [];
-    if (fs.lstatSync(traversable).isDirectory()) {
-        const globPromise = promisify(glob);
-        paths = await globPromise(path.join(traversable, "**", fileCriteria));
-    }
-    else {
-        paths.push(traversable);
-    }
-    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
-    return files;
-}
 
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
@@ -376,11 +362,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
     });
 
-
+var test = false;
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
     files = files.filter(file => {
-        return path.basename(file) === name;
+        return file.includes(name);
     });
     if(files.length == 0){
         return null;
@@ -389,24 +375,29 @@ async function findPath(traversable: string, name: string) {
         return files[0];
     }
     else {
-        throw new HardhatPluginError(PLUGIN_NAME, `More than one file was found because the path provided is ambiguous, please specify a relative path`);
+        const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }
 
 extendEnvironment(hre => {
     hre.starknet = {
-        getContractFactory: async contractName => {
+        getContractFactory: async contractPath => {
             const artifactsPath = hre.config.paths.starknetArtifacts;
             checkArtifactExists(artifactsPath);
 
-            const metadataPath = await findPath(artifactsPath, `${contractName}.json`);
+            contractPath  = contractPath.replace(/\.[^/.]+$/, "");
+
+            let searchTarget = path.join(`${contractPath}.cairo`,`${path.basename(contractPath)}.json`);
+            const metadataPath = await findPath(artifactsPath,searchTarget);
             if (!metadataPath) {
-                throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
             }
 
-            const abiPath = await findPath(artifactsPath, `${contractName}${ABI_SUFFIX}`);
+            searchTarget = path.join(`${contractPath}.cairo`,`${path.basename(contractPath)}${ABI_SUFFIX}`);
+            const abiPath = await findPath(artifactsPath,searchTarget);
             if (!abiPath) {
-                throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
             }
 
             const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
@@ -499,3 +490,17 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
         }
         
     });
+
+
+    async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+        let paths: string[] = [];
+        if (fs.lstatSync(traversable).isDirectory()) {
+            paths = await globPromise(path.join(traversable, "**", fileCriteria));
+        }
+        else {
+            paths.push(traversable);
+        }
+        const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+        return files;
+    }
+    

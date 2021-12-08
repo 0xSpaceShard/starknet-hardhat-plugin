@@ -93,6 +93,10 @@ export class VenvWrapper implements StarknetWrapper {
     public async runCommand(command: StarknetCommand, args: string[], _paths?: string[]): Promise<ProcessResult> {
         const commandPath = this.command2path.get(command);
         const process = spawnSync(commandPath, args);
+        if(!process.stdout){
+            const msg = "Command not found. If you're using a Python virtual environment, check that it has 'cairo-lang' installed.";
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
         return {
             statusCode: process.status,
             stdout: process.stdout,
