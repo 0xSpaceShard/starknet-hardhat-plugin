@@ -499,9 +499,5 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
         } else {
             throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
         }
-        
+
     });
-
-
-    
-    
