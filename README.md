@@ -10,7 +10,7 @@ This plugin was tested with:
 
 ## Install
 ```
-npm install @shardlabs/starknet-hardhat-plugin
+npm install @shardlabs/starknet-hardhat-plugin --save-dev
 ```
 Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
 ```typescript
@@ -74,9 +74,16 @@ npx hardhat test
 Read more about the network used in tests in the [Testing network](#testing-network) section.
 These examples are inspired by the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
-### Important note
+### Important notes
 - `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
 - All function names, argument names and return value names should be referred to by the names specified in contract source files.
+- The argument of `getContractFactory` is the **name** or the **path** of the source of the target contract:
+  - if providing a path, it should be relative to the project root or the contracts directory:
+    - `getContractFactory("contracts/subdir/MyContract.cairo")`
+    - `getContractFactory("subdir/MyContract.cairo")`
+  - the extension can be omitted:
+    - `getContractFactory("subdir/MyContract")`
+    - `getContractFactory("MyContract")`
 
 ```typescript
 import { expect } from "chai";

@@ -10,31 +10,10 @@ import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNE
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
+import { glob } from "glob";
+import { promisify } from "util";
 
-async function traverseFiles(
-    traversable: string,
-    predicate: (path: string) => boolean,
-    action: (path: string) => Promise<number>
-): Promise<number> {
-    let statusCode = 0;
-
-    const stats = fs.lstatSync(traversable);
-    if (stats.isDirectory()) {
-        for (const childName of fs.readdirSync(traversable)) {
-            const childPath = path.join(traversable, childName);
-            statusCode += await traverseFiles(childPath, predicate, action);
-        }
-    } else if (stats.isFile()) {
-        if (predicate(traversable)) {
-            statusCode += await action(traversable);
-        }
-    } else {
-        const msg = `Can only interpret files and directories. ${traversable} is neither.`;
-        console.error(msg);
-    }
-
-    return statusCode;
-}
+const globPromise = promisify(glob);
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -50,6 +29,18 @@ function checkArtifactExists(artifactsPath: string): void {
     }
 }
 
+async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+    let paths: string[] = [];
+    if (fs.lstatSync(traversable).isDirectory()) {
+        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+    }
+    else {
+        paths.push(traversable);
+    }
+    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+    return files;
+}
+
 /**
  * Transfers logs and generates a return status code.
  * 
@@ -57,6 +48,7 @@ function checkArtifactExists(artifactsPath: string): void {
  * @returns 0 if succeeded, 1 otherwise
  */
 function processExecuted(executed: ProcessResult): number {
+    
     if (executed.stdout.length) {
         console.log(adaptLog(executed.stdout.toString()));
     }
@@ -220,29 +212,26 @@ task("starknet-compile", "Compiles Starknet contracts")
             }
 
             checkSourceExists(sourcesPath);
-            statusCode += await traverseFiles(sourcesPath, isStarknetContract, async (file: string): Promise<number> => {
+            const files = await traverseFiles(sourcesPath,"*.cairo");
+            for(const file of files){
                 console.log("Compiling", file);
                 const suffix = file.replace(rootRegex, "");
                 const fileName = getFileName(suffix);
                 const dirPath = path.join(artifactsPath, suffix);
-
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
                 const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
-
                 const compileArgs = [
                     file,
                     "--output", outputPath,
                     "--abi", abiPath,
                     "--cairo_path", cairoPath,
                 ];
-
                 const binds = {
                     [sourcesPath]: sourcesPath,
                     [artifactsPath]: artifactsPath,
                 };
                 addPaths(binds, cairoPath);
-
                 // unlinking/deleting is necessary if user switched from docker to venv
                 if (fs.existsSync(outputPath)) {
                     fs.unlinkSync(outputPath);
@@ -257,8 +246,8 @@ task("starknet-compile", "Compiles Starknet contracts")
                     Object.keys(binds)
                 );
 
-                return processExecuted(executed);
-            });
+                statusCode +=processExecuted(executed);
+            }
         }
 
         if (statusCode) {
@@ -266,6 +255,7 @@ task("starknet-compile", "Compiles Starknet contracts")
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
     });
+
 
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
@@ -333,7 +323,9 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             }
 
             checkArtifactExists(artifactsPath);
-            statusCode += await traverseFiles(artifactsPath, isStarknetCompilationArtifact, async file => {
+            const paths = await traverseFiles(artifactsPath,"*.json");
+            const files = paths.filter(isStarknetCompilationArtifact);
+            for(const file of files){
                 console.log("Deploying", file);
                 const executed = await hre.starknetWrapper.runCommand(
                     "starknet",
@@ -345,17 +337,16 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     ],
                     [artifactsPath]
                 );
-               
                 if(args.wait){
                     const execResult = processExecuted(executed);
                     if(execResult == 0){
                         txHashes.push(extractTxHash(executed.stdout.toString()));
                     }
-                    return execResult;
+                    statusCode += execResult;
                 } 
                 else
-                    return processExecuted(executed);
-            });
+                    statusCode += processExecuted(executed);
+            }
         }
 
         if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
@@ -383,34 +374,41 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         }
     });
 
-
 async function findPath(traversable: string, name: string) {
-    let foundPath: string;
-    await traverseFiles(
-        traversable,
-        file => path.basename(file) === name,
-        async file => {
-            foundPath = file;
-            return 0;
-        }
-    );
-    return foundPath;
+    let files = await traverseFiles(traversable);
+    files = files.filter(file => {
+        return file.endsWith(name);
+    });
+    if(files.length == 0){
+        return null;
+    }
+    else if(files.length == 1){
+        return files[0];
+    }
+    else {
+        const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
 }
 
 extendEnvironment(hre => {
     hre.starknet = {
-        getContractFactory: async contractName => {
+        getContractFactory: async contractPath => {
             const artifactsPath = hre.config.paths.starknetArtifacts;
             checkArtifactExists(artifactsPath);
 
-            const metadataPath = await findPath(artifactsPath, `${contractName}.json`);
+            contractPath  = contractPath.replace(/\.[^/.]+$/, "");
+
+            let searchTarget = path.join(`${contractPath}.cairo`,`${path.basename(contractPath)}.json`);
+            const metadataPath = await findPath(artifactsPath,searchTarget);
             if (!metadataPath) {
-                throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractName}`);
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
             }
 
-            const abiPath = await findPath(artifactsPath, `${contractName}${ABI_SUFFIX}`);
+            searchTarget = path.join(`${contractPath}.cairo`,`${path.basename(contractPath)}${ABI_SUFFIX}`);
+            const abiPath = await findPath(artifactsPath,searchTarget);
             if (!abiPath) {
-                throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractName}`);
+                throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
             }
 
             const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
@@ -501,5 +499,5 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
         } else {
             throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
         }
-        
+
     });
