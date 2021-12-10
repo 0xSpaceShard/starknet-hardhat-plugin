@@ -13,10 +13,9 @@ npm install
 # used by some cases
 ../scripts/setup-venv.sh
 
-echo "DEBUG $1"
 total=0
 success=0
-for test_case in "../test/$1/"; do
+for test_case in "../test/$1/*"; do
     total=$((total + 1))
     test_name=$(basename $test_case)
     echo "Test $total) $test_name"
