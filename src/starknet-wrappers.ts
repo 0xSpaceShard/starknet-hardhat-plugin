@@ -4,15 +4,75 @@ import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
+import { Choice } from "./types";
 
 export type StarknetCommand = "starknet" | "starknet-compile";
 
+export interface CompileOptions {
+    file: string,
+    output: string,
+    abi: string,
+    cairoPath: string,
+}
+
+export interface DeployOptions {
+    contract: string,
+    gatewayUrl: string,
+    inputs: string[],
+    signature?: string[],
+}
+
+export interface InvokeOrCallOptions {
+    choice: Choice,
+    address: string,
+    abi: string,
+    functionName: string,
+    inputs: string[],
+    signature: string[],
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+}
+
+export interface GetTxStatusOptions {
+    hash: string,
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+}
+
 export interface StarknetWrapper {
-    runCommand(command: StarknetCommand, args: string[], paths?: string[]): Promise<ProcessResult>;
+    compile(options: CompileOptions): Promise<ProcessResult>;
+
+    deploy(options: DeployOptions): Promise<ProcessResult>;
+
+    invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult>;
+
+    getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
     return `${image.repository}:${image.tag}`;
+}
+
+/**
+ * Populate `paths` with paths from `colonSeparatedStr`.
+ * @param paths
+ * @param colonSeparatedStr
+ */
+ function addPaths(paths: string[], colonSeparatedStr: string): void {
+    for (let p of colonSeparatedStr.split(":")) {
+        if (!path.isAbsolute(p)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+        }
+
+        // strip trailing slash(es)
+        p = p.replace(/\/*$/, "");
+
+        // duplicate paths will cause errors
+        if (paths.indexOf(`${p}/`) !== -1) {
+            continue;
+        }
+        paths.push(p)
+    }
 }
 
 export class DockerWrapper implements StarknetWrapper {
@@ -33,6 +93,22 @@ export class DockerWrapper implements StarknetWrapper {
             }
         }
         return this.docker;
+    }
+
+    public async compile(options: CompileOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async deploy(options: DeployOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+
+    public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
     }
 
     public async runCommand(command: StarknetCommand, args: string[], paths?: string[]) {
@@ -89,12 +165,24 @@ export class VenvWrapper implements StarknetWrapper {
             ["starknet-compile", this.starknetCompilePath]
         ]);
     }
+    compile(options: CompileOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+    deploy(options: DeployOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+    invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
+    getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+        throw new Error("Method not implemented.");
+    }
 
     public async runCommand(command: StarknetCommand, args: string[], _paths?: string[]): Promise<ProcessResult> {
         const commandPath = this.command2path.get(command);
         const process = spawnSync(commandPath, args);
-        if(!process.stdout){
-            const msg = "Command not found. If you're using a Python virtual environment, check that it has 'cairo-lang' installed.";
+        if (!process.stdout){
+            const msg = "Command not found. Check that your Python virtual environment has 'cairo-lang' installed.";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
         return {

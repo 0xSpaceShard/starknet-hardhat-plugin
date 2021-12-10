@@ -8,7 +8,7 @@ import "./type-extensions";
 import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
 import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
-import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
+import { adaptLog, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { glob } from "glob";
 import { promisify } from "util";
@@ -87,29 +87,6 @@ function isStarknetCompilationArtifact(filePath: string) {
 
 function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
-}
-
-/**
- * Populate `pathsObj` with paths from `colonSeparatedStr`.
- * `pathsObj` maps a path to itself.
- * @param pathsObj
- * @param colonSeparatedStr
- */
-function addPaths(pathsObj: any, colonSeparatedStr: string): void {
-    for (let p of colonSeparatedStr.split(":")) {
-        if (!path.isAbsolute(p)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
-        }
-
-        // strip trailing slash(es)
-        p = p.replace(/\/*$/, "");
-
-        // duplicate paths will cause errors
-        if (`${p}/` in pathsObj) {
-            continue;
-        }
-        pathsObj[p] = p;
-    }
 }
 
 // add sources path
@@ -221,17 +198,7 @@ task("starknet-compile", "Compiles Starknet contracts")
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
                 const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
-                const compileArgs = [
-                    file,
-                    "--output", outputPath,
-                    "--abi", abiPath,
-                    "--cairo_path", cairoPath,
-                ];
-                const binds = {
-                    [sourcesPath]: sourcesPath,
-                    [artifactsPath]: artifactsPath,
-                };
-                addPaths(binds, cairoPath);
+
                 // unlinking/deleting is necessary if user switched from docker to venv
                 if (fs.existsSync(outputPath)) {
                     fs.unlinkSync(outputPath);
@@ -240,13 +207,14 @@ task("starknet-compile", "Compiles Starknet contracts")
                     fs.unlinkSync(abiPath);
                 }
                 fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await hre.starknetWrapper.runCommand(
-                    "starknet-compile",
-                    compileArgs,
-                    Object.keys(binds)
-                );
+                const executed = await hre.starknetWrapper.compile({
+                    file,
+                    output: outputPath,
+                    abi: abiPath,
+                    cairoPath,
+                });
 
-                statusCode +=processExecuted(executed);
+                statusCode += processExecuted(executed);
             }
         }
 
@@ -322,11 +290,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
 
-        const inputs: string[] = [];
-        if (args.inputs) {
-            inputs.push("--inputs", ...args.inputs.split(/\s+/));
-        }
-
         let statusCode = 0;
         const txHashes: string[] = [];
         for (let artifactsPath of artifactsPaths) {
@@ -339,16 +302,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             const files = paths.filter(isStarknetCompilationArtifact);
             for(const file of files){
                 console.log("Deploying", file);
-                const executed = await hre.starknetWrapper.runCommand(
-                    "starknet",
-                    [
-                        "deploy",
-                        "--contract", file,
-                        "--gateway_url", adaptUrl(gatewayUrl),
-                        ...inputs
-                    ],
-                    [artifactsPath]
-                );
+                const executed = await hre.starknetWrapper.deploy({
+                    contract: file,
+                    gatewayUrl,
+                    inputs: args.inputs.split(/\s+/),
+                });
                 if(args.wait){
                     const execResult = processExecuted(executed);
                     if(execResult == 0){
@@ -356,28 +314,28 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     }
                     statusCode += execResult;
                 } 
-                else
+                else {
                     statusCode += processExecuted(executed);
+                }
             }
         }
 
-        if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
+        if (args.wait){ // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
             console.log("Checking deployment transactions...");
-            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => {iterativelyCheckStatus(
+            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => iterativelyCheckStatus(
                 hash, 
                 hre.starknetWrapper, 
                 gatewayUrl, 
                 gatewayUrl, 
                 () => {
-                    console.log("Deployment transaction " + hash + " status is now PENDING");
+                    console.log("Deployment transaction " + hash + " status is now at least PENDING");
                     resolve();
                 },
                 (error) => {
                     console.log("Deployment transaction " + hash + " status is REJECTED");
                     reject(error);
                 }
-                )
-            }));
+            )));
             await Promise.allSettled(promises);
         }
 
@@ -388,13 +346,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
-    files = files.filter(file => {
-        return file.endsWith(name);
-    });
-    if(files.length == 0){
+    files = files.filter(f => f.endsWith(name));
+    if (files.length == 0){
         return null;
     }
-    else if(files.length == 1){
+    else if (files.length == 1){
         return files[0];
     }
     else {
