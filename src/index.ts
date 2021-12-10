@@ -65,14 +65,6 @@ function processExecuted(executed: ProcessResult): number {
     return executed.statusCode ? 1 : 0;
 }
 
-function hasCairoExtension(filePath: string) {
-    return path.extname(filePath) === ".cairo";
-}
-
-function isStarknetContract(filePath: string) {
-    return hasCairoExtension(filePath);
-}
-
 function isStarknetCompilationArtifact(filePath: string) {
     const content = fs.readFileSync(filePath).toString();
     let parsed = null;
