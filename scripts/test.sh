@@ -13,6 +13,7 @@ npm install
 # used by some cases
 ../scripts/setup-venv.sh
 
+echo "DEBUG $npm_config_dirname"
 total=0
 success=0
 for test_case in "../test/$npm_config_dirname/"; do
