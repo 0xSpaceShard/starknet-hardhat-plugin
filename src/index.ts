@@ -297,7 +297,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 const executed = await hre.starknetWrapper.deploy({
                     contract: file,
                     gatewayUrl,
-                    inputs: args.inputs.split(/\s+/),
+                    inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
                 });
                 if(args.wait){
                     const execResult = processExecuted(executed);
