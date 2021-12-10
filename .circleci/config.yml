@@ -1,7 +1,15 @@
 version: 2.1
 
-aliases:
-  - &node-base
+commands: # a reusable command with parameters
+  test:
+    parameters:
+      test-name:
+        type: string
+    steps:
+      - run: 
+          name: <<parameters.test-name>>
+          command: npm run <<parameters.test-name>>
+  build:
     steps:
       - checkout
       - run:
@@ -13,35 +21,35 @@ aliases:
       - run:
           name: Build
           command: npm run build
-  - &run-general-tests
-      - run:
-          name: Test
-          command: npm run test-general-tests
-  - &run-configuration-tests
-      - run:
-          name: Test
-          command: npm run test-configuration-tests
 
           
 jobs:
   general_test_node_v12:
-    <<: *node-base
-      <<: *run-general-tests
+    steps:
+      - build
+      - test:
+          test-name: "test-general-tests"
     machine:
       image: ubuntu-2004:202010-01
   general_test_node_v14:
-    <<: *node-base
-      <<: *run-general-tests
+    steps:
+      - build
+      - test:
+          test-name: "test-general-tests"
     machine:
       image: ubuntu-2004:202107-02
   configuration_test_node_v12:
-    <<: *node-base
-      <<: *run-configuration-tests
+    steps:
+      - build
+      - test:
+          test-name: "test-configuration-tests"
     machine:
       image: ubuntu-2004:202010-01
   configuration_test_node_v14:
-    <<: *node-base
-      <<: *run-configuration-tests
+    steps:
+      - build
+      - test:
+          test-name: "test-configuration-tests"
     machine:
       image: ubuntu-2004:202107-02
   npm_publish:
