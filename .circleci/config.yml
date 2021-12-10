@@ -14,12 +14,10 @@ aliases:
           name: Build
           command: npm run build
   - &run-general-tests
-    steps:
       - run:
           name: Test
           command: npm run test-general-tests
   - &run-configuration-tests
-    steps:
       - run:
           name: Test
           command: npm run test-configuration-tests
@@ -28,22 +26,22 @@ aliases:
 jobs:
   general_test_node_v12:
     <<: *node-base
-    <<: *run-general-tests
+      <<: *run-general-tests
     machine:
       image: ubuntu-2004:202010-01
   general_test_node_v14:
     <<: *node-base
-    <<: *run-general-tests
+      <<: *run-general-tests
     machine:
       image: ubuntu-2004:202107-02
   configuration_test_node_v12:
     <<: *node-base
-    <<: *run-configuration-tests
+      <<: *run-configuration-tests
     machine:
       image: ubuntu-2004:202010-01
   configuration_test_node_v14:
     <<: *node-base
-    <<: *run-configuration-tests
+      <<: *run-configuration-tests
     machine:
       image: ubuntu-2004:202107-02
   npm_publish:
