@@ -6,7 +6,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY} from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -261,6 +261,11 @@ function isTestnet(networkName: string): boolean {
         || networkName === ALPHA_TESTNET_INTERNALLY;
 }
 
+function isMainnet(networkName: string): boolean {
+    return networkName === ALPHA_MAINNET
+        || networkName === ALPHA_MAINNET_INTERNALLY;
+}
+
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
  *
@@ -270,7 +275,10 @@ function isTestnet(networkName: string): boolean {
  */
 function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     let gatewayUrl: string = args.gatewayUrl;
-    const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
+    let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
+    if (isMainnet(networkName)) {
+        networkName = ALPHA_MAINNET_INTERNALLY;
+    }
 
     if (gatewayUrl && !networkName) {
         return gatewayUrl;
@@ -444,15 +452,16 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     .setAction(async (args, hre) => {
         let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
         
-        if(!isTestnet(args.starknetNetwork)){
-            if(args.starknetNetwork === ALPHA_MAINNET)
+        if (!isTestnet(args.starknetNetwork)) {
+            if (isMainnet(args.starknetNetwork)) {
                 voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
-            else{
+            } else {
                 const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
         }
-        voyagerUrl+=args.address + "/code";
+
+        voyagerUrl += args.address + "/code";
         let isVerified = false;
         try{
             const resp = await axios.get(voyagerUrl,{
