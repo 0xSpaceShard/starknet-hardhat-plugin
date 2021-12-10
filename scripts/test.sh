@@ -15,7 +15,7 @@ npm install
 
 total=0
 success=0
-for test_case in ../test/*; do
+for test_case in "../test/$npm_config_dirname/"; do
     total=$((total + 1))
     test_name=$(basename $test_case)
     echo "Test $total) $test_name"
