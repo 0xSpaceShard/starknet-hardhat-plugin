@@ -110,12 +110,12 @@ export async function iterativelyCheckStatus(
     starknetWrapper: StarknetWrapper,
     gatewayUrl: string,
     feederGatewayUrl: string,
-    resolve: () => void,
+    resolve: (status: string) => void,
     reject: (reason?: any) => void
 ) {
     const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl);
     if (isTxAccepted(statusObject)) {
-        resolve();
+        resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected."));
     } else {
@@ -356,7 +356,7 @@ export class StarknetContract {
                 this.starknetWrapper,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
-                resolve,
+                status => resolve(),
                 reject
             );
         });

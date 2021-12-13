@@ -246,8 +246,9 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
+    } else if (isTestnet(networkName)) {
+        networkName = ALPHA_TESTNET_INTERNALLY;
     }
-
     if (gatewayUrl && !networkName) {
         return gatewayUrl;
     }
@@ -327,12 +328,12 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                 hre.starknetWrapper, 
                 gatewayUrl, 
                 gatewayUrl, 
-                () => {
-                    console.log("Deployment transaction " + hash + " status is now at least PENDING");
+                status => {
+                    console.log(`Deployment transaction ${hash} is now ${status}`);
                     resolve();
                 },
-                (error) => {
-                    console.log("Deployment transaction " + hash + " status is REJECTED");
+                error => {
+                    console.log(`Deployment transaction ${hash} is REJECTED`);
                     reject(error);
                 }
             )));
