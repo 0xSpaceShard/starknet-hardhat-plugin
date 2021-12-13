@@ -7,11 +7,11 @@ import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 
 /**
- * According to: https://www.cairo-lang.org/docs/hello_starknet/intro.html#interact-with-the-contract
+ * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
  * Not using an enum to avoid code duplication and reverse mapping.
  */
 export type TxStatus =
-    /** The transaction passed the validation and is waiting to be sent on-chain. */
+    /** The transaction passed the validation and entered the pending block. */
     "PENDING"
 
     /** The transaction has not been received yet (i.e., not written to storage). */
@@ -23,8 +23,11 @@ export type TxStatus =
     /** The transaction failed validation and thus was skipped. */
     | "REJECTED"
 
+    /** The transaction passed the validation and entered an actual created block. */
+    | "ACCEPTED_ON_L2"
+
     /** The transaction was accepted on-chain. */
-    | "ACCEPTED_ONCHAIN"
+    | "ACCEPTED_ON_L1"
 ;
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
@@ -91,11 +94,9 @@ async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gat
     }
 }
 
-const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ONCHAIN"];
+const ACCEPTABLE_STATUSES: TxStatus[] = ["ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
 export function isTxAccepted(statusObject: StatusObject): boolean {
-    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status)
-        && statusObject.block_hash
-        && statusObject.block_hash !== "pending";
+    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
 const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];

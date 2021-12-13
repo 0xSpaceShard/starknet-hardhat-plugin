@@ -21,7 +21,8 @@
     "url": "https://github.com/Shard-Labs/starknet-hardhat-plugin.git"
   },
   "scripts": {
-    "test": "./scripts/test.sh",
+    "test-configuration-tests": "./scripts/test.sh configuration-tests",
+    "test-general-tests": "./scripts/test.sh general-tests",
     "build": "rm -rf dist && tsc"
   },
   "author": "Shard-Labs",

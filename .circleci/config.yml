@@ -1,7 +1,15 @@
 version: 2.1
 
-aliases:
-  - &node-base
+commands: # a reusable command with parameters
+  test:
+    parameters:
+      test-name:
+        type: string
+    steps:
+      - run: 
+          name: <<parameters.test-name>>
+          command: npm run <<parameters.test-name>>
+  install_and_build:
     steps:
       - checkout
       - run:
@@ -13,17 +21,35 @@ aliases:
       - run:
           name: Build
           command: npm run build
-      - run:
-          name: Test
-          command: npm run test
 
+          
 jobs:
-  test_node_v12:
-    <<: *node-base
+  general_test_node_v12:
+    steps:
+      - install_and_build
+      - test:
+          test-name: "test-general-tests"
     machine:
       image: ubuntu-2004:202010-01
-  test_node_v14:
-    <<: *node-base
+  general_test_node_v14:
+    steps:
+      - install_and_build
+      - test:
+          test-name: "test-general-tests"
+    machine:
+      image: ubuntu-2004:202107-02
+  configuration_test_node_v12:
+    steps:
+      - install_and_build
+      - test:
+          test-name: "test-configuration-tests"
+    machine:
+      image: ubuntu-2004:202010-01
+  configuration_test_node_v14:
+    steps:
+      - install_and_build
+      - test:
+          test-name: "test-configuration-tests"
     machine:
       image: ubuntu-2004:202107-02
   npm_publish:
@@ -39,8 +65,10 @@ workflows:
   version: 2
   test_and_publish:
     jobs:
-      - test_node_v12
-      - test_node_v14
+      - general_test_node_v12
+      - general_test_node_v14
+      - configuration_test_node_v12
+      - configuration_test_node_v14
       - npm_publish:
           context: shardlabs
           filters:
@@ -48,5 +76,7 @@ workflows:
               only:
                 - master
           requires:
-            - test_node_v12
-            - test_node_v14
+            - general_test_node_v12
+            - general_test_node_v14
+            - configuration_test_node_v12
+            - configuration_test_node_v14

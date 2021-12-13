@@ -6,7 +6,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA} from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -256,6 +256,10 @@ task("starknet-compile", "Compiles Starknet contracts")
         }
     });
 
+function isTestnet(networkName: string): boolean {
+    return networkName === ALPHA_TESTNET
+        || networkName === ALPHA_TESTNET_INTERNALLY;
+}
 
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
@@ -293,7 +297,7 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
 }
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
-    .addFlag("wait", "Wait for deployment transaction to be either PENDING or ACCEPTED_ONCHAIN")
+    .addFlag("wait", "Wait for deployment transaction to be at least ACCEPTED_ON_L2")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addOptionalParam("inputs",
@@ -440,7 +444,7 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     .setAction(async (args, hre) => {
         let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
         
-        if(args.starknetNetwork && args.starknetNetwork !== ALPHA){
+        if(!isTestnet(args.starknetNetwork)){
             if(args.starknetNetwork === ALPHA_MAINNET)
                 voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
             else{
