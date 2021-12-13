@@ -81,6 +81,18 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+/**
+ * First deletes the file if it already exists. Then creates an empty file at the provided path.
+ * Unlinking/deleting is necessary if user switched from docker to venv
+ * @param filePath the file to be recreated
+ */
+function initializeFile(filePath: string) {
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    fs.closeSync(fs.openSync(filePath, "w"));
+}
+
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
     let newPath: string;
@@ -191,14 +203,10 @@ task("starknet-compile", "Compiles Starknet contracts")
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
                 const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
 
-                // unlinking/deleting is necessary if user switched from docker to venv
-                if (fs.existsSync(outputPath)) {
-                    fs.unlinkSync(outputPath);
-                }
-                if (fs.existsSync(abiPath)) {
-                    fs.unlinkSync(abiPath);
-                }
                 fs.mkdirSync(dirPath, { recursive: true });
+                initializeFile(outputPath);
+                initializeFile(abiPath);
+
                 const executed = await hre.starknetWrapper.compile({
                     file,
                     output: outputPath,
