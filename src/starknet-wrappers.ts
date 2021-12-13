@@ -17,7 +17,7 @@ export interface CompileOptions {
 export interface DeployOptions {
     contract: string,
     gatewayUrl: string,
-    inputs: string[],
+    inputs?: string[],
     signature?: string[],
 }
 
@@ -26,8 +26,8 @@ export interface InvokeOrCallOptions {
     address: string,
     abi: string,
     functionName: string,
-    inputs: string[],
-    signature: string[],
+    inputs?: string[],
+    signature?: string[],
     gatewayUrl: string,
     feederGatewayUrl: string,
 }
@@ -57,11 +57,11 @@ export abstract class StarknetWrapper {
             "--gateway_url", options.gatewayUrl,
         ];
 
-        if (options.inputs) {
+        if (options.inputs && options.inputs.length) {
             prepared.push("--inputs", ...options.inputs);
         }
 
-        if (options.signature) {
+        if (options.signature && options.signature.length) {
             prepared.push("--signature", ...options.signature);
         }
 
@@ -80,11 +80,11 @@ export abstract class StarknetWrapper {
             "--address", options.address,
         ];
 
-        if (options.inputs) {
+        if (options.inputs && options.inputs.length) {
             prepared.push("--inputs", ...options.inputs);
         }
 
-        if (options.signature) {
+        if (options.signature && options.signature.length) {
             prepared.push("--signature", ...options.signature);
         }
 

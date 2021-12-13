@@ -83,7 +83,7 @@ function getFileName(filePath: string) {
 
 /**
  * First deletes the file if it already exists. Then creates an empty file at the provided path.
- * Unlinking/deleting is necessary if user switched from docker to venv
+ * Unlinking/deleting is necessary if user switched from docker to venv.
  * @param filePath the file to be recreated
  */
 function initializeFile(filePath: string) {

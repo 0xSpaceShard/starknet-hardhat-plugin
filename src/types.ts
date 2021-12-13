@@ -325,7 +325,7 @@ export class StarknetContract {
             abi: this.abiPath,
             functionName: functionName,
             inputs: adaptInput(functionName, args, func.inputs, this.abi),
-            signature: signature.map(s => s.toString()),
+            signature: handleSignature(signature),
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl
         });
