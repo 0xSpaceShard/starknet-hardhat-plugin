@@ -10,6 +10,7 @@ executors:
   linux-node16:
     machine:
       image: ubuntu-2004:202111-01
+  # uncomment the following lines and add the executor to the parameters matrix once the CircleCI plan is upgraded
   # macos-node14:
   #   macos:
   #     xcode: 11.7

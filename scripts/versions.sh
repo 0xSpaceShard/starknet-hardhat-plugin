@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-node --version
-npm --version
+echo "node: $(node --version)"
+echo "npm: $(npm --version)"
 
 #these two commands may return different versions (e.g. if using circleci/node and remote docker)
-docker --version
+echo "docker: $(docker --version)"
 docker version
 
-python3 --version
-pip3 --version
+echo "python3: $(python3 --version)"
+echo "pip3: $(pip3 --version)"
