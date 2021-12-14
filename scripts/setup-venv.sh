@@ -9,6 +9,10 @@ source "$VENV/bin/activate"
 echo "python at: $(which python)"
 echo "python version: $(python --version)"
 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    brew install gmp
+fi
+
 pip install cairo-lang==0.6.2
 echo "starknet at: $(which starknet)"
 echo "starknet version: $(starknet --version)"

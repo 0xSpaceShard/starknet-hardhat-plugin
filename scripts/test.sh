@@ -10,6 +10,7 @@ cd starknet-hardhat-example
 git log -n 1
 npm install
 
+
 # used by some cases
 ../scripts/setup-venv.sh
 
