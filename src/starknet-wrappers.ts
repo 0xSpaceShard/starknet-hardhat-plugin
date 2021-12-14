@@ -4,22 +4,142 @@ import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
+import { Choice } from "./types";
+import { adaptUrl } from "./utils";
 
-export type StarknetCommand = "starknet" | "starknet-compile";
+export interface CompileOptions {
+    file: string,
+    output: string,
+    abi: string,
+    cairoPath: string,
+}
 
-export interface StarknetWrapper {
-    runCommand(command: StarknetCommand, args: string[], paths?: string[]): Promise<ProcessResult>;
+export interface DeployOptions {
+    contract: string,
+    gatewayUrl: string,
+    inputs?: string[],
+    signature?: string[],
+}
+
+export interface InvokeOrCallOptions {
+    choice: Choice,
+    address: string,
+    abi: string,
+    functionName: string,
+    inputs?: string[],
+    signature?: string[],
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+}
+
+export interface GetTxStatusOptions {
+    hash: string,
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+}
+
+export abstract class StarknetWrapper {
+    protected prepareCompileOptions(options: CompileOptions): string[] {
+        return [
+            options.file,
+            "--abi", options.abi,
+            "--output", options.output,
+            "--cairo_path", options.cairoPath
+        ];
+    }
+
+    public abstract compile(options: CompileOptions): Promise<ProcessResult>;
+
+    protected prepareDeployOptions(options: DeployOptions): string[] {
+        const prepared = [
+            "deploy",
+            "--contract", options.contract,
+            "--gateway_url", options.gatewayUrl,
+        ];
+
+        if (options.inputs && options.inputs.length) {
+            prepared.push("--inputs", ...options.inputs);
+        }
+
+        if (options.signature && options.signature.length) {
+            prepared.push("--signature", ...options.signature);
+        }
+
+        return prepared;
+    }
+
+    public abstract deploy(options: DeployOptions): Promise<ProcessResult>;
+
+    protected prepareInvokeOrCalOptions(options: InvokeOrCallOptions): string[] {
+        const prepared = [
+            options.choice,
+            "--abi", options.abi,
+            "--feeder_gateway_url", options.feederGatewayUrl,
+            "--gateway_url", options.gatewayUrl,
+            "--function", options.functionName,
+            "--address", options.address,
+        ];
+
+        if (options.inputs && options.inputs.length) {
+            prepared.push("--inputs", ...options.inputs);
+        }
+
+        if (options.signature && options.signature.length) {
+            prepared.push("--signature", ...options.signature);
+        }
+
+        return prepared;
+    }
+
+    public abstract invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult>;
+
+    protected prepareGetTxStatusOptions(options: GetTxStatusOptions): string[] {
+        return [
+            "tx_status",
+            "--hash", options.hash,
+            "--gateway_url", options.gatewayUrl,
+            "--feeder_gateway_url", options.feederGatewayUrl,
+        ];
+    }
+
+    public abstract getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
     return `${image.repository}:${image.tag}`;
 }
 
-export class DockerWrapper implements StarknetWrapper {
+type String2String = { [path: string]: string };
+
+/**
+ * Populate `paths` with paths from `colonSeparatedStr`.
+ * `paths` maps a path to itself.
+ * @param paths
+ * @param colonSeparatedStr
+ */
+ function addPaths(paths: String2String, colonSeparatedStr: string): void {
+    for (let p of colonSeparatedStr.split(":")) {
+        if (!path.isAbsolute(p)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+        }
+
+        // strip trailing slash(es)
+        p = p.replace(/\/*$/, "");
+
+        // duplicate paths will cause errors
+        if (`${p}/` in paths) {
+            continue;
+        }
+        paths[p] = p;
+    }
+}
+
+export class DockerWrapper extends StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
 
     constructor(image: Image) {
+        super();
         this.image = image;
         console.log(`${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`);
     }
@@ -35,22 +155,73 @@ export class DockerWrapper implements StarknetWrapper {
         return this.docker;
     }
 
-    public async runCommand(command: StarknetCommand, args: string[], paths?: string[]) {
-        const docker = await this.getDocker();
-        const binds: { [path: string]: string } = {};
-
-        if (paths) {
-            for (const path of paths) {
-                binds[path] = path;
-            }
-        }
-
-        const options = {
+    public async compile(options: CompileOptions): Promise<ProcessResult> {
+        const binds: String2String = {
+            [options.file]: options.file,
+            [options.abi]: options.abi,
+            [options.output]: options.output,
+        };
+        
+        addPaths(binds, options.cairoPath);
+        
+        const dockerOptions = {
             binds,
             networkMode: "host"
-        }
+        };
+        
+        const preparedOptions = this.prepareCompileOptions(options);
 
-        return docker.runContainer(this.image, [command, ...args], options);
+        const docker = await this.getDocker();
+        return docker.runContainer(this.image, ["starknet-compile", ...preparedOptions], dockerOptions);
+    }
+
+    public async deploy(options: DeployOptions): Promise<ProcessResult> {
+        const binds: String2String = {
+            [options.contract]: options.contract,
+        };
+        
+        const dockerOptions = {
+            binds,
+            networksMode: "host"
+        };
+        
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        const preparedOptions = this.prepareDeployOptions(options);
+
+        const docker = await this.getDocker();
+        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+    }
+
+    public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+        const binds: String2String = {
+            [options.abi]: options.abi,
+        };
+
+        const dockerOptions = {
+            binds,
+            networksMode: "host"
+        };
+
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        const preparedOptions = this.prepareInvokeOrCalOptions(options);
+
+        const docker = await this.getDocker();
+        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+    }
+
+    public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+        const binds: String2String = {};
+
+        const dockerOptions = {
+            binds,
+            networksMode: "host"
+        };
+
+        const preparedOptions = this.prepareGetTxStatusOptions(options);
+        
+        const docker = await this.getDocker();
+        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
     }
 }
 
@@ -60,13 +231,12 @@ function checkCommandPath(commandPath: string): void {
     }
 }
 
-export class VenvWrapper implements StarknetWrapper {
+export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
     private starknetPath: string;
 
-    private command2path: Map<StarknetCommand, string>;
-
     constructor(venvPath: string) {
+        super();
         let venvPrefix = "";
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
@@ -83,18 +253,12 @@ export class VenvWrapper implements StarknetWrapper {
             this.starknetPath = path.join(venvPrefix, "starknet");
             checkCommandPath(this.starknetPath);
         }
-
-        this.command2path = new Map([
-            ["starknet", this.starknetPath],
-            ["starknet-compile", this.starknetCompilePath]
-        ]);
     }
 
-    public async runCommand(command: StarknetCommand, args: string[], _paths?: string[]): Promise<ProcessResult> {
-        const commandPath = this.command2path.get(command);
-        const process = spawnSync(commandPath, args);
-        if(!process.stdout){
-            const msg = "Command not found. If you're using a Python virtual environment, check that it has 'cairo-lang' installed.";
+    private async execute(commandPath: string, preparedOptions: string[]): Promise<ProcessResult> {
+        const process = spawnSync(commandPath, preparedOptions);
+        if (!process.stdout){
+            const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
         return {
@@ -102,5 +266,29 @@ export class VenvWrapper implements StarknetWrapper {
             stdout: process.stdout,
             stderr: process.stderr
         };
+    }
+
+    public async compile(options: CompileOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareCompileOptions(options);
+        const executed = await this.execute(this.starknetCompilePath, preparedOptions);
+        return executed;
+    }
+
+    public async deploy(options: DeployOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareDeployOptions(options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
+
+    public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareInvokeOrCalOptions(options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
+
+    public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareGetTxStatusOptions(options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
     }
 }

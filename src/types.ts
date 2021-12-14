@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
-import { adaptLog, adaptUrl } from "./utils";
+import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 
@@ -50,6 +50,7 @@ export interface StringMap {
     [key: string]: any;
 }
 
+export type Choice = "call" | "invoke";
 
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
@@ -75,16 +76,16 @@ function extractAddress(response: string) {
     tx_status: TxStatus
 }
 
-async function checkStatus(txHash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
-    const executed = await starknetWrapper.runCommand("starknet", [
-        "tx_status",
-        "--hash", txHash,
-        "--gateway_url", adaptUrl(gatewayUrl),
-        "--feeder_gateway_url", adaptUrl(feederGatewayUrl)
-    ]);
+async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
+    const executed = await starknetWrapper.getTxStatus({
+        hash,
+        gatewayUrl,
+        feederGatewayUrl
+    });
     if (executed.statusCode) {
         throw new HardhatPluginError(PLUGIN_NAME, executed.stderr.toString());
     }
+
     const response = executed.stdout.toString();
     try {
         const responseParsed = JSON.parse(response);
@@ -109,12 +110,12 @@ export async function iterativelyCheckStatus(
     starknetWrapper: StarknetWrapper,
     gatewayUrl: string,
     feederGatewayUrl: string,
-    resolve: () => void,
+    resolve: (status: string) => void,
     reject: (reason?: any) => void
 ) {
     const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl);
     if (isTxAccepted(statusObject)) {
-        resolve();
+        resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected."));
     } else {
@@ -151,11 +152,11 @@ function readAbi(abiPath: string): starknet.Abi {
  * @param signature array of transaction signature elements
  * @param starknetArgs destination array
  */
-function handleSignature(signature: Array<Numeric>, starknetArgs: string[]) {
+function handleSignature(signature: Array<Numeric>): string[] {
     if (signature) {
-        starknetArgs.push("--signature");
-        signature.forEach(part => starknetArgs.push(part.toString()));
+        return signature.map(s => s.toString());
     }
+    return [];
 }
 
 export class StarknetContractFactory {
@@ -209,16 +210,12 @@ export class StarknetContractFactory {
      * @returns the newly created instance
      */
     async deploy(constructorArguments?: StringMap, signature?: Array<Numeric>): Promise<StarknetContract> {
-        const starknetArgs = [
-            "deploy",
-            "--contract", this.metadataPath,
-            "--gateway_url", adaptUrl(this.gatewayUrl)
-        ];
-
-        this.handleConstructorArguments(constructorArguments, starknetArgs);
-        handleSignature(signature, starknetArgs);
-
-        const executed = await this.starknetWrapper.runCommand("starknet", starknetArgs, [this.metadataPath]);
+        const executed = await this.starknetWrapper.deploy({
+            contract: this.metadataPath,
+            inputs: this.handleConstructorArguments(constructorArguments),
+            signature: handleSignature(signature),
+            gatewayUrl: this.gatewayUrl,
+        });
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -248,16 +245,16 @@ export class StarknetContractFactory {
         });
     }
 
-    private handleConstructorArguments(constructorArguments: StringMap, starknetArgs: string[]): void {
+    private handleConstructorArguments(constructorArguments: StringMap): string[] {
         if (this.constructorAbi) {
             if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
                 throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
             }
-            const construtorArguments = adaptInput(
+            const argumentArray = adaptInput(
                 this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
             );
-            starknetArgs.push("--inputs");
-            construtorArguments.forEach(arg => starknetArgs.push(arg));
+
+            return argumentArray;
         }
 
         if (constructorArguments && Object.keys(constructorArguments).length) {
@@ -266,6 +263,8 @@ export class StarknetContractFactory {
             }
             // other case already handled
         }
+
+        return [];
     }
 
     /**
@@ -305,7 +304,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(kind: "invoke" | "call", functionName: string, args?: StringMap, signature?: Array<Numeric>) {
+    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -316,33 +315,22 @@ export class StarknetContract {
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
-        const starknetArgs = [
-            kind,
-            "--address", this.address,
-            "--abi", this.abiPath,
-            "--function", functionName,
-            "--gateway_url", adaptUrl(this.gatewayUrl),
-            "--feeder_gateway_url", adaptUrl(this.feederGatewayUrl)
-        ];
-
         if (Array.isArray(args)) {
             throw new HardhatPluginError(PLUGIN_NAME, "Arguments should be passed in the form of an object.");
         }
 
-        if (args && Object.keys(args).length) {
-            starknetArgs.push("--inputs");
-            const adapted = adaptInput(functionName, args, func.inputs, this.abi);
-            starknetArgs.push(...adapted);
-        }
-
-        if (signature) {
-            starknetArgs.push("--signature");
-            signature.forEach(part => starknetArgs.push(part.toString()));
-        }
-
-        const executed = await this.starknetWrapper.runCommand("starknet", starknetArgs, [this.abiPath]);
+        const executed = await this.starknetWrapper.invokeOrCall({
+            choice,
+            address: this.address,
+            abi: this.abiPath,
+            functionName: functionName,
+            inputs: adaptInput(functionName, args, func.inputs, this.abi),
+            signature: handleSignature(signature),
+            gatewayUrl: this.gatewayUrl,
+            feederGatewayUrl: this.feederGatewayUrl
+        });
         if (executed.statusCode) {
-            const msg = `Could not ${kind} ${functionName}:\n` + executed.stderr.toString();
+            const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
         }
@@ -368,7 +356,7 @@ export class StarknetContract {
                 this.starknetWrapper,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
-                resolve,
+                status => resolve(),
                 reject
             );
         });

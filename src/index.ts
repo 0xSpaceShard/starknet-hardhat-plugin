@@ -6,9 +6,9 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import "./type-extensions";
 import { StarknetContractFactory, iterativelyCheckStatus, extractTxHash } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY} from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL, ALPHA_MAINNET, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY} from "./constants";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
-import { adaptLog, adaptUrl, getDefaultHttpNetworkConfig } from "./utils";
+import { adaptLog, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { glob } from "glob";
 import { promisify } from "util";
@@ -65,14 +65,6 @@ function processExecuted(executed: ProcessResult): number {
     return executed.statusCode ? 1 : 0;
 }
 
-function hasCairoExtension(filePath: string) {
-    return path.extname(filePath) === ".cairo";
-}
-
-function isStarknetContract(filePath: string) {
-    return hasCairoExtension(filePath);
-}
-
 function isStarknetCompilationArtifact(filePath: string) {
     const content = fs.readFileSync(filePath).toString();
     let parsed = null;
@@ -90,26 +82,15 @@ function getFileName(filePath: string) {
 }
 
 /**
- * Populate `pathsObj` with paths from `colonSeparatedStr`.
- * `pathsObj` maps a path to itself.
- * @param pathsObj
- * @param colonSeparatedStr
+ * First deletes the file if it already exists. Then creates an empty file at the provided path.
+ * Unlinking/deleting is necessary if user switched from docker to venv.
+ * @param filePath the file to be recreated
  */
-function addPaths(pathsObj: any, colonSeparatedStr: string): void {
-    for (let p of colonSeparatedStr.split(":")) {
-        if (!path.isAbsolute(p)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
-        }
-
-        // strip trailing slash(es)
-        p = p.replace(/\/*$/, "");
-
-        // duplicate paths will cause errors
-        if (`${p}/` in pathsObj) {
-            continue;
-        }
-        pathsObj[p] = p;
+function initializeFile(filePath: string) {
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
     }
+    fs.closeSync(fs.openSync(filePath, "w"));
 }
 
 // add sources path
@@ -221,32 +202,19 @@ task("starknet-compile", "Compiles Starknet contracts")
                 const outputPath = path.join(dirPath, `${fileName}.json`);
                 const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
                 const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
-                const compileArgs = [
-                    file,
-                    "--output", outputPath,
-                    "--abi", abiPath,
-                    "--cairo_path", cairoPath,
-                ];
-                const binds = {
-                    [sourcesPath]: sourcesPath,
-                    [artifactsPath]: artifactsPath,
-                };
-                addPaths(binds, cairoPath);
-                // unlinking/deleting is necessary if user switched from docker to venv
-                if (fs.existsSync(outputPath)) {
-                    fs.unlinkSync(outputPath);
-                }
-                if (fs.existsSync(abiPath)) {
-                    fs.unlinkSync(abiPath);
-                }
-                fs.mkdirSync(dirPath, { recursive: true });
-                const executed = await hre.starknetWrapper.runCommand(
-                    "starknet-compile",
-                    compileArgs,
-                    Object.keys(binds)
-                );
 
-                statusCode +=processExecuted(executed);
+                fs.mkdirSync(dirPath, { recursive: true });
+                initializeFile(outputPath);
+                initializeFile(abiPath);
+
+                const executed = await hre.starknetWrapper.compile({
+                    file,
+                    output: outputPath,
+                    abi: abiPath,
+                    cairoPath,
+                });
+
+                statusCode += processExecuted(executed);
             }
         }
 
@@ -261,6 +229,11 @@ function isTestnet(networkName: string): boolean {
         || networkName === ALPHA_TESTNET_INTERNALLY;
 }
 
+function isMainnet(networkName: string): boolean {
+    return networkName === ALPHA_MAINNET
+        || networkName === ALPHA_MAINNET_INTERNALLY;
+}
+
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
  *
@@ -270,8 +243,12 @@ function isTestnet(networkName: string): boolean {
  */
 function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     let gatewayUrl: string = args.gatewayUrl;
-    const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
-
+    let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
+    if (isMainnet(networkName)) {
+        networkName = ALPHA_MAINNET_INTERNALLY;
+    } else if (isTestnet(networkName)) {
+        networkName = ALPHA_TESTNET_INTERNALLY;
+    }
     if (gatewayUrl && !networkName) {
         return gatewayUrl;
     }
@@ -314,11 +291,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
         const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
 
-        const inputs: string[] = [];
-        if (args.inputs) {
-            inputs.push("--inputs", ...args.inputs.split(/\s+/));
-        }
-
         let statusCode = 0;
         const txHashes: string[] = [];
         for (let artifactsPath of artifactsPaths) {
@@ -331,16 +303,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             const files = paths.filter(isStarknetCompilationArtifact);
             for(const file of files){
                 console.log("Deploying", file);
-                const executed = await hre.starknetWrapper.runCommand(
-                    "starknet",
-                    [
-                        "deploy",
-                        "--contract", file,
-                        "--gateway_url", adaptUrl(gatewayUrl),
-                        ...inputs
-                    ],
-                    [artifactsPath]
-                );
+                const executed = await hre.starknetWrapper.deploy({
+                    contract: file,
+                    gatewayUrl,
+                    inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+                });
                 if(args.wait){
                     const execResult = processExecuted(executed);
                     if(execResult == 0){
@@ -348,28 +315,28 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
                     }
                     statusCode += execResult;
                 } 
-                else
+                else {
                     statusCode += processExecuted(executed);
+                }
             }
         }
 
-        if(args.wait){      //  If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
+        if (args.wait){ // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
             console.log("Checking deployment transactions...");
-            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => {iterativelyCheckStatus(
+            const promises = txHashes.map( hash => new Promise<void>((resolve, reject) => iterativelyCheckStatus(
                 hash, 
                 hre.starknetWrapper, 
                 gatewayUrl, 
                 gatewayUrl, 
-                () => {
-                    console.log("Deployment transaction " + hash + " status is now PENDING");
+                status => {
+                    console.log(`Deployment transaction ${hash} is now ${status}`);
                     resolve();
                 },
-                (error) => {
-                    console.log("Deployment transaction " + hash + " status is REJECTED");
+                error => {
+                    console.log(`Deployment transaction ${hash} is REJECTED`);
                     reject(error);
                 }
-                )
-            }));
+            )));
             await Promise.allSettled(promises);
         }
 
@@ -380,13 +347,11 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
-    files = files.filter(file => {
-        return file.endsWith(name);
-    });
-    if(files.length == 0){
+    files = files.filter(f => f.endsWith(name));
+    if (files.length == 0){
         return null;
     }
-    else if(files.length == 1){
+    else if (files.length == 1){
         return files[0];
     }
     else {
@@ -444,15 +409,16 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     .setAction(async (args, hre) => {
         let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
         
-        if(!isTestnet(args.starknetNetwork)){
-            if(args.starknetNetwork === ALPHA_MAINNET)
+        if (!isTestnet(args.starknetNetwork)) {
+            if (isMainnet(args.starknetNetwork)) {
                 voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
-            else{
+            } else {
                 const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
         }
-        voyagerUrl+=args.address + "/code";
+
+        voyagerUrl += args.address + "/code";
         let isVerified = false;
         try{
             const resp = await axios.get(voyagerUrl,{

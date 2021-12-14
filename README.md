@@ -47,7 +47,9 @@ module.exports = {
 ```
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha testnet and mainnet are available by default, you don't need to define them in the config file; just pass them with `--starknet-network alpha` or `--starknet-network alphaMainnet`.
+The Alpha networks are available by default, you don't need to define them in the config file; just pass:
+- `--starknet-network alpha` or `--starknet-network goerli-alpha` for Alpha Testnet (on Goerli)
+- `--starknet-network alpha-mainnet` for Alpha Mainnet
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 ```
@@ -57,10 +59,10 @@ You would typically use the input feature when deploying a single contract requi
 
 ### `starknet-verify`
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path PATH/TO/CONTRACT] [--address CONTRACT_ADDRESS]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [--address <CONTRACT_ADDRESS>]
 ```
 
-Queries Voyager to verify `PATH/TO/CONTRACT.cairo` deployed at `CONTRACT_ADDRESS`
+Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source file at `<PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
