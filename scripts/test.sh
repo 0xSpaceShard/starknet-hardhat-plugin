@@ -29,7 +29,7 @@ for test_case in "../test/$1"/*; do
     # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
     /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
-    "$test_case/check.sh $2" && success=$((success + 1)) || echo "Test failed!"
+    "$test_case/check.sh" "$2" && success=$((success + 1)) || echo "Test failed!"
 
     rm -rf starknet-artifacts
     git checkout --force
