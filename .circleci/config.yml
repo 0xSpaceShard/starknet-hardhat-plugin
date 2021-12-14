@@ -57,8 +57,16 @@ workflows:
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests
+                network: alpha
               - platform: macos-node14
                 test-name: test-configuration-tests
+                network: alpha
+              - platform: macos-node14
+                test-name: test-general-tests
+                network: devnet
+              - platform: macos-node14
+                test-name: test-configuration-tests
+                network: devnet
       - npm_publish:
           context: shardlabs
           filters:
