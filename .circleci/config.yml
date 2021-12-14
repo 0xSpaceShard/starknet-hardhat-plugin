@@ -10,10 +10,9 @@ executors:
   linux-node16:
     machine:
       image: ubuntu-2004:202111-01
-  # uncomment the following lines and add the executor to the parameters matrix once the CircleCI plan is upgraded
-  # macos-node14:
-  #   macos:
-  #     xcode: 11.7
+  macos-node14:
+    macos:
+      xcode: 11.7
 
 jobs:
   test:
@@ -52,7 +51,7 @@ workflows:
       - test:
           matrix:
             parameters:
-              platform: [linux-node12, linux-node14, linux-node16]
+              platform: [linux-node12, linux-node14, linux-node16, macos-node14]
               test-name: [test-general-tests, test-configuration-tests]
       - npm_publish:
           context: shardlabs
