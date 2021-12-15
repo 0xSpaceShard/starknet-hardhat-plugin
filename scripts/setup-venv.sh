@@ -1,4 +1,5 @@
 #!/bin/bash
+
 set -e
 
 VENV=../my-venv
@@ -10,6 +11,7 @@ echo "python at: $(which python)"
 echo "python version: $(python --version)"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
+    export HOMEBREW_NO_INSTALL_CLEANUP=1
     brew install gmp
 fi
 

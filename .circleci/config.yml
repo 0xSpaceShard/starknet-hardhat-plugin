@@ -1,15 +1,9 @@
 version: 2.1
 
 executors:
-  linux-node12:
-    machine:
-      image: ubuntu-2004:202010-01
   linux-node14:
     machine:
       image: ubuntu-2004:202107-02
-  linux-node16:
-    machine:
-      image: ubuntu-2004:202111-01
   macos-node14:
     macos:
       xcode: 11.7
@@ -24,8 +18,6 @@ jobs:
         type: executor
       test-name:
         type: string
-      network:
-        type: string
     executor: << parameters.platform >>
     steps:
       - checkout
@@ -36,8 +28,8 @@ jobs:
           name: Build
           command: npm run build
       - run:
-          name: << parameters.test-name >>-<< parameters.network >>
-          command: npm run << parameters.test-name >> << parameters.network >>
+          name: << parameters.test-name >>
+          command: npm run << parameters.test-name >>
   npm_publish:
     docker:
       - image: cimg/node:14.18.1
@@ -54,22 +46,13 @@ workflows:
       - test:
           matrix:
             parameters:
-              platform: [linux-node12, linux-node14, linux-node16, macos-node14]
+              platform: [linux-node14, macos-node14]
               test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
-              network: [alpha, devnet]
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests
-                network: alpha
               - platform: macos-node14
                 test-name: test-configuration-tests
-                network: alpha
-              - platform: macos-node14
-                test-name: test-general-tests
-                network: devnet
-              - platform: macos-node14
-                test-name: test-configuration-tests
-                network: devnet
       - npm_publish:
           context: shardlabs
           filters:
