@@ -53,7 +53,9 @@ function iterate_dir(){
 
 echo "Testing on Alpha is temporarily disabled. Uncomment the next line to reenable it."
 # iterate_dir alpha
-pip3 install starknet-devnet
+
+# install and build devnet
+../scripts/install-devnet.sh
 starknet-devnet & # assuming the default (localhost:5000)
 iterate_dir devnet
 
