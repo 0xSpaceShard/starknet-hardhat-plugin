@@ -1,8 +1,8 @@
 import "../dist/index.js";
 
 module.exports = {
-    paths: {
-        starknetArtifacts: "my-starknet-artifacts"
+    cairo: {
+        venv: "active"
     },
     networks: {
         devnet: {
