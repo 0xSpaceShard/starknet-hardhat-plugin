@@ -1,18 +1,15 @@
 version: 2.1
 
 executors:
-  linux-node12:
-    machine:
-      image: ubuntu-2004:202010-01
   linux-node14:
     machine:
       image: ubuntu-2004:202107-02
-  linux-node16:
-    machine:
-      image: ubuntu-2004:202111-01
   macos-node14:
     macos:
       xcode: 11.7
+    environment:
+      TERM: xterm-256color
+    
 
 jobs:
   test:
@@ -24,9 +21,6 @@ jobs:
     executor: << parameters.platform >>
     steps:
       - checkout
-      - run:
-          name: Versions
-          command: ./scripts/versions.sh
       - run:
           name: Install
           command: npm install
@@ -45,14 +39,20 @@ jobs:
           name: Publish
           command: ./scripts/npm-publish.sh
 
+
 workflows:
   test_and_publish:
     jobs:
       - test:
           matrix:
             parameters:
-              platform: [linux-node12, linux-node14, linux-node16, macos-node14]
-              test-name: [test-general-tests, test-configuration-tests]
+              platform: [linux-node14, macos-node14]
+              test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
+            exclude:
+              - platform: macos-node14
+                test-name: test-general-tests
+              - platform: macos-node14
+                test-name: test-configuration-tests
       - npm_publish:
           context: shardlabs
           filters:

@@ -23,6 +23,7 @@
   "scripts": {
     "test-configuration-tests": "./scripts/test.sh configuration-tests",
     "test-general-tests": "./scripts/test.sh general-tests",
+    "test-venv-tests": "./scripts/test.sh venv-tests",
     "build": "rm -rf dist && tsc"
   },
   "author": "Shard-Labs",
