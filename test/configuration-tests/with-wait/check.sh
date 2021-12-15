@@ -2,4 +2,4 @@
 set -e
 
 npx hardhat starknet-compile
-npx hardhat starknet-deploy starknet-artifacts/contracts/test.cairo/ --starknet-network $1 --wait
+npx hardhat starknet-deploy starknet-artifacts/contracts/test.cairo/ --starknet-network "$NETWORK" --wait
