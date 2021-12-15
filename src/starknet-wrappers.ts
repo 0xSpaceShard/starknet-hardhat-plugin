@@ -182,7 +182,7 @@ export class DockerWrapper extends StarknetWrapper {
         
         const dockerOptions = {
             binds,
-            networksMode: "host"
+            networkMode: "host"
         };
         
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
@@ -199,7 +199,7 @@ export class DockerWrapper extends StarknetWrapper {
 
         const dockerOptions = {
             binds,
-            networksMode: "host"
+            networkssMode: "host"
         };
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
@@ -215,7 +215,7 @@ export class DockerWrapper extends StarknetWrapper {
 
         const dockerOptions = {
             binds,
-            networksMode: "host"
+            networkMode: "host"
         };
 
         const preparedOptions = this.prepareGetTxStatusOptions(options);
