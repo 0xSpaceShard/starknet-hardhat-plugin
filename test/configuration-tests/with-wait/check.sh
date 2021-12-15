@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 
-npx hardhat starknet-compile
-npx hardhat starknet-deploy starknet-artifacts/contracts/test.cairo/ --starknet-network "$NETWORK" --wait
+npx hardhat starknet-compile contracts/util.cairo
+npx hardhat starknet-deploy starknet-artifacts/contracts/util.cairo/ --starknet-network "$NETWORK" --wait

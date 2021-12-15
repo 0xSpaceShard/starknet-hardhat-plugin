@@ -199,7 +199,7 @@ export class DockerWrapper extends StarknetWrapper {
 
         const dockerOptions = {
             binds,
-            networkssMode: "host"
+            networkMode: "host"
         };
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
