@@ -11,6 +11,6 @@ cd starknet-devnet
 
 poetry build
 
-pip3 install dist/starknet_devnet-0.1.9-py3-none-any.whl
+pip3 install dist/starknet_devnet-*-py3-none-any.whl
 
 cd ..
