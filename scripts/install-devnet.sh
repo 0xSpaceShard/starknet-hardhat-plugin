@@ -3,7 +3,7 @@ set -e
 
 curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
 
-git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-devnet.git
+git clone -b master --single-branch git@github.com:Shard-Labs/starknet-devnet.git
 
 cd starknet-devnet 
 
