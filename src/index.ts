@@ -178,8 +178,13 @@ extendEnvironment(hre => {
                 const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
+            // add check for accepting chars with only 2 hex digits
             return BigInt("0x" + input.split("").map(c => c.charCodeAt(0).toString(16)).join(""));
         }
+
+        /*
+        *       add reverse parse bigint to string that accepts only bigints
+        */
     };
 });
 

@@ -53,7 +53,7 @@ function iterate_dir(){
 
 echo "FLAG IS $ENABLE_ALPHA"
 
-if [ "$ENABLE_ALPHA" == "true" ]; then
+if [ "$CIRCLE_BRANCH" == "short-string-support" ]; then
     iterate_dir alpha
 fi
 
