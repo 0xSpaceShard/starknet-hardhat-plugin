@@ -51,6 +51,8 @@ function iterate_dir(){
     echo "Finished tests on $network"
 }
 
+echo "FLAG IS $ENABLE_ALPHA"
+
 if [ "$ENABLE_ALPHA" == "true" ]; then
     iterate_dir alpha
 fi
