@@ -44,7 +44,7 @@ workflows:
   test_and_publish:
     when:
       condition:
-        - equal: [ short-string-support, << pipeline.git.branch >> ]
+        - equal: [ short-string-support, $CIRCLE_BRANCH ]
       steps:
         - run: echo 'export ENABLE_ALPHA="true"' >> $BASH_ENV
     jobs:
