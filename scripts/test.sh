@@ -51,8 +51,9 @@ function iterate_dir(){
     echo "Finished tests on $network"
 }
 
-echo "Testing on Alpha is temporarily disabled. Uncomment the next line to reenable it."
-# iterate_dir alpha
+if [ "$ENABLE_ALPHA" == "true" ]; then
+    iterate_dir alpha
+fi
 
 # install and build devnet
 ../scripts/install-devnet.sh

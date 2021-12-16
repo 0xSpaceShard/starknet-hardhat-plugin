@@ -42,6 +42,11 @@ jobs:
 
 workflows:
   test_and_publish:
+    when:
+      condition:
+        - equal: [ master, << pipeline.git.branch >> ]
+      steps:
+        - run: echo 'export ENABLE_ALPHA="true"' >> $BASH_ENV
     jobs:
       - test:
           matrix:
