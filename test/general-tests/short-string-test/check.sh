@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-mocha short-string-test.ts
+mocha ../test/short-string-test/short-string-test.ts

@@ -27,6 +27,7 @@ function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
+    if [$test_case == "short-string-test"]; then
         total=$((total + 1))
         test_name=$(basename $test_case)
         echo "Test $total) $test_name"
@@ -47,8 +48,10 @@ function iterate_dir(){
         git clean -fd
         echo "----------------------------------------------"
         echo
+    fi
     done
     echo "Finished tests on $network"
+
 }
 
 if [ "$CIRCLE_BRANCH" == "master" ]; then
