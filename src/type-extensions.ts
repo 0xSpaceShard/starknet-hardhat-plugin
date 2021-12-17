@@ -51,11 +51,18 @@ declare module "hardhat/types/runtime" {
             getContractFactory: (name: string) => Promise<StarknetContractFactory>;
 
             /**
-             * Converts a short string (max 31 characters) to a BigInt
+             * Converts a short string (max 31 characters) to a BigInt. Only accepts characters whose hex value has exactly 2 characters. 
              * @param input the input short string
-             * @returns a BigInt which is the result of converting a string to it's ASCII equivalent
+             * @returns a BigInt which is the result of converting a string's ASCII value to its hex equivalent
              */
-             parseShortString: (input: string) => BigInt;
+            stringToBigInt: (convertableString: string) => BigInt;
+
+            /**
+             * Converts a BigInt to a string.
+             * @param input the input BigInt
+             * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
+             */
+            bigIntToString: (convertableBigInt: BigInt) => string;
 
             /**
              * The selected starknet-network, present when specified with --starknet-network.

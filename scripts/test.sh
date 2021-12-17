@@ -51,9 +51,7 @@ function iterate_dir(){
     echo "Finished tests on $network"
 }
 
-echo "FLAG IS $ENABLE_ALPHA"
-
-if [ "$CIRCLE_BRANCH" == "short-string-support" ]; then
+if [ "$CIRCLE_BRANCH" == "master" ]; then
     iterate_dir alpha
 fi
 

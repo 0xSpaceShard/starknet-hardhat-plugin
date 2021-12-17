@@ -3,7 +3,7 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import "./type-extensions";
 import { StarknetContractFactory } from "./types";
-import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, SHORT_STRING_MAX_CHARACTERS } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, DEFAULT_STARKNET_NETWORK, ALPHA_URL, ALPHA_MAINNET_URL, SHORT_STRING_MAX_CHARACTERS, CHAR_HEX_CODE_MAX_LENGTH } from "./constants";
 import { HardhatConfig, HardhatUserConfig, HttpNetworkConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig, traverseFiles, checkArtifactExists } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -112,9 +112,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."
-    ).setAction(async (args, hre) => {
-        await starknetDeployAction(args, hre);
-    });
+    ).setAction(starknetDeployAction);
 
 
 
@@ -173,25 +171,29 @@ extendEnvironment(hre => {
             });
         },
 
-        parseShortString: input => {
-            if(input.length > SHORT_STRING_MAX_CHARACTERS) {
+        stringToBigInt: convertableString => {
+
+            if(convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
                 const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            // add check for accepting chars with only 2 hex digits
-            return BigInt("0x" + input.split("").map(c => c.charCodeAt(0).toString(16)).join(""));
-        }
+            
+            if(!/^[\x00-\x7F]*$/.test(convertableString)){
+                const msg = "Input string contains an invalid ASCII character.";
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            
+            const charArray = convertableString.split("").map(c => c.toString().charCodeAt(0).toString(16));
+            return BigInt("0x" + charArray.join(""));
+        },
 
-        /*
-        *       add reverse parse bigint to string that accepts only bigints
-        */
-    };
-});
+        bigIntToString: convertableBigInt => {
+           return Buffer.from(convertableBigInt.toString(16), 'hex').toString();
+        }
+}});
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addParam("path", `The path of the cairo contract (e.g. contracts/conract.cairo)`)
     .addParam("address", `The address where the contract is deployed`)
-    .setAction(async (args, hre) => {
-        await starknetVoyagerAction(args,hre);
-    });
+    .setAction(starknetVoyagerAction);
