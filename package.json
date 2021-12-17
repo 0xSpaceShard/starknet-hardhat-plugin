@@ -24,7 +24,7 @@
     "test-configuration-tests": "TEST_SUBDIR=configuration-tests ./scripts/test.sh",
     "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
     "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
-    "utility-function-tests": "npx hardhat test ./test/utility-function-tests/short-string/string-test.ts",
+    "utility-function-tests": "mocha ./test/utility-function-tests/short-string-test.ts",
     "build": "rm -rf dist && tsc"
   },
   "author": "Shard-Labs",
@@ -41,6 +41,7 @@
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.10",
     "chai": "^4.3.4",
+    "mocha": "^9.1.3",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.2"
   }
