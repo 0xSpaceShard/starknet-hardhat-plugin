@@ -117,7 +117,7 @@ function getFileName(filePath: string) {
     return httpNetwork.url;
 }
 
-export async function starknetCompileAction(hre: HardhatRuntimeEnvironment, args: any) {
+export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnvironment) {
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
 

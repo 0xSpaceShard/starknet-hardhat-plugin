@@ -5,6 +5,7 @@ import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHA
 import { StarknetContractFactory } from "./types";
 import { checkArtifactExists, traverseFiles } from "./utils";
 
+
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
     files = files.filter(f => f.endsWith(name));
