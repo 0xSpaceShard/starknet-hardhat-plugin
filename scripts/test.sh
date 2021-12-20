@@ -4,7 +4,7 @@ set -e
 CONFIG_FILE_NAME="hardhat.config.ts"
 
 # setup example repo
-rm -rf starknet-hardhat-example
+#rm -rrm -rf starknet-hardhat-example
 git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
@@ -26,28 +26,30 @@ fi
 function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
-    #for test_case in "$test_dir"/*; do
-        total=$((total + 1))
-        test_name=$(basename short-string-test)
-        echo "Test $total) $test_name"
+    for test_case in "$test_dir"/*; do
+        if [ "$test_case" == "../test/general-tests/short-string-test" ]; then
+            total=$((total + 1))
+            test_name=$(basename short-string-test)
+            echo "Test $total) $test_name"
 
-        config_file_path="short-string-test/$CONFIG_FILE_NAME"
-        if [ ! -f "$config_file_path" ]; then
-            echo "No config file provided!"
-            continue
+            config_file_path="short-string-test/$CONFIG_FILE_NAME"
+            if [ ! -f "$config_file_path" ]; then
+                echo "No config file provided!"
+                continue
+            fi
+
+            # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
+            /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
+
+            NETWORK="$network" "short-string-test/check.sh" && success=$((success + 1)) || echo "Test failed!"
+
+            rm -rf starknet-artifacts
+            git checkout --force
+            git clean -fd
+            echo "----------------------------------------------"
+            echo
         fi
-
-        # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
-        /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
-
-        NETWORK="$network" "short-string-test/check.sh" && success=$((success + 1)) || echo "Test failed!"
-
-        rm -rf starknet-artifacts
-        git checkout --force
-        git clean -fd
-        echo "----------------------------------------------"
-        echo
-    #done
+    done
     echo "Finished tests on $network"
 }
 

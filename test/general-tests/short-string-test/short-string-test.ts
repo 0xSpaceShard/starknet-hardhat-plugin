@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { starknet } from "hardhat";
+import { bigIntToStringUtil, stringToBigIntUtil } from "../../../src/extend-utils";
 
 describe("Starknet", function () {
   this.timeout(300_000); 
@@ -11,12 +11,12 @@ describe("Starknet", function () {
   const invalidCharacterString = "invalid char ÿ";
 
   it("should convert a valid string to a BigInt", async function() {
-    const convertedInput = starknet.stringToBigInt(inputString);
+    const convertedInput = stringToBigIntUtil(inputString);
     expect(convertedInput).to.deep.equal(convertedString);
   });
 
   it("should convert a BigInt to a string", async function() {
-    const convertedOutput = starknet.bigIntToString(convertedString);
+    const convertedOutput = bigIntToStringUtil(convertedString);
     expect(convertedOutput).to.deep.equal(inputString);
  
   });
@@ -24,7 +24,7 @@ describe("Starknet", function () {
   it("should fail when a string has over 31 characters", async function() {
     
     try{
-      starknet.stringToBigInt(largeString);
+      stringToBigIntUtil(largeString);
       expect.fail("Should have failed on converting a string with more than 31 characters.");
     } catch (err: any) {
       expect(err.message).to.deep.equal("Strings must have a max of 31 characters.");
@@ -34,7 +34,7 @@ describe("Starknet", function () {
   it("should fail when a string has an invalid ASCII character", async function() {
     
     try{
-      starknet.stringToBigInt(invalidCharacterString);
+      stringToBigIntUtil(invalidCharacterString);
       expect.fail("Should have failed on converting a string with an invalid ASCII character.");
     } catch (err: any) {
       expect(err.message).to.deep.equal("Input string contains an invalid ASCII character.");
