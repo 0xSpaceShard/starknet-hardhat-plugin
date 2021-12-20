@@ -5,13 +5,13 @@ describe("Starknet", function () {
   this.timeout(300_000); 
 
   const inputString = "hello";
-  const convertedString = BigInt(448378203247);
+  const convertedString = BigInt("448378203247");
 
   const invalidLengthString = "string with more than 31 characters";
 
-  const exactString = "string w/ exactly 31 characters";
-  const convertedExactString = BigInt(203991099562869677407395550498274557187023598428675066738548183291570516595);
-  const largeString = "string wi/ exactly 32 characters";
+  const exactString = "string of exactly 31 characters";
+  const convertedExactString = BigInt("203991099562869677216504074689167276267761996859264679054038991384575570547");
+  const largeString = "string for exactly 32 characters";
   const invalidCharacterString = "invalid char ÿ";
 
   it("should convert a valid string to a BigInt", async function() {
