@@ -40,7 +40,6 @@ jobs:
           command: ./scripts/npm-publish.sh
 
 
-
 workflows:
   test_and_publish:
     jobs:
