@@ -24,7 +24,6 @@
     "test-configuration-tests": "TEST_SUBDIR=configuration-tests ./scripts/test.sh",
     "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
     "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
-    "utility-function-tests": "mocha ./test/utility-function-tests/short-string-test.ts",
     "build": "rm -rf dist && tsc"
   },
   "author": "Shard-Labs",

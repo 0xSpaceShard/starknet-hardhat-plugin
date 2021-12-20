@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { bigIntToStringUtil, stringToBigIntUtil } from "../../../src/extend-utils";
+import { bigIntToStringUtil, stringToBigIntUtil } from "../../../dist/extend-utils";
 
 describe("Starknet", function () {
   this.timeout(300_000); 

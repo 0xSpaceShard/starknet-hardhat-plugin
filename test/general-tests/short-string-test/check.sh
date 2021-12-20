@@ -1,4 +1,5 @@
 #!/bin/bash
 set -e
 
-mocha ../test/short-string-test/short-string-test.ts
+cd ..
+mocha --require ts-node/register test/general-tests/short-string-test/short-string-test.ts

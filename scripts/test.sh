@@ -20,38 +20,35 @@ test_dir="../test/$TEST_SUBDIR"
 
 if [ ! -d "$test_dir" ]; then
     echo "Invalid test directory"
-    continue
+    exit -1
 fi
 
 function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
-        if [ "$test_case" == "../test/general-tests/short-string-test" ]; then
-            total=$((total + 1))
-            test_name=$(basename $test_case)
-            echo "Test $total) $test_name"
+        total=$((total + 1))
+        test_name=$(basename $test_case)
+        echo "Test $total) $test_name"
 
-            config_file_path="$test_case/$CONFIG_FILE_NAME"
-            if [ ! -f "$config_file_path" ]; then
-                echo "No config file provided!"
-                continue
-            fi
-
-            # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
-            /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
-
-            NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
-
-            rm -rf starknet-artifacts
-            git checkout --force
-            git clean -fd
-            echo "----------------------------------------------"
-            echo
+        config_file_path="$test_case/$CONFIG_FILE_NAME"
+        if [ ! -f "$config_file_path" ]; then
+            echo "No config file provided!"
+            continue
         fi
+
+        # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
+        /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
+
+        NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
+
+        rm -rf starknet-artifacts
+        git checkout --force
+        git clean -fd
+        echo "----------------------------------------------"
+        echo
     done
     echo "Finished tests on $network"
-
 }
 
 if [ "$CIRCLE_BRANCH" == "master" ]; then
