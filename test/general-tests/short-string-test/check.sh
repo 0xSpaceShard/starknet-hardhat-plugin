@@ -2,4 +2,4 @@
 set -e
 
 cd ..
-mocha --require ts-node/register test/general-tests/short-string-test/short-string-test.ts
+npx hardhat test test/general-tests/short-string-test/short-string-test.ts

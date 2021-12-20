@@ -2,4 +2,4 @@ dist
 node_modules
 starknet-hardhat-example
 starknet-hardhat-example-link
-./hardhat.config.ts
+cache
