@@ -20,7 +20,7 @@ test_dir="../test/$TEST_SUBDIR"
 
 if [ ! -d "$test_dir" ]; then
     echo "Invalid test directory"
-    continue
+    exit -1
 fi
 
 function iterate_dir(){
@@ -51,8 +51,9 @@ function iterate_dir(){
     echo "Finished tests on $network"
 }
 
-echo "Testing on Alpha is temporarily disabled. Uncomment the next line to reenable it."
-# iterate_dir alpha
+if [ "$CIRCLE_BRANCH" == "master" ]; then
+    iterate_dir alpha
+fi
 
 # install and build devnet
 ../scripts/install-devnet.sh

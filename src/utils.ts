@@ -1,5 +1,12 @@
 import { HttpNetworkConfig } from "hardhat/types";
+import { HardhatPluginError } from "hardhat/plugins";
+import { PLUGIN_NAME } from "./constants";
+import * as path from "path";
+import * as fs from "fs";
+import { glob } from "glob";
+import { promisify } from "util";
 
+const globPromise = promisify(glob);
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
  * 
@@ -48,3 +55,23 @@ export function getDefaultHttpNetworkConfig(url: string): HttpNetworkConfig {
         timeout: undefined,
     };
 }
+
+export async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+    let paths: string[] = [];
+    if (fs.lstatSync(traversable).isDirectory()) {
+        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+    }
+    else {
+        paths.push(traversable);
+    }
+    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+    return files;
+}
+
+export function checkArtifactExists(artifactsPath: string): void {
+    if (!fs.existsSync(artifactsPath)) {
+        const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+}
+
