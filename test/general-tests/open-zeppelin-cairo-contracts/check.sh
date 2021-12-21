@@ -6,3 +6,4 @@ rm -rf contracts
 mv cairo-contracts/contracts contracts
 
 npx hardhat starknet-compile contracts/Ownable.cairo
+rm -rf cairo-contracts

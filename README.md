@@ -1,12 +1,16 @@
-## Requirements
-This plugin was tested with:
-- Node.js v12.22.4
-- npm/npx v7.21.1
-- Docker v20.10.8 (optional):
-  - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
-  - If you opt for the containerized version, make sure you have a running Docker daemon.
-- Linux / macOS:
-  - On Windows, we recommend using WSL 2.
+[![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=green)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
+
+If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
+
+## Content
+- [Install](#install)
+- [CLI commands](#cli-commands)
+- [API](#api)
+- [Testing](#test)
+  - [Important notes](#important-notes)
+  - [Examples](#test-examples)
+- [Configure the plugin](#configure-the-plugin)
+- [More examples](#more-examples)
 
 ## Install
 ```
@@ -17,7 +21,17 @@ Add the following line to the top of your `hardhat.config.ts` (or `hardhat.confi
 import "@shardlabs/starknet-hardhat-plugin";
 ```
 
-## Use
+### Requirements
+This plugin was tested with:
+- Node.js v12.22.4
+- npm/npx v7.21.1
+- Docker v20.10.8 (optional):
+  - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
+  - If you opt for the containerized version, make sure you have a running Docker daemon.
+- Linux / macOS:
+  - On Windows, we recommend using WSL 2.
+
+## CLI commands
 This plugin adds the following tasks which target the source/artifact/test directories of your Hardhat project:
 ### `starknet-compile`
 ```
@@ -48,7 +62,7 @@ module.exports = {
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
 The Alpha networks are available by default, you don't need to define them in the config file; just pass:
-- `--starknet-network alpha` or `--starknet-network goerli-alpha` for Alpha Testnet (on Goerli)
+- `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 - `--starknet-network alpha-mainnet` for Alpha Mainnet
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
@@ -66,15 +80,23 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
+## API
+Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
+```typescript
+import { starknet } from "hardhat";
+```
+To see all the utility functions this object introduces, check [this](src/type-extensions.ts) out.
 
-## Test
+## Testing
+Relying on the above described API makes it easier to interact with your contracts and test them.
+
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 ```
 npx hardhat test
 ```
 
 Read more about the network used in tests in the [Testing network](#testing-network) section.
-These examples are inspired by the [official Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
+These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
 - `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
@@ -87,6 +109,8 @@ These examples are inspired by the [official Python tutorial](https://www.cairo-
     - `getContractFactory("subdir/MyContract")`
     - `getContractFactory("MyContract")`
 
+
+### Test examples
 ```typescript
 import { expect } from "chai";
 import { starknet } from "hardhat";
@@ -172,11 +196,11 @@ describe("My Test", function () {
 
 For more usage examples, including tuple, array and struct support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
-## Config
+## Configure the plugin
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
 ### Cairo version
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you don't specify neither `version` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `version` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
 A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
@@ -190,7 +214,7 @@ module.exports = {
 ```
 
 ### Existing virtual environment
-If you want to use an existing Python virtual environment, specify it by using `cairo.venv`.
+If you want to use an existing Python virtual environment, specify it by using `cairo["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
 ```typescript
@@ -219,9 +243,9 @@ module.exports = {
 ```
 
 ### Testing network
-If you don't specify a `mocha.starknetNetwork`, the program defaults to using the Alpha testnet for Mocha tests.
+To set the network used in your Mocha tests, use `mocha["starknetNetwork"]`. Not specifying one will default to using Alpha testnet.
 
-A faster approach, but still in beta-phase, is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
+A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
 ```javascript
 module.exports = {
@@ -239,5 +263,5 @@ module.exports = {
 };
 ```
 
-## Example
+## More examples
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).

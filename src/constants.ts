@@ -6,7 +6,7 @@ export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";
 export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const DEFAULT_DOCKER_IMAGE_TAG = "0.6.2";
 
-export const ALPHA_TESTNET = "goerli-alpha";
+export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";
 export const ALPHA_MAINNET = "alpha-mainnet";
 export const ALPHA_MAINNET_INTERNALLY = "alphaMainnet";

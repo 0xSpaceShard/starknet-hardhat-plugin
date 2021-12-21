@@ -51,15 +51,19 @@ declare module "hardhat/types/runtime" {
             getContractFactory: (name: string) => Promise<StarknetContractFactory>;
 
             /**
-             * Converts a short string (max 31 characters) to a BigInt. Only accepts valid ASCII characters,
-             * i.e characters with charcode between 0 and 127 
+             * Cairo and Starknet source files may contain short string literals,
+             * which are interpreted as numbers (felts) during Starknet runtime.
+             * Use this utility function to provide short string arguments to your contract functions.
+             * 
+             * This function converts such a short string (max 31 characters) to its felt representation (wrapped in a `BigInt`).
+             * Only accepts standard ASCII characters, i.e. characters with charcode between 0 and 127, inclusive.
              * @param input the input short string
-             * @returns a BigInt which is the result of converting a string's ASCII value to its hex equivalent
+             * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
              */
             stringToBigInt: (convertableString: string) => BigInt;
 
             /**
-             * Converts a BigInt to a string.
+             * Converts a BigInt to a string. The opposite of {@link stringToBigInt}.
              * @param input the input BigInt
              * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
              */
