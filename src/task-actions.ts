@@ -42,8 +42,6 @@ function isMainnet(networkName: string): boolean {
         console.error(replacedErr);
     }
 
-    const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
-    console.log(`\t${finalMsg}\n`);
     return executed.statusCode ? 1 : 0;
 }
 
@@ -200,7 +198,7 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     }
 
     if (args.wait) { // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
-        console.log("Checking deployment transactions...");
+        console.log("Checking deployment transaction...");
         const promises = txHashes.map(hash => new Promise<void>((resolve, reject) => iterativelyCheckStatus(
             hash,
             hre.starknetWrapper,
