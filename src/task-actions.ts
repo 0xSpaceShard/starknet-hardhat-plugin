@@ -29,7 +29,7 @@ function isMainnet(networkName: string): boolean {
  * @param executed The process result of running the container
  * @returns 0 if succeeded, 1 otherwise
  */
- function processExecuted(executed: ProcessResult): number {
+ function processExecuted(executed: ProcessResult, logStatus: boolean): number {
     
     if (executed.stdout.length) {
         console.log(adaptLog(executed.stdout.toString()));
@@ -42,8 +42,11 @@ function isMainnet(networkName: string): boolean {
         console.error(replacedErr);
     }
 
-    const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
-    console.log(`\t${finalMsg}\n`);
+    if (logStatus) {
+        const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
+        console.log(`\t${finalMsg}\n`);
+    }
+    
     return executed.statusCode ? 1 : 0;
 }
 
@@ -153,7 +156,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
                 cairoPath,
             });
 
-            statusCode += processExecuted(executed);
+            statusCode += processExecuted(executed,true);
         }
     }
 
@@ -187,20 +190,20 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
                 inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
             });
             if (args.wait) {
-                const execResult = processExecuted(executed);
+                const execResult = processExecuted(executed,false);
                 if (execResult == 0) {
                     txHashes.push(extractTxHash(executed.stdout.toString()));
                 }
                 statusCode += execResult;
             }
             else {
-                statusCode += processExecuted(executed);
+                statusCode += processExecuted(executed,true);
             }
         }
     }
 
     if (args.wait) { // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
-        console.log("Checking deployment transactions...");
+        console.log(`Checking deployment transaction${txHashes.length === 1 ? "" : "s"}...`);
         const promises = txHashes.map(hash => new Promise<void>((resolve, reject) => iterativelyCheckStatus(
             hash,
             hre.starknetWrapper,

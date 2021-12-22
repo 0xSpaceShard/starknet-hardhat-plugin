@@ -70,7 +70,7 @@ export abstract class StarknetWrapper {
 
     public abstract deploy(options: DeployOptions): Promise<ProcessResult>;
 
-    protected prepareInvokeOrCalOptions(options: InvokeOrCallOptions): string[] {
+    protected prepareInvokeOrCallOptions(options: InvokeOrCallOptions): string[] {
         const prepared = [
             options.choice,
             "--abi", options.abi,
@@ -172,7 +172,8 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareCompileOptions(options);
 
         const docker = await this.getDocker();
-        return docker.runContainer(this.image, ["starknet-compile", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(this.image, ["starknet-compile", ...preparedOptions], dockerOptions);
+        return executed;
     }
 
     public async deploy(options: DeployOptions): Promise<ProcessResult> {
@@ -189,7 +190,8 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareDeployOptions(options);
 
         const docker = await this.getDocker();
-        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        return executed;
     }
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
@@ -204,10 +206,11 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareInvokeOrCalOptions(options);
+        const preparedOptions = this.prepareInvokeOrCallOptions(options);
 
         const docker = await this.getDocker();
-        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        return executed;
     }
 
     public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
@@ -221,7 +224,8 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareGetTxStatusOptions(options);
         
         const docker = await this.getDocker();
-        return docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        return executed;
     }
 }
 
@@ -281,7 +285,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareInvokeOrCalOptions(options);
+        const preparedOptions = this.prepareInvokeOrCallOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }

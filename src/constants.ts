@@ -14,7 +14,7 @@ export const DEFAULT_STARKNET_NETWORK = ALPHA_TESTNET_INTERNALLY;
 export const ALPHA_URL = "https://alpha4.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
 
-export const CHECK_STATUS_TIMEOUT = 1000; // ms
+export const CHECK_STATUS_TIMEOUT = 2000; // ms
 export const LEN_SUFFIX = "_len";
 export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
