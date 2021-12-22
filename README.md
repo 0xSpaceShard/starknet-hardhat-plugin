@@ -2,7 +2,7 @@
 
 If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
-## Content
+## Contents
 - [Install](#install)
 - [CLI commands](#cli-commands)
 - [API](#api)
