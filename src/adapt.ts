@@ -41,6 +41,22 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
 
+    // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
+    const countArrays = inputSpecs.filter( i => i.name.endsWith(LEN_SUFFIX)).length;
+    const expectedInputCount = inputSpecs.length-countArrays;
+
+    if(expectedInputCount > 0 && !input) {
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got 0.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    } else if (input) {
+        const inputLength = Object.keys(input).length;
+        
+        if (inputLength != expectedInputCount) {
+            const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLength}.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+    }
+
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
