@@ -16,7 +16,7 @@ export interface Argument {
     type: string;
 }
 
-export interface Function {
+export interface CairoFunction {
     stateMutability?: string;
     name: string;
     type: "function" | "constructor";
@@ -24,7 +24,7 @@ export interface Function {
     outputs: Argument[];
 }
 
-export type AbiEntry = Function | Struct;
+export type AbiEntry = CairoFunction | Struct;
 
 export interface Abi {
     [name: string]: AbiEntry;

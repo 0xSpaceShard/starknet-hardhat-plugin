@@ -6,7 +6,7 @@ import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction } from "./task-actions"
+import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction } from "./task-actions";
 import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
@@ -126,13 +126,14 @@ extendEnvironment(hre => {
         },
 
         bigIntToString: convertableBigInt => {
-           const convertedBigInt = bigIntToStringUtil(convertableBigInt);
-           return convertedBigInt;
+            const convertedBigInt = bigIntToStringUtil(convertableBigInt);
+            return convertedBigInt;
         }
-}});
+    };
+});
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addParam("path", `The path of the cairo contract (e.g. contracts/conract.cairo)`)
-    .addParam("address", `The address where the contract is deployed`)
+    .addParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")
+    .addParam("address", "The address where the contract is deployed")
     .setAction(starknetVoyagerAction);

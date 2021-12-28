@@ -60,20 +60,27 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
 }
 
 export function stringToBigIntUtil(convertableString: string) {
+    if (!convertableString) {
+        throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
+    }
+
     if(convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
         const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
-    
-    if(!/^[\x00-\x7F]*$/.test(convertableString)){
-        const msg = "Input string contains an invalid ASCII character.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+
+    const charArray = [];
+    for (const c of convertableString.split("")) {
+        const charCode = c.charCodeAt(0);
+        if (charCode > 127) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Invalid character: ${c}`);
+        }
+        charArray.push(charCode.toString(16));
     }
 
-    const charArray = convertableString.split("").map(c => c.toString().charCodeAt(0).toString(16));
     return BigInt("0x" + charArray.join(""));
 }
 
 export function bigIntToStringUtil(convertableBigInt: BigInt){
-    return Buffer.from(convertableBigInt.toString(16), 'hex').toString();
+    return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }

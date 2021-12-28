@@ -54,7 +54,7 @@ declare module "hardhat/types/runtime" {
              * Cairo and Starknet source files may contain short string literals,
              * which are interpreted as numbers (felts) during Starknet runtime.
              * Use this utility function to provide short string arguments to your contract functions.
-             * 
+             *
              * This function converts such a short string (max 31 characters) to its felt representation (wrapped in a `BigInt`).
              * Only accepts standard ASCII characters, i.e. characters with charcode between 0 and 127, inclusive.
              * @param input the input short string

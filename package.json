@@ -24,7 +24,8 @@
     "test-configuration-tests": "TEST_SUBDIR=configuration-tests ./scripts/test.sh",
     "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
     "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "lint": "eslint src test"
   },
   "author": "Shard-Labs",
   "license": "ISC",
@@ -39,7 +40,10 @@
     "@types/glob": "^7.2.0",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.10",
+    "@typescript-eslint/eslint-plugin": "^5.8.1",
+    "@typescript-eslint/parser": "^5.8.1",
     "chai": "^4.3.4",
+    "eslint": "^8.5.0",
     "mocha": "^9.1.3",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.2"

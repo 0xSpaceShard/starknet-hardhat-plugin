@@ -9,7 +9,7 @@ import { promisify } from "util";
 const globPromise = promisify(glob);
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
- * 
+ *
  * @param msg the log message to be adapted
  * @returns the log message with adaptation replacements
  */
@@ -56,7 +56,7 @@ export function getDefaultHttpNetworkConfig(url: string): HttpNetworkConfig {
     };
 }
 
-export async function traverseFiles(traversable: string, fileCriteria: string = "*") {
+export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
         paths = await globPromise(path.join(traversable, "**", fileCriteria));

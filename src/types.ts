@@ -123,6 +123,7 @@ export async function iterativelyCheckStatus(
         // Local var `arguments` holds what was passed in the current call
         const timeout = CHECK_STATUS_TIMEOUT; // ms
 
+        // eslint-disable-next-line prefer-rest-params
         setTimeout(iterativelyCheckStatus, timeout, ...arguments);
     }
 }
@@ -163,7 +164,7 @@ export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
     private abiPath: string;
-    private constructorAbi: starknet.Function;
+    private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
@@ -180,7 +181,7 @@ export class StarknetContractFactory {
         for (const abiEntryName in this.abi) {
             const abiEntry = this.abi[abiEntryName];
             if (abiEntry.type === "constructor") {
-                this.constructorAbi = <starknet.Function> abiEntry;
+                this.constructorAbi = <starknet.CairoFunction> abiEntry;
             }
         }
     }
@@ -309,7 +310,7 @@ export class StarknetContract {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
 
-        const func = <starknet.Function> this.abi[functionName];
+        const func = <starknet.CairoFunction> this.abi[functionName];
         if (!func) {
             const msg = `Function '${functionName}' doesn't exist on this contract.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -356,7 +357,7 @@ export class StarknetContract {
                 this.starknetWrapper,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
-                status => resolve(),
+                () => resolve(),
                 reject
             );
         });
@@ -388,7 +389,7 @@ export class StarknetContract {
      */
     async call(functionName: string, args?: StringMap, signature?: Array<Numeric>): Promise<StringMap> {
         const executed = await this.invokeOrCall("call", functionName, args, signature);
-        const func = <starknet.Function> this.abi[functionName];
+        const func = <starknet.CairoFunction> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;
     }

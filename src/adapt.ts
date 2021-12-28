@@ -3,7 +3,7 @@ import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
-function isNumeric(value: any) {
+function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
         return false;
     }
@@ -81,7 +81,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
 
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (felt*).`
+                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (felt*).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
 
@@ -153,7 +153,6 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
         throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
     }
 
-    const generatedComplex: any = {};
     const struct = <starknet.Struct> abi[type];
 
     const countArrays = struct.members.filter( i => i.type === "felt*").length;
@@ -172,8 +171,6 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
     }
-
-    return generatedComplex;
 }
 
 /**
@@ -241,7 +238,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
         return {
             generatedComplex: raw[rawIndex],
             newRawIndex: rawIndex + 1
-        }
+        };
     }
 
     let generatedComplex: any = null;

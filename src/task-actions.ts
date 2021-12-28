@@ -25,12 +25,11 @@ function isMainnet(networkName: string): boolean {
 }
 /**
  * Transfers logs and generates a return status code.
- * 
+ *
  * @param executed The process result of running the container
  * @returns 0 if succeeded, 1 otherwise
  */
- function processExecuted(executed: ProcessResult, logStatus: boolean): number {
-    
+function processExecuted(executed: ProcessResult, logStatus: boolean): number {
     if (executed.stdout.length) {
         console.log(adaptLog(executed.stdout.toString()));
     }
@@ -46,7 +45,6 @@ function isMainnet(networkName: string): boolean {
         const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
         console.log(`\t${finalMsg}\n`);
     }
-    
     return executed.statusCode ? 1 : 0;
 }
 
@@ -68,7 +66,7 @@ function isStarknetCompilationArtifact(filePath: string) {
  * Unlinking/deleting is necessary if user switched from docker to venv.
  * @param filePath the file to be recreated
  */
- function initializeFile(filePath: string) {
+function initializeFile(filePath: string) {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
@@ -88,8 +86,8 @@ function getFileName(filePath: string) {
  * @param hre environment whose networks and starknet.network are accessed
  * @returns the URL of the gateway to be used
  */
- function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
-    let gatewayUrl: string = args.gatewayUrl;
+function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
+    const gatewayUrl: string = args.gatewayUrl;
     let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
@@ -106,7 +104,7 @@ function getFileName(filePath: string) {
     }
 
     if (!networkName) { // we already know no gatewayUrl is provided
-        const msg = "No starknet-network or gateway-url provided."
+        const msg = "No starknet-network or gateway-url provided.";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
@@ -228,65 +226,65 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
 
 export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnvironment) {
     let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
-        
-        if (!isTestnet(args.starknetNetwork)) {
-            if (isMainnet(args.starknetNetwork)) {
-                voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
-            } else {
-                const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
+
+    if (!isTestnet(args.starknetNetwork)) {
+        if (isMainnet(args.starknetNetwork)) {
+            voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
+        } else {
+            const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+    }
+
+    voyagerUrl += args.address + "/code";
+    let isVerified = false;
+    try{
+        const resp = await axios.get(voyagerUrl,{
+            headers: {
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                "Content-Type": "application/json"
+            }
+        });
+        const data = resp.data;
+
+        if(data.contract != null && data.contract.length > 0){
+            isVerified = true;
+        }
+    }catch(error){
+        const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    if(isVerified){
+        const msg =`Contract at address ${args.address} has already been verified`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    //If contract hasn't been verified yet, do it
+    let contractPath = args.path;
+    if (!path.isAbsolute(contractPath)) {
+        contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
+    }
+    if (fs.existsSync(contractPath)) {
+        const content = {code:fs.readFileSync(contractPath).toString().split(/\r?\n|\r/)};
+        await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
+            switch(error.response.status){
+            case 400:{
+                const msg = `Contract at address ${args.address} does not match the provided code`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-        }
-
-        voyagerUrl += args.address + "/code";
-        let isVerified = false;
-        try{
-            const resp = await axios.get(voyagerUrl,{
-                headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Content-Type': 'application/json'
-                }
-            });
-            const data = resp.data;
-            
-            if(data.contract != null && data.contract.length > 0){
-                isVerified = true;
+            case 500:{
+                const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-        }catch(error){
-            const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
-        
-        if(isVerified){
-            const msg =`Contract at address ${args.address} has already been verified`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
-        //If contract hasn't been verified yet, do it
-        let contractPath = args.path;
-        if (!path.isAbsolute(contractPath)) {
-            contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
-        }
-        if (fs.existsSync(contractPath)) {
-            const content = {code:fs.readFileSync(contractPath).toString().split(/\r?\n|\r/)};
-            await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
-                switch(error.response.status){
-                    case 400:{
-                        const msg = `Contract at address ${args.address} does not match the provided code`;
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
-                    }
-                    case 500:{
-                        const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
-                    }
-                    default:{
-                        const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
-                    }
-                } 
-            });
-            console.log(`Contract has been successfuly verified at address ${args.address}`);
-            return;
-        } else {
-            throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
-        }
+            default:{
+                const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            }
+        });
+        console.log(`Contract has been successfuly verified at address ${args.address}`);
+        return;
+    } else {
+        throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
+    }
 }
