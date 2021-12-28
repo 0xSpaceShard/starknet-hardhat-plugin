@@ -42,19 +42,15 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter( i => i.name.endsWith(LEN_SUFFIX)).length;
+    const countArrays = inputSpecs.filter( i => i.type === "felt*").length;
     const expectedInputCount = inputSpecs.length-countArrays;
 
-    if(expectedInputCount > 0 && !input) {
-        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got 0.`;
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length; 
+
+    if(expectedInputCount != inputLen) {
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
-    } else if (input) {
-        const inputLength = Object.keys(input).length;
-        
-        if (inputLength != expectedInputCount) {
-            const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLength}.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
     }
 
     for (let i = 0; i < inputSpecs.length; ++i) {
@@ -138,6 +134,11 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
         const memberTypes = type.slice(1, -1).split(", ");
 
+        if (input.length != 2) {
+            const msg = `Expected "${inputSpec.name}" to have exactly 2 arguments`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
         for (let i = 0; i < input.length; ++i) {
             const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
             const nestedInput = input[i];
@@ -154,6 +155,17 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
     const generatedComplex: any = {};
     const struct = <starknet.Struct> abi[type];
+
+    const countArrays = struct.members.filter( i => i.type === "felt*").length;
+    const expectedInputCount = struct.members.length-countArrays;
+
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length; 
+
+    if(expectedInputCount != inputLen) {
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
 
     for (let i = 0; i < struct.members.length; ++i) {
         const memberSpec = struct.members[i];
