@@ -46,7 +46,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     const expectedInputCount = inputSpecs.length-countArrays;
 
     // Initialize an array with the user input
-    const inputLen = Object.keys(input || {}).length; 
+    const inputLen = Object.keys(input || {}).length;
 
     if(expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
@@ -159,7 +159,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
     const expectedInputCount = struct.members.length-countArrays;
 
     // Initialize an array with the user input
-    const inputLen = Object.keys(input || {}).length; 
+    const inputLen = Object.keys(input || {}).length;
 
     if(expectedInputCount != inputLen) {
         const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;

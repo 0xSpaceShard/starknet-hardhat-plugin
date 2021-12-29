@@ -69,13 +69,20 @@ export function stringToBigIntUtil(convertableString: string) {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
+    const invalidChars: { [key: string]: boolean } = {};
     const charArray = [];
     for (const c of convertableString.split("")) {
         const charCode = c.charCodeAt(0);
         if (charCode > 127) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Invalid character: ${c}`);
+            invalidChars[c] = true;
         }
         charArray.push(charCode.toString(16));
+    }
+
+    const invalidCharArray = Object.keys(invalidChars);
+    if (invalidCharArray.length) {
+        const msg = `Non-standard-ASCII character${invalidCharArray.length === 1 ? "" : "s"}: ${invalidCharArray.join(", ")}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
     return BigInt("0x" + charArray.join(""));
