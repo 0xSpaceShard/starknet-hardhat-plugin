@@ -13,7 +13,7 @@ describe("Starknet", function () {
     const convertedExactString = BigInt("203991099562869677216504074689167276267761996859264679054038991384575570547");
     const largeString = "string for exactly 32 characters";
     const invalidCharacterString = "invalid char ÿ";
-    const multipleInvalidCharactersString = "invaliđ čar";
+    const multipleInvalidCharactersString = "invaliđ čarđ";
 
     it("should convert a valid string to a BigInt", async function() {
         const convertedInput = starknet.stringToBigInt(inputString);
@@ -28,7 +28,6 @@ describe("Starknet", function () {
     it("should convert a BigInt to a string", async function() {
         const convertedOutput = starknet.bigIntToString(convertedString);
         expect(convertedOutput).to.deep.equal(inputString);
-
     });
 
     it("should fail when a string has exactly 32 characters", async function() {

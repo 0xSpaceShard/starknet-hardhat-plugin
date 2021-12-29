@@ -19,6 +19,8 @@ npm install @shardlabs/starknet-hardhat-plugin --save-dev
 Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
 ```typescript
 import "@shardlabs/starknet-hardhat-plugin";
+// or
+require("@shardlabs/starknet-hardhat-plugin");
 ```
 
 ### Requirements
@@ -84,6 +86,8 @@ Like in the previous command, this plugin relies on `--starknet-network`, but wi
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
 ```typescript
 import { starknet } from "hardhat";
+// or
+const starknet = require("hardhat").starknet;
 ```
 To see all the utility functions this object introduces, check [this](src/type-extensions.ts) out.
 
@@ -114,6 +118,9 @@ These examples are inspired by the official [Starknet Python tutorial](https://w
 ```typescript
 import { expect } from "chai";
 import { starknet } from "hardhat";
+// or
+const expect = require("chai").expect;
+const starknet = require("hardhat").starknet;
 
 describe("My Test", function () {
   this.timeout(300_000); // 5 min - recommended if used with Alpha testnet
