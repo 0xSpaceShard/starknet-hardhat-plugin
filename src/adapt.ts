@@ -42,13 +42,13 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter( i => i.type === "felt*").length;
+    const countArrays = inputSpecs.filter(i => i.type === "felt*").length;
     const expectedInputCount = inputSpecs.length-countArrays;
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
 
-    if(expectedInputCount != inputLen) {
+    if (expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -155,13 +155,13 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
     const struct = <starknet.Struct> abi[type];
 
-    const countArrays = struct.members.filter( i => i.type === "felt*").length;
+    const countArrays = struct.members.filter(i => i.type === "felt*").length;
     const expectedInputCount = struct.members.length-countArrays;
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
 
-    if(expectedInputCount != inputLen) {
+    if (expectedInputCount != inputLen) {
         const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -197,9 +197,8 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
         if (outputSpec.type === "felt") {
             adapted[outputSpec.name] = currentValue;
             resultIndex++;
-        }
 
-        else if (outputSpec.type === "felt*") {
+        } else if (outputSpec.type === "felt*") {
             const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (felt*).`;
@@ -210,9 +209,8 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             const arr = result.slice(resultIndex, resultIndex + arrLength);
             adapted[outputSpec.name] = arr;
             resultIndex += arrLength;
-        }
 
-        else {
+        } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
             adapted[outputSpec.name] = ret.generatedComplex;
             resultIndex = ret.newRawIndex;

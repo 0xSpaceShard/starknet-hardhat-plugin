@@ -16,13 +16,49 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "array-bracket-spacing": [
+            "error",
+            "never"
+        ],
+        "brace-style": [
+            "error",
+            "1tbs"
+        ],
+        "eol-last": [
+            "error",
+            "always"
+        ],
         "indent": [
             "error",
             4
         ],
+        "keyword-spacing": [
+            "error",
+            {
+                "before": true,
+                "after": true
+            }
+        ],
+        "key-spacing": [
+            "error",
+            {
+                "beforeColon": false,
+                "afterColon": true
+            }
+        ],
         "linebreak-style": [
             "error",
             "unix"
+        ],
+        "no-trailing-spaces": [
+            "error"
+        ],
+        "no-var": [
+            "error"
+        ],
+        "object-curly-spacing": [
+            "error",
+            "always"
         ],
         "quotes": [
             "error",
@@ -32,8 +68,20 @@
             "error",
             "always"
         ],
-        "no-trailing-spaces": [
-            "error"
+        "space-in-parens": [
+            "error",
+            "never"
+        ],
+        "switch-colon-spacing": [
+            "error",
+            {
+                "before": false,
+                "after": true
+            }
+        ],
+        "template-curly-spacing": [
+            "error",
+            "never"
         ]
     }
 }

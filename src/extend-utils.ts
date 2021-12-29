@@ -11,11 +11,11 @@ async function findPath(traversable: string, name: string) {
     files = files.filter(f => f.endsWith(name));
     if (files.length == 0){
         return null;
-    }
-    else if (files.length == 1){
+
+    } else if (files.length == 1){
         return files[0];
-    }
-    else {
+
+    } else {
         const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -64,7 +64,7 @@ export function stringToBigIntUtil(convertableString: string) {
         throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
     }
 
-    if(convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
+    if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
         const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }

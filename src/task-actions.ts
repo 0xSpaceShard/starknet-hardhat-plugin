@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, ALPHA_MAINNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL} from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, ALPHA_MAINNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { adaptLog,traverseFiles,checkArtifactExists } from "./utils";
@@ -53,7 +53,7 @@ function isStarknetCompilationArtifact(filePath: string) {
     let parsed = null;
     try {
         parsed = JSON.parse(content);
-    } catch(err) {
+    } catch (err) {
         return false;
     }
 
@@ -193,8 +193,7 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
                     txHashes.push(extractTxHash(executed.stdout.toString()));
                 }
                 statusCode += execResult;
-            }
-            else {
+            } else {
                 statusCode += processExecuted(executed,true);
             }
         }
@@ -238,7 +237,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
 
     voyagerUrl += args.address + "/code";
     let isVerified = false;
-    try{
+    try {
         const resp = await axios.get(voyagerUrl,{
             headers: {
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
@@ -247,15 +246,15 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
         });
         const data = resp.data;
 
-        if(data.contract != null && data.contract.length > 0){
+        if (data.contract != null && data.contract.length > 0){
             isVerified = true;
         }
-    }catch(error){
+    } catch (error){
         const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if(isVerified){
+    if (isVerified){
         const msg =`Contract at address ${args.address} has already been verified`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -265,18 +264,18 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
         contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
     }
     if (fs.existsSync(contractPath)) {
-        const content = {code:fs.readFileSync(contractPath).toString().split(/\r?\n|\r/)};
+        const content = { code: fs.readFileSync(contractPath).toString().split(/\r?\n|\r/) };
         await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
-            switch(error.response.status){
-            case 400:{
+            switch (error.response.status){
+            case 400: {
                 const msg = `Contract at address ${args.address} does not match the provided code`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            case 500:{
+            case 500: {
                 const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            default:{
+            default: {
                 const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }

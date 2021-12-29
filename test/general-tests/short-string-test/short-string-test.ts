@@ -33,7 +33,7 @@ describe("Starknet", function () {
 
     it("should fail when a string has exactly 32 characters", async function() {
 
-        try{
+        try {
             starknet.stringToBigInt(largeString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
@@ -43,7 +43,7 @@ describe("Starknet", function () {
 
     it("should fail when a string has over 31 characters", async function() {
 
-        try{
+        try {
             starknet.stringToBigInt(invalidLengthString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
@@ -53,7 +53,7 @@ describe("Starknet", function () {
 
     it("should fail when a string has a non-standard-ASCII character", async function() {
 
-        try{
+        try {
             starknet.stringToBigInt(invalidCharacterString);
             expect.fail("Should have failed on converting a string with an invalid character.");
         } catch (err: any) {
@@ -63,7 +63,7 @@ describe("Starknet", function () {
 
     it("should fail when a string has multiple non-standard-ASCII characters", async function() {
 
-        try{
+        try {
             starknet.stringToBigInt(multipleInvalidCharactersString);
             expect.fail("Should have failed on converting a string with invalid characters.");
         } catch (err: any) {

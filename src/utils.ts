@@ -60,11 +60,10 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
         paths = await globPromise(path.join(traversable, "**", fileCriteria));
-    }
-    else {
+    } else {
         paths.push(traversable);
     }
-    const files = paths.filter(file => { return fs.lstatSync(file).isFile(); });
+    const files = paths.filter(file => fs.lstatSync(file).isFile());
     return files;
 }
 
