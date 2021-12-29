@@ -134,8 +134,8 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
         const memberTypes = type.slice(1, -1).split(", ");
 
-        if (input.length != 2) {
-            const msg = `Expected "${inputSpec.name}" to have exactly 2 arguments`;
+        if (input.length != memberTypes.length) {
+            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${memberTypes.length === 1 ? "" : "s"}, got ${input.length}.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -163,7 +163,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
     const inputLen = Object.keys(input || {}).length; 
 
     if(expectedInputCount != inputLen) {
-        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
