@@ -53,7 +53,7 @@ export function getDefaultHttpNetworkConfig(url: string, verificationUrl: string
         gasMultiplier: undefined,
         gasPrice: undefined,
         httpHeaders: undefined,
-        timeout: undefined,
+        timeout: undefined
     };
 }
 

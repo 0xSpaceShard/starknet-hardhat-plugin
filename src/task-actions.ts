@@ -5,7 +5,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog,traverseFiles,checkArtifactExists, getNetwork } from "./utils";
+import { adaptLog, traverseFiles, checkArtifactExists, getNetwork } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
@@ -134,10 +134,10 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
                 file,
                 output: outputPath,
                 abi: abiPath,
-                cairoPath,
+                cairoPath
             });
 
-            statusCode += processExecuted(executed,true);
+            statusCode += processExecuted(executed, true);
         }
     }
 
@@ -168,16 +168,16 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
             const executed = await hre.starknetWrapper.deploy({
                 contract: file,
                 gatewayUrl,
-                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined
             });
             if (args.wait) {
-                const execResult = processExecuted(executed,false);
+                const execResult = processExecuted(executed, false);
                 if (execResult == 0) {
                     txHashes.push(extractTxHash(executed.stdout.toString()));
                 }
                 statusCode += execResult;
             } else {
-                statusCode += processExecuted(executed,true);
+                statusCode += processExecuted(executed, true);
             }
         }
     }
@@ -215,7 +215,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     const voyagerUrl = `${network.verificationUrl}${args.address}/code`;
     let isVerified = false;
     try {
-        const resp = await axios.get(voyagerUrl,{
+        const resp = await axios.get(voyagerUrl, {
             headers: {
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 "Content-Type": "application/json"
@@ -242,7 +242,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     }
     if (fs.existsSync(contractPath)) {
         const content = { code: fs.readFileSync(contractPath).toString().split(/\r?\n|\r/) };
-        await axios.post(voyagerUrl,JSON.stringify(content)).catch(error=>{
+        await axios.post(voyagerUrl, JSON.stringify(content)).catch(error=>{
             switch (error.response.status){
             case 400: {
                 const msg = `Contract at address ${args.address} does not match the provided code`;

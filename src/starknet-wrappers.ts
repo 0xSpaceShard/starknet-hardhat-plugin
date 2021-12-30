@@ -54,7 +54,7 @@ export abstract class StarknetWrapper {
         const prepared = [
             "deploy",
             "--contract", options.contract,
-            "--gateway_url", options.gatewayUrl,
+            "--gateway_url", options.gatewayUrl
         ];
 
         if (options.inputs && options.inputs.length) {
@@ -77,7 +77,7 @@ export abstract class StarknetWrapper {
             "--feeder_gateway_url", options.feederGatewayUrl,
             "--gateway_url", options.gatewayUrl,
             "--function", options.functionName,
-            "--address", options.address,
+            "--address", options.address
         ];
 
         if (options.inputs && options.inputs.length) {
@@ -98,7 +98,7 @@ export abstract class StarknetWrapper {
             "tx_status",
             "--hash", options.hash,
             "--gateway_url", options.gatewayUrl,
-            "--feeder_gateway_url", options.feederGatewayUrl,
+            "--feeder_gateway_url", options.feederGatewayUrl
         ];
     }
 
@@ -159,7 +159,7 @@ export class DockerWrapper extends StarknetWrapper {
         const binds: String2String = {
             [options.file]: options.file,
             [options.abi]: options.abi,
-            [options.output]: options.output,
+            [options.output]: options.output
         };
 
         addPaths(binds, options.cairoPath);
@@ -178,7 +178,7 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async deploy(options: DeployOptions): Promise<ProcessResult> {
         const binds: String2String = {
-            [options.contract]: options.contract,
+            [options.contract]: options.contract
         };
 
         const dockerOptions = {
@@ -196,7 +196,7 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
         const binds: String2String = {
-            [options.abi]: options.abi,
+            [options.abi]: options.abi
         };
 
         const dockerOptions = {

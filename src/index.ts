@@ -116,7 +116,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
 extendEnvironment(hre => {
     hre.starknet = {
         getContractFactory: async contractPath => {
-            const contractFactory = await getContractFactoryUtil(hre,contractPath);
+            const contractFactory = await getContractFactoryUtil(hre, contractPath);
             return contractFactory;
         },
 
