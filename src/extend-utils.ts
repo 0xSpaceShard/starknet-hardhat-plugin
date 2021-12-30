@@ -11,11 +11,11 @@ async function findPath(traversable: string, name: string) {
     files = files.filter(f => f.endsWith(name));
     if (files.length == 0){
         return null;
-    }
-    else if (files.length == 1){
+
+    } else if (files.length == 1){
         return files[0];
-    }
-    else {
+
+    } else {
         const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -60,20 +60,34 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
 }
 
 export function stringToBigIntUtil(convertableString: string) {
-    if(convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
+    if (!convertableString) {
+        throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
+    }
+
+    if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
         const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
-    
-    if(!/^[\x00-\x7F]*$/.test(convertableString)){
-        const msg = "Input string contains an invalid ASCII character.";
+
+    const invalidChars: { [key: string]: boolean } = {};
+    const charArray = [];
+    for (const c of convertableString.split("")) {
+        const charCode = c.charCodeAt(0);
+        if (charCode > 127) {
+            invalidChars[c] = true;
+        }
+        charArray.push(charCode.toString(16));
+    }
+
+    const invalidCharArray = Object.keys(invalidChars);
+    if (invalidCharArray.length) {
+        const msg = `Non-standard-ASCII character${invalidCharArray.length === 1 ? "" : "s"}: ${invalidCharArray.join(", ")}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    const charArray = convertableString.split("").map(c => c.toString().charCodeAt(0).toString(16));
     return BigInt("0x" + charArray.join(""));
 }
 
 export function bigIntToStringUtil(convertableBigInt: BigInt){
-    return Buffer.from(convertableBigInt.toString(16), 'hex').toString();
+    return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }

@@ -117,7 +117,7 @@ type String2String = { [path: string]: string };
  * @param paths
  * @param colonSeparatedStr
  */
- function addPaths(paths: String2String, colonSeparatedStr: string): void {
+function addPaths(paths: String2String, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
             throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
@@ -161,14 +161,14 @@ export class DockerWrapper extends StarknetWrapper {
             [options.abi]: options.abi,
             [options.output]: options.output,
         };
-        
+
         addPaths(binds, options.cairoPath);
-        
+
         const dockerOptions = {
             binds,
             networkMode: "host"
         };
-        
+
         const preparedOptions = this.prepareCompileOptions(options);
 
         const docker = await this.getDocker();
@@ -180,12 +180,12 @@ export class DockerWrapper extends StarknetWrapper {
         const binds: String2String = {
             [options.contract]: options.contract,
         };
-        
+
         const dockerOptions = {
             binds,
             networkMode: "host"
         };
-        
+
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeployOptions(options);
 
@@ -222,7 +222,7 @@ export class DockerWrapper extends StarknetWrapper {
         };
 
         const preparedOptions = this.prepareGetTxStatusOptions(options);
-        
+
         const docker = await this.getDocker();
         const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
         return executed;
