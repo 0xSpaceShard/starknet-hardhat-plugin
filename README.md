@@ -89,7 +89,7 @@ import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
-To see all the utility functions this object introduces, check [this](src/type-extensions.ts) out.
+To see all the utilities this object introduces, check [this](src/type-extensions.ts#L48) out.
 
 ## Testing
 Relying on the above described API makes it easier to interact with your contracts and test them.

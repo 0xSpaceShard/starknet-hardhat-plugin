@@ -44,9 +44,10 @@ export function adaptUrl(url: string): string {
     return url;
 }
 
-export function getDefaultHttpNetworkConfig(url: string): HttpNetworkConfig {
+export function getDefaultHttpNetworkConfig(url: string, verificationUrl: string): HttpNetworkConfig {
     return {
         url,
+        verificationUrl: verificationUrl,
         accounts: undefined,
         gas: undefined,
         gasMultiplier: undefined,
@@ -74,28 +75,40 @@ export function checkArtifactExists(artifactsPath: string): void {
     }
 }
 
-
-export function getNetwork(networkName:string, hre: HardhatRuntimeEnvironment): HttpNetworkConfig {
-
+/**
+ * Extracts the network config from `hre.config.networks` according to `networkName`.
+ * @param networkName The name of the network
+ * @param hre `HardhatRuntimeEnvironment` holding defined networks
+ * @param origin Where the extraction is being called from
+ * @returns Network config corresponding to `networkName`
+ */
+export function getNetwork(networkName: string, hre: HardhatRuntimeEnvironment, origin: string): HttpNetworkConfig {
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
     }
 
-    hre.starknet.network = networkName;
-    const httpNetwork = <HttpNetworkConfig> hre.config.networks[networkName];
-     
-    return httpNetwork;    
+    const network = <HttpNetworkConfig> hre.config.networks[networkName];
+    if (!network) {
+        const available = Object.keys(hre.config.networks).join(", ");
+        const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    if (!network.url) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${networkName}. No "url" specified.`);
+    }
+
+    return network;    
 }
 
-
-export function isTestnet(networkName: string): boolean {
+function isTestnet(networkName: string): boolean {
     return networkName === ALPHA_TESTNET
         || networkName === ALPHA_TESTNET_INTERNALLY;
 }
 
-export function isMainnet(networkName: string): boolean {
+function isMainnet(networkName: string): boolean {
     return networkName === ALPHA_MAINNET
         || networkName === ALPHA_MAINNET_INTERNALLY;
 }

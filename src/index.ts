@@ -2,7 +2,7 @@ import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import "./type-extensions";
-import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, ALPHA_URL, ALPHA_MAINNET_URL } from "./constants";
+import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -60,11 +60,11 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
     if (!config.networks.alpha) {
-        config.networks.alpha = getDefaultHttpNetworkConfig(ALPHA_URL);
+        config.networks.alpha = getDefaultHttpNetworkConfig(ALPHA_URL, VOYAGER_GOERLI_CONTRACT_API_URL);
     }
 
     if (!config.networks.alphaMainnet) {
-        config.networks.alphaMainnet = getDefaultHttpNetworkConfig(ALPHA_MAINNET_URL);
+        config.networks.alphaMainnet = getDefaultHttpNetworkConfig(ALPHA_MAINNET_URL, VOYAGER_MAINNET_CONTRACT_API_URL);
     }
 });
 

@@ -1,6 +1,6 @@
 import * as path from "path";
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
 import { checkArtifactExists, traverseFiles, getNetwork } from "./utils";
@@ -25,32 +25,24 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
-    contractPath = contractPath.replace(/\.[^/.]+$/, "");
+    contractPath = contractPath.replace(/\.[^/.]+$/, ""); // remove extension
 
-    let searchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}.json`);
-    const metadataPath = await findPath(artifactsPath, searchTarget);
+    const metadataSearchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}.json`);
+    const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
     }
 
-    searchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}${ABI_SUFFIX}`);
-    const abiPath = await findPath(artifactsPath, searchTarget);
+    const abiSearchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}${ABI_SUFFIX}`);
+    const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
     }
 
     const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
 
-    const network = getNetwork(testNetworkName,hre);
-
-    if (!network) {
-        const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks". \nValid hardhat networks are: ` + Object.keys(hre.config.networks).join(' ');
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-
-    if (!network.url) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
-    }
+    const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
+    hre.starknet.network = testNetworkName;
 
     return new StarknetContractFactory({
         starknetWrapper: hre.starknetWrapper,

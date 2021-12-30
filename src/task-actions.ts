@@ -5,7 +5,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog,traverseFiles,checkArtifactExists, getNetwork, isMainnet, isTestnet } from "./utils";
+import { adaptLog,traverseFiles,checkArtifactExists, getNetwork } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
@@ -96,19 +96,8 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
+    const network = getNetwork(networkName, hre, "starknet-network");
     hre.starknet.network = networkName;
-    
-    const network = getNetwork(networkName,hre);
-
-    if (!network) {
-        const msg = `Unknown starknet-network provided: ${networkName} \nValid hardhat networks are: ` + Object.keys(hre.config.networks).join(' ');
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-
-    if (!network.url) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${networkName}. No "url" specified.`);
-    }
-
     return network.url;
 }
 
@@ -218,18 +207,12 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
 }
 
 export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnvironment) {
-    let voyagerUrl = VOYAGER_GOERLI_CONTRACT_API_URL;
-
-    if (!isTestnet(args.starknetNetwork)) {
-        if (isMainnet(args.starknetNetwork)) {
-            voyagerUrl = VOYAGER_MAINNET_CONTRACT_API_URL;
-        } else {
-            const msg = `Unknown starknet-network provided: ${args.starknetNetwork}`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+    const network = getNetwork(args.starknetNetwork, hre, "starknet-network");
+    if (!network.verificationUrl) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Network ${args.starknetNetwork} does not support Voyager verification.`);
     }
 
-    voyagerUrl += args.address + "/code";
+    const voyagerUrl = `${network.verificationUrl}${args.address}/code`;
     let isVerified = false;
     try {
         const resp = await axios.get(voyagerUrl,{

@@ -31,6 +31,10 @@ declare module "hardhat/types/config" {
         alpha: HttpNetworkConfig;
         alphaMainnet: HttpNetworkConfig;
     }
+
+    export interface HttpNetworkConfig {
+        verificationUrl?: string;
+    }
 }
 
 type StarknetContractType = StarknetContract;
@@ -70,7 +74,7 @@ declare module "hardhat/types/runtime" {
             bigIntToString: (convertableBigInt: BigInt) => string;
 
             /**
-             * The selected starknet-network, present when specified with --starknet-network.
+             * The selected starknet-network, present if the called task relies on `--starknet-network` or `mocha.starknetNetwork`.
              */
             network?: string;
         }
