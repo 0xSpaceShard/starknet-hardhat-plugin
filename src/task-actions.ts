@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { adaptLog,traverseFiles,checkArtifactExists, getNetwork } from "./utils";
@@ -80,8 +80,8 @@ function getFileName(filePath: string) {
  */
 function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     const gatewayUrl: string = args.gatewayUrl;
-    let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
-   
+    const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
+
     if (gatewayUrl && !networkName) {
         return gatewayUrl;
     }
