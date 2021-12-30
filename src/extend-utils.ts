@@ -3,7 +3,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
-import { checkArtifactExists, traverseFiles } from "./utils";
+import { checkArtifactExists, traverseFiles, getNetwork } from "./utils";
 
 
 async function findPath(traversable: string, name: string) {
@@ -40,13 +40,15 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     }
 
     const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-    const testNetwork: HttpNetworkConfig = <HttpNetworkConfig>hre.config.networks[testNetworkName];
-    if (!testNetwork) {
-        const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks".`;
+
+    const network = getNetwork(testNetworkName,hre);
+
+    if (!network) {
+        const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks". \nValid hardhat networks are: ` + Object.keys(hre.config.networks).join(' ');
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (!testNetwork.url) {
+    if (!network.url) {
         throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
     }
 
@@ -54,8 +56,8 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        gatewayUrl: testNetwork.url,
-        feederGatewayUrl: testNetwork.url
+        gatewayUrl: network.url,
+        feederGatewayUrl: network.url
     });
 }
 
@@ -91,3 +93,5 @@ export function stringToBigIntUtil(convertableString: string) {
 export function bigIntToStringUtil(convertableBigInt: BigInt){
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
+
+

@@ -1,6 +1,6 @@
-import { HttpNetworkConfig } from "hardhat/types";
+import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME } from "./constants";
+import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, PLUGIN_NAME } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
@@ -74,3 +74,28 @@ export function checkArtifactExists(artifactsPath: string): void {
     }
 }
 
+
+export function getNetwork(networkName:string, hre: HardhatRuntimeEnvironment): HttpNetworkConfig {
+
+    if (isMainnet(networkName)) {
+        networkName = ALPHA_MAINNET_INTERNALLY;
+    } else if (isTestnet(networkName)) {
+        networkName = ALPHA_TESTNET_INTERNALLY;
+    }
+
+    hre.starknet.network = networkName;
+    const httpNetwork = <HttpNetworkConfig> hre.config.networks[networkName];
+     
+    return httpNetwork;    
+}
+
+
+export function isTestnet(networkName: string): boolean {
+    return networkName === ALPHA_TESTNET
+        || networkName === ALPHA_TESTNET_INTERNALLY;
+}
+
+export function isMainnet(networkName: string): boolean {
+    return networkName === ALPHA_MAINNET
+        || networkName === ALPHA_MAINNET_INTERNALLY;
+}

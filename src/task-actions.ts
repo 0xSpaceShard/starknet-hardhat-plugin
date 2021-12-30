@@ -2,11 +2,11 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, ALPHA_MAINNET, ALPHA_TESTNET_INTERNALLY, ALPHA_MAINNET_INTERNALLY, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog,traverseFiles,checkArtifactExists } from "./utils";
-import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
+import { adaptLog,traverseFiles,checkArtifactExists, getNetwork, isMainnet, isTestnet } from "./utils";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -14,15 +14,7 @@ function checkSourceExists(sourcePath: string): void {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }
-function isTestnet(networkName: string): boolean {
-    return networkName === ALPHA_TESTNET
-        || networkName === ALPHA_TESTNET_INTERNALLY;
-}
 
-function isMainnet(networkName: string): boolean {
-    return networkName === ALPHA_MAINNET
-        || networkName === ALPHA_MAINNET_INTERNALLY;
-}
 /**
  * Transfers logs and generates a return status code.
  *
@@ -89,11 +81,7 @@ function getFileName(filePath: string) {
 function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     const gatewayUrl: string = args.gatewayUrl;
     let networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
-    if (isMainnet(networkName)) {
-        networkName = ALPHA_MAINNET_INTERNALLY;
-    } else if (isTestnet(networkName)) {
-        networkName = ALPHA_TESTNET_INTERNALLY;
-    }
+   
     if (gatewayUrl && !networkName) {
         return gatewayUrl;
     }
@@ -109,13 +97,19 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     }
 
     hre.starknet.network = networkName;
-    const httpNetwork = <HttpNetworkConfig> hre.config.networks[networkName];
-    if (!httpNetwork) {
-        const msg = `Unknown starknet-network provided: ${networkName}`;
+    
+    const network = getNetwork(networkName,hre);
+
+    if (!network) {
+        const msg = `Unknown starknet-network provided: ${networkName} \nValid hardhat networks are: ` + Object.keys(hre.config.networks).join(' ');
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    return httpNetwork.url;
+    if (!network.url) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${networkName}. No "url" specified.`);
+    }
+
+    return network.url;
 }
 
 export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnvironment) {
