@@ -1,4 +1,4 @@
-[![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=green)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
+[![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=blue)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
 
 If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
@@ -89,7 +89,7 @@ import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
-To see all the utility functions this object introduces, check [this](src/type-extensions.ts) out.
+To see all the utilities this object introduces, check [this](src/type-extensions.ts#L48) out.
 
 ## Testing
 Relying on the above described API makes it easier to interact with your contracts and test them.

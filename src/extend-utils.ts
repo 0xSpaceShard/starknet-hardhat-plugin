@@ -1,18 +1,18 @@
 import * as path from "path";
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
-import { checkArtifactExists, traverseFiles } from "./utils";
+import { checkArtifactExists, traverseFiles, getNetwork } from "./utils";
 
 
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
     files = files.filter(f => f.endsWith(name));
-    if (files.length == 0){
+    if (files.length == 0) {
         return null;
 
-    } else if (files.length == 1){
+    } else if (files.length == 1) {
         return files[0];
 
     } else {
@@ -25,37 +25,31 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
-    contractPath = contractPath.replace(/\.[^/.]+$/, "");
+    contractPath = contractPath.replace(/\.[^/.]+$/, ""); // remove extension
 
-    let searchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}.json`);
-    const metadataPath = await findPath(artifactsPath, searchTarget);
+    const metadataSearchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}.json`);
+    const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
     }
 
-    searchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}${ABI_SUFFIX}`);
-    const abiPath = await findPath(artifactsPath, searchTarget);
+    const abiSearchTarget = path.join(`${contractPath}.cairo`, `${path.basename(contractPath)}${ABI_SUFFIX}`);
+    const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
     }
 
     const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-    const testNetwork: HttpNetworkConfig = <HttpNetworkConfig>hre.config.networks[testNetworkName];
-    if (!testNetwork) {
-        const msg = `Network ${testNetworkName} is specified under "mocha.starknetNetwork", but not defined in "networks".`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
 
-    if (!testNetwork.url) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${testNetworkName}. No "url" specified.`);
-    }
+    const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
+    hre.starknet.network = testNetworkName;
 
     return new StarknetContractFactory({
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        gatewayUrl: testNetwork.url,
-        feederGatewayUrl: testNetwork.url
+        gatewayUrl: network.url,
+        feederGatewayUrl: network.url
     });
 }
 
@@ -88,6 +82,8 @@ export function stringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToStringUtil(convertableBigInt: BigInt){
+export function bigIntToStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
+
+

@@ -1,0 +1,6 @@
+  1 failing
+
+  1) ContractFactory
+       should be created:
+     HardhatPluginError: Invalid network provided in mocha.starknetNetwork: foo.
+Valid hardhat networks: hardhat, localhost, devnet, alpha, alphaMainnet

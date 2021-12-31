@@ -24,6 +24,17 @@
             "error",
             "1tbs"
         ],
+        "comma-dangle": [
+            "error",
+            "never"
+        ],
+        "comma-spacing": [
+            "error",
+            {
+                "before": false,
+                "after": true
+            }
+        ],
         "eol-last": [
             "error",
             "always"
@@ -65,6 +76,10 @@
             "double"
         ],
         "semi": [
+            "error",
+            "always"
+        ],
+        "space-before-blocks": [
             "error",
             "always"
         ],

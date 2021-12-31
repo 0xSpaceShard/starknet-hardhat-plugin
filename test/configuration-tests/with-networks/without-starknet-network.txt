@@ -1,0 +1,3 @@
+Error in plugin Starknet: No starknet-network or gateway-url provided.
+
+For more info run Hardhat with --show-stack-traces

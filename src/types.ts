@@ -215,7 +215,7 @@ export class StarknetContractFactory {
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
             signature: handleSignature(signature),
-            gatewayUrl: this.gatewayUrl,
+            gatewayUrl: this.gatewayUrl
         });
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
