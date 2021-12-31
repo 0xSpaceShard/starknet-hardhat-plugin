@@ -24,6 +24,7 @@ echo "Success"
 
 echo "Testing invalid mocha network"
 NETWORK="$INVALID_NETWORK" npx hardhat test test/contract-factory-test.ts 2>&1 \
-    | tail -n +2 \
+    | tail -n +9 \
+    | head -n 6 \
     | diff - "$PREFIX/invalid-mocha-network.txt"
 echo "Success"

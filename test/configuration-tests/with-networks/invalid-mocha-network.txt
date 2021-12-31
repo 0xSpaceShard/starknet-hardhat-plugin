@@ -1,21 +1,6 @@
-Starknet plugin using dockerized environment (shardlabs/cairo-cli:0.6.2)
-
-
-  ContractFactory
-    1) should be created
-
-
-  0 passing (15ms)
   1 failing
 
   1) ContractFactory
        should be created:
      HardhatPluginError: Invalid network provided in mocha.starknetNetwork: foo.
 Valid hardhat networks: hardhat, localhost, devnet, alpha, alphaMainnet
-      at getNetwork (/home/fabijanc/shardlabs/starknet-hardhat-plugin/src/utils.ts:96:15)
-      at /home/fabijanc/shardlabs/starknet-hardhat-plugin/src/extend-utils.ts:44:31
-      at Generator.next (<anonymous>)
-      at fulfilled (/home/fabijanc/shardlabs/starknet-hardhat-plugin/dist/extend-utils.js:24:58)
-
-
-
