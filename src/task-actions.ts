@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { adaptLog, traverseFiles, checkArtifactExists, getNetwork } from "./utils";
@@ -206,13 +206,26 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     }
 }
 
-export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnvironment) {
-    const network = getNetwork(args.starknetNetwork, hre, "starknet-network");
+/**
+ * Extracts the verification URL assigned to the network provided.
+ * If no `networkName` is provided, defaults to Alpha testnet.
+ * If `networkName` is provided, but not supported for verification, an error is thrown.
+ * @param networkName the name of the network
+ * @param hre the runtime environment from which network data is extracted
+ * @param origin short string describing where/how `networkName` was specified
+ */
+function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
+    networkName ||= ALPHA_TESTNET;
+    const network = getNetwork(networkName, hre, origin);
     if (!network.verificationUrl) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Network ${args.starknetNetwork} does not support Voyager verification.`);
+        throw new HardhatPluginError(PLUGIN_NAME, `Network ${networkName} does not support Voyager verification.`);
     }
+    return network.verificationUrl;
+}
 
-    const voyagerUrl = `${network.verificationUrl}${args.address}/code`;
+export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnvironment) {
+    const verificationUrl = getVerificationUrl(args.starknetNetwork, hre, "starknet-network");
+    const voyagerUrl = `${verificationUrl}${args.address}/code`;
     let isVerified = false;
     try {
         const resp = await axios.get(voyagerUrl, {
@@ -223,15 +236,15 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
         });
         const data = resp.data;
 
-        if (data.contract != null && data.contract.length > 0){
+        if (data.contract != null && data.contract.length > 0) {
             isVerified = true;
         }
-    } catch (error){
+    } catch (error) {
         const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (isVerified){
+    if (isVerified) {
         const msg =`Contract at address ${args.address} has already been verified`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -243,7 +256,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     if (fs.existsSync(contractPath)) {
         const content = { code: fs.readFileSync(contractPath).toString().split(/\r?\n|\r/) };
         await axios.post(voyagerUrl, JSON.stringify(content)).catch(error=>{
-            switch (error.response.status){
+            switch (error.response.status) {
             case 400: {
                 const msg = `Contract at address ${args.address} does not match the provided code`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);

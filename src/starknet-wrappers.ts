@@ -261,7 +261,7 @@ export class VenvWrapper extends StarknetWrapper {
 
     private async execute(commandPath: string, preparedOptions: string[]): Promise<ProcessResult> {
         const process = spawnSync(commandPath, preparedOptions);
-        if (!process.stdout){
+        if (!process.stdout) {
             const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }

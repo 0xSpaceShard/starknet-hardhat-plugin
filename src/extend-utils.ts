@@ -9,10 +9,10 @@ import { checkArtifactExists, traverseFiles, getNetwork } from "./utils";
 async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
     files = files.filter(f => f.endsWith(name));
-    if (files.length == 0){
+    if (files.length == 0) {
         return null;
 
-    } else if (files.length == 1){
+    } else if (files.length == 1) {
         return files[0];
 
     } else {
@@ -82,7 +82,7 @@ export function stringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToStringUtil(convertableBigInt: BigInt){
+export function bigIntToStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 
