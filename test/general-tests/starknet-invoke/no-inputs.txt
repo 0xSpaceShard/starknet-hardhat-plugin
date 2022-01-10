@@ -1,0 +1,5 @@
+Error in plugin Starknet: Could not invoke increase_balance:
+Error: AssertionError: Expected at least 1 inputs, got 0.
+
+
+For more info run Hardhat with --show-stack-traces

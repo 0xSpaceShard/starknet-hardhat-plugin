@@ -21,7 +21,7 @@ async function findPath(traversable: string, name: string) {
     }
 }
 
-export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string) {
+export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string, networkURL?:string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
@@ -39,17 +39,24 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
     }
 
+    let gateway;
     const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-
-    const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
     hre.starknet.network = testNetworkName;
+
+    if(networkURL) {
+        gateway = networkURL;
+    }
+    else {
+        const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
+        gateway = network.url;
+    }
 
     return new StarknetContractFactory({
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        gatewayUrl: network.url,
-        feederGatewayUrl: network.url
+        gatewayUrl: gateway,
+        feederGatewayUrl: gateway
     });
 }
 

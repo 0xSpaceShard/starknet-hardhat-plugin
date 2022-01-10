@@ -287,6 +287,10 @@ export class StarknetContractFactory {
         contract.address = address;
         return contract;
     }
+
+    getAbiPath() {
+        return this.abiPath;
+    }
 }
 
 export class StarknetContract {

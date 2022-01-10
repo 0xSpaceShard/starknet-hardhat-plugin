@@ -6,7 +6,7 @@ import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction } from "./task-actions";
+import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction } from "./task-actions";
 import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
@@ -137,3 +137,27 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     .addParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")
     .addParam("address", "The address where the contract is deployed")
     .setAction(starknetVoyagerAction);
+
+task("starknet-invoke", "Invokes a function on a contract in the provided address.")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
+    .addParam("contract", "The name of the contract to invoke from")
+    .addParam("function", "The name of the function to invoke")
+    .addParam("address", "The address where the contract is deployed")
+    .addOptionalParam("inputs",
+        "Space separated values forming function input.\n" +
+        "Pass them as a single string; e.g. --inputs \"1 2 3\"")
+    .addOptionalParam("signature", "The call signature")
+    .setAction(starknetInvokeAction);
+
+task("starknet-call", "Invokes a function on a contract in the provided address.")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
+    .addParam("contract", "The name of the contract to invoke from")
+    .addParam("function", "The name of the function to invoke")
+    .addParam("address", "The address where the contract is deployed")
+    .addOptionalParam("inputs",
+        "Space separated values forming function input.\n" +
+        "Pass them as a single string; e.g. --inputs \"1 2 3\"")
+    .addOptionalParam("signature", "The call signature")
+    .setAction(starknetCallAction);

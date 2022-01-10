@@ -52,7 +52,7 @@ declare module "hardhat/types/runtime" {
              * @param name the case-sensitive contract name
              * @returns a factory for generating instances of the desired contract
              */
-            getContractFactory: (name: string) => Promise<StarknetContractFactory>;
+            getContractFactory: (name: string, networkURL?: string) => Promise<StarknetContractFactory>;
 
             /**
              * Cairo and Starknet source files may contain short string literals,
