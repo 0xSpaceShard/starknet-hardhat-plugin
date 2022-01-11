@@ -82,6 +82,20 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
+### `starknet-invoke`
+```
+npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+```
+
+Invokes a function on the target contract.
+
+### `starknet-call`
+```
+npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+```
+
+Calls a function on the target contract and returns its return value.
+
 ## API
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
 ```typescript
