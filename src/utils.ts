@@ -112,3 +112,18 @@ function isMainnet(networkName: string): boolean {
     return networkName === ALPHA_MAINNET
         || networkName === ALPHA_MAINNET_INTERNALLY;
 }
+
+export async function findPath(traversable: string, name: string) {
+    let files = await traverseFiles(traversable);
+    files = files.filter(f => f.endsWith(name));
+    if (files.length == 0) {
+        return null;
+
+    } else if (files.length == 1) {
+        return files[0];
+
+    } else {
+        const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+}

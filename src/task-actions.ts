@@ -5,7 +5,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
 import { iterativelyCheckStatus, extractTxHash } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog, traverseFiles, checkArtifactExists, getNetwork } from "./utils";
+import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
@@ -156,10 +156,14 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     let statusCode = 0;
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
-        if (!path.isAbsolute(artifactsPath)) {
+
+        // Check if input is the name of the contract and not a path
+        if (artifactsPath === path.basename(artifactsPath)) {
+            const metadataSearchTarget = path.join(`${artifactsPath}.cairo`, `${path.basename(artifactsPath)}.json`);
+            artifactsPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
+        } else if (!path.isAbsolute(artifactsPath)) {
             artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
         }
-
         checkArtifactExists(artifactsPath);
         const paths = await traverseFiles(artifactsPath, "*.json");
         const files = paths.filter(isStarknetCompilationArtifact);

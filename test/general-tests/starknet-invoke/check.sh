@@ -28,6 +28,7 @@ echo "Success"
 
 echo "Testing success case"
 npx hardhat starknet-invoke --starknet-network "$NETWORK" --contract contract --function increase_balance --address "$ADDRESS" --inputs "10 20" 2>&1 \
-    | tail \
-    | diff - <(echo "")
+    | tail -n +2\
+    | head -n -5\
+    | diff - <(echo "Invoke transaction was sent.")
 echo "Success"
