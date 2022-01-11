@@ -172,7 +172,8 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
             const executed = await hre.starknetWrapper.deploy({
                 contract: file,
                 gatewayUrl,
-                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined
+                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+                salt: args.salt? args.salt : undefined
             });
             if (args.wait) {
                 const execResult = processExecuted(executed, false);

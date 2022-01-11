@@ -106,7 +106,14 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         "Pass them as a single string; e.g. --inputs \"1 2 3\"\n" +
         "You would typically use this feature when deploying a single contract.\n" +
         "If you're deploying multiple contracts, they'll all use the same input."
-    ).addOptionalVariadicPositionalParam("paths",
+    )
+    .addOptionalParam("salt",
+        "An optional salt controlling where the contract will be deployed.\n" +
+        "The contract deployment address is determined by the hash\n" +
+        "of contract, salt and caller.\n" +
+        "If the salt is not supplied, the contract will be deployed with a random salt."
+    )
+    .addOptionalVariadicPositionalParam("paths",
         "The paths to be used for deployment.\n" +
         "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
         "If no paths are provided, the default artifacts directory is traversed."

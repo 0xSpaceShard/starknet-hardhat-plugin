@@ -19,6 +19,7 @@ export interface DeployOptions {
     gatewayUrl: string,
     inputs?: string[],
     signature?: string[],
+    salt?: string
 }
 
 export interface InvokeOrCallOptions {
@@ -63,6 +64,10 @@ export abstract class StarknetWrapper {
 
         if (options.signature && options.signature.length) {
             prepared.push("--signature", ...options.signature);
+        }
+
+        if (options.salt && options.salt !== "") {
+            prepared.push("--salt",  options.salt);
         }
 
         return prepared;
