@@ -279,19 +279,19 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
 }
 
 export async function starknetInvokeAction(args: any, hre: HardhatRuntimeEnvironment) {
-    await starknetInvokeOrCallAction("invoke",args,hre);
+    await starknetInvokeOrCallAction("invoke", args, hre);
 }
 
 export async function starknetCallAction(args: any, hre: HardhatRuntimeEnvironment) {
-    await starknetInvokeOrCallAction("call",args,hre);
+    await starknetInvokeOrCallAction("call", args, hre);
 }
 
 
 async function starknetInvokeOrCallAction(choice: any, args: any, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
-    const contractFactory = await hre.starknet.getContractFactory(args.contract,gatewayUrl);
+    const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
-    
+
     const executed = await hre.starknetWrapper.invokeOrCall({
         choice: choice,
         address: args.address,
@@ -302,8 +302,8 @@ async function starknetInvokeOrCallAction(choice: any, args: any, hre: HardhatRu
         gatewayUrl: gatewayUrl,
         feederGatewayUrl: gatewayUrl
     });
-    
-    const statusCode = processExecuted(executed,true);
+
+    const statusCode = processExecuted(executed, true);
 
     if (statusCode) {
         const msg = `Could not ${choice} ${args.function}:\n` + executed.stderr.toString();

@@ -43,10 +43,9 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
     hre.starknet.network = testNetworkName;
 
-    if(networkURL) {
+    if (networkURL) {
         gateway = networkURL;
-    }
-    else {
+    } else {
         const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
         gateway = network.url;
     }
