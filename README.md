@@ -51,7 +51,7 @@ If no paths are provided, all Starknet artifacts from the default artifacts dire
 
 If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
 
-The "--salt" parameter, when provided, will control add a salt to the contract address
+The "--salt" parameter, when provided, will control add a salt to the contract address. It should be an hex string
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 ```javascript
