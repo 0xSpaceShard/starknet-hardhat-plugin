@@ -18,7 +18,6 @@ export interface DeployOptions {
     contract: string,
     gatewayUrl: string,
     inputs?: string[],
-    signature?: string[],
     salt?: string
 }
 
@@ -60,10 +59,6 @@ export abstract class StarknetWrapper {
 
         if (options.inputs && options.inputs.length) {
             prepared.push("--inputs", ...options.inputs);
-        }
-
-        if (options.signature && options.signature.length) {
-            prepared.push("--signature", ...options.signature);
         }
 
         if (options.salt) {

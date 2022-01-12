@@ -210,12 +210,12 @@ export class StarknetContractFactory {
      * @param constructorArguments constructor arguments
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: StringMap, signature?: Array<Numeric>): Promise<StarknetContract> {
+    async deploy(constructorArguments?: StringMap, addressSalt?:string): Promise<StarknetContract> {
         const executed = await this.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
-            signature: handleSignature(signature),
-            gatewayUrl: this.gatewayUrl
+            gatewayUrl: this.gatewayUrl,
+            salt: addressSalt
         });
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
