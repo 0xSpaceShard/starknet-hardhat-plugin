@@ -9,18 +9,109 @@ executors:
       xcode: 11.7
     environment:
       TERM: xterm-256color
-    
+
+aliases:
+  - &restore_macos_brew_cache
+    - when:
+          condition:
+            and:
+              - equal: [ macos-node14, << parameters.platform >> ]
+          steps:
+              - restore_cache:
+                    name: "Restore brew-gmp Cache"
+                    key: brew-gmp-cache-{{ arch }}-v1
+  - &save_macos_brew_cache
+    - when:
+          condition:
+            and:
+              - equal: [ macos-node14, << parameters.platform >> ]
+          steps:
+              - save_cache:
+                    name: "Save brew-gmp Cache"
+                    key: brew-gmp-cache-{{ arch }}-v1
+                    paths:
+                      - /usr/local/Cellar/gmp
+                      - /usr/local/lib
+                      - /usr/local/include
+
+  - &restore_cairo_cache
+    - restore_cache:
+          name: "Restore cairo-lang Cache"
+          key: cairo-lang-cache-{{ arch }}-{{ checksum "/tmp/cairo-lang-version" }}
+
+  - &save_cairo_cache
+    - save_cache:
+          name: "Save cairo-lang Cache"
+          key: cairo-lang-cache-{{ arch }}-{{ checksum "/tmp/cairo-lang-version" }}
+          paths:
+            - /usr/python3.8/dist-packages
+            - /usr/python3.9/dist-packages
+            - /Users/distiller/project/my-venv
+            - /home/circleci/project/my-venv
+            - /usr/local/bin
+
+  - &restore_devnet_cache
+    - restore_cache:
+          name: "Restore devnet Cache"
+          key: devnet-cache-{{ arch }}-{{ checksum "/tmp/devnet-version" }}
+
+  - &save_devnet_cache
+    - save_cache:
+          name: "Save devnet Cache"
+          key: devnet-cache-{{ arch }}-{{ checksum "/tmp/devnet-version" }}
+          paths:
+            - /opt/circleci/.pyenv/versions
+
+commands:
+  fetch_dependecies_version:
+    description: "Fetch the dendencies version"
+    steps:
+      - run:
+          name: "Fetch Devnet version"
+          command: echo $(curl -Ls https://api.github.com/repos/Shard-Labs/starknet-devnet/commits/master | jq -r .sha) > /tmp/devnet-version
+      - run:
+          name: "Fetch cairo-lang version"
+          command: echo $(curl -Ls https://api.github.com/repos/starkware-libs/cairo-lang/commits/master | jq -r .sha) > /tmp/cairo-lang-version
+  restore_dependency_cache:
+    parameters:
+      platform:
+        type: string
+    description: "Restore the dependencies from cache"
+    steps:
+      - <<: *restore_macos_brew_cache
+      - <<: *restore_cairo_cache
+      - <<: *restore_devnet_cache
+  save_dependency_cache:
+    parameters:
+        platform:
+          type: string
+    description: "Save the dependencies to cache"
+    steps:
+      - <<: *save_macos_brew_cache
+      - <<: *save_cairo_cache
+      - <<: *save_devnet_cache
 
 jobs:
   test:
     parameters:
       platform:
-        type: executor
+        type: string
       test-name:
         type: string
     executor: << parameters.platform >>
     steps:
       - checkout
+      - when:
+          condition:
+            and:
+              - equal: [ linux-node14, << parameters.platform >> ]
+          steps:
+            - run:
+                name: Add file permissions
+                command: sudo chown -R circleci /usr/local/bin
+      - fetch_dependecies_version
+      - restore_dependency_cache:
+          platform: << parameters.platform >>
       - run:
           name: Install
           command: npm install
@@ -33,6 +124,8 @@ jobs:
       - run:
           name: << parameters.test-name >>
           command: npm run << parameters.test-name >>
+      - save_dependency_cache:
+          platform: << parameters.platform >>
   npm_publish:
     docker:
       - image: cimg/node:14.18.1
@@ -42,7 +135,6 @@ jobs:
           name: Publish
           command: ./scripts/npm-publish.sh
 
-
 workflows:
   test_and_publish:
     jobs:
@@ -50,7 +142,7 @@ workflows:
           matrix:
             parameters:
               platform: [linux-node14, macos-node14]
-              test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
+              test-name: [test-venv-tests, test-general-tests, test-configuration-tests]
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests
