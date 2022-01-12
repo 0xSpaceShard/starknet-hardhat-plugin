@@ -45,11 +45,13 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 ### `starknet-deploy`
 ```
-npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <SINGLE_STRING_OF_SPACE_SEPARATED_VALUES>]
+npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <SINGLE_STRING_OF_SPACE_SEPARATED_VALUES>] [--salt <SALT>]
 ```
 If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
 
 If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
+
+The "--salt" parameter, when provided, will control add a salt to the contract address
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 ```javascript
@@ -88,6 +90,10 @@ npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [-
 ```
 
 Invokes a function on the target contract.
+If the function takes any inputs, they should be passed as a single string, separated by space.
+```
+npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20"
+```
 
 ### `starknet-call`
 ```
@@ -95,6 +101,10 @@ npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--c
 ```
 
 Calls a function on the target contract and returns its return value.
+If the function takes any inputs, they should be passed as a single string, separated by space.
+```
+npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
+```
 
 ## API
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:

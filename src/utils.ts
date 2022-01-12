@@ -99,7 +99,7 @@ export function getNetwork(networkName: string, hre: HardhatRuntimeEnvironment, 
     if (!network.url) {
         throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${networkName}. No "url" specified.`);
     }
-
+    hre.starknet.network = networkName;
     return network;
 }
 

@@ -5,10 +5,7 @@ import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHA
 import { StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getNetwork } from "./utils";
 
-
-
-
-export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string, networkURL?:string) {
+export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string, networkUrl?:string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
@@ -27,12 +24,10 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     }
 
     let gateway;
-    const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-    hre.starknet.network = testNetworkName;
-
-    if (networkURL) {
-        gateway = networkURL;
+    if (networkUrl) {
+        gateway = networkUrl;
     } else {
+        const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
         const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
         gateway = network.url;
     }

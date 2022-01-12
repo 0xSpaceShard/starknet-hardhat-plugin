@@ -66,7 +66,7 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
-        if (options.salt && options.salt !== "") {
+        if (options.salt) {
             prepared.push("--salt",  options.salt);
         }
 

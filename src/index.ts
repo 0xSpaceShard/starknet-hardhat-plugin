@@ -109,8 +109,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     )
     .addOptionalParam("salt",
         "An optional salt controlling where the contract will be deployed.\n" +
-        "The contract deployment address is determined by the hash\n" +
-        "of contract, salt and caller.\n" +
+        "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
         "If the salt is not supplied, the contract will be deployed with a random salt."
     )
     .addOptionalVariadicPositionalParam("paths",

@@ -3,7 +3,7 @@ import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
-import { iterativelyCheckStatus, extractTxHash } from "./types";
+import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -292,7 +292,7 @@ export async function starknetCallAction(args: any, hre: HardhatRuntimeEnvironme
 }
 
 
-async function starknetInvokeOrCallAction(choice: any, args: any, hre: HardhatRuntimeEnvironment) {
+async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
