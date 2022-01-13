@@ -18,7 +18,7 @@ export interface DeployOptions {
     contract: string,
     gatewayUrl: string,
     inputs?: string[],
-    signature?: string[],
+    salt?: string
 }
 
 export interface InvokeOrCallOptions {
@@ -61,8 +61,8 @@ export abstract class StarknetWrapper {
             prepared.push("--inputs", ...options.inputs);
         }
 
-        if (options.signature && options.signature.length) {
-            prepared.push("--signature", ...options.signature);
+        if (options.salt) {
+            prepared.push("--salt",  options.salt);
         }
 
         return prepared;

@@ -3,9 +3,9 @@ import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
-import { iterativelyCheckStatus, extractTxHash } from "./types";
+import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog, traverseFiles, checkArtifactExists, getNetwork } from "./utils";
+import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
@@ -156,10 +156,14 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     let statusCode = 0;
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
-        if (!path.isAbsolute(artifactsPath)) {
+
+        // Check if input is the name of the contract and not a path
+        if (artifactsPath === path.basename(artifactsPath)) {
+            const metadataSearchTarget = path.join(`${artifactsPath}.cairo`, `${path.basename(artifactsPath)}.json`);
+            artifactsPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
+        } else if (!path.isAbsolute(artifactsPath)) {
             artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
         }
-
         checkArtifactExists(artifactsPath);
         const paths = await traverseFiles(artifactsPath, "*.json");
         const files = paths.filter(isStarknetCompilationArtifact);
@@ -168,7 +172,8 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
             const executed = await hre.starknetWrapper.deploy({
                 contract: file,
                 gatewayUrl,
-                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined
+                inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+                salt: args.salt? args.salt : undefined
             });
             if (args.wait) {
                 const execResult = processExecuted(executed, false);
@@ -275,5 +280,39 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
         return;
     } else {
         throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
+    }
+}
+
+export async function starknetInvokeAction(args: any, hre: HardhatRuntimeEnvironment) {
+    await starknetInvokeOrCallAction("invoke", args, hre);
+}
+
+export async function starknetCallAction(args: any, hre: HardhatRuntimeEnvironment) {
+    await starknetInvokeOrCallAction("call", args, hre);
+}
+
+
+async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: HardhatRuntimeEnvironment) {
+    const gatewayUrl = getGatewayUrl(args, hre);
+    const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
+    const abiPath = contractFactory.getAbiPath();
+
+    const executed = await hre.starknetWrapper.invokeOrCall({
+        choice: choice,
+        address: args.address,
+        abi: abiPath,
+        functionName: args.function,
+        inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+        signature: args.signature,
+        gatewayUrl: gatewayUrl,
+        feederGatewayUrl: gatewayUrl
+    });
+
+    const statusCode = processExecuted(executed, true);
+
+    if (statusCode) {
+        const msg = `Could not ${choice} ${args.function}:\n` + executed.stderr.toString();
+        const replacedMsg = adaptLog(msg);
+        throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 }

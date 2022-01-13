@@ -3,25 +3,9 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
-import { checkArtifactExists, traverseFiles, getNetwork } from "./utils";
+import { checkArtifactExists, findPath, getNetwork } from "./utils";
 
-
-async function findPath(traversable: string, name: string) {
-    let files = await traverseFiles(traversable);
-    files = files.filter(f => f.endsWith(name));
-    if (files.length == 0) {
-        return null;
-
-    } else if (files.length == 1) {
-        return files[0];
-
-    } else {
-        const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-}
-
-export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string) {
+export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string, networkUrl?:string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
@@ -39,17 +23,21 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
     }
 
-    const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-
-    const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
-    hre.starknet.network = testNetworkName;
+    let gateway;
+    if (networkUrl) {
+        gateway = networkUrl;
+    } else {
+        const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
+        const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
+        gateway = network.url;
+    }
 
     return new StarknetContractFactory({
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        gatewayUrl: network.url,
-        feederGatewayUrl: network.url
+        gatewayUrl: gateway,
+        feederGatewayUrl: gateway
     });
 }
 

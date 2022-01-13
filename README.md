@@ -45,11 +45,15 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 ### `starknet-deploy`
 ```
-npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <SINGLE_STRING_OF_SPACE_SEPARATED_VALUES>]
+npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <CONSTRUCTOR_ARGUMENTS>] [--salt <SALT>]
 ```
 If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
 
+If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
+
 If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
+
+The "--salt" parameter should be an hex string which, when provided, will add a salt to the contract address.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 ```javascript
@@ -67,7 +71,6 @@ The Alpha networks are available by default, you don't need to define them in th
 - `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 - `--starknet-network alpha-mainnet` for Alpha Mainnet
 
-If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
 ```
@@ -81,6 +84,28 @@ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [--addre
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source file at `<PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
+
+### `starknet-invoke`
+```
+npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+```
+
+Invokes a function on the target contract.
+If the function takes any inputs, they should be passed as a single string, separated by space.
+```
+npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20"
+```
+
+### `starknet-call`
+```
+npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+```
+
+Calls a function on the target contract and returns its return value.
+If the function takes any inputs, they should be passed as a single string, separated by space.
+```
+npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
+```
 
 ## API
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
