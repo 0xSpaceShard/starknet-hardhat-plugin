@@ -26,9 +26,11 @@ npx hardhat starknet-call --starknet-network "$NETWORK" --contract contract --fu
     | diff - "$PREFIX/too-many-inputs.txt"
 echo "Success"
 
-echo "Testing success case"
-npx hardhat starknet-call --starknet-network "$NETWORK" --contract contract --function sum_points_to_tuple --address "$ADDRESS" --inputs "10 20 30 40" 2>&1 \
-    | tail -n +2 \
-    | head -n -3 \
-    | diff - <(echo "40 60")
-echo "Success"
+echo "The success case of starknet-call test is temporarily disabled."
+echo "To enable it back, uncomment the lines in its check.sh."
+# echo "Testing success case"
+# npx hardhat starknet-call --starknet-network "$NETWORK" --contract contract --function sum_points_to_tuple --address "$ADDRESS" --inputs "10 20 30 40" 2>&1 \
+#     | tail -n +2 \
+#     | head -n -3 \
+#     | diff - <(echo "40 60")
+# echo "Success"

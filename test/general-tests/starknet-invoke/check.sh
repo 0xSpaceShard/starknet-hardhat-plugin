@@ -26,9 +26,11 @@ npx hardhat starknet-invoke --starknet-network "$NETWORK" --contract contract --
     | diff - "$PREFIX/too-many-inputs.txt"
 echo "Success"
 
-echo "Testing success case"
-npx hardhat starknet-invoke --starknet-network "$NETWORK" --contract contract --function increase_balance --address "$ADDRESS" --inputs "10 20" 2>&1 \
-    | tail -n +2\
-    | head -n -5\
-    | diff - <(echo "Invoke transaction was sent.")
-echo "Success"
+echo "The success case of starknet-invoke test is temporarily disabled."
+echo "To enable it back, uncomment the lines in its check.sh."
+# echo "Testing success case"
+# npx hardhat starknet-invoke --starknet-network "$NETWORK" --contract contract --function increase_balance --address "$ADDRESS" --inputs "10 20" 2>&1 \
+#     | tail -n +2\
+#     | head -n -5\
+#     | diff - <(echo "Invoke transaction was sent.")
+# echo "Success"
