@@ -1,5 +1,8 @@
 version: 2.1
 
+##########################
+# Executor name definition
+##########################
 executors:
   linux-node14:
     machine:
@@ -10,17 +13,48 @@ executors:
     environment:
       TERM: xterm-256color
 
+####################################################################################################################################################
+# Aliases - encapsulation of lengthy logic
+#
+# `restore_*` aliases refer to downloading the saved cache of their respective key, if it exists
+#  i.e - `restore_macos_brew_cache` will try to download the cache that holds the data installed after running `brew install gmp`
+#
+# `save_*` aliases refer to saving the installation data to cache
+#  i.e - `save_macos_brew_cache` will save the result of installing gmp with the command `brew install gmp`
+#
+#
+#   Available caches:
+#
+#   `brew-gmp-cache` is used to save/restore cache of the gmp package installation on macos
+#
+#   `venv_cache` is used to save/restore cache of the venv tests, which use starknet commands installed in the virtual environment `my-venv`
+#
+#   `cairo_cache` is used to save/restore cache of the cairo-lang package, which uses starknet commands installed in the local bin folder
+#
+#   `devnet_cache` is used to save/restore cache of starknet-devnet, including all its dependencies
+#
+#
+#   key format: {cache name}-{key version}-{ executor architecture }-{ checksum of the dependency version }
+#   Exception is "brew-gmp-cache", which we do not need to verify the checksum
+#
+####################################################################################################################################################
 aliases:
   - &restore_macos_brew_cache
+    ######################################################
+    # Try to restore only if the executor is a macos one #
+    ######################################################
     - when:
           condition:
             and:
               - equal: [ macos-node14, << parameters.platform >> ]
           steps:
               - restore_cache:
-                    name: "Restore brew-gmp Cache"
+                    name: "Restore venv Cache"
                     key: brew-gmp-cache-v1-{{ arch }}
   - &save_macos_brew_cache
+    ############################################
+    # Save only if the executor is a macos one #
+    ############################################
     - when:
           condition:
             and:
@@ -39,11 +73,38 @@ aliases:
                       - /usr/local/lib/libgmpxx.a
                       - /usr/local/lib/libgmpxx.dylib
 
+  - &restore_venv_cache
+    #############################################################
+    # Try to restore only if the test name is "test-venv-tests" #
+    #############################################################
+    - when:
+          condition:
+            and:
+              - equal: [ test-venv-tests, << parameters.test-name >> ]
+          steps:
+              - restore_cache:
+                    name: "Restore venv Cache"
+                    key: venv-cache-v1-{{ arch }}
+  - &save_venv_cache
+    ###################################################
+    # Save only if the test name is "test-venv-tests" #
+    ###################################################
+    - when:
+          condition:
+            and:
+              - equal: [ test-venv-tests, << parameters.test-name >> ]
+          steps:
+              - save_cache:
+                    name: "Save venv Cache"
+                    key: venv-cache-v1-{{ arch }}
+                    paths:
+                      - /Users/distiller/project/my-venv
+                      - /home/circleci/project/my-venv
+
   - &restore_cairo_cache
     - restore_cache:
           name: "Restore cairo-lang Cache"
           key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
-
   - &save_cairo_cache
     - save_cache:
           name: "Save cairo-lang Cache"
@@ -51,8 +112,6 @@ aliases:
           paths:
             - /usr/python3.8/dist-packages/cairo-lang
             - /usr/python3.9/dist-packages/cairo-lang
-            - /Users/distiller/project/my-venv
-            - /home/circleci/project/my-venv
             - /usr/local/bin/starknet
             - /usr/local/bin/starknet-compile
 
@@ -60,7 +119,6 @@ aliases:
     - restore_cache:
           name: "Restore devnet Cache"
           key: devnet-cache-{{ arch }}-v1-{{ checksum "/tmp/devnet-version" }}
-
   - &save_devnet_cache
     - save_cache:
           name: "Save devnet Cache"
@@ -72,6 +130,17 @@ aliases:
             - /usr/local/lib/python3.8/site-packages
             - /usr/local/lib/python3.9/site-packages
 
+######################################################################################################################################################################
+# Commands
+#
+#   fetch_dependecies_version - retrieves the latest version of the dependencies (starknet-devnet and cairo-lang).
+#                               These are saved to different files, from which we verify the checksum to check for any needed updates, and create caches with new keys
+#
+#   restore_dependency_cache - download dependencies from cache. It calls the `restore_*` aliases defined above for each dependecy.
+#
+#   save_dependency_cache - save the dependencies in cache. It calls the `save_*` aliases defined above for each dependecy.
+#
+######################################################################################################################################################################
 commands:
   fetch_dependecies_version:
     description: "Fetch the dependencies version"
@@ -86,21 +155,30 @@ commands:
     parameters:
       platform:
         type: string
+      test-name:
+        type: string
     description: "Restore the dependencies from cache"
     steps:
       - <<: *restore_macos_brew_cache
       - <<: *restore_cairo_cache
+      - <<: *restore_venv_cache
       - <<: *restore_devnet_cache
   save_dependency_cache:
     parameters:
         platform:
           type: string
+        test-name:
+          type: string
     description: "Save the dependencies to cache"
     steps:
       - <<: *save_macos_brew_cache
       - <<: *save_cairo_cache
+      - <<: *save_venv_cache
       - <<: *save_devnet_cache
 
+###################
+# Jobs definition #
+###################
 jobs:
   test:
     parameters:
@@ -111,6 +189,10 @@ jobs:
     executor: << parameters.platform >>
     steps:
       - checkout
+
+      ############################################################################################################################################################
+      # If on a Linux executor, add permissions for user to be able to write to "/usr/local/bin", so that we're able to download cache that will be in that folder
+      ############################################################################################################################################################
       - when:
           condition:
             and:
@@ -119,9 +201,19 @@ jobs:
             - run:
                 name: Add file permissions
                 command: sudo chown -R circleci /usr/local/bin
+
+      ##################################################
+      # Retrieve the latest versions of the dependencies
+      ##################################################
       - fetch_dependecies_version
+
+      #############################################################################################################################################################################
+      # Call Command: restore_dependency_cache - restore the dependencies that were saved in cache. The parameters are passed because some caches depend on the executor and test #
+      #############################################################################################################################################################################
       - restore_dependency_cache:
           platform: << parameters.platform >>
+          test-name: << parameters.test-name >>
+
       - run:
           name: Install
           command: npm install
@@ -134,8 +226,13 @@ jobs:
       - run:
           name: << parameters.test-name >>
           command: npm run << parameters.test-name >>
+
+      #################################################################################################################################################################################
+      # Call Command: save_dependency_cache - save dependencies that were installed during the job run. The parameters are passed because some caches depend on the executor and test #
+      #################################################################################################################################################################################
       - save_dependency_cache:
           platform: << parameters.platform >>
+          test-name: << parameters.test-name >>
   npm_publish:
     docker:
       - image: cimg/node:14.18.1
