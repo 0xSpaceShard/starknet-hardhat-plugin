@@ -12,7 +12,7 @@ echo "python version: $(python --version)"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export HOMEBREW_NO_INSTALL_CLEANUP=1
-    brew install gmp
+    brew ls --versions gmp || brew install gmp
 fi
 
 if [ -z "$TEST_SUBDIR" ]; then
@@ -21,7 +21,7 @@ if [ -z "$TEST_SUBDIR" ]; then
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
-    pip3 install cairo-lang==0.6.2
+    which "$VENV/bin/starknet" || pip3 install cairo-lang=="$(cat /tmp/cairo-lang-version)"
     echo "starknet at: $(which starknet)"
     echo "starknet version: $(starknet --version)"
 fi

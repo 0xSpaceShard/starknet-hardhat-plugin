@@ -56,7 +56,10 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
 fi
 
 # install and build devnet
-../scripts/install-devnet.sh
+
+export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
+which starknet-devnet || ../scripts/install-devnet.sh
+echo "starknet-devnet at: $(which starknet-devnet)"
 starknet-devnet & # assuming the default (localhost:5000)
 iterate_dir devnet
 
