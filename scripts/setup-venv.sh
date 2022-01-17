@@ -21,7 +21,7 @@ if [ -z "$TEST_SUBDIR" ]; then
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
-    which starknet || pip3 install cairo-lang==0.6.2
+    which "$VENV/bin/starknet" || pip3 install cairo-lang=="$(cat /tmp/cairo-lang-version)"
     echo "starknet at: $(which starknet)"
     echo "starknet version: $(starknet --version)"
 fi

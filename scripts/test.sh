@@ -57,7 +57,7 @@ fi
 
 # install and build devnet
 
-export PATH="$PATH:/opt/circleci/.pyenv/shims"
+export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
 which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
 starknet-devnet & # assuming the default (localhost:5000)

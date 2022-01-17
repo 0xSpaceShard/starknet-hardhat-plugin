@@ -19,7 +19,7 @@ aliases:
           steps:
               - restore_cache:
                     name: "Restore brew-gmp Cache"
-                    key: brew-gmp-cache-{{ arch }}-v1
+                    key: brew-gmp-cache-v1-{{ arch }}
   - &save_macos_brew_cache
     - when:
           condition:
@@ -28,50 +28,60 @@ aliases:
           steps:
               - save_cache:
                     name: "Save brew-gmp Cache"
-                    key: brew-gmp-cache-{{ arch }}-v1
+                    key: brew-gmp-cache-v1-{{ arch }}
                     paths:
                       - /usr/local/Cellar/gmp
-                      - /usr/local/lib
                       - /usr/local/include
+                      - /usr/local/lib/libgmp.10.dylib
+                      - /usr/local/lib/libgmp.a
+                      - /usr/local/lib/libgmp.dylib
+                      - /usr/local/lib/libgmpxx.4.dylib
+                      - /usr/local/lib/libgmpxx.a
+                      - /usr/local/lib/libgmpxx.dylib
 
   - &restore_cairo_cache
     - restore_cache:
           name: "Restore cairo-lang Cache"
-          key: cairo-lang-cache-{{ arch }}-{{ checksum "/tmp/cairo-lang-version" }}
+          key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
 
   - &save_cairo_cache
     - save_cache:
           name: "Save cairo-lang Cache"
-          key: cairo-lang-cache-{{ arch }}-{{ checksum "/tmp/cairo-lang-version" }}
+          key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
           paths:
-            - /usr/python3.8/dist-packages
-            - /usr/python3.9/dist-packages
+            - /usr/python3.8/dist-packages/cairo-lang
+            - /usr/python3.9/dist-packages/cairo-lang
             - /Users/distiller/project/my-venv
             - /home/circleci/project/my-venv
-            - /usr/local/bin
+            - /usr/local/bin/starknet
+            - /usr/local/bin/starknet-compile
 
   - &restore_devnet_cache
     - restore_cache:
           name: "Restore devnet Cache"
-          key: devnet-cache-{{ arch }}-{{ checksum "/tmp/devnet-version" }}
+          key: devnet-cache-{{ arch }}-v1-{{ checksum "/tmp/devnet-version" }}
 
   - &save_devnet_cache
     - save_cache:
           name: "Save devnet Cache"
-          key: devnet-cache-{{ arch }}-{{ checksum "/tmp/devnet-version" }}
+          key: devnet-cache-{{ arch }}-v1-{{ checksum "/tmp/devnet-version" }}
           paths:
             - /opt/circleci/.pyenv/versions
+            - /opt/circleci/.pyenv/shims/starknet-devnet
+            - /usr/local/bin/starknet-devnet
+            - /usr/local/lib/python3.8/site-packages
+            - /usr/local/lib/python3.9/site-packages
 
 commands:
   fetch_dependecies_version:
-    description: "Fetch the dendencies version"
+    description: "Fetch the dependencies version"
     steps:
       - run:
           name: "Fetch Devnet version"
           command: echo $(curl -Ls https://api.github.com/repos/Shard-Labs/starknet-devnet/commits/master | jq -r .sha) > /tmp/devnet-version
       - run:
-          name: "Fetch cairo-lang version"
-          command: echo $(curl -Ls https://api.github.com/repos/starkware-libs/cairo-lang/commits/master | jq -r .sha) > /tmp/cairo-lang-version
+          name: "Set cairo-lang version"
+          command: echo 0.6.2 > /tmp/cairo-lang-version
   restore_dependency_cache:
     parameters:
       platform:
@@ -142,7 +152,7 @@ workflows:
           matrix:
             parameters:
               platform: [linux-node14, macos-node14]
-              test-name: [test-venv-tests, test-general-tests, test-configuration-tests]
+              test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests
