@@ -90,6 +90,23 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
                 adapted.push(element.toString());
             }
 
+        } else if (inputSpec.type.includes("*")) {
+            if (!Array.isArray(currentValue)) {
+                const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}*`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+
+            const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
+            if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
+                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}*).`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+
+            adapted.push(currentValue.length.toString());
+            for (const element of currentValue) {
+                adaptComplexInput(currentValue, element, abi, adapted);
+            }
+
         } else {
             const nestedInput = input[inputSpec.name];
             adaptComplexInput(nestedInput, inputSpec, abi, adapted);
@@ -155,7 +172,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
     const struct = <starknet.Struct> abi[type];
 
-    const countArrays = struct.members.filter(i => i.type === "felt*").length;
+    const countArrays = struct.members.filter(i => i.type.includes("*")).length;
     const expectedInputCount = struct.members.length-countArrays;
 
     // Initialize an array with the user input
@@ -210,6 +227,22 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             adapted[outputSpec.name] = arr;
             resultIndex += arrLength;
 
+        } else if (outputSpec.type.includes("*")) {
+            const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
+            if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
+                const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (${outputSpec.type}*).`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+
+            const arrLength = Number(adapted[lenName]);
+            let structArray = [];
+
+            for(let i = 0; i<arrLength; i++){
+                const ret = generateComplexOutput(result, 0, outputSpec.type, abi);
+                structArray.push(ret);
+                resultIndex += ret.newRawIndex;
+            }
+            adapted[outputSpec.name] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
             adapted[outputSpec.name] = ret.generatedComplex;
