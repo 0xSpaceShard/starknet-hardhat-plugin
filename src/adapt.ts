@@ -42,7 +42,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter(i => i.type === "felt*").length;
+    const countArrays = inputSpecs.filter(i => i.type.includes("*")).length;
     const expectedInputCount = inputSpecs.length-countArrays;
 
     // Initialize an array with the user input
@@ -64,7 +64,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const nextSpec = inputSpecs[i+1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
-                if (nextSpec && nextSpec.name === arrayName && nextSpec.type === "felt*" && arrayName in input) {
+                if (nextSpec && nextSpec.name === arrayName && nextSpec.type.includes("*") && arrayName in input) {
                     // will add array length in next iteration
                 } else {
                     throw new HardhatPluginError(PLUGIN_NAME, errorMsg);
@@ -91,20 +91,24 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             }
 
         } else if (inputSpec.type.includes("*")) {
+            const type = inputSpec.type.slice(0, -1) //Remove * from the type
             if (!Array.isArray(currentValue)) {
-                const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}*`;
+                const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
 
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}*).`;
+                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
+            // Remove the * from the spec type
+            const trimmedInputSpec = inputSpec;
+            trimmedInputSpec.type = trimmedInputSpec.type.slice(0,-1);
 
             adapted.push(currentValue.length.toString());
             for (const element of currentValue) {
-                adaptComplexInput(currentValue, element, abi, adapted);
+                adaptComplexInput(element, trimmedInputSpec, abi, adapted);
             }
 
         } else {
@@ -114,7 +118,6 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
 
         lastSpec = inputSpec;
     }
-
     return adapted;
 }
 
@@ -230,15 +233,18 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
         } else if (outputSpec.type.includes("*")) {
             const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (${outputSpec.type}*).`;
+                const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
 
             const arrLength = Number(adapted[lenName]);
             let structArray = [];
 
+            // Remove * from the spec type
+            const trimmedSpecType = outputSpec.type.slice(0,-1);
+
             for(let i = 0; i<arrLength; i++){
-                const ret = generateComplexOutput(result, 0, outputSpec.type, abi);
+                const ret = generateComplexOutput(result, 0, trimmedSpecType, abi);
                 structArray.push(ret);
                 resultIndex += ret.newRawIndex;
             }
