@@ -178,7 +178,7 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
                 contract: file,
                 gatewayUrl,
                 inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
-                salt: args.salt? args.salt : undefined
+                salt: args.salt ? args.salt : undefined
             });
             if (args.wait) {
                 const execResult = processExecuted(executed, false);
@@ -319,8 +319,10 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         account: wallet ? wallet.accountName : undefined,
         accountDir: wallet ? accountDir : undefined,
         gatewayUrl: gatewayUrl,
-        networkID: wallet ? args.starknetNetwork : undefined,
-        feederGatewayUrl: gatewayUrl
+        feederGatewayUrl: gatewayUrl,
+        blockNumber: args.blockNumber ? args.blockNumber : undefined,
+        networkID: wallet ? args.starknetNetwork : undefined
+
     });
 
     const statusCode = processExecuted(executed, true);

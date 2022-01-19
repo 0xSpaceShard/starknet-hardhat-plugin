@@ -34,6 +34,7 @@ export interface InvokeOrCallOptions {
     networkID?:string,
     gatewayUrl: string,
     feederGatewayUrl: string
+    blockNumber?: string
 }
 
 export interface GetTxStatusOptions {
@@ -50,7 +51,6 @@ export interface DeployAccountOptions {
     feederGatewayUrl: string,
     network: string
 }
-
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileOptions): string[] {
@@ -102,6 +102,9 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
+        if (options.blockNumber) {
+            prepared.push("--block_number", options.blockNumber);
+        }
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
             prepared.push("--network_id", options.networkID);
