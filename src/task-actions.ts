@@ -152,7 +152,7 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
-    const intRegex = new RegExp("^-?\d+$");
+    const intRegex = new RegExp(/^-?\d+$/);
 
     let statusCode = 0;
     const txHashes: string[] = [];
