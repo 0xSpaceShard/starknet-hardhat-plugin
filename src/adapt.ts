@@ -205,7 +205,8 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
-        result.push(BigInt(num));
+        const parsed = num[0] === '-' ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
+        result.push(parsed);
     }
 
     let resultIndex = 0;
