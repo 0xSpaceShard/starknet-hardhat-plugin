@@ -152,11 +152,15 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
-    console.log(args.inputs);
+    const intRegex = new RegExp("^-?\d+$");
+
     let statusCode = 0;
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
 
+        if(intRegex.test(artifactsPath)) {
+            console.log(`WARNING: found an integer "${artifactsPath}" as an artifact path. Make sure that all inputs are within double quotes (")`);
+        }
         // Check if input is the name of the contract and not a path
         if (artifactsPath === path.basename(artifactsPath)) {
             const metadataSearchTarget = path.join(`${artifactsPath}.cairo`, `${path.basename(artifactsPath)}.json`);
