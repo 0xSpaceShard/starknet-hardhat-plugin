@@ -13,6 +13,9 @@ export interface CompileOptions {
     abi: string,
     cairoPath: string,
 }
+export interface CleanOptions {
+    file: string
+}
 
 export interface DeployOptions {
     contract: string,
@@ -67,8 +70,14 @@ export abstract class StarknetWrapper {
 
         return prepared;
     }
-
+ protected prepareCleanOptions(options: CleanOptions): string[] {
+        const prepared = [
+            options.file
+        ];
+        return prepared;
+    }
     public abstract deploy(options: DeployOptions): Promise<ProcessResult>;
+      public abstract clean(options: CleanOptions): Promise<ProcessResult>;
 
     protected prepareInvokeOrCallOptions(options: InvokeOrCallOptions): string[] {
         const prepared = [
@@ -193,6 +202,23 @@ export class DockerWrapper extends StarknetWrapper {
         const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
         return executed;
     }
+     public async clean(options: CleanOptions): Promise<ProcessResult> {
+       const binds: String2String = {
+            [options.file]: options.file
+        };
+
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+
+        const preparedOptions = this.prepareCleanOptions(options);
+
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(this.image, ["starknet-clean", ...preparedOptions], dockerOptions);
+        return executed;
+    }
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
         const binds: String2String = {
@@ -283,7 +309,11 @@ export class VenvWrapper extends StarknetWrapper {
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
-
+     public async clean(options: CleanOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareCleanOptions(options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInvokeOrCallOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
