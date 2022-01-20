@@ -146,8 +146,49 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }
+export async function starknetCleanAction(args: any, hre: HardhatRuntimeEnvironment) {
+    const gatewayUrl = getGatewayUrl(args, hre);
+    const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
+    const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
 
+    let statusCode = 0;
+    const txHashes: string[] = [];
+    for (let artifactsPath of artifactsPaths) {
 
+        // Check if input is the name of the contract and not a path
+        if (artifactsPath === path.basename(artifactsPath)) {
+            const metadataSearchTarget = path.join(`${artifactsPath}.cairo`, `${path.basename(artifactsPath)}.json`);
+            artifactsPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
+        } else if (!path.isAbsolute(artifactsPath)) {
+            artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
+        }
+        checkArtifactExists(artifactsPath);
+        const paths = await traverseFiles(artifactsPath, "*.json");
+        const files = paths.filter(isStarknetCompilationArtifact);
+        for (const file of files) {
+            console.log("Removing", file);
+            const suffix = file.replace(rootRegex, "");
+            const fileName = getFileName(suffix);
+            const dirPath = path.join(artifactsPath, suffix);
+          
+
+            fs.rmdirSync(dirPath, { recursive: true });
+           
+
+            const executed = await hre.starknetWrapper.clean({
+                file
+            });
+
+            statusCode += processExecuted(executed, true);
+        }
+    }
+
+   
+
+    if (statusCode) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Failed deletion of ${statusCode} contracts`);
+    }
+}
 export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
