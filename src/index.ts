@@ -6,7 +6,7 @@ import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction } from "./task-actions";
+import { starknetCompileAction,starknetCleanAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction } from "./task-actions";
 import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
@@ -95,6 +95,19 @@ task("starknet-compile", "Compiles Starknet contracts")
         "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .setAction(starknetCompileAction);
+
+task("starknet-clean", "Deletes the content of the directory where compilation artifacts are stored")
+    .addOptionalVariadicPositionalParam("paths",
+        "The paths to be used for deployment.\n" +
+        "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+        "If no paths are provided, the default contracts directory is traversed."
+    )
+    .addOptionalParam("cairoPath",
+        "Allows specifying the locations of imported files, if necessary.\n" +
+        "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
+    )
+    .setAction(starknetCleanAction);
+
 
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
