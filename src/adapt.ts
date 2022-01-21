@@ -208,7 +208,6 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
         const parsed = num[0] === '-' ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
         result.push(parsed);
     }
-
     let resultIndex = 0;
     let lastSpec: starknet.Argument = { type: null, name: null };
     const adapted: StringMap = {};
@@ -231,24 +230,30 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             adapted[outputSpec.name] = arr;
             resultIndex += arrLength;
 
-        } else if (outputSpec.type.includes("*")) {
+        } else if (outputSpec.type.endsWith("*")) {
             const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
 
-            const arrLength = Number(adapted[lenName]);
-            let structArray = [];
-
             // Remove * from the spec type
             const trimmedSpecType = outputSpec.type.slice(0,-1);
+            const arrLength = Number(adapted[lenName]);
 
+            const structArray = [];
+
+            // Iterate over the struct array, starting at index, starting at `resultIndex`
+            let newRawIndex = resultIndex;
             for(let i = 0; i<arrLength; i++){
-                const ret = generateComplexOutput(result, 0, trimmedSpecType, abi);
-                structArray.push(ret);
-                resultIndex += ret.newRawIndex;
+                // Generate a struct with each element of the array and push it to `structArray`
+                const ret = generateComplexOutput(result, newRawIndex, trimmedSpecType, abi);
+                structArray.push(ret.generatedComplex);
+                // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
+                newRawIndex=ret.newRawIndex;
             }
+            // New resultIndex is the raw index generated from the last struct
+            resultIndex=newRawIndex;
             adapted[outputSpec.name] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
@@ -258,7 +263,6 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
 
         lastSpec = outputSpec;
     }
-
     return adapted;
 }
 
