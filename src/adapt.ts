@@ -73,24 +73,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
                 throw new HardhatPluginError(PLUGIN_NAME, errorMsg);
             }
 
-        } else if (inputSpec.type === "felt*") {
-            if (!Array.isArray(currentValue)) {
-                const msg = `${functionName}: Expected ${inputSpec.name} to be a felt*`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-
-            const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
-            if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (felt*).`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-
-            adapted.push(currentValue.length.toString());
-            for (const element of currentValue) {
-                adapted.push(element.toString());
-            }
-
-        } else if (inputSpec.type.includes("*")) {
+        } else if (inputSpec.type.endsWith("*")) {
             const type = inputSpec.type.slice(0, -1) //Remove * from the type
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
@@ -217,18 +200,6 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
         if (outputSpec.type === "felt") {
             adapted[outputSpec.name] = currentValue;
             resultIndex++;
-
-        } else if (outputSpec.type === "felt*") {
-            const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
-            if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (felt*).`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-
-            const arrLength = Number(adapted[lenName]);
-            const arr = result.slice(resultIndex, resultIndex + arrLength);
-            adapted[outputSpec.name] = arr;
-            resultIndex += arrLength;
 
         } else if (outputSpec.type.endsWith("*")) {
             const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
