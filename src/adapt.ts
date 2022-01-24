@@ -74,7 +74,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             }
 
         } else if (inputSpec.type.endsWith("*")) {
-            const type = inputSpec.type.slice(0, -1) //Remove * from the type
+            const type = inputSpec.type.slice(0, -1); //Remove * from the type
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -87,7 +87,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             }
             // Remove the * from the spec type
             const trimmedInputSpec = inputSpec;
-            trimmedInputSpec.type = trimmedInputSpec.type.slice(0,-1);
+            trimmedInputSpec.type = trimmedInputSpec.type.slice(0, -1);
 
             adapted.push(currentValue.length.toString());
             for (const element of currentValue) {
@@ -188,7 +188,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
-        const parsed = num[0] === '-' ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
+        const parsed = num[0] === "-" ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
         result.push(parsed);
     }
     let resultIndex = 0;
@@ -209,14 +209,14 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             }
 
             // Remove * from the spec type
-            const trimmedSpecType = outputSpec.type.slice(0,-1);
+            const trimmedSpecType = outputSpec.type.slice(0, -1);
             const arrLength = Number(adapted[lenName]);
 
             const structArray = [];
 
             // Iterate over the struct array, starting at index, starting at `resultIndex`
             let newRawIndex = resultIndex;
-            for(let i = 0; i<arrLength; i++){
+            for (let i = 0; i<arrLength; i++) {
                 // Generate a struct with each element of the array and push it to `structArray`
                 const ret = generateComplexOutput(result, newRawIndex, trimmedSpecType, abi);
                 structArray.push(ret.generatedComplex);
