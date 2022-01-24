@@ -49,10 +49,9 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     const inputLen = Object.keys(input || {}).length;
 
     if (expectedInputCount != inputLen) {
-        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.\nIf this call is being made using CLI, make sure all the inputs are inside double quotes (e.g. '--inputs "10 20" ').`;
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
-
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
@@ -64,7 +63,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const nextSpec = inputSpecs[i+1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
-                if (nextSpec && nextSpec.name === arrayName && nextSpec.type.includes("*") && arrayName in input) {
+                if (nextSpec && nextSpec.name === arrayName && nextSpec.type.endsWith("*") && arrayName in input) {
                     // will add array length in next iteration
                 } else {
                     throw new HardhatPluginError(PLUGIN_NAME, errorMsg);
@@ -74,7 +73,6 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             }
 
         } else if (inputSpec.type.endsWith("*")) {
-            const type = inputSpec.type.slice(0, -1); //Remove * from the type
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -86,12 +84,11 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
             // Remove the * from the spec type
-            const trimmedInputSpec = inputSpec;
-            trimmedInputSpec.type = trimmedInputSpec.type.slice(0, -1);
+            const inputSpecArrayElement = { name: inputSpec.name, type: inputSpec.type.slice(0, -1) };
 
             adapted.push(currentValue.length.toString());
             for (const element of currentValue) {
-                adaptComplexInput(element, trimmedInputSpec, abi, adapted);
+                adaptComplexInput(element, inputSpecArrayElement, abi, adapted);
             }
 
         } else {
@@ -209,7 +206,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             }
 
             // Remove * from the spec type
-            const trimmedSpecType = outputSpec.type.slice(0, -1);
+            const outputSpecArrayElementType = outputSpec.type.slice(0, -1);
             const arrLength = Number(adapted[lenName]);
 
             const structArray = [];
@@ -218,7 +215,7 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             let newRawIndex = resultIndex;
             for (let i = 0; i<arrLength; i++) {
                 // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(result, newRawIndex, trimmedSpecType, abi);
+                const ret = generateComplexOutput(result, newRawIndex, outputSpecArrayElementType, abi);
                 structArray.push(ret.generatedComplex);
                 // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
                 newRawIndex=ret.newRawIndex;
