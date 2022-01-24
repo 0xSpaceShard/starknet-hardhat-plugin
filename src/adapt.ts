@@ -49,7 +49,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     const inputLen = Object.keys(input || {}).length;
 
     if (expectedInputCount != inputLen) {
-        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}`;
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     for (let i = 0; i < inputSpecs.length; ++i) {
