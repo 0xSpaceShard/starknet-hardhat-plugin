@@ -42,7 +42,7 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter(i => i.type.includes("*")).length;
+    const countArrays = inputSpecs.filter(i => i.type.endsWith("*")).length;
     const expectedInputCount = inputSpecs.length-countArrays;
 
     // Initialize an array with the user input
@@ -155,7 +155,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
 
     const struct = <starknet.Struct> abi[type];
 
-    const countArrays = struct.members.filter(i => i.type.includes("*")).length;
+    const countArrays = struct.members.filter(i => i.type.endsWith("*")).length;
     const expectedInputCount = struct.members.length-countArrays;
 
     // Initialize an array with the user input
@@ -212,16 +212,14 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             const structArray = [];
 
             // Iterate over the struct array, starting at index, starting at `resultIndex`
-            let newRawIndex = resultIndex;
             for (let i = 0; i<arrLength; i++) {
                 // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(result, newRawIndex, outputSpecArrayElementType, abi);
+                const ret = generateComplexOutput(result, resultIndex, outputSpecArrayElementType, abi);
                 structArray.push(ret.generatedComplex);
                 // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
-                newRawIndex=ret.newRawIndex;
+                resultIndex=ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            resultIndex=newRawIndex;
             adapted[outputSpec.name] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
