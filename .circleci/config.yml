@@ -107,18 +107,36 @@ aliases:
                       - /home/circleci/project/my-venv
 
   - &restore_cairo_cache
-    - restore_cache:
-          name: "Restore cairo-lang Cache"
-          key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
+    #################################################################
+    # Try to restore only if the test name is not "test-venv-tests" #
+    #################################################################
+    - when:
+          condition:
+            and:
+              - not:
+                  equal: [ test-venv-tests, << parameters.test-name >> ]
+          steps:
+              - restore_cache:
+                    name: "Restore cairo-lang Cache"
+                    key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
   - &save_cairo_cache
-    - save_cache:
-          name: "Save cairo-lang Cache"
-          key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
-          paths:
-            - /usr/python3.8/dist-packages/cairo-lang
-            - /usr/python3.9/dist-packages/cairo-lang
-            - /usr/local/bin/starknet
-            - /usr/local/bin/starknet-compile
+    ##############################################################
+    # Try to save only if the test name is not "test-venv-tests" #
+    ##############################################################
+    - when:
+          condition:
+            and:
+              - not:
+                  equal: [ test-venv-tests, << parameters.test-name >> ]
+          steps:
+              - save_cache:
+                    name: "Save cairo-lang Cache"
+                    key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
+                    paths:
+                      - /usr/python3.8/dist-packages/cairo-lang
+                      - /usr/python3.9/dist-packages/cairo-lang
+                      - /usr/local/bin/starknet
+                      - /usr/local/bin/starknet-compile
 
   - &restore_devnet_cache
     - restore_cache:
