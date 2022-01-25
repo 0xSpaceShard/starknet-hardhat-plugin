@@ -21,3 +21,4 @@ export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/cont
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
+export const STARKNET_CLI_MODULE = "starkware.starknet.cli.starknet_cli"

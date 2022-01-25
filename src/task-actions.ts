@@ -320,3 +320,31 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 }
+
+export async function starknetDeployAccountAction(args: any, hre: HardhatRuntimeEnvironment) {
+    const gatewayUrl = getGatewayUrl(args, hre);
+    const wallet = hre.config.wallets[args.wallet];
+
+    if (!wallet) {
+        const available = Object.keys(hre.config.wallets).join(", ");
+        const msg = `Invalid wallet provided: ${args.wallet}.\nValid hardhat networks: ${available}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    const executed = await hre.starknetWrapper.deployAccount({
+        accountDir:wallet.accountPath,
+        accountName:wallet.name,
+        feederGatewayUrl:gatewayUrl,
+        gatewayUrl:gatewayUrl,
+        network:args.starknetNetwork,
+        wallet:wallet.modulePath
+    });
+
+    const statusCode = processExecuted(executed, true);
+
+    if (statusCode) {
+        const msg = `Could not deploy account contract:\n`;// + executed.stderr.toString();
+        const replacedMsg = adaptLog(msg);
+        throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+    }
+}

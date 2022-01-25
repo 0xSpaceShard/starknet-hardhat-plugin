@@ -8,6 +8,17 @@ type CairoConfig = {
     venv?: string;
 }
 
+type WalletUserConfig = {
+    [walletName : string]: WalletConfig | undefined;
+}
+
+type WalletConfig = {
+    name: string;
+    modulePath: string;
+    accountPath: string;
+    accountFile: string;
+}
+
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
         starknetArtifacts?: string;
@@ -21,10 +32,12 @@ declare module "hardhat/types/config" {
 
     export interface HardhatConfig {
         cairo: CairoConfig;
+        wallets: WalletUserConfig;
     }
 
     export interface HardhatUserConfig {
         cairo?: CairoConfig;
+        wallets?: WalletUserConfig;
     }
 
     export interface NetworksConfig {

@@ -1,4 +1,4 @@
-import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
+import { HardhatRuntimeEnvironment, HttpNetworkConfig, StringMap } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, PLUGIN_NAME } from "./constants";
 import * as path from "path";
@@ -127,3 +127,13 @@ export async function findPath(traversable: string, name: string) {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }
+
+export function processResult(stdout: string): StringMap {
+    const lines = stdout.toString().split('\n');
+    const results: StringMap = {};
+    lines.forEach(function(line) {
+        const parts: string[] = line.split(": ");
+        results[parts[0]] = parts[1];
+    });
+    return results;
+};

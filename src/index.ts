@@ -6,7 +6,7 @@ import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction } from "./task-actions";
+import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction, starknetDeployAccountAction } from "./task-actions";
 import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
@@ -167,3 +167,8 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
     .addOptionalParam("signature", "The call signature")
     .setAction(starknetCallAction);
+
+task("starknet-deploy-account", "Deploys a new account according to the parameters.")
+    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .setAction(starknetDeployAccountAction);
