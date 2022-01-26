@@ -333,7 +333,7 @@ export async function starknetDeployAccountAction(args: any, hre: HardhatRuntime
 
     if (!wallet) {
         const available = Object.keys(hre.config.wallets).join(", ");
-        const msg = `Invalid wallet provided: ${args.wallet}.\nValid hardhat networks: ${available}`;
+        const msg = `Invalid wallet provided: ${args.wallet}.\nValid wallets: ${available}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 

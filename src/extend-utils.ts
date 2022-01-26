@@ -1,6 +1,6 @@
 import * as path from "path";
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getNetwork } from "./utils";
@@ -24,10 +24,11 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     }
 
     let gateway;
+    let testNetworkName;
     if (networkUrl) {
         gateway = networkUrl;
     } else {
-        const testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
+        testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
         const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
         gateway = network.url;
     }
@@ -36,6 +37,7 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
+        networkID: testNetworkName,
         gatewayUrl: gateway,
         feederGatewayUrl: gateway
     });
@@ -75,3 +77,12 @@ export function bigIntToStringUtil(convertableBigInt: BigInt) {
 }
 
 
+export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
+    const wallet = hre.config.wallets[name];
+    if (!wallet) {
+        const available = Object.keys(hre.config.wallets).join(", ");
+        const msg = `Invalid wallet provided: ${name}.\nValid wallets: ${available}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    return wallet;
+}

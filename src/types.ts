@@ -6,6 +6,7 @@ import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
+import { network } from "hardhat";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -38,6 +39,7 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
+    networkID: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
@@ -167,6 +169,7 @@ export class StarknetContractFactory {
     private abiPath: string;
     private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
+    private networkID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -174,6 +177,7 @@ export class StarknetContractFactory {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.networkID = config.networkID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -230,6 +234,7 @@ export class StarknetContractFactory {
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
+            networkID: this.networkID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -282,6 +287,7 @@ export class StarknetContractFactory {
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
+            networkID: this.networkID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -299,6 +305,7 @@ export class StarknetContract {
     private abi: starknet.Abi;
     private abiPath: string;
     public address: string;
+    private networkID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -306,6 +313,7 @@ export class StarknetContract {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.networkID = config.networkID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
@@ -334,6 +342,7 @@ export class StarknetContract {
             wallet: wallet ? wallet.modulePath : undefined,
             account: wallet ? wallet.accountName : undefined,
             accountDir: wallet ? wallet.accountPath : undefined,
+            networkID: this.networkID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl
         });

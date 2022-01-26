@@ -3,11 +3,11 @@ import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError } from "hardhat/plugins";
 import "./type-extensions";
 import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_PATH, DEFAULT_DOCKER_IMAGE_TAG, DOCKER_REPOSITORY, ALPHA_URL, ALPHA_MAINNET_URL, VOYAGER_GOERLI_CONTRACT_API_URL, VOYAGER_MAINNET_CONTRACT_API_URL } from "./constants";
-import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
+import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction, starknetDeployAccountAction } from "./task-actions";
-import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
+import { bigIntToStringUtil, getContractFactoryUtil, getWalletUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -137,7 +137,8 @@ extendEnvironment(hre => {
         },
 
         getWallet: name => {
-            return hre.config.wallets[name];
+            const wallet = getWalletUtil(name, hre);
+            return wallet;
         }
     };
 });
