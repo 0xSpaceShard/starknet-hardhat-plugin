@@ -134,6 +134,10 @@ extendEnvironment(hre => {
         bigIntToString: convertableBigInt => {
             const convertedBigInt = bigIntToStringUtil(convertableBigInt);
             return convertedBigInt;
+        },
+
+        getWallet: name => {
+            return hre.config.wallets[name];
         }
     };
 });
@@ -153,7 +157,7 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
     .addOptionalParam("inputs",
         "Space separated values forming function input.\n" +
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
-    .addOptionalParam("signature", "The call signature")
+    .addOptionalParam("wallet", "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when invoking.")
     .setAction(starknetInvokeAction);
 
 task("starknet-call", "Invokes a function on a contract in the provided address.")
@@ -165,7 +169,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
     .addOptionalParam("inputs",
         "Space separated values forming function input.\n" +
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
-    .addOptionalParam("signature", "The call signature")
+    .addOptionalParam("wallet", "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling.")
     .setAction(starknetCallAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")

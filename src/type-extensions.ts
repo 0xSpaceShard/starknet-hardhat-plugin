@@ -13,10 +13,9 @@ type WalletUserConfig = {
 }
 
 type WalletConfig = {
-    name: string;
     modulePath: string;
-    accountPath: string;
-    accountFile: string;
+    accountName?: string;
+    accountPath?: string;
 }
 
 declare module "hardhat/types/config" {
@@ -91,12 +90,19 @@ declare module "hardhat/types/runtime" {
              * The selected starknet-network, present if the called task relies on `--starknet-network` or `mocha.starknetNetwork`.
              */
             network?: string;
+
+            /**
+             * @param name the name of the wallet to get
+             * @returns a wallet
+             */
+            getWallet: (name: string) => WalletConfig;
         }
     }
 
     type StarknetContract = StarknetContractType;
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
+    type Wallet = WalletConfig;
 }
 
 declare module "mocha" {

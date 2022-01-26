@@ -2,10 +2,10 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_ACCOUNT_PATH } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath } from "./utils";
+import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath, getAccountPath } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function checkSourceExists(sourcePath: string): void {
@@ -301,14 +301,20 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
     const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
 
+    const wallet = hre.config.wallets[args.wallet];
+    const accountDir = wallet ? getAccountPath(wallet.accountPath, hre) : undefined;
+
     const executed = await hre.starknetWrapper.invokeOrCall({
         choice: choice,
         address: args.address,
         abi: abiPath,
         functionName: args.function,
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
-        signature: args.signature,
+        wallet: wallet ? wallet.modulePath : undefined,
+        account: wallet ? wallet.accountName : undefined,
+        accountDir: accountDir,
         gatewayUrl: gatewayUrl,
+        networkID: wallet ? args.starknetNetwork : undefined,
         feederGatewayUrl: gatewayUrl
     });
 
@@ -331,19 +337,21 @@ export async function starknetDeployAccountAction(args: any, hre: HardhatRuntime
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
+    const accountDir = getAccountPath(wallet.accountPath, hre);
+
     const executed = await hre.starknetWrapper.deployAccount({
-        accountDir:wallet.accountPath,
-        accountName:wallet.name,
-        feederGatewayUrl:gatewayUrl,
-        gatewayUrl:gatewayUrl,
-        network:args.starknetNetwork,
-        wallet:wallet.modulePath
+        accountDir: accountDir,
+        accountName: wallet.accountName,
+        feederGatewayUrl: gatewayUrl,
+        gatewayUrl: gatewayUrl,
+        network: args.starknetNetwork,
+        wallet: wallet.modulePath
     });
 
     const statusCode = processExecuted(executed, true);
 
     if (statusCode) {
-        const msg = `Could not deploy account contract:\n`;// + executed.stderr.toString();
+        const msg = "Could not deploy account contract:\n" + executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }

@@ -1,12 +1,11 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { exec, execSync } from "child_process";
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME, STARKNET_CLI_MODULE } from "./constants";
 import { Choice } from "./types";
-import { adaptUrl, processResult } from "./utils";
+import { adaptUrl } from "./utils";
 
 export interface CompileOptions {
     file: string,
@@ -28,9 +27,12 @@ export interface InvokeOrCallOptions {
     abi: string,
     functionName: string,
     inputs?: string[],
-    signature?: string[],
+    wallet?: string,
+    account?: string,
+    accountDir?: string,
+    networkID?:string,
     gatewayUrl: string,
-    feederGatewayUrl: string,
+    feederGatewayUrl: string
 }
 
 export interface GetTxStatusOptions {
@@ -95,8 +97,19 @@ export abstract class StarknetWrapper {
             prepared.push("--inputs", ...options.inputs);
         }
 
-        if (options.signature && options.signature.length) {
-            prepared.push("--signature", ...options.signature);
+        if (options.wallet) {
+            prepared.push("--wallet", options.wallet);
+            prepared.push("--network_id", options.networkID);
+
+            if (options.account) {
+                prepared.push("--account", options.account);
+            }
+            if (options.accountDir) {
+                prepared.push("--account_dir", options.accountDir);
+            }
+
+        } else {
+            prepared.push("--no_wallet");
         }
 
         return prepared;
@@ -172,8 +185,6 @@ export class DockerWrapper extends StarknetWrapper {
     constructor(image: Image) {
         super();
         this.image = image;
-        console.log(spawnSync("whereis python"));
-        this.pythonPath = (spawnSync("which python").stdout || spawnSync("which python3").stdout).toString();
         console.log(`${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`);
     }
 
@@ -186,6 +197,18 @@ export class DockerWrapper extends StarknetWrapper {
             }
         }
         return this.docker;
+    }
+
+    private async setPythonPath() {
+        const binds: String2String = {};
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(this.image, ["which", "python"], dockerOptions);
+        this.pythonPath = executed.stdout.toString().trim();
     }
 
     public async compile(options: CompileOptions): Promise<ProcessResult> {
@@ -262,19 +285,22 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
+        const binds: String2String = {
+            [options.accountDir]: options.accountDir
+        };
 
         const dockerOptions = {
             binds,
             networkMode: "host"
         };
 
+        await this.setPythonPath();
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareDeployAccountOptions(options);
-        const deployAccountCommand = this.pythonPath + " -c " + `\"from ${STARKNET_CLI_MODULE} import deploy_account; deploy_account(${preparedOptions},[]) \"`;
+        const deployAccountScript = `import asyncio;from argparse import Namespace;from ${STARKNET_CLI_MODULE} import deploy_account;asyncio.run(deploy_account(${preparedOptions},[]))`;
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, [deployAccountCommand] , dockerOptions);
+        const executed = await docker.runContainer(this.image, ["python", "-c", deployAccountScript], dockerOptions);
         return executed;
     }
 }
@@ -288,7 +314,6 @@ function checkCommandPath(commandPath: string): void {
 export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
     private starknetPath: string;
-    private pythonPath: string;
     constructor(venvPath: string) {
         super();
         let venvPrefix = "";
@@ -307,7 +332,6 @@ export class VenvWrapper extends StarknetWrapper {
             this.starknetPath = path.join(venvPrefix, "starknet");
             checkCommandPath(this.starknetPath);
         }
-        this.pythonPath = (spawnSync("which",["python"]).stdout || spawnSync("which",["python3"]).stdout).toString().trim();
     }
 
     private async execute(commandPath: string, preparedOptions: string[]): Promise<ProcessResult> {
@@ -349,23 +373,9 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
-        let executed, stdout, stderr, statusCode;
         const preparedOptions = this.prepareDeployAccountOptions(options);
-        const deployAccountArgs = `"import asyncio;from argparse import Namespace;from starkware.starknet.cli.starknet_cli import deploy_account;asyncio.run(deploy_account(${preparedOptions},[]))"`;
-        try {
-            executed = await execSync(this.pythonPath + " -c " + deployAccountArgs);
-            statusCode = 0;
-            stdout = executed;
-            stderr = Buffer.from("");
-        } catch (err: any) {
-            statusCode = 1;
-            stdout = Buffer.from("");
-            stderr = err.stderr;
-        }
-        return {
-            statusCode: statusCode,
-            stdout: stdout,
-            stderr: stderr
-        };
+        const deployAccountScript = `import asyncio;from argparse import Namespace;from ${STARKNET_CLI_MODULE} import deploy_account;asyncio.run(deploy_account(${preparedOptions},[]))`;
+        const executed = await this.execute("python", ["-c", deployAccountScript]);
+        return executed;
     }
 }

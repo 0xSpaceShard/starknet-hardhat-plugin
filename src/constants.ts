@@ -3,6 +3,8 @@ export const PLUGIN_NAME = "Starknet";
 export const ABI_SUFFIX = "_abi.json";
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
 export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";
+export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
+export const DEFAULT_STARKNET_ACCOUNT_NAME = "~/.starknet_accounts";
 export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const DEFAULT_DOCKER_IMAGE_TAG = "0.7.0";
 
@@ -21,4 +23,4 @@ export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/cont
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
-export const STARKNET_CLI_MODULE = "starkware.starknet.cli.starknet_cli"
+export const STARKNET_CLI_MODULE = "starkware.starknet.cli.starknet_cli";
