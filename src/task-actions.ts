@@ -300,9 +300,16 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
     const gatewayUrl = getGatewayUrl(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
-
-    const wallet = hre.config.wallets[args.wallet];
-    const accountDir = wallet ? getAccountPath(wallet.accountPath, hre) : undefined;
+    let wallet, accountDir;
+    if(args.wallet) {
+        wallet = hre.config.wallets[args.wallet];
+        if (!wallet) {
+            const available = Object.keys(hre.config.wallets).join(", ");
+            const msg = `Invalid wallet provided: ${args.wallet}.\nValid wallets: ${available}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        accountDir = getAccountPath(wallet.accountPath, hre);
+    }
 
     const executed = await hre.starknetWrapper.invokeOrCall({
         choice: choice,
@@ -313,7 +320,7 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         signature: args.signature,
         wallet: wallet ? wallet.modulePath : undefined,
         account: wallet ? wallet.accountName : undefined,
-        accountDir: accountDir,
+        accountDir: wallet ? accountDir : undefined,
         gatewayUrl: gatewayUrl,
         networkID: wallet ? args.starknetNetwork : undefined,
         feederGatewayUrl: gatewayUrl
