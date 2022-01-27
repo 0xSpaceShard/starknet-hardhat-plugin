@@ -332,6 +332,26 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
+
+    if (choice === "invoke" && args.wait) { // If the "wait" flag was passed as an argument, check the transaction hash for its status
+        console.log(`Checking ${choice} transaction...`);
+        const executedOutput = executed.stdout.toString();
+        const txHash = extractTxHash(executedOutput);
+        await new Promise<void>((resolve, reject) => iterativelyCheckStatus(
+            txHash,
+            hre.starknetWrapper,
+            gatewayUrl,
+            gatewayUrl,
+            status => {
+                console.log(`Invoke transaction ${txHash} is now ${status}`);
+                resolve();
+            },
+            error => {
+                console.log(`Invoke transaction ${txHash} is REJECTED`);
+                reject(error);
+            }
+        ));
+    }
 }
 
 export async function starknetDeployAccountAction(args: any, hre: HardhatRuntimeEnvironment) {
