@@ -75,7 +75,8 @@ function extractAddress(response: string) {
  */
  type StatusObject = {
     block_hash: string,
-    tx_status: TxStatus
+    tx_status: TxStatus,
+    error_message?: string
 }
 
 async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
@@ -119,7 +120,7 @@ export async function iterativelyCheckStatus(
     if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
-        reject(new Error("Transaction rejected."));
+        reject(new Error("Transaction rejected.\n" + statusObject.error_message));
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
