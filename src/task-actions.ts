@@ -112,9 +112,10 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
 
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
-        const basePath = path.parse(sourcesPath).dir;
+        let basePath = path.parse(sourcesPath).dir;
         if (!path.isAbsolute(sourcesPath)) {
             sourcesPath = path.normalize(path.join(root, sourcesPath));
+            basePath = path.normalize(path.join(root, basePath));
         }
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
