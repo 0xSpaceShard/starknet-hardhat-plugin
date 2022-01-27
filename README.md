@@ -85,24 +85,37 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
+### `starknet-deploy-account`
+```
+npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
+```
+
+Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file
+
+```
+npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
+```
+
 ### `starknet-invoke`
 ```
-npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>]
 ```
 
 Invokes a function on the target contract.
 If the function takes any inputs, they should be passed as a single string, separated by space.
+If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
 ```
-npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20"
+npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20" --wallet MyWallet
 ```
 
 ### `starknet-call`
 ```
-npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>]
+npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>]
 ```
 
 Calls a function on the target contract and returns its return value.
 If the function takes any inputs, they should be passed as a single string, separated by space.
+If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
 ```
 npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
 ```
@@ -137,6 +150,8 @@ These examples are inspired by the official [Starknet Python tutorial](https://w
   - the extension can be omitted:
     - `getContractFactory("subdir/MyContract")`
     - `getContractFactory("MyContract")`
+- The `wallet` is an optional argument for the `StarknetContract` `invoke` and `call` methods, and if omitted, the Starknet argument `--no_wallet` will be passed by default.
+- To get the wallet configured in the `hardhat.config` file, simply use `starknet.getWallet("MyWallet")`.
 
 
 ### Test examples
@@ -226,7 +241,7 @@ describe("My Test", function () {
 });
 ```
 
-For more usage examples, including tuple, array and struct support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
+For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
 ## Configure the plugin
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
@@ -294,6 +309,35 @@ module.exports = {
   ...
 };
 ```
+
+### Wallet
+To configure a wallet for your project, specify it by using `wallets["walletName"]`.
+You can specify multiple wallets/accounts.
+
+The parameters for the wallet are:
+  - `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
+  - `modulePath`: The python module and wallet class of your chosen wallet provider;
+  - `accountPath`: The path where your wallet information will be saved.
+
+```javascript
+module.exports = {
+  ...
+  wallets: {
+    MyWallet: {
+      accountName: "OpenZeppelin",
+      modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+      accountPath: "~/.starknet_accounts"
+    },
+    AnotherWallet: {
+      accountName: "AnotherOpenZeppelin",
+      modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+      accountPath: "~/.starknet_accounts"
+    }
+  }
+  ...
+};
+```
+Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
 
 ## More examples
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
