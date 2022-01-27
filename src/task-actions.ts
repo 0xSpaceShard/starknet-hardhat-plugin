@@ -107,7 +107,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
     const rootRegex = new RegExp("^" + root);
 
     const defaultSourcesPath = hre.config.paths.starknetSources;
-    const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
+    const sourcesPaths: string[] = args.paths || defaultSourcesPath.split(" ");
     const artifactsPath = hre.config.paths.starknetArtifacts;
 
     let statusCode = 0;
@@ -115,7 +115,6 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
         if (!path.isAbsolute(sourcesPath)) {
             sourcesPath = path.normalize(path.join(root, sourcesPath));
         }
-
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
         for (const file of files) {
@@ -125,7 +124,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
             const dirPath = path.join(artifactsPath, suffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-            const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
+            const cairoPath = (sourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
