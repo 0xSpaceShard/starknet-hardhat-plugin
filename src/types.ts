@@ -318,7 +318,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, wallet?: Wallet) {
+    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -339,6 +339,7 @@ export class StarknetContract {
             abi: this.abiPath,
             functionName: functionName,
             inputs: adaptInput(functionName, args, func.inputs, this.abi),
+            signature: handleSignature(signature),
             wallet: wallet ? wallet.modulePath : undefined,
             account: wallet ? wallet.accountName : undefined,
             accountDir: wallet ? wallet.accountPath : undefined,
@@ -363,8 +364,8 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: StringMap, wallet?: Wallet): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, args, wallet);
+    async invoke(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args, signature, wallet);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -403,8 +404,8 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: StringMap, wallet?: Wallet): Promise<StringMap> {
-        const executed = await this.invokeOrCall("call", functionName, args, wallet);
+    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<StringMap> {
+        const executed = await this.invokeOrCall("call", functionName, args, signature, wallet);
         const func = <starknet.CairoFunction> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;

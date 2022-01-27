@@ -310,6 +310,7 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         abi: abiPath,
         functionName: args.function,
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
+        signature: args.signature,
         wallet: wallet ? wallet.modulePath : undefined,
         account: wallet ? wallet.accountName : undefined,
         accountDir: accountDir,

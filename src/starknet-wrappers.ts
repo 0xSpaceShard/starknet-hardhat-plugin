@@ -27,6 +27,7 @@ export interface InvokeOrCallOptions {
     abi: string,
     functionName: string,
     inputs?: string[],
+    signature?: string[],
     wallet?: string,
     account?: string,
     accountDir?: string,
@@ -95,6 +96,10 @@ export abstract class StarknetWrapper {
 
         if (options.inputs && options.inputs.length) {
             prepared.push("--inputs", ...options.inputs);
+        }
+
+        if (options.signature && options.signature.length) {
+            prepared.push("--signature", ...options.signature);
         }
 
         if (options.wallet) {
@@ -314,6 +319,7 @@ function checkCommandPath(commandPath: string): void {
 export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
     private starknetPath: string;
+
     constructor(venvPath: string) {
         super();
         let venvPrefix = "";
