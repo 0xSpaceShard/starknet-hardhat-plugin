@@ -112,6 +112,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
 
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
+        const basePath = path.parse(sourcesPath).dir;
         if (!path.isAbsolute(sourcesPath)) {
             sourcesPath = path.normalize(path.join(root, sourcesPath));
         }
@@ -124,7 +125,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
             const dirPath = path.join(artifactsPath, suffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-            const cairoPath = (sourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
+            const cairoPath = (basePath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
