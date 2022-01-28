@@ -3,7 +3,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
-import { checkArtifactExists, findPath, getNetwork } from "./utils";
+import { checkArtifactExists, findPath, getAccountPath, getNetwork } from "./utils";
 
 export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, contractPath:string, networkUrl?:string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -84,5 +84,6 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
         const msg = `Invalid wallet provided: ${name}.\nValid wallets: ${available}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
+    wallet.accountPath = getAccountPath(wallet.accountPath, hre);
     return wallet;
 }

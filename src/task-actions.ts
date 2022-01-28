@@ -300,8 +300,9 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
     const gatewayUrl = getGatewayUrl(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
+
     let wallet, accountDir;
-    if(args.wallet) {
+    if (args.wallet) {
         wallet = hre.config.wallets[args.wallet];
         if (!wallet) {
             const available = Object.keys(hre.config.wallets).join(", ");

@@ -204,18 +204,6 @@ export class DockerWrapper extends StarknetWrapper {
         return this.docker;
     }
 
-    private async setPythonPath() {
-        const binds: String2String = {};
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["which", "python"], dockerOptions);
-        this.pythonPath = executed.stdout.toString().trim();
-    }
-
     public async compile(options: CompileOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.file]: options.file,
@@ -257,7 +245,8 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
         const binds: String2String = {
-            [options.abi]: options.abi
+            [options.abi]: options.abi,
+            [options.accountDir]: options.accountDir
         };
 
         const dockerOptions = {
@@ -299,7 +288,6 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
-        await this.setPythonPath();
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareDeployAccountOptions(options);
