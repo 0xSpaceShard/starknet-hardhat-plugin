@@ -245,9 +245,12 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
         const binds: String2String = {
-            [options.abi]: options.abi,
-            [options.accountDir]: options.accountDir
+            [options.abi]: options.abi
         };
+
+        if (options.accountDir) {
+            addPaths(binds, options.accountDir);
+        }
 
         const dockerOptions = {
             binds,
