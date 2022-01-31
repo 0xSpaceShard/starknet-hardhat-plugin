@@ -27,11 +27,12 @@ function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
-        if [[ "$network" == "devnet" ]] && [[ "$test_case" == "wallet-test" ]]; then
+
+        test_name=$(basename $test_case)
+        if [[ "$network" == "devnet" ]] && [[ "$test_name" == "wallet-test" ]]; then
             echo "Skipping devnet test for wallet-test"
         else
             total=$((total + 1))
-            test_name=$(basename $test_case)
             echo "Test $total) $test_name"
 
             config_file_path="$test_case/$CONFIG_FILE_NAME"
