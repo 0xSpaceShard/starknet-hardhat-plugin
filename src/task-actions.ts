@@ -2,11 +2,12 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_ACCOUNT_PATH } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath, getAccountPath } from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { getWalletUtil } from "./extend-utils";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -303,12 +304,7 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
 
     let wallet, accountDir;
     if (args.wallet) {
-        wallet = hre.config.wallets[args.wallet];
-        if (!wallet) {
-            const available = Object.keys(hre.config.wallets).join(", ");
-            const msg = `Invalid wallet provided: ${args.wallet}.\nValid wallets: ${available}`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+        wallet = getWalletUtil(args.wallet, hre);
         accountDir = getAccountPath(wallet.accountPath, hre);
     }
 
@@ -338,14 +334,7 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
 
 export async function starknetDeployAccountAction(args: any, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
-    const wallet = hre.config.wallets[args.wallet];
-
-    if (!wallet) {
-        const available = Object.keys(hre.config.wallets).join(", ");
-        const msg = `Invalid wallet provided: ${args.wallet}.\nValid wallets: ${available}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-
+    const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
     const executed = await hre.starknetWrapper.deployAccount({

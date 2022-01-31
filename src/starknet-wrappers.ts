@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
-import { PLUGIN_NAME, STARKNET_CLI_MODULE } from "./constants";
+import { PLUGIN_NAME } from "./constants";
 import { Choice } from "./types";
 import { adaptUrl } from "./utils";
 
@@ -133,21 +133,35 @@ export abstract class StarknetWrapper {
 
     public abstract getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult>;
 
-    protected prepareDeployAccountOptions(options: DeployAccountOptions): string {
+    protected getPythonDeployAccountScript(options: DeployAccountOptions): string {
+
         const wallet = options.wallet? "'" + options.wallet + "'" : "None";
         const accountName = options.accountName? "'" + options.accountName + "'" : "'__default__'";
         const accountDir = options.accountDir? "'" + options.accountDir + "'" : "None";
-        return "Namespace(" +
-            "network=" + "'" + options.network + "'" +
-            ", network_id=" + "'" + options.network + "'" +
-            ", wallet=" + wallet +
-            ", account=" + accountName +
-            ", account_dir=" + accountDir +
-            ", flavor=None" +
-            ", gateway_url=" + "'" +  options.gatewayUrl + "/gateway'" +
-            ", feeder_gateway_url=" + "'" + options.feederGatewayUrl + "/feeder_gateway'" +
-            ", command='deploy_account'" +
-        ")";
+        const gateway_url = "'" + options.gatewayUrl + "/gateway'";
+        const feeder_gateway_url = "'" + options.feederGatewayUrl + "/feeder_gateway'";
+        const network = "'" + options.network + "'";
+
+        const args = [
+            `network=${network}`,
+            `network_id=${network}`,
+            `wallet=${wallet}`,
+            `account=${accountName}`,
+            `account_dir=${accountDir}`,
+            "flavor=None",
+            `gateway_url=${gateway_url}`,
+            `feeder_gateway_url=${feeder_gateway_url}`,
+            "command='deploy_account'"
+        ];
+
+        let script =
+        `import asyncio
+        from argparse import Namespace
+        from starkware.starknet.cli.starknet_cli import deploy_account
+        asyncio.run(deploy_account(Namespace(${args.join(",")}),[]))`;
+
+        script = script.replace(/(?:\r\n|\r|\n)/g, ";");
+        return script ;
 
     }
     public abstract deployAccount(options: DeployAccountOptions): Promise<ProcessResult>;
@@ -249,7 +263,7 @@ export class DockerWrapper extends StarknetWrapper {
         };
 
         if (options.accountDir) {
-            addPaths(binds, options.accountDir);
+            binds[options.accountDir] = options.accountDir;
         }
 
         const dockerOptions = {
@@ -293,8 +307,7 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareDeployAccountOptions(options);
-        const deployAccountScript = `import asyncio;from argparse import Namespace;from ${STARKNET_CLI_MODULE} import deploy_account;asyncio.run(deploy_account(${preparedOptions},[]))`;
+        const deployAccountScript = this.getPythonDeployAccountScript(options);
         const docker = await this.getDocker();
         const executed = await docker.runContainer(this.image, ["python", "-c", deployAccountScript], dockerOptions);
         return executed;
@@ -370,8 +383,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployAccountOptions(options);
-        const deployAccountScript = `import asyncio;from argparse import Namespace;from ${STARKNET_CLI_MODULE} import deploy_account;asyncio.run(deploy_account(${preparedOptions},[]))`;
+        const deployAccountScript = this.getPythonDeployAccountScript(options);
         const executed = await this.execute("python", ["-c", deployAccountScript]);
         return executed;
     }

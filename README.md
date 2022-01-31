@@ -321,7 +321,6 @@ The parameters for the wallet are:
 
 ```javascript
 module.exports = {
-  ...
   wallets: {
     MyWallet: {
       accountName: "OpenZeppelin",

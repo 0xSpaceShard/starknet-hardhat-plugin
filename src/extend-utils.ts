@@ -1,6 +1,6 @@
 import * as path from "path";
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ABI_SUFFIX, DEFAULT_STARKNET_NETWORK, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath, getNetwork } from "./utils";
@@ -81,7 +81,7 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     const wallet = hre.config.wallets[name];
     if (!wallet) {
         const available = Object.keys(hre.config.wallets).join(", ");
-        const msg = `Invalid wallet provided: ${name}.\nValid wallets: ${available}`;
+        const msg = `Invalid wallet name provided: ${name}.\nValid wallets: ${available}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     wallet.accountPath = getAccountPath(wallet.accountPath, hre);

@@ -1,4 +1,4 @@
-import { HardhatRuntimeEnvironment, HttpNetworkConfig, StringMap } from "hardhat/types";
+import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, DEFAULT_STARKNET_ACCOUNT_PATH, PLUGIN_NAME } from "./constants";
 import * as path from "path";
@@ -139,7 +139,7 @@ export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironme
 
     // Adapt path to be absolute
     if (accountDir[0] === "~") {
-        accountDir = path.join(process.env.HOME, accountDir.slice(1));
+        accountDir = path.normalize(path.join(process.env.HOME, accountDir.slice(1)));
     } else if (!path.isAbsolute(accountDir)) {
         const root = hre.config.paths.root;
         accountDir = path.normalize(path.join(root, accountDir));
