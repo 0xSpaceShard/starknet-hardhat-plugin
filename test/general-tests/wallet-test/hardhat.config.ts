@@ -8,12 +8,5 @@ module.exports = {
     },
     mocha: {
         starknetNetwork: process.env.NETWORK
-    },
-    wallets: {
-        OpenZeppelin: {
-          accountName: "OpenZeppelin",
-          modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-          accountPath: "~/.starknet_accounts"
-        }
-      }
+    }
 };
