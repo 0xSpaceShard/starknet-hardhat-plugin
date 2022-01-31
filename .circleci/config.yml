@@ -267,19 +267,12 @@ jobs:
 
 workflows:
   test_and_publish:
-    #triggers:
-    #    - schedule:
-    #        cron: "0,30 4 * * *"
-    #        filters:
-     #         branches:
-     #           only:
-    #              - support-pending-block
     jobs:
       - test:
           matrix:
             parameters:
-              platform: [linux-node14]
-              test-name: [test-general-tests]
+              platform: [linux-node14, macos-node14]
+              test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests
