@@ -56,7 +56,7 @@ function iterate_dir(){
     echo "Finished tests on $network"
 }
 
-if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
+if [[ "$CIRCLE_BRANCH" == "support-pending-block" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
 
