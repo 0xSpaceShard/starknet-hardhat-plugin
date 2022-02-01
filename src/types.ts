@@ -5,6 +5,7 @@ import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
+import { Wallet } from "hardhat/types";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -37,6 +38,7 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
+    networkID: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
@@ -166,6 +168,7 @@ export class StarknetContractFactory {
     private abiPath: string;
     private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
+    private networkID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -173,6 +176,7 @@ export class StarknetContractFactory {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.networkID = config.networkID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -229,6 +233,7 @@ export class StarknetContractFactory {
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
+            networkID: this.networkID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -281,6 +286,7 @@ export class StarknetContractFactory {
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
+            networkID: this.networkID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -298,6 +304,7 @@ export class StarknetContract {
     private abi: starknet.Abi;
     private abiPath: string;
     public address: string;
+    private networkID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -305,11 +312,12 @@ export class StarknetContract {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.networkID = config.networkID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>) {
+    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -331,6 +339,10 @@ export class StarknetContract {
             functionName: functionName,
             inputs: adaptInput(functionName, args, func.inputs, this.abi),
             signature: handleSignature(signature),
+            wallet: wallet ? wallet.modulePath : undefined,
+            account: wallet ? wallet.accountName : undefined,
+            accountDir: wallet ? wallet.accountPath : undefined,
+            networkID: this.networkID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl
         });
@@ -351,8 +363,8 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: StringMap, signature?: Array<Numeric>): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, args, signature);
+    async invoke(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args, signature, wallet);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -391,8 +403,8 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>): Promise<StringMap> {
-        const executed = await this.invokeOrCall("call", functionName, args, signature);
+    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<StringMap> {
+        const executed = await this.invokeOrCall("call", functionName, args, signature, wallet);
         const func = <starknet.CairoFunction> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;

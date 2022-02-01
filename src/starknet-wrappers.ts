@@ -28,8 +28,12 @@ export interface InvokeOrCallOptions {
     functionName: string,
     inputs?: string[],
     signature?: string[],
+    wallet?: string,
+    account?: string,
+    accountDir?: string,
+    networkID?:string,
     gatewayUrl: string,
-    feederGatewayUrl: string,
+    feederGatewayUrl: string
 }
 
 export interface GetTxStatusOptions {
@@ -37,6 +41,16 @@ export interface GetTxStatusOptions {
     gatewayUrl: string,
     feederGatewayUrl: string,
 }
+
+export interface DeployAccountOptions {
+    wallet: string,
+    accountName: string,
+    accountDir: string,
+    gatewayUrl: string,
+    feederGatewayUrl: string,
+    network: string
+}
+
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileOptions): string[] {
@@ -88,6 +102,21 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
+        if (options.wallet) {
+            prepared.push("--wallet", options.wallet);
+            prepared.push("--network_id", options.networkID);
+
+            if (options.account) {
+                prepared.push("--account", options.account);
+            }
+            if (options.accountDir) {
+                prepared.push("--account_dir", options.accountDir);
+            }
+
+        } else {
+            prepared.push("--no_wallet");
+        }
+
         return prepared;
     }
 
@@ -103,6 +132,39 @@ export abstract class StarknetWrapper {
     }
 
     public abstract getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult>;
+
+    protected getPythonDeployAccountScript(options: DeployAccountOptions): string {
+
+        const wallet = options.wallet? "'" + options.wallet + "'" : "None";
+        const accountName = options.accountName? "'" + options.accountName + "'" : "'__default__'";
+        const accountDir = options.accountDir? "'" + options.accountDir + "'" : "None";
+        const gateway_url = "'" + options.gatewayUrl + "/gateway'";
+        const feeder_gateway_url = "'" + options.feederGatewayUrl + "/feeder_gateway'";
+        const network = "'" + options.network + "'";
+
+        const args = [
+            `network=${network}`,
+            `network_id=${network}`,
+            `wallet=${wallet}`,
+            `account=${accountName}`,
+            `account_dir=${accountDir}`,
+            "flavor=None",
+            `gateway_url=${gateway_url}`,
+            `feeder_gateway_url=${feeder_gateway_url}`,
+            "command='deploy_account'"
+        ];
+
+        let script =
+        `import asyncio
+        from argparse import Namespace
+        from starkware.starknet.cli.starknet_cli import deploy_account
+        asyncio.run(deploy_account(Namespace(${args.join(",")}),[]))`;
+
+        script = script.replace(/(?:\r\n|\r|\n)/g, ";");
+        return script ;
+
+    }
+    public abstract deployAccount(options: DeployAccountOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
@@ -137,6 +199,7 @@ function addPaths(paths: String2String, colonSeparatedStr: string): void {
 export class DockerWrapper extends StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
+    private pythonPath: string;
 
     constructor(image: Image) {
         super();
@@ -199,6 +262,10 @@ export class DockerWrapper extends StarknetWrapper {
             [options.abi]: options.abi
         };
 
+        if (options.accountDir) {
+            binds[options.accountDir] = options.accountDir;
+        }
+
         const dockerOptions = {
             binds,
             networkMode: "host"
@@ -225,6 +292,24 @@ export class DockerWrapper extends StarknetWrapper {
 
         const docker = await this.getDocker();
         const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        return executed;
+    }
+
+    public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
+        const binds: String2String = {
+            [options.accountDir]: options.accountDir
+        };
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        const deployAccountScript = this.getPythonDeployAccountScript(options);
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(this.image, ["python", "-c", deployAccountScript], dockerOptions);
         return executed;
     }
 }
@@ -261,6 +346,7 @@ export class VenvWrapper extends StarknetWrapper {
 
     private async execute(commandPath: string, preparedOptions: string[]): Promise<ProcessResult> {
         const process = spawnSync(commandPath, preparedOptions);
+
         if (!process.stdout) {
             const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -293,6 +379,12 @@ export class VenvWrapper extends StarknetWrapper {
     public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareGetTxStatusOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
+
+    public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
+        const deployAccountScript = this.getPythonDeployAccountScript(options);
+        const executed = await this.execute("python", ["-c", deployAccountScript]);
         return executed;
     }
 }

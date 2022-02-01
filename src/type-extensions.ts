@@ -8,6 +8,16 @@ type CairoConfig = {
     venv?: string;
 }
 
+type WalletUserConfig = {
+    [walletName : string]: WalletConfig | undefined;
+}
+
+type WalletConfig = {
+    modulePath: string;
+    accountName?: string;
+    accountPath?: string;
+}
+
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
         starknetArtifacts?: string;
@@ -21,10 +31,12 @@ declare module "hardhat/types/config" {
 
     export interface HardhatConfig {
         cairo: CairoConfig;
+        wallets: WalletUserConfig;
     }
 
     export interface HardhatUserConfig {
         cairo?: CairoConfig;
+        wallets?: WalletUserConfig;
     }
 
     export interface NetworksConfig {
@@ -78,12 +90,19 @@ declare module "hardhat/types/runtime" {
              * The selected starknet-network, present if the called task relies on `--starknet-network` or `mocha.starknetNetwork`.
              */
             network?: string;
+
+            /**
+             * @param name the name of the wallet to get
+             * @returns a wallet
+             */
+            getWallet: (name: string) => WalletConfig;
         }
     }
 
     type StarknetContract = StarknetContractType;
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
+    type Wallet = WalletConfig;
 }
 
 declare module "mocha" {

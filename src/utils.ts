@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, PLUGIN_NAME } from "./constants";
+import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, DEFAULT_STARKNET_ACCOUNT_PATH, PLUGIN_NAME } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
@@ -126,4 +126,23 @@ export async function findPath(traversable: string, name: string) {
         const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
+}
+
+/**
+ *
+ * @param accountPath Path where the account file is saved
+ * @param hre The HardhatRuntimeEnvironment
+ * @returns Absolute where the account file is saved
+ */
+export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironment) {
+    let accountDir = accountPath || DEFAULT_STARKNET_ACCOUNT_PATH;
+
+    // Adapt path to be absolute
+    if (accountDir[0] === "~") {
+        accountDir = path.normalize(path.join(process.env.HOME, accountDir.slice(1)));
+    } else if (!path.isAbsolute(accountDir)) {
+        const root = hre.config.paths.root;
+        accountDir = path.normalize(path.join(root, accountDir));
+    }
+    return accountDir;
 }

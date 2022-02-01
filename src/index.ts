@@ -6,8 +6,8 @@ import { PLUGIN_NAME, DEFAULT_STARKNET_SOURCES_PATH, DEFAULT_STARKNET_ARTIFACTS_
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
-import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction } from "./task-actions";
-import { bigIntToStringUtil, getContractFactoryUtil, stringToBigIntUtil } from "./extend-utils";
+import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction, starknetDeployAccountAction } from "./task-actions";
+import { bigIntToStringUtil, getContractFactoryUtil, getWalletUtil, stringToBigIntUtil } from "./extend-utils";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -134,6 +134,11 @@ extendEnvironment(hre => {
         bigIntToString: convertableBigInt => {
             const convertedBigInt = bigIntToStringUtil(convertableBigInt);
             return convertedBigInt;
+        },
+
+        getWallet: name => {
+            const wallet = getWalletUtil(name, hre);
+            return wallet;
         }
     };
 });
@@ -154,6 +159,7 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
         "Space separated values forming function input.\n" +
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
     .addOptionalParam("signature", "The call signature")
+    .addOptionalParam("wallet", "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when invoking.")
     .setAction(starknetInvokeAction);
 
 task("starknet-call", "Invokes a function on a contract in the provided address.")
@@ -166,4 +172,10 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "Space separated values forming function input.\n" +
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
     .addOptionalParam("signature", "The call signature")
+    .addOptionalParam("wallet", "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling.")
     .setAction(starknetCallAction);
+
+task("starknet-deploy-account", "Deploys a new account according to the parameters.")
+    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .setAction(starknetDeployAccountAction);
