@@ -107,9 +107,27 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
     const rootRegex = new RegExp("^" + root);
 
     const defaultSourcesPath = hre.config.paths.starknetSources;
-    const sourcesPaths: string[] = args.paths || defaultSourcesPath.split(" ");
+    const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
     const artifactsPath = hre.config.paths.starknetArtifacts;
 
+    const cairoPaths = [defaultSourcesPath, root];
+    if (args.cairoPath) {
+        args.cairoPath.split(":").forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    if (hre.config.paths.cairoPaths) {
+        hre.config.paths.cairoPaths.forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    for (let i = 0; i<cairoPaths.length; i++) {
+        if (!path.isAbsolute(cairoPaths[i])) {
+            cairoPaths[i] = path.normalize(path.join(root, cairoPaths[i]));
+        }
+    }
+
+    const cairoPath = cairoPaths.join(":");
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
         if (!path.isAbsolute(sourcesPath)) {
@@ -117,7 +135,6 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
         }
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
-        const defaultSourcesPaths = defaultSourcesPath.replace(/\s+/g, " ").replace(" ", ":");
         for (const file of files) {
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
@@ -125,7 +142,6 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
             const dirPath = path.join(artifactsPath, suffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-            const cairoPath = (defaultSourcesPaths + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
