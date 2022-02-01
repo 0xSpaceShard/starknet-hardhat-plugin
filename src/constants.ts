@@ -21,3 +21,6 @@ export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/ap
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
+
+export const PENDING_BLOCK_NUMBER = "pending";
+

@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT } from "./constants";
+import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, PENDING_BLOCK_NUMBER } from "./constants";
 import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -97,7 +97,7 @@ async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatew
     }
 }
 
-const ACCEPTABLE_STATUSES: TxStatus[] = ["ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
+const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
 export function isTxAccepted(statusObject: StatusObject): boolean {
     return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
@@ -317,7 +317,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet) {
+    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -344,7 +344,8 @@ export class StarknetContract {
             accountDir: wallet ? wallet.accountPath : undefined,
             networkID: this.networkID,
             gatewayUrl: this.gatewayUrl,
-            feederGatewayUrl: this.feederGatewayUrl
+            feederGatewayUrl: this.feederGatewayUrl,
+            blockNumber: blockNumber
         });
         if (executed.statusCode) {
             const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
@@ -403,8 +404,9 @@ export class StarknetContract {
      * @param signature array of transaction signature elements
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<StringMap> {
-        const executed = await this.invokeOrCall("call", functionName, args, signature, wallet);
+    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string): Promise<StringMap> {
+        const blockNum = blockNumber || PENDING_BLOCK_NUMBER;
+        const executed = await this.invokeOrCall("call", functionName, args, signature, wallet, blockNum);
         const func = <starknet.CairoFunction> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;
