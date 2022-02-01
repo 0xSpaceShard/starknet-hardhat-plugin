@@ -260,7 +260,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
             rawIndex = ret.newRawIndex;
         }
 
-    } else {// struct
+    } else { // struct
         if (!(type in abi)) {
             throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
         }

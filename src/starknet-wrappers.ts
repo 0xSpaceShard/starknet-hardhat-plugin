@@ -159,9 +159,8 @@ export abstract class StarknetWrapper {
         from argparse import Namespace
         from starkware.starknet.cli.starknet_cli import deploy_account
         asyncio.run(deploy_account(Namespace(${args.join(",")}),[]))`;
-
         script = script.replace(/(?:\r\n|\r|\n)/g, ";");
-        return script ;
+        return script;
 
     }
     public abstract deployAccount(options: DeployAccountOptions): Promise<ProcessResult>;
