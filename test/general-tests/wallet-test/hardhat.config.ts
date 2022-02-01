@@ -15,5 +15,5 @@ module.exports = {
           modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
           accountPath: "~/.starknet_accounts"
         }
-      }
+    }
 };
