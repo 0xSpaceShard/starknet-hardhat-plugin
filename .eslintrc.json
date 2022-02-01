@@ -20,6 +20,10 @@
             "error",
             "never"
         ],
+        "block-spacing": [
+            "error",
+            "always"
+        ],
         "brace-style": [
             "error",
             "1tbs"
@@ -79,6 +83,13 @@
             "error",
             "always"
         ],
+        "semi-spacing": [
+            "error",
+            {
+                "before": false,
+                "after": true
+            }
+        ],
         "space-before-blocks": [
             "error",
             "always"
@@ -97,6 +108,9 @@
         "template-curly-spacing": [
             "error",
             "never"
+        ],
+        "@typescript-eslint/no-unused-vars": [
+            "error"
         ]
     }
 }
