@@ -173,7 +173,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "Pass them as a single string; e.g. --inputs \"1 2 3\"")
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam("wallet", "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling.")
-    .addOptionalParam("blockNumber", "The number of the block to call")
+    .addOptionalParam("blockNumber", "The number of the block to call. If omitted, the pending block will be queried.")
     .setAction(starknetCallAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")

@@ -110,11 +110,12 @@ npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --f
 
 ### `starknet-call`
 ```
-npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>]
+npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--blockNumber <BLOCK_NUMBER>]
 ```
 
 Calls a function on the target contract and returns its return value.
 If the function takes any inputs, they should be passed as a single string, separated by space.
+The pending block will always be queried by default, and if there's no pending block, the default behaviour is to query the last block. Using the `--blockNumber` argument will query the specified block.
 If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
 ```
 npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
