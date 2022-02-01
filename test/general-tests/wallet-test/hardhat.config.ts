@@ -11,9 +11,9 @@ module.exports = {
     },
     wallets: {
         OpenZeppelin: {
-          accountName: "OpenZeppelin",
-          modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-          accountPath: "~/.starknet_accounts"
+            accountName: "OpenZeppelin",
+            modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+            accountPath: "~/.starknet_accounts"
         }
     }
 };
