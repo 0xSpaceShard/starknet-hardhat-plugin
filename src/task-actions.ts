@@ -117,7 +117,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
         }
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
-        const defaultSourcesPaths = defaultSourcesPath.replace(" ", ":");
+        const defaultSourcesPaths = defaultSourcesPath.replace(/\s+/g, " ").replace(" ", ":");
         for (const file of files) {
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");

@@ -64,7 +64,7 @@ export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 
-export function extractAddress(response: string) {
+function extractAddress(response: string) {
     return extractFromResponse(response, /^Contract address: (.*)$/m);
 }
 
@@ -383,7 +383,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(),
                 error => {
-                    console.log(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
+                    console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
                     reject(error);
                 }
             );
