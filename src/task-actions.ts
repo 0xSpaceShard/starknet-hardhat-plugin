@@ -363,7 +363,7 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
                 resolve();
             },
             error => {
-                console.log(`Invoke transaction ${txHash} is REJECTED`);
+                console.error(`Invoke transaction ${txHash} is REJECTED`);
                 reject(error);
             }
         ));
