@@ -150,6 +150,7 @@ task("starknet-verify", "Verifies the contract in the Starknet network.")
     .setAction(starknetVoyagerAction);
 
 task("starknet-invoke", "Invokes a function on a contract in the provided address.")
+    .addFlag("wait", "Wait for invoke transaction to be at least ACCEPTED_ON_L2")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
     .addParam("contract", "The name of the contract to invoke from")

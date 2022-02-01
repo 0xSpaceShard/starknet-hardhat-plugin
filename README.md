@@ -285,6 +285,10 @@ module.exports = {
     // Defaults to "starknet-artifacts".
     // Has to be different from the value set in `paths.artifacts` (which is used by core Hardhat and has a default value of `artifacts`).
     starknetArtifacts: "also-my-own-starknet-path",
+
+   // Same purpose as the `--cairo-path` argument on for the `starknet-compile` command
+   // Allows specifying the locations of imported files, if necessary.
+    cairoPaths: ["cairo-path1", "cairo-path2"]
   }
   ...
 };

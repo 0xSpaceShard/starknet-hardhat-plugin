@@ -35,6 +35,12 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
 }
 
+export type TxFailureReason = {
+    code: string;
+    error_message: string;
+    tx_id: string;
+}
+
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
@@ -54,14 +60,6 @@ export interface StringMap {
 
 export type Choice = "call" | "invoke";
 
-function extractFromResponse(response: string, regex: RegExp) {
-    const matched = response.match(regex);
-    if (!matched || !matched[1]) {
-        throw new HardhatPluginError(PLUGIN_NAME, "Could not parse response. Check that you're using the correct network.");
-    }
-    return matched[1];
-}
-
 export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
@@ -70,12 +68,21 @@ function extractAddress(response: string) {
     return extractFromResponse(response, /^Contract address: (.*)$/m);
 }
 
+function extractFromResponse(response: string, regex: RegExp) {
+    const matched = response.match(regex);
+    if (!matched || !matched[1]) {
+        throw new HardhatPluginError(PLUGIN_NAME, "Could not parse response. Check that you're using the correct network.");
+    }
+    return matched[1];
+}
+
 /**
  * The object returned by starknet tx_status.
  */
  type StatusObject = {
     block_hash: string,
-    tx_status: TxStatus
+    tx_status: TxStatus,
+    transaction_failure_reason?: TxFailureReason
 }
 
 async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
@@ -119,7 +126,7 @@ export async function iterativelyCheckStatus(
     if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
-        reject(new Error("Transaction rejected."));
+        reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.transaction_failure_reason.error_message));
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
@@ -375,7 +382,10 @@ export class StarknetContract {
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(),
-                reject
+                error => {
+                    console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
+                    reject(error);
+                }
             );
         });
     }

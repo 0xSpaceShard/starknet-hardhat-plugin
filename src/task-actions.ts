@@ -110,12 +110,29 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
     const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
     const artifactsPath = hre.config.paths.starknetArtifacts;
 
+    const cairoPaths = [defaultSourcesPath, root];
+    if (args.cairoPath) {
+        args.cairoPath.split(":").forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    if (hre.config.paths.cairoPaths) {
+        hre.config.paths.cairoPaths.forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    for (let i = 0; i<cairoPaths.length; i++) {
+        if (!path.isAbsolute(cairoPaths[i])) {
+            cairoPaths[i] = path.normalize(path.join(root, cairoPaths[i]));
+        }
+    }
+
+    const cairoPath = cairoPaths.join(":");
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
         if (!path.isAbsolute(sourcesPath)) {
             sourcesPath = path.normalize(path.join(root, sourcesPath));
         }
-
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
         for (const file of files) {
@@ -125,7 +142,6 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
             const dirPath = path.join(artifactsPath, suffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
-            const cairoPath = (defaultSourcesPath + ":" + root) + (args.cairoPath ? ":" + args.cairoPath : "");
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
@@ -331,6 +347,26 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         const msg = `Could not ${choice} ${args.function}:\n` + executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+    }
+
+    if (choice === "invoke" && args.wait) { // If the "wait" flag was passed as an argument, check the transaction hash for its status
+        console.log(`Checking ${choice} transaction...`);
+        const executedOutput = executed.stdout.toString();
+        const txHash = extractTxHash(executedOutput);
+        await new Promise<void>((resolve, reject) => iterativelyCheckStatus(
+            txHash,
+            hre.starknetWrapper,
+            gatewayUrl,
+            gatewayUrl,
+            status => {
+                console.log(`Invoke transaction ${txHash} is now ${status}`);
+                resolve();
+            },
+            error => {
+                console.error(`Invoke transaction ${txHash} is REJECTED`);
+                reject(error);
+            }
+        ));
     }
 }
 

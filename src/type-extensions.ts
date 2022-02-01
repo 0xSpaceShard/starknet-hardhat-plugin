@@ -22,11 +22,13 @@ declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
         starknetArtifacts?: string;
         starknetSources?: string;
+        cairoPaths?: string[];
     }
 
     export interface ProjectPathsConfig {
         starknetArtifacts: string;
         starknetSources?: string;
+        cairoPaths?: string[];
     }
 
     export interface HardhatConfig {
