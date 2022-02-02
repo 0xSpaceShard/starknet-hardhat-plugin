@@ -375,6 +375,8 @@ export async function starknetDeployAccountAction(args: any, hre: HardhatRuntime
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
+    fs.mkdirSync(accountDir, { recursive: true });
+
     const executed = await hre.starknetWrapper.deployAccount({
         accountDir: accountDir,
         accountName: wallet.accountName,
