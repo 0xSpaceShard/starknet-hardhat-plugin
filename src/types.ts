@@ -82,7 +82,7 @@ function extractFromResponse(response: string, regex: RegExp) {
  type StatusObject = {
     block_hash: string,
     tx_status: TxStatus,
-    transaction_failure_reason?: TxFailureReason
+    tx_failure_reason?: TxFailureReason
 }
 
 async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
@@ -126,7 +126,7 @@ export async function iterativelyCheckStatus(
     if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
-        reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.transaction_failure_reason.error_message));
+        reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.tx_failure_reason.error_message));
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
