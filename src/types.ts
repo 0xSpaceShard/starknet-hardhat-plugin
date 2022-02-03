@@ -132,7 +132,7 @@ export async function iterativelyCheckStatus(
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.tx_failure_reason.error_message));
-    } else if (statusObject.tx_status==undefined) {
+    } else if (statusObject==undefined) {
         // eslint-disable-next-line prefer-rest-params
         setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
     } else {
