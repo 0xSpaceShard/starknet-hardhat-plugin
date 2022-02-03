@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, PENDING_BLOCK_NUMBER } from "./constants";
+import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, PENDING_BLOCK_NUMBER, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
 import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -122,18 +122,32 @@ export async function iterativelyCheckStatus(
     resolve: (status: string) => void,
     reject: (reason?: any) => void
 ) {
-    const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl);
+    const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl).catch(reason => {
+        console.warn(reason);
+        return {
+            block_hash: undefined,
+            tx_status: undefined,
+            tx_failure_reason: {
+                code: undefined,
+                error_message: reason,
+                tx_id: undefined
+            }
+        };
+    });
+
     if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.tx_failure_reason.error_message));
+    } else if (statusObject.tx_status==undefined) {
+        // eslint-disable-next-line prefer-rest-params
+        setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
-        const timeout = CHECK_STATUS_TIMEOUT; // ms
 
         // eslint-disable-next-line prefer-rest-params
-        setTimeout(iterativelyCheckStatus, timeout, ...arguments);
+        setTimeout(iterativelyCheckStatus, CHECK_STATUS_TIMEOUT, ...arguments);
     }
 }
 
@@ -325,6 +339,7 @@ export class StarknetContract {
     }
 
     private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string) {
+        console.log(args);
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
