@@ -125,15 +125,7 @@ export async function iterativelyCheckStatus(
     const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl)
         .catch(reason => {
             console.warn(reason);
-            return {
-                block_hash: undefined,
-                tx_status: undefined,
-                tx_failure_reason: {
-                    code: undefined,
-                    error_message: reason,
-                    tx_id: undefined
-                }
-            };
+            return undefined;
         });
 
     if (isTxAccepted(statusObject)) {
