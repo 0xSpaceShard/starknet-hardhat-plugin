@@ -128,13 +128,14 @@ export async function iterativelyCheckStatus(
             return undefined;
         });
 
-    if (isTxAccepted(statusObject)) {
+    if (!statusObject) {
+        console.warn("Retrying transaction status check...");
+        // eslint-disable-next-line prefer-rest-params
+        setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
+    } else if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
         reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.tx_failure_reason.error_message));
-    } else if (statusObject==undefined) {
-        // eslint-disable-next-line prefer-rest-params
-        setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
