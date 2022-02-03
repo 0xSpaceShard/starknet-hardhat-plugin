@@ -122,18 +122,19 @@ export async function iterativelyCheckStatus(
     resolve: (status: string) => void,
     reject: (reason?: any) => void
 ) {
-    const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl).catch(reason => {
-        console.warn(reason);
-        return {
-            block_hash: undefined,
-            tx_status: undefined,
-            tx_failure_reason: {
-                code: undefined,
-                error_message: reason,
-                tx_id: undefined
-            }
-        };
-    });
+    const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl)
+        .catch(reason => {
+            console.warn(reason);
+            return {
+                block_hash: undefined,
+                tx_status: undefined,
+                tx_failure_reason: {
+                    code: undefined,
+                    error_message: reason,
+                    tx_id: undefined
+                }
+            };
+        });
 
     if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
@@ -339,7 +340,6 @@ export class StarknetContract {
     }
 
     private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string) {
-        console.log(args);
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
