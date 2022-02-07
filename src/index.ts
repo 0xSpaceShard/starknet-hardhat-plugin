@@ -7,7 +7,7 @@ import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction, starknetDeployAccountAction } from "./task-actions";
-import { bigIntToStringUtil, getContractFactoryUtil, getWalletUtil, stringToBigIntUtil } from "./extend-utils";
+import { bigIntToShortStringUtil, getContractFactoryUtil, getWalletUtil, shortStringToBigIntUtil } from "./extend-utils";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -126,13 +126,13 @@ extendEnvironment(hre => {
             return contractFactory;
         },
 
-        stringToBigInt: convertableString => {
-            const convertedString = stringToBigIntUtil(convertableString);
+        shortStringToBigInt: convertableString => {
+            const convertedString = shortStringToBigIntUtil(convertableString);
             return convertedString;
         },
 
-        bigIntToString: convertableBigInt => {
-            const convertedBigInt = bigIntToStringUtil(convertableBigInt);
+        bigIntToShortString: convertableBigInt => {
+            const convertedBigInt = bigIntToShortStringUtil(convertableBigInt);
             return convertedBigInt;
         },
 

@@ -79,14 +79,14 @@ declare module "hardhat/types/runtime" {
              * @param input the input short string
              * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
              */
-            stringToBigInt: (convertableString: string) => BigInt;
+            shortStringToBigInt: (convertableString: string) => BigInt;
 
             /**
-             * Converts a BigInt to a string. The opposite of {@link stringToBigInt}.
+             * Converts a BigInt to a string. The opposite of {@link shortStringToBigInt}.
              * @param input the input BigInt
              * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
              */
-            bigIntToString: (convertableBigInt: BigInt) => string;
+            bigIntToShortString: (convertableBigInt: BigInt) => string;
 
             /**
              * The selected starknet-network, present if the called task relies on `--starknet-network` or `mocha.starknetNetwork`.

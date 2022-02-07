@@ -43,13 +43,13 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     });
 }
 
-export function stringToBigIntUtil(convertableString: string) {
+export function shortStringToBigIntUtil(convertableString: string) {
     if (!convertableString) {
         throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
     }
 
     if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
-        const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
+        const msg = `Short strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
@@ -72,7 +72,7 @@ export function stringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToStringUtil(convertableBigInt: BigInt) {
+export function bigIntToShortStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 
