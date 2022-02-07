@@ -3,9 +3,11 @@ import "hardhat/types/runtime";
 import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 
-type CairoConfig = {
-    version?: string;
+type StarknetConfig = {
+    dockerizedVersion?: string;
     venv?: string;
+    wallets?: WalletUserConfig;
+    network?: string;
 }
 
 type WalletUserConfig = {
@@ -32,13 +34,11 @@ declare module "hardhat/types/config" {
     }
 
     export interface HardhatConfig {
-        cairo: CairoConfig;
-        wallets: WalletUserConfig;
+        starknet: StarknetConfig;
     }
 
     export interface HardhatUserConfig {
-        cairo?: CairoConfig;
-        wallets?: WalletUserConfig;
+        starknet?: StarknetConfig;
     }
 
     export interface NetworksConfig {
@@ -89,7 +89,7 @@ declare module "hardhat/types/runtime" {
             bigIntToShortString: (convertableBigInt: BigInt) => string;
 
             /**
-             * The selected starknet-network, present if the called task relies on `--starknet-network` or `mocha.starknetNetwork`.
+             * The selected starknet-network, present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
              */
             network?: string;
 
@@ -105,10 +105,4 @@ declare module "hardhat/types/runtime" {
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
     type Wallet = WalletConfig;
-}
-
-declare module "mocha" {
-    export interface MochaOptions {
-        starknetNetwork?: string;
-    }
 }

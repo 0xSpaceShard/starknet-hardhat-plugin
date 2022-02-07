@@ -53,7 +53,6 @@ function isStarknetCompilationArtifact(filePath: string) {
     return !!parsed.entry_points_by_type;
 }
 
-
 /**
  * First deletes the file if it already exists. Then creates an empty file at the provided path.
  * Unlinking/deleting is necessary if user switched from docker to venv.
@@ -69,8 +68,6 @@ function initializeFile(filePath: string) {
 function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
-
-
 
 /**
  * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.

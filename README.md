@@ -253,21 +253,21 @@ Use this configuration option to select the `cairo-lang`/`starknet` version used
 A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
 module.exports = {
-  cairo: {
+  starknet: {
     // The default in this version of the plugin
-    version: "0.7.0"
+    dockerizedVersion: "0.7.0"
   }
   ...
 };
 ```
 
 ### Existing virtual environment
-If you want to use an existing Python virtual environment, specify it by using `cairo["venv"]`.
+If you want to use an existing Python virtual environment, specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
 ```typescript
 module.exports = {
-  cairo: {
+  starknet: {
     // venv: "active" <- for the active virtual environment
     // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
     venv: "<VENV_PATH>"
@@ -286,7 +286,7 @@ module.exports = {
     // Has to be different from the value set in `paths.artifacts` (which is used by core Hardhat and has a default value of `artifacts`).
     starknetArtifacts: "also-my-own-starknet-path",
 
-   // Same purpose as the `--cairo-path` argument on for the `starknet-compile` command
+   // Same purpose as the `--cairo-path` argument of the `starknet-compile` command
    // Allows specifying the locations of imported files, if necessary.
     cairoPaths: ["cairo-path1", "cairo-path2"]
   }
@@ -295,21 +295,19 @@ module.exports = {
 ```
 
 ### Testing network
-To set the network used in your Mocha tests, use `mocha["starknetNetwork"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Mocha tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
 ```javascript
 module.exports = {
+  starknet: {
+    network: "myNetwork"
+  },
   networks: {
     myNetwork: {
       url: "http://localhost:5000"
     }
-  },
-  mocha: {
-    // Used for deployment in Mocha tests
-    // Defaults to "alpha" (for Alpha testnet), which is preconfigured even if you don't see it under `networks:`
-    starknetNetwork: "myNetwork"
   }
   ...
 };
