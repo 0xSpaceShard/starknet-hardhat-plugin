@@ -36,7 +36,7 @@ describe("Starknet", function () {
             starknet.shortStringToBigInt(largeString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
-            expect(err.message).to.deep.equal("Strings must have a max of 31 characters.");
+            expect(err.message).to.deep.equal("Short strings must have a max of 31 characters.");
         }
     });
 
@@ -46,7 +46,7 @@ describe("Starknet", function () {
             starknet.shortStringToBigInt(invalidLengthString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
-            expect(err.message).to.deep.equal("Strings must have a max of 31 characters.");
+            expect(err.message).to.deep.equal("Short strings must have a max of 31 characters.");
         }
     });
 
