@@ -502,3 +502,4 @@ export class StarknetContract {
         return adaptedOutput;
     }
 }
+

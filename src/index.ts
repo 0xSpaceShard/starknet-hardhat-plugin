@@ -1,6 +1,6 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError } from "hardhat/plugins";
+import { HardhatPluginError, lazyObject } from "hardhat/plugins";
 import "./type-extensions";
 import {
     PLUGIN_NAME,
@@ -30,6 +30,7 @@ import {
     getWalletUtil,
     shortStringToBigIntUtil
 } from "./extend-utils";
+import { DevnetUtils } from "./devnet-utils";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -172,7 +173,9 @@ extendEnvironment((hre) => {
         getWallet: (name) => {
             const wallet = getWalletUtil(name, hre);
             return wallet;
-        }
+        },
+
+        devnet: lazyObject(() => new DevnetUtils(hre))
     };
 });
 

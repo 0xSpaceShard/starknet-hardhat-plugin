@@ -1,6 +1,7 @@
-import * as path from "path";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import * as path from "path";
+
 import {
     ABI_SUFFIX,
     DEFAULT_STARKNET_NETWORK,
