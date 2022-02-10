@@ -7,21 +7,21 @@ import { PLUGIN_NAME } from "./constants";
 import { Choice } from "./types";
 import { adaptUrl } from "./utils";
 
-export interface CompileOptions {
+interface CompileWrapperOptions {
     file: string,
     output: string,
     abi: string,
     cairoPath: string,
 }
 
-export interface DeployOptions {
+interface DeployWrapperOptions {
     contract: string,
     gatewayUrl: string,
     inputs?: string[],
     salt?: string
 }
 
-export interface InvokeOrCallOptions {
+interface InvokeOrCallWrapperOptions {
     choice: Choice,
     address: string,
     abi: string,
@@ -37,13 +37,13 @@ export interface InvokeOrCallOptions {
     blockNumber?: string
 }
 
-export interface GetTxStatusOptions {
+interface GetTxStatusWrapperOptions {
     hash: string,
     gatewayUrl: string,
     feederGatewayUrl: string,
 }
 
-export interface DeployAccountOptions {
+interface DeployAccountWrapperOptions {
     wallet: string,
     accountName: string,
     accountDir: string,
@@ -53,7 +53,7 @@ export interface DeployAccountOptions {
 }
 
 export abstract class StarknetWrapper {
-    protected prepareCompileOptions(options: CompileOptions): string[] {
+    protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
         return [
             options.file,
             "--abi", options.abi,
@@ -62,9 +62,9 @@ export abstract class StarknetWrapper {
         ];
     }
 
-    public abstract compile(options: CompileOptions): Promise<ProcessResult>;
+    public abstract compile(options: CompileWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareDeployOptions(options: DeployOptions): string[] {
+    protected prepareDeployOptions(options: DeployWrapperOptions): string[] {
         const prepared = [
             "deploy",
             "--contract", options.contract,
@@ -82,9 +82,9 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract deploy(options: DeployOptions): Promise<ProcessResult>;
+    public abstract deploy(options: DeployWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareInvokeOrCallOptions(options: InvokeOrCallOptions): string[] {
+    protected prepareInvokeOrCallOptions(options: InvokeOrCallWrapperOptions): string[] {
         const prepared = [
             options.choice,
             "--abi", options.abi,
@@ -123,9 +123,9 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult>;
+    public abstract invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareGetTxStatusOptions(options: GetTxStatusOptions): string[] {
+    protected prepareGetTxStatusOptions(options: GetTxStatusWrapperOptions): string[] {
         return [
             "tx_status",
             "--hash", options.hash,
@@ -134,9 +134,9 @@ export abstract class StarknetWrapper {
         ];
     }
 
-    public abstract getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult>;
+    public abstract getTxStatus(options: GetTxStatusWrapperOptions): Promise<ProcessResult>;
 
-    protected getPythonDeployAccountScript(options: DeployAccountOptions): string {
+    protected getPythonDeployAccountScript(options: DeployAccountWrapperOptions): string {
 
         const wallet = options.wallet? "'" + options.wallet + "'" : "None";
         const accountName = options.accountName? "'" + options.accountName + "'" : "'__default__'";
@@ -166,7 +166,7 @@ export abstract class StarknetWrapper {
         return script;
 
     }
-    public abstract deployAccount(options: DeployAccountOptions): Promise<ProcessResult>;
+    public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
@@ -220,7 +220,7 @@ export class DockerWrapper extends StarknetWrapper {
         return this.docker;
     }
 
-    public async compile(options: CompileOptions): Promise<ProcessResult> {
+    public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.file]: options.file,
             [options.abi]: options.abi,
@@ -241,7 +241,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async deploy(options: DeployOptions): Promise<ProcessResult> {
+    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.contract]: options.contract
         };
@@ -259,7 +259,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+    public async invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.abi]: options.abi
         };
@@ -282,7 +282,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+    public async getTxStatus(options: GetTxStatusWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {};
 
         const dockerOptions = {
@@ -297,7 +297,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
+    public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.accountDir]: options.accountDir
         };
@@ -363,31 +363,31 @@ export class VenvWrapper extends StarknetWrapper {
         };
     }
 
-    public async compile(options: CompileOptions): Promise<ProcessResult> {
+    public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
         const executed = await this.execute(this.starknetCompilePath, preparedOptions);
         return executed;
     }
 
-    public async deploy(options: DeployOptions): Promise<ProcessResult> {
+    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeployOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
 
-    public async invokeOrCall(options: InvokeOrCallOptions): Promise<ProcessResult> {
+    public async invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInvokeOrCallOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
 
-    public async getTxStatus(options: GetTxStatusOptions): Promise<ProcessResult> {
+    public async getTxStatus(options: GetTxStatusWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareGetTxStatusOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
 
-    public async deployAccount(options: DeployAccountOptions): Promise<ProcessResult> {
+    public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
         const deployAccountScript = this.getPythonDeployAccountScript(options);
         const executed = await this.execute("python", ["-c", deployAccountScript]);
         return executed;
