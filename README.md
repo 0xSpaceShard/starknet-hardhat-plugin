@@ -30,6 +30,7 @@ This plugin was tested with:
 - Docker v20.10.8 (optional):
   - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
   - If you opt for the containerized version, make sure you have a running Docker daemon.
+  - If you're experiencing Docker access issues, check [this](https://stackoverflow.com/questions/52364905/after-executing-following-code-of-dockerode-npm-getting-error-connect-eacces-v).
 - Linux / macOS:
   - On Windows, we recommend using WSL 2.
 
@@ -233,7 +234,7 @@ describe("My Test", function () {
 
     // signature is calculated for each transaction according to `publicKey` used and `amount` passed
     const signature = [BigInt("123..."), BigInt("456...")];
-    await contract.invoke("increase_balance", { user: publicKey, amount: 20 }, signature);
+    await contract.invoke("increase_balance", { user: publicKey, amount: 20 }, { signature });
 
     // notice how `res` is mapped to `balance`
     const { res: balance } = await contract.call("get_balance", { user: publicKey });
@@ -248,26 +249,26 @@ For more usage examples, including tuple, array and struct support, as well as w
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
 ### Cairo version
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `version` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
 A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 ```javascript
 module.exports = {
-  cairo: {
+  starknet: {
     // The default in this version of the plugin
-    version: "0.7.0"
+    dockerizedVersion: "0.7.0"
   }
   ...
 };
 ```
 
 ### Existing virtual environment
-If you want to use an existing Python virtual environment, specify it by using `cairo["venv"]`.
+If you want to use an existing Python virtual environment, specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
 ```typescript
 module.exports = {
-  cairo: {
+  starknet: {
     // venv: "active" <- for the active virtual environment
     // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
     venv: "<VENV_PATH>"
@@ -286,30 +287,28 @@ module.exports = {
     // Has to be different from the value set in `paths.artifacts` (which is used by core Hardhat and has a default value of `artifacts`).
     starknetArtifacts: "also-my-own-starknet-path",
 
-   // Same purpose as the `--cairo-path` argument on for the `starknet-compile` command
+   // Same purpose as the `--cairo-path` argument of the `starknet-compile` command
    // Allows specifying the locations of imported files, if necessary.
-    cairoPaths: ["cairo-path1", "cairo-path2"]
+    cairoPaths: ["my/own/cairo-path1", "also/my/own/cairo-path2"]
   }
   ...
 };
 ```
 
 ### Testing network
-To set the network used in your Mocha tests, use `mocha["starknetNetwork"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Mocha tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
 ```javascript
 module.exports = {
+  starknet: {
+    network: "myNetwork"
+  },
   networks: {
     myNetwork: {
       url: "http://localhost:5000"
     }
-  },
-  mocha: {
-    // Used for deployment in Mocha tests
-    // Defaults to "alpha" (for Alpha testnet), which is preconfigured even if you don't see it under `networks:`
-    starknetNetwork: "myNetwork"
   }
   ...
 };
@@ -326,22 +325,33 @@ The parameters for the wallet are:
 
 ```javascript
 module.exports = {
-  wallets: {
-    MyWallet: {
-      accountName: "OpenZeppelin",
-      modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-      accountPath: "~/.starknet_accounts"
-    },
-    AnotherWallet: {
-      accountName: "AnotherOpenZeppelin",
-      modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-      accountPath: "~/.starknet_accounts"
+  starknet: {
+    wallets: {
+      MyWallet: {
+        accountName: "OpenZeppelin",
+        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+        accountPath: "~/.starknet_accounts"
+      },
+      AnotherWallet: {
+        accountName: "AnotherOpenZeppelin",
+        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+        accountPath: "~/.starknet_accounts"
+      }
     }
   }
   ...
 };
 ```
 Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
+
+To use the wallet in your scripts, use the `getWallet` utility function:
+```typescript
+import { starknet } from "hardhat";
+...
+const wallet = starknet.getWallet("MyWallet");
+const contract = ...;
+await contract.invoke("increase_balance", { amount: 1 }, { wallet });
+```
 
 ## More examples
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).

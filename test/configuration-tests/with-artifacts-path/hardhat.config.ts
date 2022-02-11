@@ -1,6 +1,9 @@
 import "../dist/index.js";
 
 module.exports = {
+    starknet: {
+        network: process.env.NETWORK
+    },
     paths: {
         starknetArtifacts: "my-starknet-artifacts"
     },
@@ -8,8 +11,5 @@ module.exports = {
         devnet: {
             url: "http://localhost:5000"
         }
-    },
-    mocha: {
-        starknetNetwork: process.env.NETWORK
     }
 };

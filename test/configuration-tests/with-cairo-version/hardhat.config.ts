@@ -1,15 +1,13 @@
 import "../dist/index.js";
 
 module.exports = {
-    cairo: {
-        version: "0.7.0"
+    starknet: {
+        dockerizedVersion: "0.7.0",
+        network: process.env.NETWORK
     },
     networks: {
         devnet: {
             url: "http://localhost:5000"
         }
-    },
-    mocha: {
-        starknetNetwork: process.env.NETWORK
     }
 };

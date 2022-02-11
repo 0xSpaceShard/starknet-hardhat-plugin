@@ -177,6 +177,23 @@ function handleSignature(signature: Array<Numeric>): string[] {
     return [];
 }
 
+export interface DeployOptions {
+    salt?: string;
+}
+
+export interface InvokeOptions {
+    signature?: Array<Numeric>;
+    wallet?: Wallet;
+}
+
+export interface CallOptions {
+    signature?: Array<Numeric>;
+    wallet?: Wallet;
+    blockNumber?: string;
+}
+
+type InvokeOrCallOptions = InvokeOptions | CallOptions;
+
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
@@ -226,15 +243,16 @@ export class StarknetContractFactory {
      * const contractFactory = ...;
      * const instance = await contractFactory.deploy({ initial_balance: 100 });
      * ```
-     * @param constructorArguments constructor arguments
+     * @param constructorArguments constructor arguments of Starknet contract
+     * @param options optional additions to deploying
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: StringMap, addressSalt?:string): Promise<StarknetContract> {
+    async deploy(constructorArguments?: StringMap, options: DeployOptions = {}): Promise<StarknetContract> {
         const executed = await this.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
             gatewayUrl: this.gatewayUrl,
-            salt: addressSalt
+            salt: options.salt
         });
         if (executed.statusCode) {
             const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
@@ -332,7 +350,7 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string) {
+    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, options: InvokeOrCallOptions = {}) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
@@ -353,14 +371,14 @@ export class StarknetContract {
             abi: this.abiPath,
             functionName: functionName,
             inputs: adaptInput(functionName, args, func.inputs, this.abi),
-            signature: handleSignature(signature),
-            wallet: wallet ? wallet.modulePath : undefined,
-            account: wallet ? wallet.accountName : undefined,
-            accountDir: wallet ? wallet.accountPath : undefined,
+            signature: handleSignature(options.signature),
+            wallet: options.wallet?.modulePath,
+            account: options.wallet?.accountName,
+            accountDir: options.wallet?.accountPath,
             networkID: this.networkID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
-            blockNumber: blockNumber
+            blockNumber: "blockNumber" in options ? options.blockNumber : undefined
         });
         if (executed.statusCode) {
             const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
@@ -375,12 +393,12 @@ export class StarknetContract {
      * Invoke the function by name and optionally provide arguments in an array.
      * For a usage example @see {@link call}
      * @param functionName
-     * @param args
-     * @param signature array of transaction signature elements
+     * @param args arguments to Starknet contract function
+     * @options optional additions to invoking
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet): Promise<void> {
-        const executed = await this.invokeOrCall("invoke", functionName, args, signature, wallet);
+    async invoke(functionName: string, args?: StringMap, options: InvokeOptions = {}): Promise<void> {
+        const executed = await this.invokeOrCall("invoke", functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<void>((resolve, reject) => {
@@ -418,13 +436,16 @@ export class StarknetContract {
      * > 10n
      * ```
      * @param functionName
-     * @param args
-     * @param signature array of transaction signature elements
+     * @param args arguments to Starknet contract function
+     * @param options optional additions to calling
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: StringMap, signature?: Array<Numeric>, wallet?: Wallet, blockNumber?: string): Promise<StringMap> {
-        const blockNum = blockNumber || PENDING_BLOCK_NUMBER;
-        const executed = await this.invokeOrCall("call", functionName, args, signature, wallet, blockNum);
+    async call(functionName: string, args?: StringMap, options: CallOptions = {}): Promise<StringMap> {
+        const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options)); // copy because of potential changes to the object
+        if (optionsCopy.blockNumber === undefined) { // using || operator would not handle the zero case correctly
+            optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
+        }
+        const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
         const func = <starknet.CairoFunction> this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;

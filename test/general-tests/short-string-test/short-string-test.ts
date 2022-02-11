@@ -16,44 +16,44 @@ describe("Starknet", function () {
     const multipleInvalidCharactersString = "invaliđ čarđ";
 
     it("should convert a valid string to a BigInt", async function() {
-        const convertedInput = starknet.stringToBigInt(inputString);
+        const convertedInput = starknet.shortStringToBigInt(inputString);
         expect(convertedInput).to.deep.equal(convertedString);
     });
 
     it("should convert a string with exactly 31 characters to a BigInt", async function() {
-        const convertedInput = starknet.stringToBigInt(exactString);
+        const convertedInput = starknet.shortStringToBigInt(exactString);
         expect(convertedInput).to.deep.equal(convertedExactString);
     });
 
     it("should convert a BigInt to a string", async function() {
-        const convertedOutput = starknet.bigIntToString(convertedString);
+        const convertedOutput = starknet.bigIntToShortString(convertedString);
         expect(convertedOutput).to.deep.equal(inputString);
     });
 
     it("should fail when a string has exactly 32 characters", async function() {
 
         try {
-            starknet.stringToBigInt(largeString);
+            starknet.shortStringToBigInt(largeString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
-            expect(err.message).to.deep.equal("Strings must have a max of 31 characters.");
+            expect(err.message).to.deep.equal("Short strings must have a max of 31 characters.");
         }
     });
 
     it("should fail when a string has over 31 characters", async function() {
 
         try {
-            starknet.stringToBigInt(invalidLengthString);
+            starknet.shortStringToBigInt(invalidLengthString);
             expect.fail("Should have failed on converting a string with more than 31 characters.");
         } catch (err: any) {
-            expect(err.message).to.deep.equal("Strings must have a max of 31 characters.");
+            expect(err.message).to.deep.equal("Short strings must have a max of 31 characters.");
         }
     });
 
     it("should fail when a string has a non-standard-ASCII character", async function() {
 
         try {
-            starknet.stringToBigInt(invalidCharacterString);
+            starknet.shortStringToBigInt(invalidCharacterString);
             expect.fail("Should have failed on converting a string with an invalid character.");
         } catch (err: any) {
             expect(err.message).to.deep.equal("Non-standard-ASCII character: ÿ");
@@ -63,7 +63,7 @@ describe("Starknet", function () {
     it("should fail when a string has multiple non-standard-ASCII characters", async function() {
 
         try {
-            starknet.stringToBigInt(multipleInvalidCharactersString);
+            starknet.shortStringToBigInt(multipleInvalidCharactersString);
             expect.fail("Should have failed on converting a string with invalid characters.");
         } catch (err: any) {
             expect(err.message).to.deep.equal("Non-standard-ASCII characters: đ, č");

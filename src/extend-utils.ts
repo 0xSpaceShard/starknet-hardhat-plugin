@@ -28,8 +28,8 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     if (networkUrl) {
         gateway = networkUrl;
     } else {
-        testNetworkName = hre.config.mocha.starknetNetwork || DEFAULT_STARKNET_NETWORK;
-        const network = getNetwork(testNetworkName, hre, "mocha.starknetNetwork");
+        testNetworkName = hre.config.starknet.network || DEFAULT_STARKNET_NETWORK;
+        const network = getNetwork(testNetworkName, hre, "starknet.network");
         gateway = network.url;
     }
 
@@ -43,13 +43,13 @@ export async function getContractFactoryUtil (hre: HardhatRuntimeEnvironment, co
     });
 }
 
-export function stringToBigIntUtil(convertableString: string) {
+export function shortStringToBigIntUtil(convertableString: string) {
     if (!convertableString) {
         throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
     }
 
     if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
-        const msg = `Strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
+        const msg = `Short strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
@@ -72,15 +72,14 @@ export function stringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToStringUtil(convertableBigInt: BigInt) {
+export function bigIntToShortStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 
-
 export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
-    const wallet = hre.config.wallets[name];
+    const wallet = hre.config.starknet.wallets[name];
     if (!wallet) {
-        const available = Object.keys(hre.config.wallets).join(", ");
+        const available = Object.keys(hre.config.starknet.wallets).join(", ");
         const msg = `Invalid wallet name provided: ${name}.\nValid wallets: ${available}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }

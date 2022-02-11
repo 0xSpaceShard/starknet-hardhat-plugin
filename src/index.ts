@@ -7,7 +7,7 @@ import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import { starknetCompileAction, starknetDeployAction, starknetVoyagerAction, starknetInvokeAction, starknetCallAction, starknetDeployAccountAction } from "./task-actions";
-import { bigIntToStringUtil, getContractFactoryUtil, getWalletUtil, stringToBigIntUtil } from "./extend-utils";
+import { bigIntToShortStringUtil, getContractFactoryUtil, getWalletUtil, shortStringToBigIntUtil } from "./extend-utils";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -49,11 +49,11 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add user-defined cairo settings
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    if (userConfig.cairo) {
-        config.cairo = JSON.parse(JSON.stringify(userConfig.cairo));
+    if (userConfig.starknet) {
+        config.starknet = JSON.parse(JSON.stringify(userConfig.starknet));
     }
-    if (!config.cairo) {
-        config.cairo = {};
+    if (!config.starknet) {
+        config.starknet = {};
     }
 });
 
@@ -70,16 +70,16 @@ extendConfig((config: HardhatConfig) => {
 
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment(hre => {
-    const venvPath = hre.config.cairo.venv;
+    const venvPath = hre.config.starknet.venv;
     if (venvPath) {
-        if (hre.config.cairo.version) {
-            const msg = "Error in config file. Only one of (cairo.version, cairo.venv) can be specified.";
+        if (hre.config.starknet.dockerizedVersion) {
+            const msg = "Error in config file. Only one of (starknet.version, starknet.venv) can be specified.";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = DOCKER_REPOSITORY;
-        const tag = hre.config.cairo.version || DEFAULT_DOCKER_IMAGE_TAG;
+        const tag = hre.config.starknet.dockerizedVersion || DEFAULT_DOCKER_IMAGE_TAG;
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
@@ -126,13 +126,13 @@ extendEnvironment(hre => {
             return contractFactory;
         },
 
-        stringToBigInt: convertableString => {
-            const convertedString = stringToBigIntUtil(convertableString);
+        shortStringToBigInt: convertableString => {
+            const convertedString = shortStringToBigIntUtil(convertableString);
             return convertedString;
         },
 
-        bigIntToString: convertableBigInt => {
-            const convertedBigInt = bigIntToStringUtil(convertableBigInt);
+        bigIntToShortString: convertableBigInt => {
+            const convertedBigInt = bigIntToShortStringUtil(convertableBigInt);
             return convertedBigInt;
         },
 
