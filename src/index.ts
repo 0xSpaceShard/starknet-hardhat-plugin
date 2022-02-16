@@ -1,6 +1,6 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError, lazyObject } from "hardhat/plugins";
+import { HardhatPluginError, lazyObject, lazyFunction } from "hardhat/plugins";
 import "./type-extensions";
 import {
     PLUGIN_NAME,
@@ -177,6 +177,8 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre))
     };
+
+    hre.starknet.Account = lazyFunction(() => require("account"));
 });
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")

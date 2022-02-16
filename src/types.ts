@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
@@ -7,7 +6,7 @@ import {
     PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
-import { adaptLog } from "./utils";
+import { adaptLog, readAbi } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
@@ -164,26 +163,6 @@ export async function iterativelyCheckStatus(
         // eslint-disable-next-line prefer-rest-params
         setTimeout(iterativelyCheckStatus, CHECK_STATUS_TIMEOUT, ...arguments);
     }
-}
-
-/**
- * Reads ABI from `abiPath` and converts it to an object for lookup by name.
- * @param abiPath the path where ABI is stored on disk
- * @returns an object mapping ABI entry names with their values
- */
-function readAbi(abiPath: string): starknet.Abi {
-    const abiRaw = fs.readFileSync(abiPath).toString();
-    const abiArray = JSON.parse(abiRaw);
-    const abi: starknet.Abi = {};
-    for (const abiEntry of abiArray) {
-        if (!abiEntry.name) {
-            const msg = `Abi entry has no name: ${abiEntry}`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
-        abi[abiEntry.name] = abiEntry;
-    }
-
-    return abi;
 }
 
 /**

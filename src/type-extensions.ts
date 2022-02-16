@@ -4,6 +4,7 @@ import "hardhat/types/runtime";
 import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
+import { Account } from "./account";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -83,6 +84,8 @@ declare module "hardhat/types/runtime" {
         starknetWrapper: StarknetWrapper;
 
         starknet: {
+            Account?: typeof Account;
+
             /**
              * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
              * the provided string should be `MyContract`.
