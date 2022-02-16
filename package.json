@@ -35,6 +35,9 @@
         "glob": "^7.2.0",
         "hardhat": "^2.8.2"
     },
+    "peerDependencies": {
+        "hardhat": "^2.8.2"
+    },
     "devDependencies": {
         "@types/chai": "^4.3.0",
         "@types/glob": "^7.2.0",
