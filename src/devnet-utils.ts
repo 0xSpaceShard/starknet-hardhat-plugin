@@ -9,7 +9,7 @@ import { getNetwork } from "./utils";
 interface L2Message {
   from_address: BigInt;
   to_address: BigInt;
-  payload: Array<any>;
+  payload: Array<BigInt>;
 }
 
 export interface FlushResponse {
