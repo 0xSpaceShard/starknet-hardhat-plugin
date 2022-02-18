@@ -134,7 +134,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming constructor input.\n" +
-            `Pass them as a single string; e.g. --inputs ${"1 2 3"}\n` +
+            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"\n` +
             "You would typically use this feature when deploying a single contract.\n" +
             "If you're deploying multiple contracts, they'll all use the same input."
     )
@@ -192,7 +192,7 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs ${"1 2 3"}`
+            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -210,7 +210,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs ${"1 2 3"}`
+            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
