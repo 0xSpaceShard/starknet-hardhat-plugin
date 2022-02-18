@@ -5,7 +5,14 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog, traverseFiles, checkArtifactExists, getNetwork, findPath, getAccountPath } from "./utils";
+import {
+    adaptLog,
+    traverseFiles,
+    checkArtifactExists,
+    getNetwork,
+    findPath,
+    getAccountPath
+} from "./utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 
@@ -89,7 +96,8 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (!networkName) { // we already know no gatewayUrl is provided
+    if (!networkName) {
+        // we already know no gatewayUrl is provided
         const msg = "No starknet-network or gateway-url provided.";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
@@ -118,7 +126,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
             cairoPaths.push(path);
         });
     }
-    for (let i = 0; i<cairoPaths.length; i++) {
+    for (let i = 0; i < cairoPaths.length; i++) {
         if (!path.isAbsolute(cairoPaths[i])) {
             cairoPaths[i] = path.normalize(path.join(root, cairoPaths[i]));
         }
@@ -161,7 +169,6 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
     }
 }
 
-
 export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
@@ -171,13 +178,17 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
     let statusCode = 0;
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
-
         if (intRegex.test(artifactsPath)) {
-            console.warn(`WARNING: found an integer "${artifactsPath}" as an artifact path. Make sure that all inputs are passed within a single string (e.g --inputs "10 20 30")`);
+            console.warn(
+                `WARNING: found an integer "${artifactsPath}" as an artifact path. Make sure that all inputs are passed within a single string (e.g --inputs "10 20 30")`
+            );
         }
         // Check if input is the name of the contract and not a path
         if (artifactsPath === path.basename(artifactsPath)) {
-            const metadataSearchTarget = path.join(`${artifactsPath}.cairo`, `${path.basename(artifactsPath)}.json`);
+            const metadataSearchTarget = path.join(
+                `${artifactsPath}.cairo`,
+                `${path.basename(artifactsPath)}.json`
+            );
             artifactsPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
         } else if (!path.isAbsolute(artifactsPath)) {
             artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
@@ -205,22 +216,28 @@ export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnviron
         }
     }
 
-    if (args.wait) { // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
+    if (args.wait) {
+        // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
         console.log(`Checking deployment transaction${txHashes.length === 1 ? "" : "s"}...`);
-        const promises = txHashes.map(hash => new Promise<void>((resolve, reject) => iterativelyCheckStatus(
-            hash,
-            hre.starknetWrapper,
-            gatewayUrl,
-            gatewayUrl,
-            status => {
-                console.log(`Deployment transaction ${hash} is now ${status}`);
-                resolve();
-            },
-            error => {
-                console.log(`Deployment transaction ${hash} is REJECTED`);
-                reject(error);
-            }
-        )));
+        const promises = txHashes.map(
+            (hash) =>
+                new Promise<void>((resolve, reject) =>
+                    iterativelyCheckStatus(
+                        hash,
+                        hre.starknetWrapper,
+                        gatewayUrl,
+                        gatewayUrl,
+                        (status) => {
+                            console.log(`Deployment transaction ${hash} is now ${status}`);
+                            resolve();
+                        },
+                        (error) => {
+                            console.log(`Deployment transaction ${hash} is REJECTED`);
+                            reject(error);
+                        }
+                    )
+                )
+        );
         await Promise.allSettled(promises);
     }
 
@@ -241,7 +258,10 @@ function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment,
     networkName ||= ALPHA_TESTNET;
     const network = getNetwork(networkName, hre, origin);
     if (!network.verificationUrl) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Network ${networkName} does not support Voyager verification.`);
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            `Network ${networkName} does not support Voyager verification.`
+        );
     }
     return network.verificationUrl;
 }
@@ -253,7 +273,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     try {
         const resp = await axios.get(voyagerUrl, {
             headers: {
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+                Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
                 "Content-Type": "application/json"
             }
         });
@@ -268,7 +288,7 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     }
 
     if (isVerified) {
-        const msg =`Contract at address ${args.address} has already been verified`;
+        const msg = `Contract at address ${args.address} has already been verified`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     //If contract hasn't been verified yet, do it
@@ -277,21 +297,26 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
         contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
     }
     if (fs.existsSync(contractPath)) {
-        const content = { code: fs.readFileSync(contractPath).toString().split(/\r?\n|\r/) };
-        await axios.post(voyagerUrl, JSON.stringify(content)).catch(error=>{
+        const content = {
+            code: fs
+                .readFileSync(contractPath)
+                .toString()
+                .split(/\r?\n|\r/)
+        };
+        await axios.post(voyagerUrl, JSON.stringify(content)).catch((error) => {
             switch (error.response.status) {
-            case 400: {
-                const msg = `Contract at address ${args.address} does not match the provided code`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            case 500: {
-                const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            default: {
-                const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
+                case 400: {
+                    const msg = `Contract at address ${args.address} does not match the provided code`;
+                    throw new HardhatPluginError(PLUGIN_NAME, msg);
+                }
+                case 500: {
+                    const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
+                    throw new HardhatPluginError(PLUGIN_NAME, msg);
+                }
+                default: {
+                    const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+                    throw new HardhatPluginError(PLUGIN_NAME, msg);
+                }
             }
         });
         console.log(`Contract has been successfuly verified at address ${args.address}`);
@@ -309,8 +334,11 @@ export async function starknetCallAction(args: any, hre: HardhatRuntimeEnvironme
     await starknetInvokeOrCallAction("call", args, hre);
 }
 
-
-async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: HardhatRuntimeEnvironment) {
+async function starknetInvokeOrCallAction(
+    choice: Choice,
+    args: any,
+    hre: HardhatRuntimeEnvironment
+) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
     const abiPath = contractFactory.getAbiPath();
@@ -335,7 +363,6 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         feederGatewayUrl: gatewayUrl,
         blockNumber: args.blockNumber ? args.blockNumber : undefined,
         networkID: wallet ? args.starknetNetwork : undefined
-
     });
 
     const statusCode = processExecuted(executed, true);
@@ -346,24 +373,27 @@ async function starknetInvokeOrCallAction(choice: Choice, args: any, hre: Hardha
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 
-    if (choice === "invoke" && args.wait) { // If the "wait" flag was passed as an argument, check the transaction hash for its status
+    if (choice === "invoke" && args.wait) {
+        // If the "wait" flag was passed as an argument, check the transaction hash for its status
         console.log(`Checking ${choice} transaction...`);
         const executedOutput = executed.stdout.toString();
         const txHash = extractTxHash(executedOutput);
-        await new Promise<void>((resolve, reject) => iterativelyCheckStatus(
-            txHash,
-            hre.starknetWrapper,
-            gatewayUrl,
-            gatewayUrl,
-            status => {
-                console.log(`Invoke transaction ${txHash} is now ${status}`);
-                resolve();
-            },
-            error => {
-                console.error(`Invoke transaction ${txHash} is REJECTED`);
-                reject(error);
-            }
-        ));
+        await new Promise<void>((resolve, reject) =>
+            iterativelyCheckStatus(
+                txHash,
+                hre.starknetWrapper,
+                gatewayUrl,
+                gatewayUrl,
+                (status) => {
+                    console.log(`Invoke transaction ${txHash} is now ${status}`);
+                    resolve();
+                },
+                (error) => {
+                    console.error(`Invoke transaction ${txHash} is REJECTED`);
+                    reject(error);
+                }
+            )
+        );
     }
 }
 

@@ -1,7 +1,12 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, PENDING_BLOCK_NUMBER, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
+import {
+    PLUGIN_NAME,
+    CHECK_STATUS_TIMEOUT,
+    PENDING_BLOCK_NUMBER,
+    CHECK_STATUS_RECOVER_TIMEOUT
+} from "./constants";
 import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -13,7 +18,7 @@ import { Wallet } from "hardhat/types";
  */
 export type TxStatus =
     /** The transaction passed the validation and entered the pending block. */
-    "PENDING"
+    | "PENDING"
 
     /** The transaction has not been received yet (i.e., not written to storage). */
     | "NOT_RECEIVED"
@@ -28,18 +33,17 @@ export type TxStatus =
     | "ACCEPTED_ON_L2"
 
     /** The transaction was accepted on-chain. */
-    | "ACCEPTED_ON_L1"
-;
+    | "ACCEPTED_ON_L1";
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
-}
+};
 
 export type TxFailureReason = {
     code: string;
     error_message: string;
     tx_id: string;
-}
+};
 
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
@@ -71,7 +75,10 @@ function extractAddress(response: string) {
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
-        throw new HardhatPluginError(PLUGIN_NAME, "Could not parse response. Check that you're using the correct network.");
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            "Could not parse response. Check that you're using the correct network."
+        );
     }
     return matched[1];
 }
@@ -79,13 +86,18 @@ function extractFromResponse(response: string, regex: RegExp) {
 /**
  * The object returned by starknet tx_status.
  */
- type StatusObject = {
-    block_hash: string,
-    tx_status: TxStatus,
-    tx_failure_reason?: TxFailureReason
-}
+type StatusObject = {
+    block_hash: string;
+    tx_status: TxStatus;
+    tx_failure_reason?: TxFailureReason;
+};
 
-async function checkStatus(hash: string, starknetWrapper: StarknetWrapper, gatewayUrl: string, feederGatewayUrl: string): Promise<StatusObject> {
+async function checkStatus(
+    hash: string,
+    starknetWrapper: StarknetWrapper,
+    gatewayUrl: string,
+    feederGatewayUrl: string
+): Promise<StatusObject> {
     const executed = await starknetWrapper.getTxStatus({
         hash,
         gatewayUrl,
@@ -122,11 +134,15 @@ export async function iterativelyCheckStatus(
     resolve: (status: string) => void,
     reject: (reason?: any) => void
 ) {
-    const statusObject = await checkStatus(txHash, starknetWrapper, gatewayUrl, feederGatewayUrl)
-        .catch(reason => {
-            console.warn(reason);
-            return undefined;
-        });
+    const statusObject = await checkStatus(
+        txHash,
+        starknetWrapper,
+        gatewayUrl,
+        feederGatewayUrl
+    ).catch((reason) => {
+        console.warn(reason);
+        return undefined;
+    });
 
     if (!statusObject) {
         console.warn("Retrying transaction status check...");
@@ -135,7 +151,12 @@ export async function iterativelyCheckStatus(
     } else if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
-        reject(new Error("Transaction rejected. Error message:\n\n" + statusObject.tx_failure_reason.error_message));
+        reject(
+            new Error(
+                "Transaction rejected. Error message:\n\n" +
+                    statusObject.tx_failure_reason.error_message
+            )
+        );
     } else {
         // Make a recursive call, but with a delay.
         // Local var `arguments` holds what was passed in the current call
@@ -172,7 +193,7 @@ function readAbi(abiPath: string): starknet.Abi {
  */
 function handleSignature(signature: Array<Numeric>): string[] {
     if (signature) {
-        return signature.map(s => s.toString());
+        return signature.map((s) => s.toString());
     }
     return [];
 }
@@ -217,7 +238,7 @@ export class StarknetContractFactory {
         for (const abiEntryName in this.abi) {
             const abiEntry = this.abi[abiEntryName];
             if (abiEntry.type === "constructor") {
-                this.constructorAbi = <starknet.CairoFunction> abiEntry;
+                this.constructorAbi = <starknet.CairoFunction>abiEntry;
             }
         }
     }
@@ -247,7 +268,10 @@ export class StarknetContractFactory {
      * @param options optional additions to deploying
      * @returns the newly created instance
      */
-    async deploy(constructorArguments?: StringMap, options: DeployOptions = {}): Promise<StarknetContract> {
+    async deploy(
+        constructorArguments?: StringMap,
+        options: DeployOptions = {}
+    ): Promise<StarknetContract> {
         const executed = await this.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
@@ -255,7 +279,8 @@ export class StarknetContractFactory {
             salt: options.salt
         });
         if (executed.statusCode) {
-            const msg = "Could not deploy contract. Check the network url in config. Is it responsive?";
+            const msg =
+                "Could not deploy contract. Check the network url in config. Is it responsive?";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -287,10 +312,16 @@ export class StarknetContractFactory {
     private handleConstructorArguments(constructorArguments: StringMap): string[] {
         if (this.constructorAbi) {
             if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
-                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments required but not provided.");
+                throw new HardhatPluginError(
+                    PLUGIN_NAME,
+                    "Constructor arguments required but not provided."
+                );
             }
             const argumentArray = adaptInput(
-                this.constructorAbi.name, constructorArguments, this.constructorAbi.inputs, this.abi
+                this.constructorAbi.name,
+                constructorArguments,
+                this.constructorAbi.inputs,
+                this.abi
             );
 
             return argumentArray;
@@ -298,7 +329,10 @@ export class StarknetContractFactory {
 
         if (constructorArguments && Object.keys(constructorArguments).length) {
             if (!this.constructorAbi) {
-                throw new HardhatPluginError(PLUGIN_NAME, "Constructor arguments provided but not required.");
+                throw new HardhatPluginError(
+                    PLUGIN_NAME,
+                    "Constructor arguments provided but not required."
+                );
             }
             // other case already handled
         }
@@ -350,19 +384,27 @@ export class StarknetContract {
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
-    private async invokeOrCall(choice: Choice, functionName: string, args?: StringMap, options: InvokeOrCallOptions = {}) {
+    private async invokeOrCall(
+        choice: Choice,
+        functionName: string,
+        args?: StringMap,
+        options: InvokeOrCallOptions = {}
+    ) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
 
-        const func = <starknet.CairoFunction> this.abi[functionName];
+        const func = <starknet.CairoFunction>this.abi[functionName];
         if (!func) {
             const msg = `Function '${functionName}' doesn't exist on this contract.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
         if (Array.isArray(args)) {
-            throw new HardhatPluginError(PLUGIN_NAME, "Arguments should be passed in the form of an object.");
+            throw new HardhatPluginError(
+                PLUGIN_NAME,
+                "Arguments should be passed in the form of an object."
+            );
         }
 
         const executed = await this.starknetWrapper.invokeOrCall({
@@ -397,7 +439,11 @@ export class StarknetContract {
      * @options optional additions to invoking
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async invoke(functionName: string, args?: StringMap, options: InvokeOptions = {}): Promise<void> {
+    async invoke(
+        functionName: string,
+        args?: StringMap,
+        options: InvokeOptions = {}
+    ): Promise<void> {
         const executed = await this.invokeOrCall("invoke", functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
@@ -408,7 +454,7 @@ export class StarknetContract {
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(),
-                error => {
+                (error) => {
                     console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
                     reject(error);
                 }
@@ -440,13 +486,18 @@ export class StarknetContract {
      * @param options optional additions to calling
      * @returns a Promise that resolves when the status of the transaction is at least `PENDING`
      */
-    async call(functionName: string, args?: StringMap, options: CallOptions = {}): Promise<StringMap> {
+    async call(
+        functionName: string,
+        args?: StringMap,
+        options: CallOptions = {}
+    ): Promise<StringMap> {
         const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options)); // copy because of potential changes to the object
-        if (optionsCopy.blockNumber === undefined) { // using || operator would not handle the zero case correctly
+        if (optionsCopy.blockNumber === undefined) {
+            // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
         }
         const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
-        const func = <starknet.CairoFunction> this.abi[functionName];
+        const func = <starknet.CairoFunction>this.abi[functionName];
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;
     }

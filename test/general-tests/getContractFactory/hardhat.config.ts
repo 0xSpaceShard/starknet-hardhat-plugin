@@ -1,4 +1,3 @@
 import "../dist/index.js";
 
-module.exports = {
-};
+module.exports = {};

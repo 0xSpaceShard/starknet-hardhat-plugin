@@ -8,57 +8,60 @@ import { Choice } from "./types";
 import { adaptUrl } from "./utils";
 
 interface CompileWrapperOptions {
-    file: string,
-    output: string,
-    abi: string,
-    cairoPath: string,
+    file: string;
+    output: string;
+    abi: string;
+    cairoPath: string;
 }
 
 interface DeployWrapperOptions {
-    contract: string,
-    gatewayUrl: string,
-    inputs?: string[],
-    salt?: string
+    contract: string;
+    gatewayUrl: string;
+    inputs?: string[];
+    salt?: string;
 }
 
 interface InvokeOrCallWrapperOptions {
-    choice: Choice,
-    address: string,
-    abi: string,
-    functionName: string,
-    inputs?: string[],
-    signature?: string[],
-    wallet?: string,
-    account?: string,
-    accountDir?: string,
-    networkID?:string,
-    gatewayUrl: string,
-    feederGatewayUrl: string
-    blockNumber?: string
+    choice: Choice;
+    address: string;
+    abi: string;
+    functionName: string;
+    inputs?: string[];
+    signature?: string[];
+    wallet?: string;
+    account?: string;
+    accountDir?: string;
+    networkID?: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+    blockNumber?: string;
 }
 
 interface GetTxStatusWrapperOptions {
-    hash: string,
-    gatewayUrl: string,
-    feederGatewayUrl: string,
+    hash: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
 }
 
 interface DeployAccountWrapperOptions {
-    wallet: string,
-    accountName: string,
-    accountDir: string,
-    gatewayUrl: string,
-    feederGatewayUrl: string,
-    network: string
+    wallet: string;
+    accountName: string;
+    accountDir: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+    network: string;
 }
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
         return [
             options.file,
-            "--abi", options.abi,
-            "--output", options.output,
-            "--cairo_path", options.cairoPath
+            "--abi",
+            options.abi,
+            "--output",
+            options.output,
+            "--cairo_path",
+            options.cairoPath
         ];
     }
 
@@ -67,8 +70,10 @@ export abstract class StarknetWrapper {
     protected prepareDeployOptions(options: DeployWrapperOptions): string[] {
         const prepared = [
             "deploy",
-            "--contract", options.contract,
-            "--gateway_url", options.gatewayUrl
+            "--contract",
+            options.contract,
+            "--gateway_url",
+            options.gatewayUrl
         ];
 
         if (options.inputs && options.inputs.length) {
@@ -76,7 +81,7 @@ export abstract class StarknetWrapper {
         }
 
         if (options.salt) {
-            prepared.push("--salt",  options.salt);
+            prepared.push("--salt", options.salt);
         }
 
         return prepared;
@@ -87,11 +92,16 @@ export abstract class StarknetWrapper {
     protected prepareInvokeOrCallOptions(options: InvokeOrCallWrapperOptions): string[] {
         const prepared = [
             options.choice,
-            "--abi", options.abi,
-            "--feeder_gateway_url", options.feederGatewayUrl,
-            "--gateway_url", options.gatewayUrl,
-            "--function", options.functionName,
-            "--address", options.address
+            "--abi",
+            options.abi,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl,
+            "--gateway_url",
+            options.gatewayUrl,
+            "--function",
+            options.functionName,
+            "--address",
+            options.address
         ];
 
         if (options.inputs && options.inputs.length) {
@@ -115,7 +125,6 @@ export abstract class StarknetWrapper {
             if (options.accountDir) {
                 prepared.push("--account_dir", options.accountDir);
             }
-
         } else {
             prepared.push("--no_wallet");
         }
@@ -128,19 +137,21 @@ export abstract class StarknetWrapper {
     protected prepareGetTxStatusOptions(options: GetTxStatusWrapperOptions): string[] {
         return [
             "tx_status",
-            "--hash", options.hash,
-            "--gateway_url", options.gatewayUrl,
-            "--feeder_gateway_url", options.feederGatewayUrl
+            "--hash",
+            options.hash,
+            "--gateway_url",
+            options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl
         ];
     }
 
     public abstract getTxStatus(options: GetTxStatusWrapperOptions): Promise<ProcessResult>;
 
     protected getPythonDeployAccountScript(options: DeployAccountWrapperOptions): string {
-
-        const wallet = options.wallet? "'" + options.wallet + "'" : "None";
-        const accountName = options.accountName? "'" + options.accountName + "'" : "'__default__'";
-        const accountDir = options.accountDir? "'" + options.accountDir + "'" : "None";
+        const wallet = options.wallet ? "'" + options.wallet + "'" : "None";
+        const accountName = options.accountName ? "'" + options.accountName + "'" : "'__default__'";
+        const accountDir = options.accountDir ? "'" + options.accountDir + "'" : "None";
         const gateway_url = "'" + options.gatewayUrl + "/gateway'";
         const feeder_gateway_url = "'" + options.feederGatewayUrl + "/feeder_gateway'";
         const network = "'" + options.network + "'";
@@ -157,14 +168,12 @@ export abstract class StarknetWrapper {
             "command='deploy_account'"
         ];
 
-        let script =
-        `import asyncio
+        let script = `import asyncio
         from argparse import Namespace
         from starkware.starknet.cli.starknet_cli import deploy_account
         asyncio.run(deploy_account(Namespace(${args.join(",")}),[]))`;
         script = script.replace(/(?:\r\n|\r|\n)/g, ";");
         return script;
-
     }
     public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
 }
@@ -206,7 +215,9 @@ export class DockerWrapper extends StarknetWrapper {
     constructor(image: Image) {
         super();
         this.image = image;
-        console.log(`${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`);
+        console.log(
+            `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
+        );
     }
 
     private async getDocker() {
@@ -237,7 +248,11 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareCompileOptions(options);
 
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["starknet-compile", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet-compile", ...preparedOptions],
+            dockerOptions
+        );
         return executed;
     }
 
@@ -255,7 +270,11 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareDeployOptions(options);
 
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
         return executed;
     }
 
@@ -278,7 +297,11 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareInvokeOrCallOptions(options);
 
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
         return executed;
     }
 
@@ -293,7 +316,11 @@ export class DockerWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareGetTxStatusOptions(options);
 
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["starknet", ...preparedOptions], dockerOptions);
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
         return executed;
     }
 
@@ -311,7 +338,11 @@ export class DockerWrapper extends StarknetWrapper {
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const deployAccountScript = this.getPythonDeployAccountScript(options);
         const docker = await this.getDocker();
-        const executed = await docker.runContainer(this.image, ["python", "-c", deployAccountScript], dockerOptions);
+        const executed = await docker.runContainer(
+            this.image,
+            ["python", "-c", deployAccountScript],
+            dockerOptions
+        );
         return executed;
     }
 }

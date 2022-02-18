@@ -8,17 +8,17 @@ type StarknetConfig = {
     venv?: string;
     wallets?: WalletUserConfig;
     network?: string;
-}
+};
 
 type WalletUserConfig = {
-    [walletName : string]: WalletConfig | undefined;
-}
+    [walletName: string]: WalletConfig | undefined;
+};
 
 type WalletConfig = {
     modulePath: string;
     accountName?: string;
     accountPath?: string;
-}
+};
 
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
@@ -67,7 +67,10 @@ declare module "hardhat/types/runtime" {
              * @param networkURL the network name
              * @returns a factory for generating instances of the desired contract
              */
-            getContractFactory: (name: string, networkURL?: string) => Promise<StarknetContractFactory>;
+            getContractFactory: (
+                name: string,
+                networkURL?: string
+            ) => Promise<StarknetContractFactory>;
 
             /**
              * Cairo and Starknet source files may contain short string literals,
@@ -98,7 +101,7 @@ declare module "hardhat/types/runtime" {
              * @returns a wallet
              */
             getWallet: (name: string) => WalletConfig;
-        }
+        };
     }
 
     type StarknetContract = StarknetContractType;
