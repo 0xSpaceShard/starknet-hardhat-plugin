@@ -249,6 +249,7 @@ jobs:
       - run:
           name: << parameters.test-name >>
           command: npm run << parameters.test-name >>
+          no_output_timeout: 15m
 
       #################################################################################################################################################################################
       # Call Command: save_dependency_cache - save dependencies that were installed during the job run. The parameters are passed because some caches depend on the executor and test #
