@@ -9,6 +9,7 @@ git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-e
 cd starknet-hardhat-example
 git log -n 1
 npm install
+npx hardhat compile
 
 # used by some cases
 ../scripts/setup-venv.sh
