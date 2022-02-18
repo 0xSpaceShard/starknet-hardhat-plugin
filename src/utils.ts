@@ -1,6 +1,13 @@
 import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
-import { ALPHA_MAINNET, ALPHA_MAINNET_INTERNALLY, ALPHA_TESTNET, ALPHA_TESTNET_INTERNALLY, DEFAULT_STARKNET_ACCOUNT_PATH, PLUGIN_NAME } from "./constants";
+import {
+    ALPHA_MAINNET,
+    ALPHA_MAINNET_INTERNALLY,
+    ALPHA_TESTNET,
+    ALPHA_TESTNET_INTERNALLY,
+    DEFAULT_STARKNET_ACCOUNT_PATH,
+    PLUGIN_NAME
+} from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
@@ -14,9 +21,7 @@ const globPromise = promisify(glob);
  * @returns the log message with adaptation replacements
  */
 export function adaptLog(msg: string): string {
-    return msg
-        .replace("--network", "--starknet-network")
-        .replace("gateway_url", "gateway-url");
+    return msg.replace("--network", "--starknet-network").replace("gateway_url", "gateway-url");
 }
 
 const DOCKER_HOST = "host.docker.internal";
@@ -44,7 +49,10 @@ export function adaptUrl(url: string): string {
     return url;
 }
 
-export function getDefaultHttpNetworkConfig(url: string, verificationUrl: string): HttpNetworkConfig {
+export function getDefaultHttpNetworkConfig(
+    url: string,
+    verificationUrl: string
+): HttpNetworkConfig {
     return {
         url,
         verificationUrl: verificationUrl,
@@ -64,7 +72,7 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     } else {
         paths.push(traversable);
     }
-    const files = paths.filter(file => fs.lstatSync(file).isFile());
+    const files = paths.filter((file) => fs.lstatSync(file).isFile());
     return files;
 }
 
@@ -82,14 +90,18 @@ export function checkArtifactExists(artifactsPath: string): void {
  * @param origin short string describing where/how `networkName` was specified
  * @returns Network config corresponding to `networkName`
  */
-export function getNetwork(networkName: string, hre: HardhatRuntimeEnvironment, origin: string): HttpNetworkConfig {
+export function getNetwork(
+    networkName: string,
+    hre: HardhatRuntimeEnvironment,
+    origin: string
+): HttpNetworkConfig {
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
     }
 
-    const network = <HttpNetworkConfig> hre.config.networks[networkName];
+    const network = <HttpNetworkConfig>hre.config.networks[networkName];
     if (!network) {
         const available = Object.keys(hre.config.networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
@@ -97,33 +109,33 @@ export function getNetwork(networkName: string, hre: HardhatRuntimeEnvironment, 
     }
 
     if (!network.url) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Cannot use network ${networkName}. No "url" specified.`);
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            `Cannot use network ${networkName}. No "url" specified.`
+        );
     }
     hre.starknet.network = networkName;
     return network;
 }
 
 function isTestnet(networkName: string): boolean {
-    return networkName === ALPHA_TESTNET
-        || networkName === ALPHA_TESTNET_INTERNALLY;
+    return networkName === ALPHA_TESTNET || networkName === ALPHA_TESTNET_INTERNALLY;
 }
 
 function isMainnet(networkName: string): boolean {
-    return networkName === ALPHA_MAINNET
-        || networkName === ALPHA_MAINNET_INTERNALLY;
+    return networkName === ALPHA_MAINNET || networkName === ALPHA_MAINNET_INTERNALLY;
 }
 
 export async function findPath(traversable: string, name: string) {
     let files = await traverseFiles(traversable);
-    files = files.filter(f => f.endsWith(name));
+    files = files.filter((f) => f.endsWith(name));
     if (files.length == 0) {
         return null;
-
     } else if (files.length == 1) {
         return files[0];
-
     } else {
-        const msg = "More than one file was found because the path provided is ambiguous, please specify a relative path";
+        const msg =
+            "More than one file was found because the path provided is ambiguous, please specify a relative path";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 }

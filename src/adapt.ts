@@ -37,19 +37,26 @@ function isNumeric(value: { toString: () => string }) {
  * @param abi the ABI artifact of compilation, parsed into an object
  * @returns array containing stringified function arguments in the correct order
  */
-export function adaptInput(functionName: string, input: any, inputSpecs: starknet.Argument[], abi: starknet.Abi): string[] {
+export function adaptInput(
+    functionName: string,
+    input: any,
+    inputSpecs: starknet.Argument[],
+    abi: starknet.Abi
+): string[] {
     const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter(i => i.type.endsWith("*")).length;
-    const expectedInputCount = inputSpecs.length-countArrays;
+    const countArrays = inputSpecs.filter((i) => i.type.endsWith("*")).length;
+    const expectedInputCount = inputSpecs.length - countArrays;
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
 
     if (expectedInputCount != inputLen) {
-        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${
+            expectedInputCount === 1 ? "" : "s"
+        }, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     for (let i = 0; i < inputSpecs.length; ++i) {
@@ -59,11 +66,15 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
             if (isNumeric(currentValue)) {
                 adapted.push(currentValue.toString());
-
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
-                const nextSpec = inputSpecs[i+1];
+                const nextSpec = inputSpecs[i + 1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
-                if (nextSpec && nextSpec.name === arrayName && nextSpec.type.endsWith("*") && arrayName in input) {
+                if (
+                    nextSpec &&
+                    nextSpec.name === arrayName &&
+                    nextSpec.type.endsWith("*") &&
+                    arrayName in input
+                ) {
                     // will add array length in next iteration
                 } else {
                     throw new HardhatPluginError(PLUGIN_NAME, errorMsg);
@@ -71,7 +82,6 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
             } else {
                 throw new HardhatPluginError(PLUGIN_NAME, errorMsg);
             }
-
         } else if (inputSpec.type.endsWith("*")) {
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
@@ -84,13 +94,15 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
             // Remove the * from the spec type
-            const inputSpecArrayElement = { name: inputSpec.name, type: inputSpec.type.slice(0, -1) };
+            const inputSpecArrayElement = {
+                name: inputSpec.name,
+                type: inputSpec.type.slice(0, -1)
+            };
 
             adapted.push(currentValue.length.toString());
             for (const element of currentValue) {
                 adaptComplexInput(element, inputSpecArrayElement, abi, adapted);
             }
-
         } else {
             const nestedInput = input[inputSpec.name];
             adaptComplexInput(nestedInput, inputSpec, abi, adapted);
@@ -110,7 +122,12 @@ export function adaptInput(functionName: string, input: any, inputSpecs: starkne
  * @param adaptedArray the array where stringified args are accumulated
  * @returns nothing; everything is accumulated into `adaptedArray`
  */
-function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starknet.Abi, adaptedArray: string[]): void {
+function adaptComplexInput(
+    input: any,
+    inputSpec: starknet.Argument,
+    abi: starknet.Abi,
+    adaptedArray: string[]
+): void {
     const type = inputSpec.type;
 
     if (input === undefined || input === null) {
@@ -126,7 +143,7 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (type[0] === "(" && type[type.length-1] === ")") {
+    if (type[0] === "(" && type[type.length - 1] === ")") {
         if (!Array.isArray(input)) {
             const msg = `Expected ${inputSpec.name} to be a tuple`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -135,7 +152,9 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
         const memberTypes = type.slice(1, -1).split(", ");
 
         if (input.length != memberTypes.length) {
-            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${memberTypes.length === 1 ? "" : "s"}, got ${input.length}.`;
+            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                memberTypes.length === 1 ? "" : "s"
+            }, got ${input.length}.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -153,16 +172,18 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
         throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
     }
 
-    const struct = <starknet.Struct> abi[type];
+    const struct = <starknet.Struct>abi[type];
 
-    const countArrays = struct.members.filter(i => i.type.endsWith("*")).length;
-    const expectedInputCount = struct.members.length-countArrays;
+    const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
+    const expectedInputCount = struct.members.length - countArrays;
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
 
     if (expectedInputCount != inputLen) {
-        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${expectedInputCount === 1 ? "" : "s"}, got ${inputLen}.`;
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
+            expectedInputCount === 1 ? "" : "s"
+        }, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
@@ -181,7 +202,11 @@ function adaptComplexInput(input: any, inputSpec: starknet.Argument, abi: starkn
  * @param outputSpecs array of starknet types in the expected function output
  * @param abi the ABI of the contract whose function was called
  */
-export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[], abi: starknet.Abi): StringMap {
+export function adaptOutput(
+    rawResult: string,
+    outputSpecs: starknet.Argument[],
+    abi: starknet.Abi
+): StringMap {
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
@@ -197,7 +222,6 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
         if (outputSpec.type === "felt") {
             adapted[outputSpec.name] = currentValue;
             resultIndex++;
-
         } else if (outputSpec.type.endsWith("*")) {
             const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
@@ -212,12 +236,17 @@ export function adaptOutput(rawResult: string, outputSpecs: starknet.Argument[],
             const structArray = [];
 
             // Iterate over the struct array, starting at index, starting at `resultIndex`
-            for (let i = 0; i<arrLength; i++) {
+            for (let i = 0; i < arrLength; i++) {
                 // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(result, resultIndex, outputSpecArrayElementType, abi);
+                const ret = generateComplexOutput(
+                    result,
+                    resultIndex,
+                    outputSpecArrayElementType,
+                    abi
+                );
                 structArray.push(ret.generatedComplex);
                 // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
-                resultIndex=ret.newRawIndex;
+                resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
             adapted[outputSpec.name] = structArray;
@@ -250,7 +279,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     }
 
     let generatedComplex: any = null;
-    if (type[0] === "(" && type[type.length-1] === ")") {
+    if (type[0] === "(" && type[type.length - 1] === ")") {
         const members = type.slice(1, -1).split(", ");
 
         generatedComplex = [];
@@ -259,14 +288,14 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
             generatedComplex.push(ret.generatedComplex);
             rawIndex = ret.newRawIndex;
         }
-
-    } else { // struct
+    } else {
+        // struct
         if (!(type in abi)) {
             throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
         }
 
         generatedComplex = {};
-        const struct = <starknet.Struct> abi[type];
+        const struct = <starknet.Struct>abi[type];
         for (const member of struct.members) {
             const ret = generateComplexOutput(raw, rawIndex, member.type, abi);
             generatedComplex[member.name] = ret.generatedComplex;

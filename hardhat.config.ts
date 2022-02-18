@@ -2,5 +2,4 @@
 
 import "./dist/index";
 
-module.exports = {
-};
+module.exports = {};

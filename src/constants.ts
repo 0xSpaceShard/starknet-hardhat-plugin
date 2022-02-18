@@ -1,4 +1,3 @@
-
 export const PLUGIN_NAME = "Starknet";
 export const ABI_SUFFIX = "_abi.json";
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
@@ -25,4 +24,3 @@ export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/cont
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
 export const PENDING_BLOCK_NUMBER = "pending";
-
