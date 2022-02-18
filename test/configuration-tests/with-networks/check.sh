@@ -19,7 +19,7 @@ npx hardhat starknet-deploy --starknet-network "$INVALID_NETWORK" "$ARTIFACT_PAT
 echo "Success"
 
 echo "Testing no mocha network"
-NETWORK=""    npx hardhat test test/contract-factory-test.ts
+NETWORK=""    npx hardhat test --no-compile test/contract-factory-test.ts
 echo "Success"
 
 echo "Testing invalid mocha network"
