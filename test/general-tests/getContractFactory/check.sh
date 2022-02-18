@@ -2,4 +2,4 @@
 set -e
 
 npx hardhat starknet-compile
-npx hardhat test test/path-test.ts
+npx hardhat test --no-compile test/path-test.ts

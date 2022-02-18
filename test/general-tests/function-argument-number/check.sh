@@ -2,4 +2,4 @@
 set -e
 
 npx hardhat starknet-compile contracts/contract.cairo
-npx hardhat test test/function-args-test.ts
+npx hardhat test --no-compile test/function-args-test.ts

@@ -7,4 +7,4 @@ PUBLIC_KEY=162844874164824503680000290607522570510059613613391289501503590295412
 npx hardhat starknet-compile
 npx hardhat starknet-deploy starknet-artifacts/contracts/contract.cairo/ --starknet-network "$NETWORK" --inputs "$INITIAL_VALUE"
 npx hardhat starknet-deploy starknet-artifacts/contracts/auth_contract.cairo/ --inputs "$PUBLIC_KEY $INITIAL_VALUE" --starknet-network "$NETWORK"
-npx hardhat test test/sample-test.ts
+npx hardhat test --no-compile test/sample-test.ts
