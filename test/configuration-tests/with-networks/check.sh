@@ -23,7 +23,7 @@ NETWORK=""    npx hardhat test --no-compile test/contract-factory-test.ts
 echo "Success"
 
 echo "Testing invalid mocha network"
-NETWORK="$INVALID_NETWORK" npx hardhat test test/contract-factory-test.ts 2>&1 \
+NETWORK="$INVALID_NETWORK" npx hardhat test --no-compile test/contract-factory-test.ts 2>&1 \
     | tail -n +9 \
     | head -n 6 \
     | diff - "$PREFIX/invalid-mocha-network.txt"
