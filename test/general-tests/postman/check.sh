@@ -3,8 +3,7 @@ set -e
 
 trap 'kill $(jobs -p)' EXIT
 
-npx hardhat starknet-compile
-npx hardhat compile
+npx hardhat starknet-compile contracts/l1l2.cairo
 npx hardhat node &
 sleep 1
 
