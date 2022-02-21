@@ -8,8 +8,9 @@ import {
     PLUGIN_NAME,
     SHORT_STRING_MAX_CHARACTERS
 } from "./constants";
-import { StarknetContractFactory } from "./types";
+import { AccountTypes, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath, getNetwork } from "./utils";
+import { Account, OpenZeppelinAccount } from "./account";
 
 export async function getContractFactoryUtil(
     hre: HardhatRuntimeEnvironment,
@@ -103,4 +104,32 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     }
     wallet.accountPath = getAccountPath(wallet.accountPath, hre);
     return wallet;
+}
+
+export async function deployAccountFromABIUtil(accountContract: string, accountType: AccountTypes, hre: HardhatRuntimeEnvironment): Promise<Account> {
+
+    let account: Account;
+    switch (accountType) {
+    case "OpenZeppelin":
+        account = await OpenZeppelinAccount.deployFromABI(accountContract, hre);
+        break;
+    default:
+        throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+    }
+
+    return account;
+}
+
+export async function getAccountFromAddressUtil(accountContract:string, address: string, privateKey: string, accountType: AccountTypes, hre: HardhatRuntimeEnvironment): Promise<Account> {
+
+    let account: Account;
+    switch (accountType) {
+    case "OpenZeppelin":
+        account = await OpenZeppelinAccount.getAccountFromAddress(accountContract, address, privateKey, hre);
+        break;
+    default:
+        throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+    }
+
+    return account;
 }

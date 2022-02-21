@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
@@ -6,7 +7,7 @@ import {
     PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
-import { adaptLog, readAbi } from "./utils";
+import { adaptLog } from "./utils";
 import { adaptInput, adaptOutput } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
@@ -33,6 +34,9 @@ export type TxStatus =
 
     /** The transaction was accepted on-chain. */
     | "ACCEPTED_ON_L1";
+
+// Types of account implementations
+export type AccountTypes = "OpenZeppelin";
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
@@ -163,6 +167,26 @@ export async function iterativelyCheckStatus(
         // eslint-disable-next-line prefer-rest-params
         setTimeout(iterativelyCheckStatus, CHECK_STATUS_TIMEOUT, ...arguments);
     }
+}
+
+/**
+ * Reads ABI from `abiPath` and converts it to an object for lookup by name.
+ * @param abiPath the path where ABI is stored on disk
+ * @returns an object mapping ABI entry names with their values
+ */
+function readAbi(abiPath: string): starknet.Abi {
+    const abiRaw = fs.readFileSync(abiPath).toString();
+    const abiArray = JSON.parse(abiRaw);
+    const abi: starknet.Abi = {};
+    for (const abiEntry of abiArray) {
+        if (!abiEntry.name) {
+            const msg = `Abi entry has no name: ${abiEntry}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+        abi[abiEntry.name] = abiEntry;
+    }
+
+    return abi;
 }
 
 /**
@@ -401,6 +425,7 @@ export class StarknetContract {
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined
         });
+
         if (executed.statusCode) {
             const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
@@ -470,7 +495,10 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options)); // copy because of potential changes to the object
+        const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options, (_key, value) =>
+            typeof value === "bigint" ? value.toString() : value
+        )); // copy because of potential changes to the object
+
         if (optionsCopy.blockNumber === undefined) {
             // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;

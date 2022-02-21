@@ -1,8 +1,6 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-
-import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
-import { StarknetWrapper } from "./starknet-wrappers";
+import { AccountTypes, StarknetContract, StarknetContractFactory, StringMap } from "./types";import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
 
@@ -15,7 +13,7 @@ type StarknetConfig = {
 
 type WalletUserConfig = {
     [walletName: string]: WalletConfig | undefined;
-};
+}
 
 type WalletConfig = {
     modulePath: string;
@@ -57,6 +55,7 @@ declare module "hardhat/types/config" {
 type StarknetContractType = StarknetContract;
 type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
+type AccountType = Account;
 
 declare module "hardhat/types/runtime" {
     interface Devnet {
@@ -84,7 +83,6 @@ declare module "hardhat/types/runtime" {
         starknetWrapper: StarknetWrapper;
 
         starknet: {
-            Account?: typeof Account;
 
             /**
              * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
@@ -129,11 +127,31 @@ declare module "hardhat/types/runtime" {
             getWallet: (name: string) => WalletConfig;
 
             devnet: Devnet;
-        };
+
+            /**
+             * Deploys an Account contract based on the ABI and the type of Account selected
+             * @param accountContract the case-sensitive contract name, same as {@link getContractFactory}
+             * @param accountType the enumerator value of the type of Account to use
+             * @returns an Account object
+             */
+            deployAccountFromABI: (accountContract: string, accountType: AccountTypes) => Promise<Account>;
+
+            /**
+             * Returns an Account already deployed based on the address and validated by the private key
+             * @param accountContract the case-sensitive contract name, same as {@link getContractFactory}
+             * @param address the address where the account is deployed
+             * @param privateKey the private key of the account
+             * @param accountType the enumerator value of the type of Account to use
+             * @returns an Account object
+             */
+            getAccountFromAddress: (accountContract: string, address: string, privateKey: string, accountType: AccountTypes) => Promise<Account>;
+
+        }
     }
 
     type StarknetContract = StarknetContractType;
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
     type Wallet = WalletConfig;
+    type Account = AccountType;
 }

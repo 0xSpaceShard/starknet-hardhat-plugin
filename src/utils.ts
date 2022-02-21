@@ -1,4 +1,3 @@
-import * as starknet from "./starknet-types";
 import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
@@ -158,24 +157,4 @@ export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironme
         accountDir = path.normalize(path.join(root, accountDir));
     }
     return accountDir;
-}
-
-/**
- * Reads ABI from `abiPath` and converts it to an object for lookup by name.
- * @param abiPath the path where ABI is stored on disk
- * @returns an object mapping ABI entry names with their values
- */
- export function readAbi(abiPath: string): starknet.Abi {
-    const abiRaw = fs.readFileSync(abiPath).toString();
-    const abiArray = JSON.parse(abiRaw);
-    const abi: starknet.Abi = {};
-    for (const abiEntry of abiArray) {
-        if (!abiEntry.name) {
-            const msg = `Abi entry has no name: ${abiEntry}`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
-        abi[abiEntry.name] = abiEntry;
-    }
-
-    return abi;
 }

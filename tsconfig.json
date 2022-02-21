@@ -1,15 +1,15 @@
 {
-    "compilerOptions": {
-        "allowJs": true,
-        "target": "es6",
-        "sourceMap": true,
-        "esModuleInterop": true,
-        "strict": true,
-        "outDir": "dist",
-        "resolveJsonModule": true,
-        "strictNullChecks": false,
-        "declaration": true,
-        "module": "commonjs"
-    },
-    "include": ["./src"]
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "es2016",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "strictNullChecks": false,
+    "declaration": true,
+    "module": "commonjs"
+  },
+  "include": ["./src"]
 }
