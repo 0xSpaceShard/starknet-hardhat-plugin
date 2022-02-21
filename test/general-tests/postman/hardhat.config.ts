@@ -1,4 +1,3 @@
-import "@shardlabs/starknet-hardhat-plugin";
 import "@nomiclabs/hardhat-ethers";
 
 import "../dist/index.js";

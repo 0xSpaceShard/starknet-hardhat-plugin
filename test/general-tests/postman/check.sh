@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# trap 'kill $(jobs -p)' EXIT
+trap 'kill $(jobs -p)' EXIT
 
 npx hardhat starknet-compile contracts/l1l2.cairo
 npx hardhat node &
