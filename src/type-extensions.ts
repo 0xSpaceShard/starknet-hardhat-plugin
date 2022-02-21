@@ -1,6 +1,7 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { AccountTypes, StarknetContract, StarknetContractFactory, StringMap } from "./types";import { StarknetWrapper } from "./starknet-wrappers";
+import { AccountTypes, StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
 

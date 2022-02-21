@@ -1,6 +1,6 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError, lazyObject, lazyFunction } from "hardhat/plugins";
+import { HardhatPluginError, lazyObject } from "hardhat/plugins";
 import "./type-extensions";
 import {
     PLUGIN_NAME,
@@ -26,6 +26,8 @@ import {
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
+    deployAccountFromABIUtil,
+    getAccountFromAddressUtil,
     getContractFactoryUtil,
     getWalletUtil,
     shortStringToBigIntUtil
