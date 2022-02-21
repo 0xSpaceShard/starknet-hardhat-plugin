@@ -129,7 +129,7 @@ import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
-To see all the utilities this object introduces, check [this](src/type-extensions.ts#L48) out.
+To see all the utilities this object introduces, check [this](src/type-extensions.ts#L85) out.
 
 ## Testing
 Relying on the above described API makes it easier to interact with your contracts and test them.
@@ -256,7 +256,7 @@ A list of available versions can be found [here](https://hub.docker.com/r/shardl
 module.exports = {
   starknet: {
     // The default in this version of the plugin
-    dockerizedVersion: "0.7.0"
+    dockerizedVersion: "0.7.1"
   }
   ...
 };
