@@ -1,7 +1,9 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
+
 import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
+import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -56,6 +58,27 @@ type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
 
 declare module "hardhat/types/runtime" {
+    interface Devnet {
+        /**
+         * Handles all pending L1 to L2 messages and sends them to the other layer
+         * @returns {Promise} - Metadata for the flushed messages
+         */
+        flush: () => Promise<FlushResponse>;
+
+        /**
+         * Deploys or loads the L1 messaging contract.
+         * @param {string} networkUrl - L1 network url.
+         * @param {string} [address] - Address of the contract to be loaded.
+         * @param {string} [networkId] - Determines if the ganache or tesnet should be used/
+         * @returns
+         */
+        loadL1MessagingContract: (
+            networkUrl: string,
+            address?: string,
+            networkId?: string
+        ) => Promise<LoadL1MessagingContractResponse>;
+    }
+
     interface HardhatRuntimeEnvironment {
         starknetWrapper: StarknetWrapper;
 
@@ -101,6 +124,8 @@ declare module "hardhat/types/runtime" {
              * @returns a wallet
              */
             getWallet: (name: string) => WalletConfig;
+
+            devnet: Devnet;
         };
     }
 

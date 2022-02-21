@@ -31,6 +31,8 @@ function iterate_dir(){
         test_name=$(basename $test_case)
         if [[ "$network" == "devnet" ]] && [[ "$test_name" == "wallet-test" ]]; then
             echo "Skipping devnet test for wallet-test"
+        elif [[ "$network" == "alpha" ]] && [[ "$test_name" == "postman" ]]; then
+            echo "Skipping alpha test for postman"
         else
             total=$((total + 1))
             echo "Test $total) $test_name"
