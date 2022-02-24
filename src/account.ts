@@ -154,7 +154,6 @@ export class OpenZeppelinAccount extends Account {
         const { response: result } = await this.starknetContract.call("execute", args, {
             signature
         });
-        console.log(functionName);
         const func = <starknet.CairoFunction>abi[functionName];
         return adaptOutput(result.join(" "), func.outputs, abi);
     }

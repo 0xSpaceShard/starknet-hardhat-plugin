@@ -4,4 +4,4 @@ set -e
 npx hardhat starknet-compile contracts/contract.cairo
 npx hardhat starknet-compile account-contracts/contracts/Account.cairo
 
-npx hardhat test test/account-test.ts
+npx hardhat test --no-compile test/account-test.ts
