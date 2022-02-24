@@ -219,26 +219,27 @@ describe("My Test", function () {
   });
 
   /**
-   * Assumes there is a file MyAuthContract.cairo whose compilation artifacts have been generated.
+   * Assumes there is a file MyContract.cairo, and the OpenZeppelin Account.cairo file and its dependencies, whose compilation artifacts have been generated.
    * The contract is assumed to have:
-   * - constructor function constructor(lucky_user: felt, initial_balance: felt)
-   * - external function increase_balance(user: felt, amount: felt) -> (res: felt)
-   * - view function get_balance(user: felt) -> (res: felt)
-   * 
-   * increase_balance checks if the transaction invoking it was signed by the user whose public key is passed in
+   * - external function increase_balance(amount1: felt, amount2: felt) -> ()
+   * - view function get_balance() -> (res: felt)
    */
-  it("should work with signed transactions", async function() {
-    const authContractFactory = await starknet.getContractFactory("MyAuthContract");
-    const publicKey = BigInt("987...");
-    const contract = await authContractFactory.deploy({ lucky_user: publicKey, initial_balance: 10 });
+  it("should succeed when using the account to invoke a function on another contract", async function() {
+    const contractFactory = await starknet.getContractFactory("MyContract");
+    const contract = await contractFactory.deploy()
 
-    // signature is calculated for each transaction according to `publicKey` used and `amount` passed
-    const signature = [BigInt("123..."), BigInt("456...")];
-    await contract.invoke("increase_balance", { user: publicKey, amount: 20 }, { signature });
+    const account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
+    const accountAddress = account.starknetContract.address;
+    const privateKey = account.privateKey;
+    const publicKey = account.publicKey;
 
-    // notice how `res` is mapped to `balance`
-    const { res: balance } = await contract.call("get_balance", { user: publicKey });
-    expect(balance).to.deep.equal(BigInt(30));
+    const { res: currBalance } = await account.call(contract, "get_balance");
+    const amount1 = 10n;
+    const amount2 = 20n;
+    await account.invoke(contract, "increase_balance", { amount1, amount2 });
+
+    const { res: newBalance } = await account.call(contract, "get_balance");
+    expect(newBalance).to.deep.equal(currBalance + amount1 + amount2);
   });
 });
 ```
@@ -313,6 +314,51 @@ module.exports = {
   ...
 };
 ```
+
+### Account
+An Account can be used to make proxy signed calls/transactions to other contracts.
+It's usage is exemplified in [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts)
+Currently only the OpenZeppelin Account implementation is supported, and you are required to have the source files in your project.
+
+You can choose to deploy a new Account, or use an existing one.
+
+To deploy a new Account, use the `starknet` object's `deployAccountFromABI` method:
+```javascript
+function deployAccountFromABI: (
+                accountContract: string,
+                accountType: AccountImplementationType
+            )
+```
+  - `accountContract` is the is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
+  - `accountType` is the implementation of the Account that you want to use. Currently only "OpenZeppelin" is supported.
+```javascript
+account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
+```
+
+To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
+```javascript
+function getAccountFromAddress: (
+                accountContract: string,
+                address: string,
+                privateKey: string,
+                accountType: AccountImplementationType
+            )
+```
+  - `accountContract` is the is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
+  - `address` is the address where the account you want to use is deployed.
+  - `privateKey` is the account's private key.
+  - `accountType` is the implementation of the Account that you want to use. Currently only "OpenZeppelin" is supported.
+
+```javascript
+const account = await starknet.getAccountFromAddress("Account", accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
+```
+
+You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
+```javascript
+const { res: currBalance } = await account.call(contract, "get_balance");
+await account.invoke(contract, "increase_balance", { amount1, amount2 });
+```
+
 
 ### Wallet
 To configure a wallet for your project, specify it by using `wallets["walletName"]`.

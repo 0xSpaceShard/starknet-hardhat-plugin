@@ -211,7 +211,6 @@ export class DockerWrapper extends StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
     private pythonPath: string;
-
     constructor(image: Image) {
         super();
         this.image = image;
@@ -268,7 +267,6 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeployOptions(options);
-
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,
@@ -295,7 +293,6 @@ export class DockerWrapper extends StarknetWrapper {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareInvokeOrCallOptions(options);
-
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,

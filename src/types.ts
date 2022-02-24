@@ -35,6 +35,9 @@ export type TxStatus =
     /** The transaction was accepted on-chain. */
     | "ACCEPTED_ON_L1";
 
+// Types of account implementations
+export type AccountImplementationType = "OpenZeppelin";
+
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
 };
@@ -182,7 +185,6 @@ function readAbi(abiPath: string): starknet.Abi {
         }
         abi[abiEntry.name] = abiEntry;
     }
-
     return abi;
 }
 
@@ -422,6 +424,7 @@ export class StarknetContract {
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined
         });
+
         if (executed.statusCode) {
             const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
@@ -491,7 +494,12 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options)); // copy because of potential changes to the object
+        const optionsCopy: CallOptions = JSON.parse(
+            JSON.stringify(options, (_key, value) =>
+                typeof value === "bigint" ? value.toString() : value
+            )
+        ); // copy because of potential changes to the object
+
         if (optionsCopy.blockNumber === undefined) {
             // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
@@ -501,5 +509,8 @@ export class StarknetContract {
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;
     }
-}
 
+    getAbi(): starknet.Abi {
+        return this.abi;
+    }
+}
