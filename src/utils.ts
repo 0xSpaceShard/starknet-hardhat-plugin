@@ -6,7 +6,6 @@ import {
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
-    DEFAULT_STARKNET_NETWORK,
     PLUGIN_NAME
 } from "./constants";
 import * as path from "path";

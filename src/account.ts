@@ -1,5 +1,5 @@
-import { abiJsonToStruct, Numeric, StarknetContract, StringMap } from "./types";
-import { PLUGIN_NAME } from "./constants";
+import { Numeric, StarknetContract, StringMap } from "./types";
+import { PLUGIN_NAME, RANDOM_KEY_LENGTH } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
@@ -116,8 +116,6 @@ export abstract class Account {
         return signature;
     }
 }
-/////////////////////////     implement usage of starknet.js and accept StarknetContract as the @call and @invoke argument and implement structured outputs and use get_code for the case when the
-// user just provides address
 
 /**
  * Wrapper for the OpenZeppelin implementation of an Account
@@ -204,7 +202,7 @@ export class OpenZeppelinAccount extends Account {
         const contractFactory = await hre.starknet.getContractFactory(accountContract);
         const contract = contractFactory.getContractAt(address);
 
-        let { res: expectedPubKey } = await contract.call("get_public_key");
+        const { res: expectedPubKey } = await contract.call("get_public_key");
 
         const keyPair = getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = getStarkKey(keyPair);
@@ -224,7 +222,7 @@ export class OpenZeppelinAccount extends Account {
  * Helper cryptography functions for Key generation and message signing
  */
 
-function generateRandomStarkPrivateKey(length = 63) {
+function generateRandomStarkPrivateKey(length = RANDOM_KEY_LENGTH) {
     const characters = "0123456789ABCDEF";
     let result = "";
     for (let i = 0; i < length; ++i) {

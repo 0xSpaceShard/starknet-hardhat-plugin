@@ -177,11 +177,6 @@ export async function iterativelyCheckStatus(
 function readAbi(abiPath: string): starknet.Abi {
     const abiRaw = fs.readFileSync(abiPath).toString();
     const abiArray = JSON.parse(abiRaw);
-    const abi: starknet.Abi = abiJsonToStruct(abiArray);
-    return abi;
-}
-
-export function abiJsonToStruct(abiArray: any) {
     const abi: starknet.Abi = {};
     for (const abiEntry of abiArray) {
         if (!abiEntry.name) {
