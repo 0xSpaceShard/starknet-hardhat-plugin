@@ -210,7 +210,7 @@ function addPaths(paths: String2String, colonSeparatedStr: string): void {
 export class DockerWrapper extends StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
-
+    private pythonPath: string;
     constructor(image: Image) {
         super();
         this.image = image;

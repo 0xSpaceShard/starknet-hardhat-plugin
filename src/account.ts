@@ -1,5 +1,5 @@
 import { Numeric, StarknetContract, StringMap } from "./types";
-import { PLUGIN_NAME, OPENZEPPELIN_EXECUTE_FUNCTION } from "./constants";
+import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
@@ -13,8 +13,12 @@ import * as starknet from "./starknet-types";
  * Multiple implementations can exist, each will be defined by an extension of this Abstract class
  */
 export abstract class Account {
-
-    protected constructor(public starknetContract: StarknetContract, public privateKey: string, public publicKey: string, public keyPair: any) {}
+    protected constructor(
+        public starknetContract: StarknetContract,
+        public privateKey: string,
+        public publicKey: string,
+        public keyPair: any
+    ) {}
 
     /**
      * Uses the account contract as a proxy to invoke a function on the target contract with a signature
@@ -41,13 +45,14 @@ export abstract class Account {
         functionName: string,
         calldata?: StringMap
     ): Promise<StringMap>;
-
 }
 
 /**
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
+    static readonly OPENZEPPELIN_EXECUTE_FUNCTION = "execute";
+
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
@@ -71,7 +76,11 @@ export class OpenZeppelinAccount extends Account {
             calldata,
             nonce
         );
-        await this.starknetContract.invoke(OPENZEPPELIN_EXECUTE_FUNCTION, args, { signature });
+        await this.starknetContract.invoke(
+            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
+            args,
+            { signature }
+        );
     }
 
     async call(
@@ -82,10 +91,21 @@ export class OpenZeppelinAccount extends Account {
         const toAddress = toContract.address;
         const abi = toContract.getAbi();
         const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const { args, signature } = await adaptArgs(this.keyPair, this.starknetContract.address, toAddress, functionName, calldata, nonce);
-        const { response: result } = await this.starknetContract.call(OPENZEPPELIN_EXECUTE_FUNCTION, args, {
-            signature
-        });
+        const { args, signature } = await adaptArgs(
+            this.keyPair,
+            this.starknetContract.address,
+            toAddress,
+            functionName,
+            calldata,
+            nonce
+        );
+        const { response: result } = await this.starknetContract.call(
+            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
+            args,
+            {
+                signature
+            }
+        );
         const func = <starknet.CairoFunction>abi[functionName];
         return adaptOutput(result.join(" "), func.outputs, abi);
     }
@@ -147,26 +167,40 @@ function generateRandomStarkPrivateKey(length = 63) {
     return toBN(result, "hex");
 }
 
-    /**
-     * Adapts the input arguments to the proper format to use in the Account contract proxy invocation function that uses the call_contract syscall
-     *
-     * @param toAddress address of the contract to be called
-     * @param selector function in the contract to be called
-     * @param calldata calldata to use as input for the contract call
-     */
-async function adaptArgs(keyPair: any, accountAddress: string, toAddress: string, functionName: string, calldata: StringMap, nonce: BigInt) {
-        const functionSelector = hash.starknetKeccak(functionName).toString();
-        const calldataArray = calldata ? calldataToNumeric(calldata, []) : [];
-        const signature = sign(keyPair, accountAddress, nonce.toString(), functionSelector, toAddress, calldataArray);
-        const args = {
-            to: BigInt(toAddress),
-            selector: functionSelector,
-            calldata: calldataArray.map((it) => BigInt(it.toString())),
-            nonce: nonce.toString()
-        };
+/**
+ * Adapts the input arguments to the proper format to use in the Account contract proxy invocation function that uses the call_contract syscall
+ *
+ * @param toAddress address of the contract to be called
+ * @param selector function in the contract to be called
+ * @param calldata calldata to use as input for the contract call
+ */
+async function adaptArgs(
+    keyPair: any,
+    accountAddress: string,
+    toAddress: string,
+    functionName: string,
+    calldata: StringMap,
+    nonce: BigInt
+) {
+    const functionSelector = hash.starknetKeccak(functionName).toString();
+    const calldataArray = calldata ? calldataToNumeric(calldata, []) : [];
+    const signature = sign(
+        keyPair,
+        accountAddress,
+        nonce.toString(),
+        functionSelector,
+        toAddress,
+        calldataArray
+    );
+    const args = {
+        to: BigInt(toAddress),
+        selector: functionSelector,
+        calldata: calldataArray.map((it) => BigInt(it.toString())),
+        nonce: nonce.toString()
+    };
 
-        return { args, signature };
-    }
+    return { args, signature };
+}
 
 /**
  * Recursively transforms the input data received as an object to a <BigNumberish> array
@@ -197,7 +231,14 @@ function calldataToNumeric(calldata: StringMap, output: BigNumberish[]): BigNumb
  * @param calldata
  * @returns
  */
-function sign(keyPair: any, accountAddress: string, nonce: BigNumberish, functionSelector: BigNumberish, toAddress: string, calldata: BigNumberish[]): Numeric[] {
+function sign(
+    keyPair: any,
+    accountAddress: string,
+    nonce: BigNumberish,
+    functionSelector: BigNumberish,
+    toAddress: string,
+    calldata: BigNumberish[]
+): Numeric[] {
     const msgHash = hash.computeHashOnElements([
         toBN(accountAddress.substring(2), "hex"),
         toBN(toAddress.substring(2), "hex"),

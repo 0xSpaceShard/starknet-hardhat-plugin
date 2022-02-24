@@ -8,7 +8,7 @@ import {
     PLUGIN_NAME,
     SHORT_STRING_MAX_CHARACTERS
 } from "./constants";
-import { AccountTypes, StarknetContractFactory } from "./types";
+import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath, getNetwork } from "./utils";
 import { Account, OpenZeppelinAccount } from "./account";
 
@@ -108,7 +108,7 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
 
 export async function deployAccountFromABIUtil(
     accountContract: string,
-    accountType: AccountTypes,
+    accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
 ): Promise<Account> {
     let account: Account;
@@ -127,7 +127,7 @@ export async function getAccountFromAddressUtil(
     accountContract: string,
     address: string,
     privateKey: string,
-    accountType: AccountTypes,
+    accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
 ): Promise<Account> {
     let account: Account;

@@ -36,7 +36,7 @@ export type TxStatus =
     | "ACCEPTED_ON_L1";
 
 // Types of account implementations
-export type AccountTypes = "OpenZeppelin";
+export type AccountImplementationType = "OpenZeppelin";
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
