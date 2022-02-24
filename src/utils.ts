@@ -12,7 +12,6 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import axios from "axios";
 
 const globPromise = promisify(glob);
 /**
@@ -158,18 +157,4 @@ export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironme
         accountDir = path.normalize(path.join(root, accountDir));
     }
     return accountDir;
-}
-
-export async function getCodeFromAddress(address: string, networkURL: string) {
-    const getCodeURL = networkURL + "/feeder_gateway/get_code";
-    const resp = await axios.get(getCodeURL, {
-        headers: {
-            "Content-Type": "application/json"
-        },
-        params: {
-            contractAddress: address
-        }
-    });
-    console.log(resp.headers["request-duration"]);
-    return resp.data;
 }
