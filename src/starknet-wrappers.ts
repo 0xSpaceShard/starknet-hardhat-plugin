@@ -273,7 +273,6 @@ export class DockerWrapper extends StarknetWrapper {
             ["starknet", ...preparedOptions],
             dockerOptions
         );
-        console.log(executed.stderr.toString());
         return executed;
     }
 
