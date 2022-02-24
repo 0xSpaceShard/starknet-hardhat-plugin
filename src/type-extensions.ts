@@ -14,7 +14,7 @@ type StarknetConfig = {
 
 type WalletUserConfig = {
     [walletName: string]: WalletConfig | undefined;
-}
+};
 
 type WalletConfig = {
     modulePath: string;
@@ -84,7 +84,6 @@ declare module "hardhat/types/runtime" {
         starknetWrapper: StarknetWrapper;
 
         starknet: {
-
             /**
              * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
              * the provided string should be `MyContract`.
@@ -135,7 +134,10 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccountFromABI: (accountContract: string, accountType: AccountTypes) => Promise<Account>;
+            deployAccountFromABI: (
+                accountContract: string,
+                accountType: AccountTypes
+            ) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key
@@ -145,9 +147,13 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            getAccountFromAddress: (accountContract: string, address: string, privateKey: string, accountType: AccountTypes) => Promise<Account>;
-
-        }
+            getAccountFromAddress: (
+                accountContract: string,
+                address: string,
+                privateKey: string,
+                accountType: AccountTypes
+            ) => Promise<Account>;
+        };
     }
 
     type StarknetContract = StarknetContractType;

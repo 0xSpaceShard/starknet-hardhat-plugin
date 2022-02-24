@@ -210,7 +210,6 @@ function addPaths(paths: String2String, colonSeparatedStr: string): void {
 export class DockerWrapper extends StarknetWrapper {
     private docker: HardhatDocker;
     private image: Image;
-    private pythonPath: string;
 
     constructor(image: Image) {
         super();
@@ -268,13 +267,13 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeployOptions(options);
-
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,
             ["starknet", ...preparedOptions],
             dockerOptions
         );
+        console.log(executed.stderr.toString());
         return executed;
     }
 

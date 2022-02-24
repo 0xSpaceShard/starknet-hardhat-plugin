@@ -185,7 +185,13 @@ extendEnvironment((hre) => {
         },
 
         getAccountFromAddress: async (accountContract, address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(accountContract, address, privateKey, accountType, hre);
+            const account = await getAccountFromAddressUtil(
+                accountContract,
+                address,
+                privateKey,
+                accountType,
+                hre
+            );
             return account;
         }
     };

@@ -106,29 +106,42 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     return wallet;
 }
 
-export async function deployAccountFromABIUtil(accountContract: string, accountType: AccountTypes, hre: HardhatRuntimeEnvironment): Promise<Account> {
-
+export async function deployAccountFromABIUtil(
+    accountContract: string,
+    accountType: AccountTypes,
+    hre: HardhatRuntimeEnvironment
+): Promise<Account> {
     let account: Account;
     switch (accountType) {
-    case "OpenZeppelin":
-        account = await OpenZeppelinAccount.deployFromABI(accountContract, hre);
-        break;
-    default:
-        throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+        case "OpenZeppelin":
+            account = await OpenZeppelinAccount.deployFromABI(accountContract, hre);
+            break;
+        default:
+            throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
 
     return account;
 }
 
-export async function getAccountFromAddressUtil(accountContract:string, address: string, privateKey: string, accountType: AccountTypes, hre: HardhatRuntimeEnvironment): Promise<Account> {
-
+export async function getAccountFromAddressUtil(
+    accountContract: string,
+    address: string,
+    privateKey: string,
+    accountType: AccountTypes,
+    hre: HardhatRuntimeEnvironment
+): Promise<Account> {
     let account: Account;
     switch (accountType) {
-    case "OpenZeppelin":
-        account = await OpenZeppelinAccount.getAccountFromAddress(accountContract, address, privateKey, hre);
-        break;
-    default:
-        throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+        case "OpenZeppelin":
+            account = await OpenZeppelinAccount.getAccountFromAddress(
+                accountContract,
+                address,
+                privateKey,
+                hre
+            );
+            break;
+        default:
+            throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
 
     return account;

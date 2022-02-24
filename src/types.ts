@@ -177,6 +177,11 @@ export async function iterativelyCheckStatus(
 function readAbi(abiPath: string): starknet.Abi {
     const abiRaw = fs.readFileSync(abiPath).toString();
     const abiArray = JSON.parse(abiRaw);
+    const abi: starknet.Abi = abiJsonToStruct(abiArray);
+    return abi;
+}
+
+export function abiJsonToStruct(abiArray: any) {
     const abi: starknet.Abi = {};
     for (const abiEntry of abiArray) {
         if (!abiEntry.name) {
@@ -185,7 +190,6 @@ function readAbi(abiPath: string): starknet.Abi {
         }
         abi[abiEntry.name] = abiEntry;
     }
-
     return abi;
 }
 
@@ -495,9 +499,11 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const optionsCopy: CallOptions = JSON.parse(JSON.stringify(options, (_key, value) =>
-            typeof value === "bigint" ? value.toString() : value
-        )); // copy because of potential changes to the object
+        const optionsCopy: CallOptions = JSON.parse(
+            JSON.stringify(options, (_key, value) =>
+                typeof value === "bigint" ? value.toString() : value
+            )
+        ); // copy because of potential changes to the object
 
         if (optionsCopy.blockNumber === undefined) {
             // using || operator would not handle the zero case correctly
@@ -508,5 +514,8 @@ export class StarknetContract {
         const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
         return adaptedOutput;
     }
-}
 
+    getAbi(): starknet.Abi {
+        return this.abi;
+    }
+}
