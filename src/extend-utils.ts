@@ -4,18 +4,16 @@ import * as path from "path";
 
 import {
     ABI_SUFFIX,
-    DEFAULT_STARKNET_NETWORK,
     PLUGIN_NAME,
     SHORT_STRING_MAX_CHARACTERS
 } from "./constants";
 import { AccountImplementationType, StarknetContractFactory } from "./types";
-import { checkArtifactExists, findPath, getAccountPath, getNetwork } from "./utils";
 import { Account, OpenZeppelinAccount } from "./account";
+import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 
 export async function getContractFactoryUtil(
     hre: HardhatRuntimeEnvironment,
-    contractPath: string,
-    networkUrl?: string
+    contractPath: string
 ) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
@@ -40,23 +38,13 @@ export async function getContractFactoryUtil(
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
     }
 
-    let gateway;
-    let testNetworkName;
-    if (networkUrl) {
-        gateway = networkUrl;
-    } else {
-        testNetworkName = hre.config.starknet.network || DEFAULT_STARKNET_NETWORK;
-        const network = getNetwork(testNetworkName, hre, "starknet.network");
-        gateway = network.url;
-    }
-
     return new StarknetContractFactory({
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        networkID: testNetworkName,
-        gatewayUrl: gateway,
-        feederGatewayUrl: gateway
+        networkID: hre.starknet.network,
+        gatewayUrl: hre.starknet.networkUrl,
+        feederGatewayUrl: hre.starknet.networkUrl
     });
 }
 

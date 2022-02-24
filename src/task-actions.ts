@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET } from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -13,7 +13,7 @@ import {
     findPath,
     getAccountPath
 } from "./utils";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment, RunSuperFunction, TaskArguments } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 
 function checkSourceExists(sourcePath: string): void {
@@ -77,13 +77,13 @@ function getFileName(filePath: string) {
 }
 
 /**
- * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK. Sets hre.starknet.network if provided.
+ * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK.
  *
  * @param args the object containing CLI args
  * @param hre environment whose networks and starknet.network are accessed
- * @returns the URL of the gateway to be used
+ * @returns the URL of the gateway to be used; can return `undefined` if `required` set to `false`
  */
-function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
+function getGatewayUrl(args: TaskArguments, hre: HardhatRuntimeEnvironment): string {
     const gatewayUrl: string = args.gatewayUrl;
     const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
 
@@ -103,11 +103,10 @@ function getGatewayUrl(args: any, hre: HardhatRuntimeEnvironment): string {
     }
 
     const network = getNetwork(networkName, hre, "starknet-network");
-    hre.starknet.network = networkName;
     return network.url;
 }
 
-export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetCompileAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
 
@@ -169,7 +168,7 @@ export async function starknetCompileAction(args: any, hre: HardhatRuntimeEnviro
     }
 }
 
-export async function starknetDeployAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -266,7 +265,7 @@ function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment,
     return network.verificationUrl;
 }
 
-export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     const verificationUrl = getVerificationUrl(args.starknetNetwork, hre, "starknet-network");
     const voyagerUrl = `${verificationUrl}${args.address}/code`;
     let isVerified = false;
@@ -326,17 +325,17 @@ export async function starknetVoyagerAction(args: any, hre: HardhatRuntimeEnviro
     }
 }
 
-export async function starknetInvokeAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     await starknetInvokeOrCallAction("invoke", args, hre);
 }
 
-export async function starknetCallAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     await starknetInvokeOrCallAction("call", args, hre);
 }
 
 async function starknetInvokeOrCallAction(
     choice: Choice,
-    args: any,
+    args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
     const gatewayUrl = getGatewayUrl(args, hre);
@@ -397,7 +396,10 @@ async function starknetInvokeOrCallAction(
     }
 }
 
-export async function starknetDeployAccountAction(args: any, hre: HardhatRuntimeEnvironment) {
+export async function starknetDeployAccountAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
     const gatewayUrl = getGatewayUrl(args, hre);
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
@@ -420,4 +422,45 @@ export async function starknetDeployAccountAction(args: any, hre: HardhatRuntime
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
+}
+
+/**
+ * Used later on for network interaction.
+ * @param args Hardhat CLI args
+ * @param hre HardhatRuntimeEnvironment
+ */
+function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    let networkName;
+    let networkConfig;
+    if (args.starknetNetwork) {
+        networkName = args.starknetNetwork;
+        networkConfig = getNetwork(networkName, hre, "--starknet-network");
+    } else if (hre.config.starknet.network) {
+        networkName = hre.config.starknet.network;
+        networkConfig = getNetwork(networkName, hre, "starknet.network in hardhat.config");
+    } else {
+        networkName = DEFAULT_STARKNET_NETWORK;
+        networkConfig = getNetwork(networkName, hre, "default settings");
+    }
+    hre.starknet.network = networkName;
+    hre.starknet.networkUrl = networkConfig.url;
+    console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
+}
+
+export async function starknetTestAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment,
+    runSuper: RunSuperFunction<TaskArguments>
+) {
+    setRuntimeNetwork(args, hre);
+    await runSuper(args);
+}
+
+export async function starknetRunAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment,
+    runSuper: RunSuperFunction<TaskArguments>
+) {
+    setRuntimeNetwork(args, hre);
+    await runSuper(args);
 }

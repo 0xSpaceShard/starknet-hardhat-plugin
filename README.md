@@ -35,7 +35,7 @@ This plugin was tested with:
   - On Windows, we recommend using WSL 2.
 
 ## CLI commands
-This plugin adds the following tasks which target the source/artifact/test directories of your Hardhat project:
+This plugin defines the following Hardhat commands (also called tasks):
 ### `starknet-compile`
 ```
 npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."]
@@ -122,6 +122,12 @@ If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured
 npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
 ```
 
+### `run`
+Introduces the `--starknet-network` option to the existing `hardhat run` task.
+
+### `test`
+Introduces the `--starknet-network` option to the existing `hardhat test` task.
+
 ## API
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
 ```typescript
@@ -129,7 +135,7 @@ import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
-To see all the utilities this object introduces, check [this](src/type-extensions.ts#L85) out.
+To see all the utilities this object introduces, check [this](src/type-extensions.ts#L86) out.
 
 ## Testing
 Relying on the above described API makes it easier to interact with your contracts and test them.

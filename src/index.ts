@@ -22,7 +22,9 @@ import {
     starknetVoyagerAction,
     starknetInvokeAction,
     starknetCallAction,
-    starknetDeployAccountAction
+    starknetDeployAccountAction,
+    starknetTestAction,
+    starknetRunAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -105,7 +107,7 @@ extendEnvironment((hre) => {
     if (venvPath) {
         if (hre.config.starknet.dockerizedVersion) {
             const msg =
-                "Error in config file. Only one of (starknet.version, starknet.venv) can be specified.";
+                "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
         hre.starknetWrapper = new VenvWrapper(venvPath);
@@ -248,3 +250,14 @@ task("starknet-deploy-account", "Deploys a new account according to the paramete
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .setAction(starknetDeployAccountAction);
+
+const STARKNET_NETWORK_DESCRIPTION =
+    "Specify the starknet-network to be used; overrides the value from hardhat.config";
+
+task("test")
+    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
+    .setAction(starknetTestAction);
+
+task("run")
+    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
+    .setAction(starknetRunAction);
