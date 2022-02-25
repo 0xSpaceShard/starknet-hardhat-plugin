@@ -23,9 +23,9 @@ interface L1Message {
 }
 
 interface L2Message {
-    from_address: BigInt;
-    to_address: BigInt;
-    payload: Array<BigInt>;
+    from_address: string;
+    to_address: string;
+    payload: Array<string>;
 }
 
 export interface FlushResponse {
