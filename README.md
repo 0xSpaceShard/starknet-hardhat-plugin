@@ -129,7 +129,7 @@ import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
-To see all the utilities this object introduces, check [this](src/type-extensions.ts#L85) out.
+To see all the utilities this object introduces, check [this](src/type-extensions.ts#L86) out.
 
 ## Testing
 Relying on the above described API makes it easier to interact with your contracts and test them.
@@ -152,11 +152,8 @@ These examples are inspired by the official [Starknet Python tutorial](https://w
   - the extension can be omitted:
     - `getContractFactory("subdir/MyContract")`
     - `getContractFactory("MyContract")`
-- The `wallet` is an optional argument for the `StarknetContract` `invoke` and `call` methods, and if omitted, the Starknet argument `--no_wallet` will be passed by default.
-- To get the wallet configured in the `hardhat.config` file, simply use `starknet.getWallet("MyWallet")`.
 
-
-### Test examples
+### Test - setup
 ```typescript
 import { expect } from "chai";
 import { starknet } from "hardhat";
@@ -175,6 +172,10 @@ describe("My Test", function () {
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
    */ 
+```
+
+### Test - deploy / load contract 
+```typescript
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy({ initial_balance: 10 });
@@ -192,7 +193,10 @@ describe("My Test", function () {
     const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
     await contract.invoke(...);
   });
+```
 
+### Test - arrays
+```typescript
   /**
    * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
    * The contract is assumed to have:
@@ -204,7 +208,9 @@ describe("My Test", function () {
     const { res } = await contract.call("sum_array", { a: [1, 2, 3] });
     expect(res).to.deep.equal(BigInt(6));
   });
-
+```
+### Test - tuples
+```typescript
   /**
    * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
    * The contract is assumed to have:
@@ -217,11 +223,15 @@ describe("My Test", function () {
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
   });
+```
 
+### Test - accounts
+```typescript
   /**
-   * Assumes there is a file MyContract.cairo, and the OpenZeppelin Account.cairo file and its dependencies, whose compilation artifacts have been generated.
-   * The contract is assumed to have:
-   * - external function increase_balance(amount1: felt, amount2: felt) -> ()
+   * Assumes there is a file MyContract.cairo, together with OpenZeppelin Account.cairo file and its dependencies.
+   * Assumes their compilation artifacts have been generated.
+   * MyContract is assumed to have:
+   * - external function increase_balance(amount: felt) -> ()
    * - view function get_balance() -> (res: felt)
    */
   it("should succeed when using the account to invoke a function on another contract", async function() {
@@ -229,17 +239,14 @@ describe("My Test", function () {
     const contract = await contractFactory.deploy()
 
     const account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
-    const accountAddress = account.starknetContract.address;
-    const privateKey = account.privateKey;
-    const publicKey = account.publicKey;
+    console.log("Account:", account.starknetContract.address, account.privateKey, account.publicKey);
 
     const { res: currBalance } = await account.call(contract, "get_balance");
-    const amount1 = 10n;
-    const amount2 = 20n;
-    await account.invoke(contract, "increase_balance", { amount1, amount2 });
+    const amount = BigInt(10);
+    await account.invoke(contract, "increase_balance", { amount });
 
     const { res: newBalance } = await account.call(contract, "get_balance");
-    expect(newBalance).to.deep.equal(currBalance + amount1 + amount2);
+    expect(newBalance).to.deep.equal(currBalance + amount);
   });
 });
 ```
@@ -308,7 +315,7 @@ module.exports = {
   },
   networks: {
     myNetwork: {
-      url: "http://localhost:5000"
+      url: "http://localhost:5000" // caveat: localhost on MacOS might not be bound to 127.0.0.1
     }
   }
   ...
@@ -317,7 +324,7 @@ module.exports = {
 
 ### Account
 An Account can be used to make proxy signed calls/transactions to other contracts.
-It's usage is exemplified in [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts)
+It's usage is exemplified [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts).
 Currently only the OpenZeppelin Account implementation is supported, and you are required to have the source files in your project.
 
 You can choose to deploy a new Account, or use an existing one.
@@ -329,7 +336,7 @@ function deployAccountFromABI: (
                 accountType: AccountImplementationType
             )
 ```
-  - `accountContract` is the is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
+  - `accountContract` is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
   - `accountType` is the implementation of the Account that you want to use. Currently only "OpenZeppelin" is supported.
 ```javascript
 account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
@@ -356,7 +363,7 @@ const account = await starknet.getAccountFromAddress("Account", accountAddress, 
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
 ```javascript
 const { res: currBalance } = await account.call(contract, "get_balance");
-await account.invoke(contract, "increase_balance", { amount1, amount2 });
+await account.invoke(contract, "increase_balance", { amount });
 ```
 
 
