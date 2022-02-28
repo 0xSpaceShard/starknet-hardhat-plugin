@@ -164,7 +164,10 @@ const starknet = require("hardhat").starknet;
 describe("My Test", function () {
   this.timeout(300_000); // 5 min - recommended if used with Alpha testnet
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
+```
 
+### Test - deploy / load contract 
+```typescript
   /**
    * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
    * The contract is assumed to have:
@@ -172,10 +175,6 @@ describe("My Test", function () {
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
    */ 
-```
-
-### Test - deploy / load contract 
-```typescript
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy({ initial_balance: 10 });
@@ -249,6 +248,25 @@ describe("My Test", function () {
     expect(newBalance).to.deep.equal(currBalance + amount);
   });
 });
+```
+
+### Test - L1-L2 communication (message exchange with Devnet)
+```typescript
+  /**
+   * Check here for more info:
+   * https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L96
+   */
+  it("should exchange messages with Devnet", async function() {
+    await starknet.devnet.loadL1MessagingContract(...);
+    const l1contract = ...;
+    const l2contract = ...;
+
+    await l1contract.send(...); // depending on your L1 contract interaction library
+    await starknet.devnet.flush();
+
+    await l2contract.invoke(...);
+    await starknet.devnet.flush();
+  });
 ```
 
 For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
@@ -405,6 +423,9 @@ const wallet = starknet.getWallet("MyWallet");
 const contract = ...;
 await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 ```
+
+### L1-L2 communication (Postman message exchange)
+Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L96) for more info. 
 
 ## More examples
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
