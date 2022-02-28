@@ -114,7 +114,6 @@ export function getNetwork(
             `Cannot use network ${networkName}. No "url" specified.`
         );
     }
-    hre.starknet.network = networkName;
     return network;
 }
 

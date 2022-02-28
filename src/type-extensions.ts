@@ -116,9 +116,16 @@ declare module "hardhat/types/runtime" {
             bigIntToShortString: (convertableBigInt: BigInt) => string;
 
             /**
-             * The selected starknet-network, present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
+             * The selected starknet-network name.
+             * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
              */
             network?: string;
+
+            /**
+             * The selected starknet-network url.
+             * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
+             */
+            networkUrl?: string;
 
             /**
              * @param name the name of the wallet to get

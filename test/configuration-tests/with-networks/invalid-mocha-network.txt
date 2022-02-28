@@ -1,6 +1,0 @@
-  1 failing
-
-  1) ContractFactory
-       should be created:
-     HardhatPluginError: Invalid network provided in starknet.network: foo.
-Valid hardhat networks: hardhat, localhost, devnet, alpha, alphaMainnet

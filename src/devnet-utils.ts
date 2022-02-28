@@ -3,7 +3,6 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { PLUGIN_NAME } from "./constants";
-import { getNetwork } from "./utils";
 
 interface L1Message {
     address: string,
@@ -45,9 +44,7 @@ export class DevnetUtils implements Devnet {
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
-        const network = getNetwork(this.hre.config.starknet.network, this.hre, "starknet.network");
-
-        return `${network.url}/postman`;
+        return `${this.hre.starknet.networkUrl}/postman`;
     }
 
     private handleError(error: unknown) {
