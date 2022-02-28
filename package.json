@@ -33,7 +33,6 @@
         "@nomiclabs/hardhat-docker": "^2.0.2",
         "axios": "^0.24.0",
         "glob": "^7.2.0",
-        "hardhat": "^2.8.2",
         "starknet": "^2.5.1"
     },
     "peerDependencies": {
