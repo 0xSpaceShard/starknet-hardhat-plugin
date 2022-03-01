@@ -29,8 +29,8 @@ function iterate_dir(){
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
 
-        # skip if there is a network file that doesn't specify the current network
-        # so by default, if no network.json, both networks are used
+        # Skip if there is a network file that doesn't specify the current network.
+        # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
         if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
@@ -42,7 +42,7 @@ function iterate_dir(){
 
         config_file_path="$test_case/$CONFIG_FILE_NAME"
         if [ ! -f "$config_file_path" ]; then
-            echo "No config file provided!"
+            echo "Error: No config file provided!"
             continue
         fi
 
