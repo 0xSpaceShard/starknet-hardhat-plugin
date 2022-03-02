@@ -1,12 +1,11 @@
-import { Numeric, StarknetContract, StringMap } from "./types";
+import { Choice, Numeric, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
-import { adaptOutput } from "./adapt";
-import * as starknet from "./starknet-types";
+import { ec } from "elliptic";
 
 /**
  * Representation of an Account.
@@ -17,7 +16,7 @@ export abstract class Account {
         public starknetContract: StarknetContract,
         public privateKey: string,
         public publicKey: string,
-        public keyPair: any
+        public keyPair: ec.KeyPair
     ) {}
 
     /**
@@ -51,13 +50,13 @@ export abstract class Account {
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly OPENZEPPELIN_EXECUTE_FUNCTION = "execute";
+    static readonly EXECUTION_FUNCTION_NAME = "execute";
 
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
         publicKey: string,
-        keyPair: any
+        keyPair: ec.KeyPair
     ) {
         super(starknetContract, privateKey, publicKey, keyPair);
     }
@@ -65,22 +64,9 @@ export class OpenZeppelinAccount extends Account {
     async invoke(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
+        calldata: StringMap = {}
     ): Promise<void> {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const { args, signature } = await adaptArgs(
-            this.keyPair,
-            this.starknetContract.address,
-            toContract.address,
-            functionName,
-            calldata,
-            nonce
-        );
-        await this.starknetContract.invoke(
-            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
-            args,
-            { signature }
-        );
+        await this.invokeOrCall("invoke", toContract, functionName, calldata);
     }
 
     async call(
@@ -88,26 +74,42 @@ export class OpenZeppelinAccount extends Account {
         functionName: string,
         calldata?: StringMap
     ): Promise<StringMap> {
-        const toAddress = toContract.address;
-        const abi = toContract.getAbi();
+        const { response } = <{ response: string[] }>(
+            await this.invokeOrCall("call", toContract, functionName, calldata)
+        );
+        return toContract.adaptOutput(functionName, response.join(" "));
+    }
+
+    private async invokeOrCall(
+        choice: Choice,
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ) {
         const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const { args, signature } = await adaptArgs(
+        const selector = hash.starknetKeccak(functionName);
+        const adaptedCalldata = toContract.adaptInput(functionName, calldata);
+        const signature = sign(
             this.keyPair,
             this.starknetContract.address,
-            toAddress,
-            functionName,
-            calldata,
+            nonce.toString(),
+            selector.toString(),
+            toContract.address,
+            adaptedCalldata
+        );
+        const args = {
+            to: BigInt(toContract.address),
+            selector,
+            calldata: adaptedCalldata,
             nonce
-        );
-        const { response: result } = await this.starknetContract.call(
-            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
+        };
+
+        const options = { signature };
+        return this.starknetContract[choice](
+            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
             args,
-            {
-                signature
-            }
+            options
         );
-        const func = <starknet.CairoFunction>abi[functionName];
-        return adaptOutput(result.join(" "), func.outputs, abi);
     }
 
     static async deployFromABI(
@@ -120,11 +122,7 @@ export class OpenZeppelinAccount extends Account {
 
         const contractFactory = await hre.starknet.getContractFactory(accountContract);
         const contract = await contractFactory.deploy({ _public_key: BigInt(publicKey) });
-
         const privateKey = "0x" + starkPrivateKey.toString(16);
-        console.log("Account private key: " + privateKey);
-        console.log("Account public key: " + publicKey);
-        console.log("Account address: " + contract.address);
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
     }
@@ -168,61 +166,6 @@ function generateRandomStarkPrivateKey(length = 63) {
 }
 
 /**
- * Adapts the input arguments to the proper format to use in the Account contract proxy invocation function that uses the call_contract syscall
- *
- * @param toAddress address of the contract to be called
- * @param selector function in the contract to be called
- * @param calldata calldata to use as input for the contract call
- */
-async function adaptArgs(
-    keyPair: any,
-    accountAddress: string,
-    toAddress: string,
-    functionName: string,
-    calldata: StringMap,
-    nonce: BigInt
-) {
-    const functionSelector = hash.starknetKeccak(functionName).toString();
-    const calldataArray = calldata ? calldataToNumeric(calldata, []) : [];
-    const signature = sign(
-        keyPair,
-        accountAddress,
-        nonce.toString(),
-        functionSelector,
-        toAddress,
-        calldataArray
-    );
-    const args = {
-        to: BigInt(toAddress),
-        selector: functionSelector,
-        calldata: calldataArray.map((it) => BigInt(it.toString())),
-        nonce: nonce.toString()
-    };
-
-    return { args, signature };
-}
-
-/**
- * Recursively transforms the input data received as an object to a <BigNumberish> array
- *
- * @param calldata
- * @param output
- * @returns
- */
-function calldataToNumeric(calldata: StringMap, output: BigNumberish[]): BigNumberish[] {
-    Object.keys(calldata).forEach((key) => {
-        if (calldata[key] !== null) {
-            if (typeof calldata[key] === "object") {
-                output = output.concat(calldataToNumeric(calldata[key], output));
-            } else {
-                output.push(calldata[key]);
-            }
-        }
-    });
-    return output;
-}
-
-/**
  * Returns a signature which is the result of signing a message
  *
  * @param nonce
@@ -232,10 +175,10 @@ function calldataToNumeric(calldata: StringMap, output: BigNumberish[]): BigNumb
  * @returns
  */
 function sign(
-    keyPair: any,
+    keyPair: ec.KeyPair,
     accountAddress: string,
     nonce: BigNumberish,
-    functionSelector: BigNumberish,
+    functionSelector: string,
     toAddress: string,
     calldata: BigNumberish[]
 ): Numeric[] {
