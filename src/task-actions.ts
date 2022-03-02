@@ -279,11 +279,10 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
         const data = resp.data;
 
         if (data.contract != null) {
-            if ( data.contract.length > 0 || Object.keys(data.contract).length > 0) {
+            if (data.contract.length > 0 || Object.keys(data.contract).length > 0) {
                 isVerified = true;
             }
         }
-
     } catch (error) {
         const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -317,8 +316,8 @@ async function handleContractVerification(
     // If the contract has dependencies, insert them into the form
     if (args.paths) {
         // The main contract file has to be inserted into the form in the same way as the dependencies
-        bodyFormData.append("file", fs.readFileSync(contractPath).toString());
         bodyFormData.append("filename", path.parse(contractPath).base);
+        bodyFormData.append("file", fs.readFileSync(contractPath).toString());
 
         args.paths.forEach(function (item: string, index: number) {
             if (!path.isAbsolute(item)) {
@@ -329,8 +328,8 @@ async function handleContractVerification(
                         `File ${args.paths[index]} does not exist`
                     );
                 }
-                bodyFormData.append("file", fs.readFileSync(args.paths[index]).toString());
                 bodyFormData.append("filename", path.parse(args.paths[index]).base);
+                bodyFormData.append("file", fs.readFileSync(args.paths[index]).toString());
             }
         });
     } else {
@@ -338,21 +337,9 @@ async function handleContractVerification(
         const file = fs.readFileSync(contractPath);
         const fileContent = file.toString().split(/\r?\n|\r/);
         bodyFormData.append("code", JSON.stringify(fileContent));
-        console.log(bodyFormData);
     }
 
-    const axiosRequestConfig = {
-        method: "post",
-        url: voyagerUrl,
-        data: bodyFormData,
-        headers: { 
-            "Accept": "*/*",
-            "Alt-Used": "goerli.voyager.online",
-            "Content-Type": "multipart/form-data" 
-        }
-    };
-
-    await axios.post(voyagerUrl, axiosRequestConfig).catch((error) => {
+    await axios.post(voyagerUrl, bodyFormData).catch((error) => {
         switch (error.response.status) {
             case 400: {
                 const msg = `Contract at address ${args.address} does not match the provided code`;
