@@ -46,6 +46,7 @@
         "linebreak-style": ["error", "unix"],
         "no-trailing-spaces": ["error"],
         "no-var": ["error"],
+        "no-warning-comments": ["error"],
         "object-curly-spacing": ["error", "always"],
         "quotes": ["error", "double"],
         "semi": ["error", "always"],
