@@ -61,6 +61,12 @@ export class OpenZeppelinAccount extends Account {
         super(starknetContract, privateKey, publicKey, keyPair);
     }
 
+    /**
+     * Invoke a function of a contract through this account.
+     * @param toContract the contract being being invoked
+     * @param functionName the name of the function to invoke
+     * @param calldata the calldata to be passed to the function
+     */
     async invoke(
         toContract: StarknetContract,
         functionName: string,
@@ -69,6 +75,12 @@ export class OpenZeppelinAccount extends Account {
         await this.invokeOrCall("invoke", toContract, functionName, calldata);
     }
 
+    /**
+     * Call a function of a contract through this account.
+     * @param toContract the contract being being called
+     * @param functionName the name of the function to call
+     * @param calldata the calldata to be passed to the function
+     */
     async call(
         toContract: StarknetContract,
         functionName: string,
@@ -168,11 +180,13 @@ function generateRandomStarkPrivateKey(length = 63) {
 /**
  * Returns a signature which is the result of signing a message
  *
+ * @param keyPair
+ * @param accountAddress
  * @param nonce
  * @param functionSelector
  * @param toAddress
  * @param calldata
- * @returns
+ * @returns the signature
  */
 function sign(
     keyPair: ec.KeyPair,

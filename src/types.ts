@@ -496,10 +496,20 @@ export class StarknetContract {
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
+    /**
+     * Returns the ABI of the whole contract.
+     * @returns contract ABI
+     */
     getAbi(): starknet.Abi {
         return this.abi;
     }
 
+    /**
+     * Adapt structured `args` to unstructured array expected by e.g. Starknet CLI.
+     * @param functionName the name of the function to adapt
+     * @param args structured args
+     * @returns unstructured args
+     */
     adaptInput(functionName: string, args?: StringMap): string[] {
         const func = <starknet.CairoFunction>this.abi[functionName];
         if (!func) {
@@ -517,6 +527,12 @@ export class StarknetContract {
         return adaptInputUtil(functionName, args, func.inputs, this.abi);
     }
 
+    /**
+     * Adapt unstructured `rawResult` to a structured object.
+     * @param functionName the name of the function that produced the output
+     * @param rawResult the function output
+     * @returns structured output
+     */
     adaptOutput(functionName: string, rawResult: string) {
         const func = <starknet.CairoFunction>this.abi[functionName];
         return adaptOutputUtil(rawResult, func.outputs, this.abi);
