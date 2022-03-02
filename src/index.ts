@@ -201,7 +201,13 @@ extendEnvironment((hre) => {
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")
+    .addOptionalParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")
+    .addOptionalParam(
+        "paths",
+        "The paths of the cairo contract and its internal dependencies, in this exact order, separated by a space." +
+            "All dependencies should be in the same folder as the contract." +
+            "e.g. --paths='path/to/main path/to/dependency1 path/to/dependency2'"
+    )
     .addParam("address", "The address where the contract is deployed")
     .setAction(starknetVoyagerAction);
 

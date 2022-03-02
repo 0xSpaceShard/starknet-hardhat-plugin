@@ -269,6 +269,12 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
     const verificationUrl = getVerificationUrl(args.starknetNetwork, hre, "starknet-network");
     const voyagerUrl = `${verificationUrl}${args.address}/code`;
     let isVerified = false;
+    if ((args.path && args.paths) || (!args.path && !args.paths)) {
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            "Exactly one of --path or --paths has to be used."
+        );
+    }
     try {
         const resp = await axios.get(voyagerUrl, {
             headers: {
@@ -291,34 +297,100 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     //If contract hasn't been verified yet, do it
-    let contractPath = args.path;
+    if (args.path) {
+        await handleSingleContractVerification(args.path, args.address, voyagerUrl, hre);
+    } else {
+        const splitPaths = args.paths.split(" ");
+        await handleMultiPartContractVerification(splitPaths, args.address, voyagerUrl, hre);
+    }
+}
+
+async function handleMultiPartContractVerification(
+    paths: string[],
+    address: string,
+    voyagerUrl: string,
+    hre: HardhatRuntimeEnvironment
+) {
+    paths.forEach(function (item, index) {
+        if (!path.isAbsolute(item)) {
+            paths[index] = path.normalize(path.join(hre.config.paths.root, item));
+            if (!fs.existsSync(paths[index])) {
+                throw new HardhatPluginError(PLUGIN_NAME, `File ${paths[index]} does not exist`);
+            }
+        }
+    });
+
+    const bodyFormData = new URLSearchParams();
+    bodyFormData.append("contract-name", path.parse(paths[0]).base);
+
+    for (let i = 0; i < paths.length; i++) {
+        const fileName = path.parse(paths[i]).base;
+        bodyFormData.append("name", fileName);
+        bodyFormData.append("file", fs.readFileSync(paths[i]).toString());
+    }
+
+    const axiosRequestConfig = {
+        method: "post",
+        url: voyagerUrl,
+        data: bodyFormData,
+        headers: { "Content-Type": "multipart/form-data" }
+    };
+
+    await axios.post(voyagerUrl, axiosRequestConfig).catch((error) => {
+        console.log(error);
+        console.log(bodyFormData);
+        switch (error.response.status) {
+            case 400: {
+                const msg = `Contract at address ${address} does not match the provided code`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            case 500: {
+                const msg = `There is no contract deployed at address ${address}, or the transaction was not finished`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            default: {
+                const msg = `Something went wrong when trying to verify the code at address ${address}`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+        }
+    });
+    console.log(`Contract has been successfuly verified at address ${address}`);
+    return;
+}
+
+async function handleSingleContractVerification(
+    contractPath: string,
+    address: string,
+    voyagerUrl: string,
+    hre: HardhatRuntimeEnvironment
+) {
     if (!path.isAbsolute(contractPath)) {
         contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
     }
     if (fs.existsSync(contractPath)) {
-        const content = {
-            code: fs
-                .readFileSync(contractPath)
-                .toString()
-                .split(/\r?\n|\r/)
-        };
-        await axios.post(voyagerUrl, JSON.stringify(content)).catch((error) => {
+        const file = fs.readFileSync(contractPath);
+        const bodyFormData = new URLSearchParams();
+        const fileContent = file.toString().split(/\r?\n|\r/);
+        bodyFormData.append("contract-name", path.parse(contractPath).base);
+        bodyFormData.append("code", JSON.stringify(fileContent));
+
+        await axios.post(voyagerUrl, bodyFormData).catch((error) => {
             switch (error.response.status) {
                 case 400: {
-                    const msg = `Contract at address ${args.address} does not match the provided code`;
+                    const msg = `Contract at address ${address} does not match the provided code`;
                     throw new HardhatPluginError(PLUGIN_NAME, msg);
                 }
                 case 500: {
-                    const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
+                    const msg = `There is no contract deployed at address ${address}, or the transaction was not finished`;
                     throw new HardhatPluginError(PLUGIN_NAME, msg);
                 }
                 default: {
-                    const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+                    const msg = `Something went wrong when trying to verify the code at address ${address}`;
                     throw new HardhatPluginError(PLUGIN_NAME, msg);
                 }
             }
         });
-        console.log(`Contract has been successfuly verified at address ${args.address}`);
+        console.log(`Contract has been successfuly verified at address ${address}`);
         return;
     } else {
         throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
