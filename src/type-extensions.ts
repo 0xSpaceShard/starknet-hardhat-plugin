@@ -51,10 +51,15 @@ declare module "hardhat/types/config" {
     export interface NetworksConfig {
         alpha: HttpNetworkConfig;
         alphaMainnet: HttpNetworkConfig;
+        hardhatStarknetDevnet: DevnetNetworkConfig;
     }
 
     export interface HttpNetworkConfig {
         verificationUrl?: string;
+    }
+
+    export interface DevnetNetworkConfig extends HttpNetworkConfig {
+        venv?: boolean;
     }
 }
 

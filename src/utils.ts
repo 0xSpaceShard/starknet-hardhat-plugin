@@ -6,6 +6,8 @@ import {
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
+    HARDHAT_STARKNET_DEVNET,
+    HARDHAT_STARKNET_DEVNET_INTERNALLY,
     PLUGIN_NAME
 } from "./constants";
 import * as path from "path";
@@ -90,18 +92,21 @@ export function checkArtifactExists(artifactsPath: string): void {
  * @param origin short string describing where/how `networkName` was specified
  * @returns Network config corresponding to `networkName`
  */
-export function getNetwork(
+export function getNetwork<N extends HttpNetworkConfig>(
     networkName: string,
     hre: HardhatRuntimeEnvironment,
     origin: string
-): HttpNetworkConfig {
+): N {
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
+    } else if (isStarknetDevnet(networkName)) {
+        networkName = HARDHAT_STARKNET_DEVNET_INTERNALLY;
     }
 
-    const network = <HttpNetworkConfig>hre.config.networks[networkName];
+    const network = <N>hre.config.networks[networkName];
+
     if (!network) {
         const available = Object.keys(hre.config.networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
@@ -123,6 +128,13 @@ function isTestnet(networkName: string): boolean {
 
 function isMainnet(networkName: string): boolean {
     return networkName === ALPHA_MAINNET || networkName === ALPHA_MAINNET_INTERNALLY;
+}
+
+function isStarknetDevnet(networkName: string): boolean {
+    return (
+        networkName === HARDHAT_STARKNET_DEVNET ||
+        networkName === HARDHAT_STARKNET_DEVNET_INTERNALLY
+    );
 }
 
 export async function findPath(traversable: string, name: string) {

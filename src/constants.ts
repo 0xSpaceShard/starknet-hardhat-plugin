@@ -13,6 +13,8 @@ export const ALPHA_MAINNET_INTERNALLY = "alphaMainnet";
 export const DEFAULT_STARKNET_NETWORK = ALPHA_TESTNET_INTERNALLY;
 export const ALPHA_URL = "https://alpha4.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
+export const HARDHAT_STARKNET_DEVNET = "hardhat-starknet-devnet";
+export const HARDHAT_STARKNET_DEVNET_INTERNALLY = "hardhatStarknetDevnet";
 
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
