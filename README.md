@@ -80,10 +80,10 @@ You would typically use the input feature when deploying a single contract requi
 
 ### `starknet-verify`
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [--address <CONTRACT_ADDRESS>]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>]
 ```
 
-Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source file at `<PATH>`.
+Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
