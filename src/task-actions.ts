@@ -278,7 +278,7 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
         });
         const data = resp.data;
 
-        if (data.contract != null) {
+        if (data.contract) {
             if (data.contract.length > 0 || Object.keys(data.contract).length > 0) {
                 isVerified = true;
             }
@@ -289,11 +289,10 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
     }
 
     if (isVerified) {
-        const msg = `Contract at address ${args.address} has already been verified`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        console.log(`Contract at address ${args.address} has already been verified`);
+    } else {
+        await handleContractVerification(args, voyagerUrl, hre);
     }
-    //If contract hasn't been verified yet, do it
-    await handleContractVerification(args, voyagerUrl, hre);
 }
 
 async function handleContractVerification(
@@ -315,28 +314,9 @@ async function handleContractVerification(
 
     // If the contract has dependencies, insert them into the form
     if (args.paths) {
-        // The main contract file has to be inserted into the form in the same way as the dependencies
-        bodyFormData.append("filename", path.parse(contractPath).base);
-        bodyFormData.append("file", fs.readFileSync(contractPath).toString());
-
-        args.paths.forEach(function (item: string, index: number) {
-            if (!path.isAbsolute(item)) {
-                args.paths[index] = path.normalize(path.join(hre.config.paths.root, item));
-                if (!fs.existsSync(args.paths[index])) {
-                    throw new HardhatPluginError(
-                        PLUGIN_NAME,
-                        `File ${args.paths[index]} does not exist`
-                    );
-                }
-                bodyFormData.append("filename", path.parse(args.paths[index]).base);
-                bodyFormData.append("file", fs.readFileSync(args.paths[index]).toString());
-            }
-        });
+        handleMultiPartContractVerification(bodyFormData, contractPath, args, hre);
     } else {
-        // Contract does not have dependencies, so the form only needs "code", an array with the contract code
-        const file = fs.readFileSync(contractPath);
-        const fileContent = file.toString().split(/\r?\n|\r/);
-        bodyFormData.append("code", JSON.stringify(fileContent));
+        handleSingleContractVerification(bodyFormData, contractPath);
     }
 
     await axios.post(voyagerUrl, bodyFormData).catch((error) => {
@@ -356,6 +336,36 @@ async function handleContractVerification(
         }
     });
     console.log(`Contract has been successfuly verified at address ${args.address}`);
+}
+
+function handleSingleContractVerification(bodyFormData: URLSearchParams, contractPath: string) {
+    const file = fs.readFileSync(contractPath);
+    const fileContent = file.toString().split(/\r?\n|\r/);
+    bodyFormData.append("code", JSON.stringify(fileContent));
+}
+
+function handleMultiPartContractVerification(
+    bodyFormData: URLSearchParams,
+    contractPath: string,
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    bodyFormData.append("filename", path.parse(contractPath).base);
+    bodyFormData.append("file", fs.readFileSync(contractPath).toString());
+
+    args.paths.forEach(function (item: string, index: number) {
+        if (!path.isAbsolute(item)) {
+            args.paths[index] = path.normalize(path.join(hre.config.paths.root, item));
+            if (!fs.existsSync(args.paths[index])) {
+                throw new HardhatPluginError(
+                    PLUGIN_NAME,
+                    `File ${args.paths[index]} does not exist`
+                );
+            }
+            bodyFormData.append("filename", path.parse(args.paths[index]).base);
+            bodyFormData.append("file", fs.readFileSync(args.paths[index]).toString());
+        }
+    });
 }
 
 export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
