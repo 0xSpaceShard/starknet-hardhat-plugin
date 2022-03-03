@@ -1,6 +1,11 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { AccountImplementationType, StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import {
+    AccountImplementationType,
+    StarknetContract,
+    StarknetContractFactory,
+    StringMap
+} from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
@@ -81,6 +86,8 @@ declare module "hardhat/types/runtime" {
     }
 
     interface HardhatRuntimeEnvironment {
+        starknetDevnet: any;
+
         starknetWrapper: StarknetWrapper;
 
         starknet: {

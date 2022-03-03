@@ -14,7 +14,7 @@ import {
     VOYAGER_MAINNET_CONTRACT_API_URL
 } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
-import { getDefaultHttpNetworkConfig } from "./utils";
+import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -35,6 +35,7 @@ import {
     shortStringToBigIntUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
+import { DevnetWrapper } from "./devnet-wrapper";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -197,6 +198,13 @@ extendEnvironment((hre) => {
             return account;
         }
     };
+});
+
+extendEnvironment((hre) => {
+    const devnetNetwork = getNetwork("devnet", hre, "");
+    const url = new URL(devnetNetwork.url);
+
+    hre.starknetDevnet = new DevnetWrapper(url.hostname, url.port);
 });
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")

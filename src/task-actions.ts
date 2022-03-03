@@ -452,8 +452,12 @@ export async function starknetTestAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
+    await hre.starknetDevnet.start();
+
     setRuntimeNetwork(args, hre);
     await runSuper(args);
+
+    hre.starknetDevnet.stop();
 }
 
 export async function starknetRunAction(
