@@ -8,7 +8,7 @@ import {
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
 import { adaptLog } from "./utils";
-import { adaptInput, adaptOutput } from "./adapt";
+import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
 
@@ -319,7 +319,7 @@ export class StarknetContractFactory {
                     "Constructor arguments required but not provided."
                 );
             }
-            const argumentArray = adaptInput(
+            const argumentArray = adaptInputUtil(
                 this.constructorAbi.name,
                 constructorArguments,
                 this.constructorAbi.inputs,
@@ -396,25 +396,13 @@ export class StarknetContract {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
 
-        const func = <starknet.CairoFunction>this.abi[functionName];
-        if (!func) {
-            const msg = `Function '${functionName}' doesn't exist on this contract.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
-
-        if (Array.isArray(args)) {
-            throw new HardhatPluginError(
-                PLUGIN_NAME,
-                "Arguments should be passed in the form of an object."
-            );
-        }
-
+        const adaptedInput = this.adaptInput(functionName, args);
         const executed = await this.starknetWrapper.invokeOrCall({
             choice,
             address: this.address,
             abi: this.abiPath,
             functionName: functionName,
-            inputs: adaptInput(functionName, args, func.inputs, this.abi),
+            inputs: adaptedInput,
             signature: handleSignature(options.signature),
             wallet: options.wallet?.modulePath,
             account: options.wallet?.accountName,
@@ -505,12 +493,48 @@ export class StarknetContract {
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
         }
         const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
-        const func = <starknet.CairoFunction>this.abi[functionName];
-        const adaptedOutput = adaptOutput(executed.stdout.toString(), func.outputs, this.abi);
-        return adaptedOutput;
+        return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
+    /**
+     * Returns the ABI of the whole contract.
+     * @returns contract ABI
+     */
     getAbi(): starknet.Abi {
         return this.abi;
+    }
+
+    /**
+     * Adapt structured `args` to unstructured array expected by e.g. Starknet CLI.
+     * @param functionName the name of the function to adapt
+     * @param args structured args
+     * @returns unstructured args
+     */
+    adaptInput(functionName: string, args?: StringMap): string[] {
+        const func = <starknet.CairoFunction>this.abi[functionName];
+        if (!func) {
+            const msg = `Function '${functionName}' doesn't exist on ${this.abiPath}.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
+        if (Array.isArray(args)) {
+            throw new HardhatPluginError(
+                PLUGIN_NAME,
+                "Arguments should be passed in the form of an object."
+            );
+        }
+
+        return adaptInputUtil(functionName, args, func.inputs, this.abi);
+    }
+
+    /**
+     * Adapt unstructured `rawResult` to a structured object.
+     * @param functionName the name of the function that produced the output
+     * @param rawResult the function output as as unparsed space separated string
+     * @returns structured output
+     */
+    adaptOutput(functionName: string, rawResult: string) {
+        const func = <starknet.CairoFunction>this.abi[functionName];
+        return adaptOutputUtil(rawResult, func.outputs, this.abi);
     }
 }
