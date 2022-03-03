@@ -530,7 +530,7 @@ export class StarknetContract {
     /**
      * Adapt unstructured `rawResult` to a structured object.
      * @param functionName the name of the function that produced the output
-     * @param rawResult the function output
+     * @param rawResult the function output as as unparsed space separated string
      * @returns structured output
      */
     adaptOutput(functionName: string, rawResult: string) {
