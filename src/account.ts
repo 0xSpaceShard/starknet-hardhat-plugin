@@ -1,11 +1,16 @@
-import { Choice, Numeric, StarknetContract, StringMap } from "./types";
+import { Choice, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { BigNumberish, toBN } from "starknet/utils/number";
+import { toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
+import {
+    generateRandomStarkPrivateKey,
+    handleAccountContractArtifacts,
+    sign
+} from "./account-utils";
 
 /**
  * Representation of an Account.
@@ -51,6 +56,8 @@ export abstract class Account {
  */
 export class OpenZeppelinAccount extends Account {
     static readonly EXECUTION_FUNCTION_NAME = "execute";
+    static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
+    static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
 
     constructor(
         starknetContract: StarknetContract,
@@ -124,15 +131,19 @@ export class OpenZeppelinAccount extends Account {
         );
     }
 
-    static async deployFromABI(
-        accountContract: string,
-        hre: HardhatRuntimeEnvironment
-    ): Promise<Account> {
+    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<Account> {
+        await handleAccountContractArtifacts(
+            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
         const starkPrivateKey = generateRandomStarkPrivateKey();
         const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
         const publicKey = ellipticCurve.getStarkKey(keyPair);
-
-        const contractFactory = await hre.starknet.getContractFactory(accountContract);
+        const contractFactory = await hre.starknet.getContractFactory(
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
+        );
         const contract = await contractFactory.deploy({ _public_key: BigInt(publicKey) });
         const privateKey = "0x" + starkPrivateKey.toString(16);
 
@@ -140,12 +151,19 @@ export class OpenZeppelinAccount extends Account {
     }
 
     static async getAccountFromAddress(
-        accountContract: string,
         address: string,
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<Account> {
-        const contractFactory = await hre.starknet.getContractFactory(accountContract);
+        await handleAccountContractArtifacts(
+            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
+        const contractFactory = await hre.starknet.getContractFactory(
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
+        );
         const contract = contractFactory.getContractAt(address);
 
         const { res: expectedPubKey } = await contract.call("get_public_key");
@@ -162,52 +180,4 @@ export class OpenZeppelinAccount extends Account {
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
     }
-}
-
-/*
- * Helper cryptography functions for Key generation and message signing
- */
-
-function generateRandomStarkPrivateKey(length = 63) {
-    const characters = "0123456789ABCDEF";
-    let result = "";
-    for (let i = 0; i < length; ++i) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return toBN(result, "hex");
-}
-
-/**
- * Returns a signature which is the result of signing a message
- *
- * @param keyPair
- * @param accountAddress
- * @param nonce
- * @param functionSelector
- * @param toAddress
- * @param calldata
- * @returns the signature
- */
-function sign(
-    keyPair: ec.KeyPair,
-    accountAddress: string,
-    nonce: BigNumberish,
-    functionSelector: string,
-    toAddress: string,
-    calldata: BigNumberish[]
-): Numeric[] {
-    const msgHash = hash.computeHashOnElements([
-        toBN(accountAddress.substring(2), "hex"),
-        toBN(toAddress.substring(2), "hex"),
-        functionSelector,
-        toBN(hash.computeHashOnElements(calldata).substring(2), "hex"),
-        nonce
-    ]);
-
-    const signedMessage = ellipticCurve.sign(keyPair, BigInt(msgHash).toString(16));
-    const signature = [
-        BigInt("0x" + signedMessage[0].toString(16)),
-        BigInt("0x" + signedMessage[1].toString(16))
-    ];
-    return signature;
 }

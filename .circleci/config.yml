@@ -273,7 +273,7 @@ workflows:
           matrix:
             parameters:
               platform: [linux-node14, macos-node14]
-              test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
+              test-name: [test-general-tests]
             exclude:
               - platform: macos-node14
                 test-name: test-general-tests

@@ -24,6 +24,7 @@ export async function getContractFactoryUtil(
         `${contractPath}.cairo`,
         `${path.basename(contractPath)}.json`
     );
+
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
         throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
@@ -95,14 +96,13 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
 }
 
 export async function deployAccountFromABIUtil(
-    accountContract: string,
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
 ): Promise<Account> {
     let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
-            account = await OpenZeppelinAccount.deployFromABI(accountContract, hre);
+            account = await OpenZeppelinAccount.deployFromABI(hre);
             break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
@@ -112,7 +112,6 @@ export async function deployAccountFromABIUtil(
 }
 
 export async function getAccountFromAddressUtil(
-    accountContract: string,
     address: string,
     privateKey: string,
     accountType: AccountImplementationType,
@@ -122,7 +121,6 @@ export async function getAccountFromAddressUtil(
     switch (accountType) {
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.getAccountFromAddress(
-                accountContract,
                 address,
                 privateKey,
                 hre

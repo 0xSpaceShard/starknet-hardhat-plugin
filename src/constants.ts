@@ -6,6 +6,10 @@ export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
 export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const DEFAULT_DOCKER_IMAGE_TAG = "0.7.1";
 
+export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
+export const ACCOUNT_ARTIFACTS_VERSION = "0.1.0";
+export const GITHUB_ACCOUNT_SHA_URL = `https://api.github.com/repos/Shard-Labs/starknet-hardhat-example/git/trees/plugin:account-contract-artifacts/${ACCOUNT_ARTIFACTS_VERSION}`;
+
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";
 export const ALPHA_MAINNET = "alpha-mainnet";

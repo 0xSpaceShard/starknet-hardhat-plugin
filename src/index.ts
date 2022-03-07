@@ -181,14 +181,13 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccountFromABI: async (accountContract, accountType) => {
-            const account = await deployAccountFromABIUtil(accountContract, accountType, hre);
+        deployAccountFromABI: async (accountType) => {
+            const account = await deployAccountFromABIUtil(accountType, hre);
             return account;
         },
 
-        getAccountFromAddress: async (accountContract, address, privateKey, accountType) => {
+        getAccountFromAddress: async (address, privateKey, accountType) => {
             const account = await getAccountFromAddressUtil(
-                accountContract,
                 address,
                 privateKey,
                 accountType,
