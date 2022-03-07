@@ -35,7 +35,7 @@ import {
     shortStringToBigIntUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
-import { DevnetWrapper } from "./devnet-wrapper";
+import { createDevnetWrapper } from "./devnet";
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -201,10 +201,7 @@ extendEnvironment((hre) => {
 });
 
 extendEnvironment((hre) => {
-    const devnetNetwork = getNetwork("devnet", hre, "");
-    const url = new URL(devnetNetwork.url);
-
-    hre.starknetDevnet = new DevnetWrapper(url.hostname, url.port);
+    hre.starknetDevnet = createDevnetWrapper(hre);
 });
 
 task("starknet-verify", "Verifies the contract in the Starknet network.")

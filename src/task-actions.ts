@@ -457,7 +457,7 @@ export async function starknetTestAction(
     setRuntimeNetwork(args, hre);
     await runSuper(args);
 
-    hre.starknetDevnet.stop();
+    await hre.starknetDevnet.stop();
 }
 
 export async function starknetRunAction(
