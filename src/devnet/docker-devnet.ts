@@ -26,9 +26,12 @@ export class DockerDevnet extends DevnetWrapper {
     protected async spawnChildProcess(): Promise<ChildProcess> {
         await this.pullImage();
 
+        console.log(`Starting docker container named ${CONTAINER_NAME}`);
+
         return spawn("docker", [
             "run",
             "--detach",
+            "--rm",
             "--name",
             CONTAINER_NAME,
             "-it",
@@ -39,6 +42,7 @@ export class DockerDevnet extends DevnetWrapper {
     }
 
     protected async beforeStop(): Promise<void> {
+        console.log(`Killing ${CONTAINER_NAME} Docker container`);
         const killContainer = spawn("docker", ["kill", CONTAINER_NAME]);
 
         return new Promise((resolve, reject) => {
@@ -48,7 +52,7 @@ export class DockerDevnet extends DevnetWrapper {
             });
 
             killContainer.on("error", (error) => {
-                console.error(`Failed to remove ${CONTAINER_NAME} Docker contaier`);
+                console.error(`Failed to remove ${CONTAINER_NAME} Docker container`);
                 reject(error);
             });
         });
