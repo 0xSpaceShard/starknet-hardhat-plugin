@@ -9,6 +9,7 @@ import {
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
+import { DevnetWrapper } from "./devnet";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -54,12 +55,17 @@ declare module "hardhat/types/config" {
         hardhatStarknetDevnet: DevnetNetworkConfig;
     }
 
+    export interface NetworksUserConfig {
+        hardhatStarknetDevnet?: DevnetNetworkConfig;
+    }
+
     export interface HttpNetworkConfig {
         verificationUrl?: string;
     }
 
     export interface DevnetNetworkConfig extends HttpNetworkConfig {
-        venv?: boolean;
+        venv?: string;
+        dockerizedVersion?: string;
     }
 }
 
@@ -91,7 +97,7 @@ declare module "hardhat/types/runtime" {
     }
 
     interface HardhatRuntimeEnvironment {
-        starknetDevnet: any;
+        starknetDevnet: DevnetWrapper;
 
         starknetWrapper: StarknetWrapper;
 
