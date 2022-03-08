@@ -1,4 +1,4 @@
-import { DevnetNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { DEVNET_DOCKER_REPOSITORY, HARDHAT_STARKNET_DEVNET } from "../constants";
 import { getNetwork } from "../utils";
@@ -7,7 +7,7 @@ import { VenvDevnet } from "./venv-devnet";
 import { DevnetWrapper } from "./devnet-wrapper";
 
 export function createDevnetWrapper(hre: HardhatRuntimeEnvironment): DevnetWrapper {
-    const devnetNetwork: DevnetNetworkConfig = getNetwork(
+    const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         HARDHAT_STARKNET_DEVNET,
         hre,
         HARDHAT_STARKNET_DEVNET

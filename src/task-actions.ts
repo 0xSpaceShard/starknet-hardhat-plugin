@@ -13,7 +13,12 @@ import {
     findPath,
     getAccountPath
 } from "./utils";
-import { HardhatRuntimeEnvironment, RunSuperFunction, TaskArguments } from "hardhat/types";
+import {
+    HardhatRuntimeEnvironment,
+    HttpNetworkConfig,
+    RunSuperFunction,
+    TaskArguments
+} from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 
 function checkSourceExists(sourcePath: string): void {
@@ -255,7 +260,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  */
 function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
     networkName ||= ALPHA_TESTNET;
-    const network = getNetwork(networkName, hre, origin);
+    const network = getNetwork<HttpNetworkConfig>(networkName, hre, origin);
     if (!network.verificationUrl) {
         throw new HardhatPluginError(
             PLUGIN_NAME,

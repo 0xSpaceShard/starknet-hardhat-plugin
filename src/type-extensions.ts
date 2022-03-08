@@ -52,21 +52,26 @@ declare module "hardhat/types/config" {
     export interface NetworksConfig {
         alpha: HttpNetworkConfig;
         alphaMainnet: HttpNetworkConfig;
-        hardhatStarknetDevnet: DevnetNetworkConfig;
+        hardhatStarknetDevnet: HardhatNetworkConfig;
     }
 
     export interface NetworksUserConfig {
-        hardhatStarknetDevnet?: DevnetNetworkConfig;
+        hardhatStarknetDevnet?: HardhatNetworkUserConfig;
     }
 
     export interface HttpNetworkConfig {
         verificationUrl?: string;
     }
 
-    export interface DevnetNetworkConfig extends HttpNetworkConfig {
+    interface DevnetNetworkConfig {
+        url?: string;
         venv?: string;
         dockerizedVersion?: string;
     }
+
+    export interface HardhatNetworkConfig extends DevnetNetworkConfig {}
+
+    export interface HardhatNetworkUserConfig extends DevnetNetworkConfig {}
 }
 
 type StarknetContractType = StarknetContract;

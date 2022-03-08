@@ -1,4 +1,4 @@
-import { HardhatRuntimeEnvironment, HttpNetworkConfig } from "hardhat/types";
+import { HardhatRuntimeEnvironment, HttpNetworkConfig, NetworkConfig } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
     ALPHA_MAINNET,
@@ -92,7 +92,7 @@ export function checkArtifactExists(artifactsPath: string): void {
  * @param origin short string describing where/how `networkName` was specified
  * @returns Network config corresponding to `networkName`
  */
-export function getNetwork<N extends HttpNetworkConfig>(
+export function getNetwork<N extends NetworkConfig>(
     networkName: string,
     hre: HardhatRuntimeEnvironment,
     origin: string
