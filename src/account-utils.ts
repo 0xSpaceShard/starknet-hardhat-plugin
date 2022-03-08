@@ -79,12 +79,19 @@ export async function handleAccountContractArtifacts(
     );
 
     if (!fs.existsSync(artifactsTargetPath)) {
+
+        // Check if an old version of the artifacts still exists in the path, if so delete it
         const baseArtifactsPath = path.join(
             hre.config.paths.starknetArtifacts,
             ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
         );
-        if (fs.existsSync(baseArtifactsPath)) {
-            fs.rmSync(baseArtifactsPath, { recursive: true, force: true });
+
+        const contents = fs.readdirSync(baseArtifactsPath);
+
+        if (!(ACCOUNT_ARTIFACTS_VERSION in contents)) {
+            contents.forEach((content) => {
+                fs.rmSync(path.join(baseArtifactsPath, content), { recursive: true, force: true });
+            });
         }
 
         const jsonArtifact = artifactsName + ".json";
@@ -92,14 +99,23 @@ export async function handleAccountContractArtifacts(
 
         fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-        const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat("/", accountType, "/", targetPath, "/");
+        const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
+            accountType,
+            "/",
+            targetPath,
+            "/"
+        );
 
         await downloadArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
         await downloadArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
     }
 }
-async function downloadArtifact(artifact: string, artifactsTargetPath: string, fileLocationUrl: string) {
-    const rawFileURL = fileLocationUrl.concat(artifact);
+async function downloadArtifact(
+    artifactName: string,
+    artifactsTargetPath: string,
+    fileLocationUrl: string
+) {
+    const rawFileURL = fileLocationUrl.concat(artifactName);
     const response = await axios.get(rawFileURL, {
         transformResponse: (res) => {
             return res;
@@ -107,5 +123,5 @@ async function downloadArtifact(artifact: string, artifactsTargetPath: string, f
         responseType: "json"
     });
 
-    fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
+    fs.writeFileSync(path.join(artifactsTargetPath, artifactName), response.data);
 }
