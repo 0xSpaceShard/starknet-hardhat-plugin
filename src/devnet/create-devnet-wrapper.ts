@@ -18,14 +18,12 @@ export function createDevnetWrapper(hre: HardhatRuntimeEnvironment): DevnetWrapp
         return new VenvDevnet(devnetNetwork.venv, hostname, port);
     }
 
-    if (devnetNetwork.dockerizedVersion) {
-        return new DockerDevnet(
-            {
-                repository: DEVNET_DOCKER_REPOSITORY,
-                tag: devnetNetwork.dockerizedVersion
-            },
-            hostname,
-            port
-        );
-    }
+    return new DockerDevnet(
+        {
+            repository: DEVNET_DOCKER_REPOSITORY,
+            tag: devnetNetwork.dockerizedVersion || "latest"
+        },
+        hostname,
+        port
+    );
 }

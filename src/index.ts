@@ -200,10 +200,6 @@ extendEnvironment((hre) => {
     };
 });
 
-extendEnvironment((hre) => {
-    hre.starknetDevnet = createDevnetWrapper(hre);
-});
-
 task("starknet-verify", "Verifies the contract in the Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")

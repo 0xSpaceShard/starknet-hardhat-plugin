@@ -9,7 +9,6 @@ import {
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
-import { DevnetWrapper } from "./devnet";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -102,8 +101,6 @@ declare module "hardhat/types/runtime" {
     }
 
     interface HardhatRuntimeEnvironment {
-        starknetDevnet: DevnetWrapper;
-
         starknetWrapper: StarknetWrapper;
 
         starknet: {
