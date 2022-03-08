@@ -27,43 +27,45 @@ function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
-
         test_name=$(basename $test_case)
-        if [[ "$network" == "devnet" ]] && [[ "$test_name" == "wallet-test" ]]; then
-            echo "Skipping devnet test for wallet-test"
-        elif [[ "$network" == "alpha" ]] && [[ "$test_name" == "postman" ]]; then
-            echo "Skipping alpha test for postman"
-        else
-            total=$((total + 1))
-            echo "Test $total) $test_name"
 
-            config_file_path="$test_case/$CONFIG_FILE_NAME"
-            if [ ! -f "$config_file_path" ]; then
-                echo "No config file provided!"
-                continue
-            fi
-
-            # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
-            /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
-
-            NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
-
-            rm -rf starknet-artifacts
-            git checkout --force
-            git clean -fd
-            echo "----------------------------------------------"
-            echo
+        # Skip if there is a network file that doesn't specify the current network.
+        # So by default, if no network.json, proceed with testing on the current network.
+        network_file="$test_case/network.json"
+        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
+            echo "Skipping $network test for $test_name"
+            continue
         fi
+
+        total=$((total + 1))
+        echo "Test $total) $test_name"
+
+        config_file_path="$test_case/$CONFIG_FILE_NAME"
+        if [ ! -f "$config_file_path" ]; then
+            echo "Error: No config file provided!"
+            continue
+        fi
+
+        # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
+        /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
+
+        NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
+
+        rm -rf starknet-artifacts
+        git checkout --force
+        git clean -fd
+        echo "----------------------------------------------"
+        echo
     done
     echo "Finished tests on $network"
 }
 
+# perform tests on Alpha-goerli testnet only on master branch and in a linux environment
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
 
-# install and build devnet
-
+# install, build and run devnet
 export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
 which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"

@@ -1,12 +1,16 @@
-import { Numeric, StarknetContract, StringMap } from "./types";
+import { Choice, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { BigNumberish, toBN } from "starknet/utils/number";
-import { adaptOutput } from "./adapt";
-import * as starknet from "./starknet-types";
+import { toBN } from "starknet/utils/number";
+import { ec } from "elliptic";
+import {
+    generateRandomStarkPrivateKey,
+    handleAccountContractArtifacts,
+    sign
+} from "./account-utils";
 
 /**
  * Representation of an Account.
@@ -17,7 +21,7 @@ export abstract class Account {
         public starknetContract: StarknetContract,
         public privateKey: string,
         public publicKey: string,
-        public keyPair: any
+        public keyPair: ec.KeyPair
     ) {}
 
     /**
@@ -51,91 +55,115 @@ export abstract class Account {
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly OPENZEPPELIN_EXECUTE_FUNCTION = "execute";
+    static readonly EXECUTION_FUNCTION_NAME = "execute";
+    static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
+    static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
 
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
         publicKey: string,
-        keyPair: any
+        keyPair: ec.KeyPair
     ) {
         super(starknetContract, privateKey, publicKey, keyPair);
     }
 
+    /**
+     * Invoke a function of a contract through this account.
+     * @param toContract the contract being being invoked
+     * @param functionName the name of the function to invoke
+     * @param calldata the calldata to be passed to the function
+     */
     async invoke(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
+        calldata: StringMap = {}
     ): Promise<void> {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const { args, signature } = await adaptArgs(
-            this.keyPair,
-            this.starknetContract.address,
-            toContract.address,
-            functionName,
-            calldata,
-            nonce
-        );
-        await this.starknetContract.invoke(
-            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
-            args,
-            { signature }
-        );
+        await this.invokeOrCall("invoke", toContract, functionName, calldata);
     }
 
+    /**
+     * Call a function of a contract through this account.
+     * @param toContract the contract being being called
+     * @param functionName the name of the function to call
+     * @param calldata the calldata to be passed to the function
+     */
     async call(
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
     ): Promise<StringMap> {
-        const toAddress = toContract.address;
-        const abi = toContract.getAbi();
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const { args, signature } = await adaptArgs(
-            this.keyPair,
-            this.starknetContract.address,
-            toAddress,
-            functionName,
-            calldata,
-            nonce
+        const { response } = <{ response: string[] }>(
+            await this.invokeOrCall("call", toContract, functionName, calldata)
         );
-        const { response: result } = await this.starknetContract.call(
-            OpenZeppelinAccount.OPENZEPPELIN_EXECUTE_FUNCTION,
-            args,
-            {
-                signature
-            }
-        );
-        const func = <starknet.CairoFunction>abi[functionName];
-        return adaptOutput(result.join(" "), func.outputs, abi);
+        return toContract.adaptOutput(functionName, response.join(" "));
     }
 
-    static async deployFromABI(
-        accountContract: string,
-        hre: HardhatRuntimeEnvironment
-    ): Promise<Account> {
+    private async invokeOrCall(
+        choice: Choice,
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ) {
+        const { res: nonce } = await this.starknetContract.call("get_nonce");
+        const selector = hash.starknetKeccak(functionName);
+        const adaptedCalldata = toContract.adaptInput(functionName, calldata);
+        const signature = sign(
+            this.keyPair,
+            this.starknetContract.address,
+            nonce.toString(),
+            selector.toString(),
+            toContract.address,
+            adaptedCalldata
+        );
+        const args = {
+            to: BigInt(toContract.address),
+            selector,
+            calldata: adaptedCalldata,
+            nonce
+        };
+
+        const options = { signature };
+        return this.starknetContract[choice](
+            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
+            args,
+            options
+        );
+    }
+
+    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<Account> {
+        await handleAccountContractArtifacts(
+            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
         const starkPrivateKey = generateRandomStarkPrivateKey();
         const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
         const publicKey = ellipticCurve.getStarkKey(keyPair);
-
-        const contractFactory = await hre.starknet.getContractFactory(accountContract);
+        const contractFactory = await hre.starknet.getContractFactory(
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
+        );
         const contract = await contractFactory.deploy({ _public_key: BigInt(publicKey) });
-
         const privateKey = "0x" + starkPrivateKey.toString(16);
-        console.log("Account private key: " + privateKey);
-        console.log("Account public key: " + publicKey);
-        console.log("Account address: " + contract.address);
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
     }
 
     static async getAccountFromAddress(
-        accountContract: string,
         address: string,
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<Account> {
-        const contractFactory = await hre.starknet.getContractFactory(accountContract);
+        await handleAccountContractArtifacts(
+            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
+        const contractFactory = await hre.starknet.getContractFactory(
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
+        );
         const contract = contractFactory.getContractAt(address);
 
         const { res: expectedPubKey } = await contract.call("get_public_key");
@@ -152,105 +180,4 @@ export class OpenZeppelinAccount extends Account {
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
     }
-}
-
-/*
- * Helper cryptography functions for Key generation and message signing
- */
-
-function generateRandomStarkPrivateKey(length = 63) {
-    const characters = "0123456789ABCDEF";
-    let result = "";
-    for (let i = 0; i < length; ++i) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return toBN(result, "hex");
-}
-
-/**
- * Adapts the input arguments to the proper format to use in the Account contract proxy invocation function that uses the call_contract syscall
- *
- * @param toAddress address of the contract to be called
- * @param selector function in the contract to be called
- * @param calldata calldata to use as input for the contract call
- */
-async function adaptArgs(
-    keyPair: any,
-    accountAddress: string,
-    toAddress: string,
-    functionName: string,
-    calldata: StringMap,
-    nonce: BigInt
-) {
-    const functionSelector = hash.starknetKeccak(functionName).toString();
-    const calldataArray = calldata ? calldataToNumeric(calldata, []) : [];
-    const signature = sign(
-        keyPair,
-        accountAddress,
-        nonce.toString(),
-        functionSelector,
-        toAddress,
-        calldataArray
-    );
-    const args = {
-        to: BigInt(toAddress),
-        selector: functionSelector,
-        calldata: calldataArray.map((it) => BigInt(it.toString())),
-        nonce: nonce.toString()
-    };
-
-    return { args, signature };
-}
-
-/**
- * Recursively transforms the input data received as an object to a <BigNumberish> array
- *
- * @param calldata
- * @param output
- * @returns
- */
-function calldataToNumeric(calldata: StringMap, output: BigNumberish[]): BigNumberish[] {
-    Object.keys(calldata).forEach((key) => {
-        if (calldata[key] !== null) {
-            if (typeof calldata[key] === "object") {
-                output = output.concat(calldataToNumeric(calldata[key], output));
-            } else {
-                output.push(calldata[key]);
-            }
-        }
-    });
-    return output;
-}
-
-/**
- * Returns a signature which is the result of signing a message
- *
- * @param nonce
- * @param functionSelector
- * @param toAddress
- * @param calldata
- * @returns
- */
-function sign(
-    keyPair: any,
-    accountAddress: string,
-    nonce: BigNumberish,
-    functionSelector: BigNumberish,
-    toAddress: string,
-    calldata: BigNumberish[]
-): Numeric[] {
-    const msgHash = hash.computeHashOnElements([
-        toBN(accountAddress.substring(2), "hex"),
-        toBN(toAddress.substring(2), "hex"),
-        functionSelector,
-        toBN(hash.computeHashOnElements(calldata).substring(2), "hex"),
-        nonce
-    ]);
-
-    const signedMessage = ellipticCurve.sign(keyPair, BigInt(msgHash).toString(16));
-    const signature = [
-        BigInt("0x" + signedMessage[0].toString(16)),
-        BigInt("0x" + signedMessage[1].toString(16))
-    ];
-    return signature;
 }

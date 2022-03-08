@@ -24,7 +24,7 @@ function isNumeric(value: { toString: () => string }) {
  * const abi = readAbi(...);
  * const funcName = "double_sum";
  * const inputSpecs = abi[funcName].inputs;
- * const adapted = adaptInput(funcName, {x: 1, y: 2}, inputSpecs, abi);
+ * const adapted = adaptInputUtil(funcName, {x: 1, y: 2}, inputSpecs, abi);
  * console.log(adapted);
  * ```
  * will yield
@@ -37,7 +37,7 @@ function isNumeric(value: { toString: () => string }) {
  * @param abi the ABI artifact of compilation, parsed into an object
  * @returns array containing stringified function arguments in the correct order
  */
-export function adaptInput(
+export function adaptInputUtil(
     functionName: string,
     input: any,
     inputSpecs: starknet.Argument[],
@@ -198,11 +198,11 @@ function adaptComplexInput(
  * Adapts the string resulting from a Starknet CLI function call.
  * This is done according to the actual output type specifed by the called function.
  *
- * @param result the actual result, basically an unparsed string
+ * @param rawResult the actual result in the form of an unparsed string
  * @param outputSpecs array of starknet types in the expected function output
  * @param abi the ABI of the contract whose function was called
  */
-export function adaptOutput(
+export function adaptOutputUtil(
     rawResult: string,
     outputSpecs: starknet.Argument[],
     abi: starknet.Abi

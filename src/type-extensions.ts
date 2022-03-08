@@ -162,7 +162,6 @@ declare module "hardhat/types/runtime" {
              * @returns an Account object
              */
             deployAccountFromABI: (
-                accountContract: string,
                 accountType: AccountImplementationType
             ) => Promise<Account>;
 
@@ -175,7 +174,6 @@ declare module "hardhat/types/runtime" {
              * @returns an Account object
              */
             getAccountFromAddress: (
-                accountContract: string,
                 address: string,
                 privateKey: string,
                 accountType: AccountImplementationType

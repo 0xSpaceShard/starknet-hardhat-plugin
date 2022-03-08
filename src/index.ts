@@ -182,14 +182,13 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccountFromABI: async (accountContract, accountType) => {
-            const account = await deployAccountFromABIUtil(accountContract, accountType, hre);
+        deployAccountFromABI: async (accountType) => {
+            const account = await deployAccountFromABIUtil(accountType, hre);
             return account;
         },
 
-        getAccountFromAddress: async (accountContract, address, privateKey, accountType) => {
+        getAccountFromAddress: async (address, privateKey, accountType) => {
             const account = await getAccountFromAddressUtil(
-                accountContract,
                 address,
                 privateKey,
                 accountType,
@@ -200,10 +199,16 @@ extendEnvironment((hre) => {
     };
 });
 
-task("starknet-verify", "Verifies the contract in the Starknet network.")
+task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addParam("path", "The path of the cairo contract (e.g. contracts/conract.cairo)")
+    .addParam("path", "The path of the main cairo contract (e.g. contracts/contract.cairo)")
     .addParam("address", "The address where the contract is deployed")
+    .addOptionalVariadicPositionalParam(
+        "paths",
+        "The paths of the dependencies of the contract specified in --path" +
+            "All dependencies should be in the same folder as the contract." +
+            "e.g. path/to/dependency1 path/to/dependency2"
+    )
     .setAction(starknetVoyagerAction);
 
 task("starknet-invoke", "Invokes a function on a contract in the provided address.")

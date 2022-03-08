@@ -10,6 +10,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
   - [Important notes](#important-notes)
   - [Examples](#test-examples)
 - [Configure the plugin](#configure-the-plugin)
+- [Account support](#account)
 - [More examples](#more-examples)
 
 ## Install
@@ -79,10 +80,10 @@ You would typically use the input feature when deploying a single contract requi
 
 ### `starknet-verify`
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [--address <CONTRACT_ADDRESS>]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>]
 ```
 
-Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source file at `<PATH>`.
+Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
@@ -231,6 +232,7 @@ describe("My Test", function () {
 ```
 
 ### Test - accounts
+More detailed documentation can be found [here](#account).
 ```typescript
   /**
    * Assumes there is a file MyContract.cairo, together with OpenZeppelin Account.cairo file and its dependencies.
@@ -244,6 +246,8 @@ describe("My Test", function () {
     const contract = await contractFactory.deploy()
 
     const account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
+    // or
+    const account = await starknet.getAccountFromAddress("Account", accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
     console.log("Account:", account.starknetContract.address, account.privateKey, account.publicKey);
 
     const { res: currBalance } = await account.call(contract, "get_balance");
@@ -257,11 +261,8 @@ describe("My Test", function () {
 ```
 
 ### Test - L1-L2 communication (message exchange with Devnet)
+Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L91) for more info.
 ```typescript
-  /**
-   * Check here for more info:
-   * https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L96
-   */
   it("should exchange messages with Devnet", async function() {
     await starknet.devnet.loadL1MessagingContract(...);
     const l1contract = ...;
@@ -328,7 +329,7 @@ module.exports = {
 ```
 
 ### Testing network
-To set the network used in your Mocha tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
@@ -346,7 +347,46 @@ module.exports = {
 };
 ```
 
-### Account
+### Wallet
+To configure a wallet for your project, specify it by using `wallets["walletName"]`.
+You can specify multiple wallets/accounts.
+
+The parameters for the wallet are:
+  - `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
+  - `modulePath`: The python module and wallet class of your chosen wallet provider;
+  - `accountPath`: The path where your wallet information will be saved.
+
+```javascript
+module.exports = {
+  starknet: {
+    wallets: {
+      MyWallet: {
+        accountName: "OpenZeppelin",
+        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+        accountPath: "~/.starknet_accounts"
+      },
+      AnotherWallet: {
+        accountName: "AnotherOpenZeppelin",
+        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
+        accountPath: "~/.starknet_accounts"
+      }
+    }
+  }
+  ...
+};
+```
+Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
+
+To use the wallet in your scripts, use the `getWallet` utility function:
+```typescript
+import { starknet } from "hardhat";
+...
+const wallet = starknet.getWallet("MyWallet");
+const contract = ...;
+await contract.invoke("increase_balance", { amount: 1 }, { wallet });
+```
+
+## Account
 An Account can be used to make proxy signed calls/transactions to other contracts.
 It's usage is exemplified [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts).
 Currently only the OpenZeppelin Account implementation is supported, and you are required to have the source files in your project.
@@ -389,49 +429,6 @@ You can then use the Account object to call and invoke your contracts using the 
 const { res: currBalance } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
-
-
-### Wallet
-To configure a wallet for your project, specify it by using `wallets["walletName"]`.
-You can specify multiple wallets/accounts.
-
-The parameters for the wallet are:
-  - `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
-  - `modulePath`: The python module and wallet class of your chosen wallet provider;
-  - `accountPath`: The path where your wallet information will be saved.
-
-```javascript
-module.exports = {
-  starknet: {
-    wallets: {
-      MyWallet: {
-        accountName: "OpenZeppelin",
-        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-        accountPath: "~/.starknet_accounts"
-      },
-      AnotherWallet: {
-        accountName: "AnotherOpenZeppelin",
-        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-        accountPath: "~/.starknet_accounts"
-      }
-    }
-  }
-  ...
-};
-```
-Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
-
-To use the wallet in your scripts, use the `getWallet` utility function:
-```typescript
-import { starknet } from "hardhat";
-...
-const wallet = starknet.getWallet("MyWallet");
-const contract = ...;
-await contract.invoke("increase_balance", { amount: 1 }, { wallet });
-```
-
-### L1-L2 communication (Postman message exchange)
-Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L96) for more info. 
 
 ## More examples
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
