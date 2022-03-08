@@ -289,7 +289,6 @@ export class StarknetContractFactory {
         const executedOutput = executed.stdout.toString();
         const address = extractAddress(executedOutput);
         const txHash = extractTxHash(executedOutput);
-
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
@@ -434,17 +433,17 @@ export class StarknetContract {
         functionName: string,
         args?: StringMap,
         options: InvokeOptions = {}
-    ): Promise<void> {
+    ): Promise<string> {
         const executed = await this.invokeOrCall("invoke", functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
-        return new Promise<void>((resolve, reject) => {
+        return new Promise<string>((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
                 this.starknetWrapper,
                 this.gatewayUrl,
                 this.feederGatewayUrl,
-                () => resolve(),
+                () => resolve(txHash),
                 (error) => {
                     console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
                     reject(error);
