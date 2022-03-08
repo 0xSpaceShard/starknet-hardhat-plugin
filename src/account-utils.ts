@@ -10,7 +10,7 @@ import {
     ABI_SUFFIX,
     ACCOUNT_ARTIFACTS_VERSION,
     ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
-    GITHUB_ACCOUNT_SHA_URL
+    GITHUB_ACCOUNT_ARTIFACTS_URL
 } from "./constants";
 import axios from "axios";
 
@@ -87,38 +87,25 @@ export async function handleAccountContractArtifacts(
             fs.rmSync(baseArtifactsPath, { recursive: true, force: true });
         }
 
-        const artifacts = {
-            json: artifactsName + ".json",
-            abi: artifactsName + ABI_SUFFIX
-        };
+        const jsonArtifact = artifactsName + ".json";
+        const abiArtifact = artifactsName + ABI_SUFFIX;
 
         fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-        const githubTree = GITHUB_ACCOUNT_SHA_URL.concat("/", accountType, "/", targetPath);
+        const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat("/", accountType, "/", targetPath, "/");
 
-        let jsonBlobUrl, abiBlobUrl;
-
-        // Get the url to the file blobs through the github api tree, because if the files are too large, the regular method of retrieving will not work
-        await axios({
-            method: "get",
-            url: githubTree
-        }).then(async (response) => {
-            jsonBlobUrl = response.data.tree.find(
-                (artifact: any) => artifact.path === artifacts.json
-            ).url;
-            abiBlobUrl = response.data.tree.find(
-                (artifact: any) => artifact.path === artifacts.abi
-            ).url;
-        });
-
-        const jsonBase64 = (await axios.get(jsonBlobUrl)).data.content;
-        const abiBase64 = (await axios.get(abiBlobUrl)).data.content;
-
-        fs.writeFileSync(path.join(artifactsTargetPath, artifacts.json), jsonBase64, {
-            encoding: "base64"
-        });
-        fs.writeFileSync(path.join(artifactsTargetPath, artifacts.abi), abiBase64, {
-            encoding: "base64"
-        });
+        await downloadArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
+        await downloadArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
     }
+}
+async function downloadArtifact(artifact: string, artifactsTargetPath: string, fileLocationUrl: string) {
+    const rawFileURL = fileLocationUrl.concat(artifact);
+    const response = await axios.get(rawFileURL, {
+        transformResponse: (res) => {
+            return res;
+        },
+        responseType: "json"
+    });
+
+    fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
 }
