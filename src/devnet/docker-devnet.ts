@@ -45,6 +45,6 @@ export class DockerDevnet extends IntegratedDevnet {
     protected cleanup(): void {
         console.log(`Killing ${CONTAINER_NAME} Docker container`);
         spawnSync("docker", ["kill", CONTAINER_NAME]);
-        this.childProcess.kill();
+        this.childProcess?.kill();
     }
 }

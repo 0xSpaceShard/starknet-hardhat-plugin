@@ -19,6 +19,6 @@ export class VenvDevnet extends IntegratedDevnet {
     }
 
     protected cleanup(): void {
-        this.childProcess.kill();
+        this.childProcess?.kill();
     }
 }
