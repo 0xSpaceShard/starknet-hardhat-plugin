@@ -1,6 +1,5 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
-import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";

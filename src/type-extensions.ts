@@ -63,15 +63,17 @@ declare module "hardhat/types/config" {
         verificationUrl?: string;
     }
 
-    interface DevnetNetworkConfig {
-        url?: string;
+    export interface HardhatNetworkConfig {
+        url: string;
         venv?: string;
         dockerizedVersion?: string;
     }
 
-    export interface HardhatNetworkConfig extends DevnetNetworkConfig {}
-
-    export interface HardhatNetworkUserConfig extends DevnetNetworkConfig {}
+    export interface HardhatNetworkUserConfig {
+        url?: string;
+        venv?: string;
+        dockerizedVersion?: string;
+    }
 }
 
 type StarknetContractType = StarknetContract;
