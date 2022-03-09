@@ -6,7 +6,8 @@ module.exports = {
     },
     networks: {
         integratedDevnet: {
-            venv: "../my-venv"
+            venv: "../my-venv",
+            url: "http://127.0.0.1:5000"
         }
     }
 };
