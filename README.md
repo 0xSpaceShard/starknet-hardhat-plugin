@@ -245,9 +245,9 @@ More detailed documentation can be found [here](#account).
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy()
 
-    const account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
+    const account = await starknet.deployAccount("OpenZeppelin");
     // or
-    const account = await starknet.getAccountFromAddress("Account", accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
+    const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
     console.log("Account:", account.starknetContract.address, account.privateKey, account.publicKey);
 
     const { res: currBalance } = await account.call(contract, "get_balance");
@@ -393,39 +393,35 @@ Currently only the OpenZeppelin Account implementation is supported, and you are
 
 You can choose to deploy a new Account, or use an existing one.
 
-To deploy a new Account, use the `starknet` object's `deployAccountFromABI` method:
-```javascript
-function deployAccountFromABI: (
-                accountContract: string,
-                accountType: AccountImplementationType
-            )
+To deploy a new Account, use the `starknet` object's `deployAccount` method:
+```typescript
+function deployAccount (
+    accountType: AccountImplementationType
+)
 ```
-  - `accountContract` is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
-  - `accountType` is the implementation of the Account that you want to use. Currently only "OpenZeppelin" is supported.
-```javascript
-account = await starknet.deployAccountFromABI("Account", "OpenZeppelin");
+  - `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+```typescript
+account = await starknet.deployAccount("OpenZeppelin");
 ```
 
 To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
-```javascript
-function getAccountFromAddress: (
-                accountContract: string,
-                address: string,
-                privateKey: string,
-                accountType: AccountImplementationType
-            )
+```typescript
+function getAccountFromAddress (
+    address: string,
+    privateKey: string,
+    accountType: AccountImplementationType
+)
 ```
-  - `accountContract` is the is the **name** or the **path** of the source of the Account contract, just like in `getContractFactory`.
   - `address` is the address where the account you want to use is deployed.
   - `privateKey` is the account's private key.
-  - `accountType` is the implementation of the Account that you want to use. Currently only "OpenZeppelin" is supported.
+  - `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
 
-```javascript
-const account = await starknet.getAccountFromAddress("Account", accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
+```typescript
+const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
 ```
 
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
-```javascript
+```typescript
 const { res: currBalance } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```

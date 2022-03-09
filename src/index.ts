@@ -28,7 +28,7 @@ import {
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
-    deployAccountFromABIUtil,
+    deployAccountUtil,
     getAccountFromAddressUtil,
     getContractFactoryUtil,
     getWalletUtil,
@@ -196,18 +196,13 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccountFromABI: async (accountType) => {
-            const account = await deployAccountFromABIUtil(accountType, hre);
+        deployAccount: async (accountType) => {
+            const account = await deployAccountUtil(accountType, hre);
             return account;
         },
 
         getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(
-                address,
-                privateKey,
-                accountType,
-                hre
-            );
+            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
             return account;
         }
     };

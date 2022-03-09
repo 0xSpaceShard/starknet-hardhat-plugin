@@ -5,20 +5,20 @@ import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 import { PLUGIN_NAME } from "./constants";
 
 interface L1Message {
-    address: string,
+    address: string;
     args: {
-        from_address: string,
-        nonce: number,
-        payload: Array<number>,
-        selector: string,
-        to_address: string
-    },
-    blockHash: string,
-    blockNumber: number,
-    event: string,
-    logIndex: number,
-    transactionHash: string,
-    transactionIndex: number
+        from_address: string;
+        nonce: number;
+        payload: Array<number>;
+        selector: string;
+        to_address: string;
+    };
+    blockHash: string;
+    blockNumber: number;
+    event: string;
+    logIndex: number;
+    transactionHash: string;
+    transactionIndex: number;
 }
 
 interface L2Message {
@@ -32,7 +32,7 @@ export interface FlushResponse {
     consumed_messages: {
         from_l1: Array<L1Message>;
         from_l2: Array<L2Message>;
-    }
+    };
 }
 
 export interface LoadL1MessagingContractResponse {

@@ -88,7 +88,7 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     return wallet;
 }
 
-export async function deployAccountFromABIUtil(
+export async function deployAccountUtil(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
 ): Promise<Account> {
@@ -113,11 +113,7 @@ export async function getAccountFromAddressUtil(
     let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
-            account = await OpenZeppelinAccount.getAccountFromAddress(
-                address,
-                privateKey,
-                hre
-            );
+            account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
             break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
