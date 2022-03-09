@@ -27,11 +27,6 @@ fi
 
 function iterate_dir(){
     network="$1"
-    network_key=network
-
-    if [ "$network" == integratedDevnet ]; then
-        network=integrated-devnet
-    fi
 
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
@@ -42,7 +37,7 @@ function iterate_dir(){
         network_file="$test_case/network.json"
 
 
-        if [[ -f "$network_file" ]] && [[ $(jq ".$network_key" "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
