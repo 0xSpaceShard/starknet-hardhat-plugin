@@ -311,34 +311,12 @@ export class StarknetContractFactory {
     }
 
     private handleConstructorArguments(constructorArguments: StringMap): string[] {
-        if (this.constructorAbi) {
-            if (!constructorArguments || Object.keys(constructorArguments).length === 0) {
-                throw new HardhatPluginError(
-                    PLUGIN_NAME,
-                    "Constructor arguments required but not provided."
-                );
-            }
-            const argumentArray = adaptInputUtil(
-                this.constructorAbi.name,
-                constructorArguments,
-                this.constructorAbi.inputs,
-                this.abi
-            );
-
-            return argumentArray;
-        }
-
-        if (constructorArguments && Object.keys(constructorArguments).length) {
-            if (!this.constructorAbi) {
-                throw new HardhatPluginError(
-                    PLUGIN_NAME,
-                    "Constructor arguments provided but not required."
-                );
-            }
-            // other case already handled
-        }
-
-        return [];
+        return adaptInputUtil(
+            this.constructorAbi.name,
+            constructorArguments,
+            this.constructorAbi.inputs,
+            this.abi
+        );
     }
 
     /**
