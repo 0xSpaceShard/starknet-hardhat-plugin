@@ -8,7 +8,7 @@
         "alpha": {
             "type": "boolean"
         },
-        "integrated-devnet": {
+        "integratedDevnet": {
             "type": "boolean"
         }
     }

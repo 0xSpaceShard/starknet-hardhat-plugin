@@ -36,10 +36,7 @@ function iterate_dir(){
         network_file="$test_case/network.json"
 
 
-        echo "jq value $network $network_file"
-        echo $(jq --arg key "$network" .[$key] -r "$network_file")
-
-        if [[ -f "$network_file" ]] && [[ $(jq --arg key "$network" .[$key] -r "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
@@ -79,7 +76,7 @@ which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
 
 # test integrated devnet
-iterate_dir integrated-devnet
+iterate_dir integratedDevnet
 
 # run devnet
 starknet-devnet & # assuming the default (localhost:5000)
