@@ -34,7 +34,12 @@ function iterate_dir(){
         # Skip if there is a network file that doesn't specify the current network.
         # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
-        if [[ -f "$network_file" ]] && [[ $(jq '."$network"' "$network_file") != true ]]; then
+
+
+        echo "jq value $network $network_file"
+        jq '."$network"' "$network_file"
+
+        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
