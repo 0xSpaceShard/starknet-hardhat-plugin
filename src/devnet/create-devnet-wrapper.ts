@@ -4,15 +4,15 @@ import { DEVNET_DOCKER_REPOSITORY, INTEGRATED_DEVNET, INTEGRATED_DEVNET_URL } fr
 import { getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
-import { DevnetWrapper } from "./devnet-wrapper";
+import { IntegratedDevnet } from "./integrated-devnet";
 
-export function createDevnetWrapper(hre: HardhatRuntimeEnvironment): DevnetWrapper {
+export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): IntegratedDevnet {
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre,
         INTEGRATED_DEVNET
     );
-    const { hostname, port } = new URL(INTEGRATED_DEVNET_URL);
+    const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
 
     if (devnetNetwork.venv) {
         return new VenvDevnet(devnetNetwork.venv, hostname, port);

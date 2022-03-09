@@ -1,9 +1,9 @@
 import { ChildProcess, spawn } from "child_process";
 
 import { getPrefixedCommand, normalizeVenvPath } from "../utils/venv";
-import { DevnetWrapper } from "./devnet-wrapper";
+import { IntegratedDevnet } from "./integrated-devnet";
 
-export class VenvDevnet extends DevnetWrapper {
+export class VenvDevnet extends IntegratedDevnet {
     private command: string = "starknet-devnet";
 
     constructor(venvPath: string, host: string, port: string) {
@@ -16,5 +16,9 @@ export class VenvDevnet extends DevnetWrapper {
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
         return spawn(this.command, ["--host", this.host, "--port", this.port]);
+    }
+
+    protected cleanup(): void {
+        this.childProcess.kill();
     }
 }

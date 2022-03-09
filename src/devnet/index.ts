@@ -1,2 +1,2 @@
-export { DevnetWrapper } from "./devnet-wrapper";
-export { createDevnetWrapper } from "./create-devnet-wrapper";
+export { IntegratedDevnet } from "./integrated-devnet";
+export { createIntegratedDevnet } from "./create-devnet-wrapper";

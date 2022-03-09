@@ -63,13 +63,12 @@ declare module "hardhat/types/config" {
     }
 
     interface DevnetNetworkConfig {
+        url?: string;
         venv?: string;
         dockerizedVersion?: string;
     }
 
-    export interface HardhatNetworkConfig extends DevnetNetworkConfig {
-        url?: string;
-    }
+    export interface HardhatNetworkConfig extends DevnetNetworkConfig {}
 
     export interface HardhatNetworkUserConfig extends DevnetNetworkConfig {}
 }

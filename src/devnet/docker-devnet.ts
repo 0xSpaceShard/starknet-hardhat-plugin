@@ -1,11 +1,12 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
-import { ChildProcess, spawn } from "child_process";
+import { ChildProcess, spawn, spawnSync } from "child_process";
+import { DEVNET_DOCKER_REPOSITORY } from "../constants";
 
-import { DevnetWrapper } from "./devnet-wrapper";
+import { IntegratedDevnet } from "./integrated-devnet";
 
 const CONTAINER_NAME = `integrated-devnet` as const;
 
-export class DockerDevnet extends DevnetWrapper {
+export class DockerDevnet extends IntegratedDevnet {
     private docker: HardhatDocker;
 
     constructor(private image: Image, host: string, port: string) {
@@ -37,24 +38,13 @@ export class DockerDevnet extends DevnetWrapper {
             "-it",
             "-p",
             `${this.host}:${this.port}:5000`,
-            "shardlabs/starknet-devnet"
+            DEVNET_DOCKER_REPOSITORY
         ]);
     }
 
-    protected async beforeStop(): Promise<void> {
+    protected cleanup(): void {
         console.log(`Killing ${CONTAINER_NAME} Docker container`);
-        const killContainer = spawn("docker", ["kill", CONTAINER_NAME]);
-
-        return new Promise((resolve, reject) => {
-            killContainer.on("spawn", () => {
-                console.log(`Removed the "${CONTAINER_NAME}" Docker container`);
-                resolve();
-            });
-
-            killContainer.on("error", (error) => {
-                console.error(`Failed to remove the "${CONTAINER_NAME}" Docker container!`);
-                reject(error);
-            });
-        });
+        spawnSync("docker", ["kill", CONTAINER_NAME]);
+        this.childProcess.kill();
     }
 }

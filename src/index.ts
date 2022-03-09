@@ -36,7 +36,9 @@ import {
     shortStringToBigIntUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
-import { createDevnetWrapper } from "./devnet";
+import { setupExitCleanup } from "./utils/cleanup";
+
+setupExitCleanup();
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {

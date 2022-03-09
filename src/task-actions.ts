@@ -26,7 +26,7 @@ import {
     TaskArguments
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
-import { createDevnetWrapper } from "./devnet";
+import { createIntegratedDevnet } from "./devnet";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -508,11 +508,11 @@ async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<u
         return;
     }
 
-    const devnet = createDevnetWrapper(hre);
+    const devnet = createIntegratedDevnet(hre);
 
     await devnet.start();
     await fn();
-    await devnet.stop();
+    devnet.stop();
 }
 
 export async function starknetTestAction(
