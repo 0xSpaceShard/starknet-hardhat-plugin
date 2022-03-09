@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+trap 'kill $(jobs -p)' EXIT
+
 CONFIG_FILE_NAME="hardhat.config.ts"
 
 # setup example repo

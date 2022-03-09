@@ -6,6 +6,7 @@ export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
 export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const DEFAULT_DOCKER_IMAGE_TAG = "0.7.1";
 export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
+export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:2711";
 
 export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
 export const ACCOUNT_ARTIFACTS_VERSION = "0.1.0";
@@ -18,8 +19,8 @@ export const ALPHA_MAINNET_INTERNALLY = "alphaMainnet";
 export const DEFAULT_STARKNET_NETWORK = ALPHA_TESTNET_INTERNALLY;
 export const ALPHA_URL = "https://alpha4.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
-export const HARDHAT_STARKNET_DEVNET = "hardhat-starknet-devnet";
-export const HARDHAT_STARKNET_DEVNET_INTERNALLY = "hardhatStarknetDevnet";
+export const INTEGRATED_DEVNET = "integrated-devnet";
+export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
 
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
