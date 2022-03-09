@@ -103,7 +103,11 @@ extendConfig((config: HardhatConfig) => {
 
 // set network as specified in userConfig
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    config.starknet.network = userConfig.starknet.network || DEFAULT_STARKNET_NETWORK;
+    if (userConfig.starknet && userConfig.starknet.network) {
+        config.starknet.network = userConfig.starknet.network;
+    } else {
+        config.starknet.network = DEFAULT_STARKNET_NETWORK;
+    }
     const networkConfig = getNetwork(
         config.starknet.network,
         config.networks,
