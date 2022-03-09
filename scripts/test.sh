@@ -34,7 +34,7 @@ function iterate_dir(){
         # Skip if there is a network file that doesn't specify the current network.
         # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
-        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]] && [[ $(jq '."$network"' "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
@@ -74,7 +74,7 @@ which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
 
 # test integrated devnet
-iterate_dir integrated-devnet
+iterate_dir "integrated-devnet"
 
 # run devnet
 starknet-devnet & # assuming the default (localhost:5000)
