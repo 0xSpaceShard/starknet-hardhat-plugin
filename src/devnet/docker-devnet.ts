@@ -27,7 +27,7 @@ export class DockerDevnet extends IntegratedDevnet {
     protected async spawnChildProcess(): Promise<ChildProcess> {
         await this.pullImage();
 
-        console.log(`Starting  the "${CONTAINER_NAME}" Docker container`);
+        console.log(`Starting the "${CONTAINER_NAME}" Docker container`);
 
         return spawn("docker", [
             "run",

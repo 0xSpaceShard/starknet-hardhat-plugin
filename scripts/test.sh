@@ -27,6 +27,11 @@ fi
 
 function iterate_dir(){
     network="$1"
+
+    if [ "$1" == integratedDevnet ]; then
+        network=integrated-devnet
+    fi
+
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
