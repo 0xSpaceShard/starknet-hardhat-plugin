@@ -311,6 +311,14 @@ export class StarknetContractFactory {
     }
 
     private handleConstructorArguments(constructorArguments: StringMap): string[] {
+        if (!this.constructorAbi) {
+            const argsProvided = Object.keys(constructorArguments || {}).length;
+            if (argsProvided) {
+                const msg = `No constructor arguments required but ${argsProvided} provided`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            return [];
+        }
         return adaptInputUtil(
             this.constructorAbi.name,
             constructorArguments,
