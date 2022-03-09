@@ -37,9 +37,9 @@ function iterate_dir(){
 
 
         echo "jq value $network $network_file"
-        jq '."$network"' "$network_file"
+        echo $(jq --arg key "$network" .[$key] -r "$network_file")
 
-        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]] && [[ $(jq --arg key "$network" .[$key] -r "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
