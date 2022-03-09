@@ -1,6 +1,11 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { AccountImplementationType, StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import {
+    AccountImplementationType,
+    StarknetContract,
+    StarknetContractFactory,
+    StringMap
+} from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account } from "./account";
@@ -142,9 +147,7 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccountFromABI: (
-                accountType: AccountImplementationType
-            ) => Promise<Account>;
+            deployAccountFromABI: (accountType: AccountImplementationType) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key

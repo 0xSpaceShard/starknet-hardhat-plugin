@@ -202,12 +202,7 @@ extendEnvironment((hre) => {
         },
 
         getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(
-                address,
-                privateKey,
-                accountType,
-                hre
-            );
+            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
             return account;
         }
     };
