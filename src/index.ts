@@ -11,10 +11,11 @@ import {
     ALPHA_URL,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
-    VOYAGER_MAINNET_CONTRACT_API_URL
+    VOYAGER_MAINNET_CONTRACT_API_URL,
+    DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
-import { getDefaultHttpNetworkConfig } from "./utils";
+import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -23,8 +24,7 @@ import {
     starknetInvokeAction,
     starknetCallAction,
     starknetDeployAccountAction,
-    starknetTestAction,
-    starknetRunAction
+    starknetTestAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -35,6 +35,16 @@ import {
     shortStringToBigIntUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
+
+// copy all user-defined cairo settings; other extendConfig calls will overwrite if needed
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    if (userConfig.starknet) {
+        config.starknet = JSON.parse(JSON.stringify(userConfig.starknet));
+    }
+    if (!config.starknet) {
+        config.starknet = {};
+    }
+});
 
 // add sources path
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -74,16 +84,6 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     config.paths.starknetArtifacts = newPath;
 });
 
-// add user-defined cairo settings
-extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    if (userConfig.starknet) {
-        config.starknet = JSON.parse(JSON.stringify(userConfig.starknet));
-    }
-    if (!config.starknet) {
-        config.starknet = {};
-    }
-});
-
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
     if (!config.networks.alpha) {
@@ -99,6 +99,21 @@ extendConfig((config: HardhatConfig) => {
             VOYAGER_MAINNET_CONTRACT_API_URL
         );
     }
+});
+
+// set network as specified in userConfig
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    if (userConfig.starknet && userConfig.starknet.network) {
+        config.starknet.network = userConfig.starknet.network;
+    } else {
+        config.starknet.network = DEFAULT_STARKNET_NETWORK;
+    }
+    const networkConfig = getNetwork(
+        config.starknet.network,
+        config.networks,
+        "starknet.network in hardhat.config"
+    );
+    config.starknet.networkUrl = networkConfig.url;
 });
 
 // add venv wrapper or docker wrapper of starknet
@@ -262,7 +277,3 @@ const STARKNET_NETWORK_DESCRIPTION =
 task("test")
     .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
     .setAction(starknetTestAction);
-
-task("run")
-    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
-    .setAction(starknetRunAction);
