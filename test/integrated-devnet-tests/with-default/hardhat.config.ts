@@ -2,11 +2,10 @@ import "../dist/index.js";
 
 module.exports = {
     starknet: {
-        network: "hardhat-starknet-devnet"
+        network: "integrated-devnet"
     },
     networks: {
-        hardhatStarknetDevnet: {
-            venv: "active",
+        integratedDevnet: {
             url: "http://localhost:5000"
         }
     }

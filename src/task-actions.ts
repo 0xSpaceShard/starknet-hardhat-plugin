@@ -7,7 +7,7 @@ import {
     ABI_SUFFIX,
     ALPHA_TESTNET,
     DEFAULT_STARKNET_NETWORK,
-    HARDHAT_STARKNET_DEVNET
+    INTEGRATED_DEVNET
 } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
@@ -503,7 +503,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
 }
 
 async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<unknown>) {
-    if (hre.starknet.network !== HARDHAT_STARKNET_DEVNET) {
+    if (hre.starknet.network !== INTEGRATED_DEVNET) {
         await fn();
         return;
     }

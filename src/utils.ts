@@ -1,4 +1,9 @@
-import { HardhatRuntimeEnvironment, HttpNetworkConfig, NetworkConfig } from "hardhat/types";
+import {
+    HardhatNetworkConfig,
+    HardhatRuntimeEnvironment,
+    HttpNetworkConfig,
+    NetworkConfig
+} from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
     ALPHA_MAINNET,
@@ -6,8 +11,8 @@ import {
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
-    HARDHAT_STARKNET_DEVNET,
-    HARDHAT_STARKNET_DEVNET_INTERNALLY,
+    INTEGRATED_DEVNET,
+    INTEGRATED_DEVNET_INTERNALLY,
     PLUGIN_NAME
 } from "./constants";
 import * as path from "path";
@@ -67,6 +72,27 @@ export function getDefaultHttpNetworkConfig(
     };
 }
 
+export function getDefaultHardhatNetworkConfig(url: string): HardhatNetworkConfig {
+    return {
+        url,
+        chainId: undefined,
+        gas: undefined,
+        gasPrice: undefined,
+        gasMultiplier: undefined,
+        hardfork: undefined,
+        mining: undefined,
+        accounts: undefined,
+        blockGasLimit: undefined,
+        minGasPrice: undefined,
+        throwOnTransactionFailures: undefined,
+        throwOnCallFailures: undefined,
+        allowUnlimitedContractSize: undefined,
+        initialDate: undefined,
+        loggingEnabled: undefined,
+        chains: undefined
+    };
+}
+
 export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
@@ -102,7 +128,7 @@ export function getNetwork<N extends NetworkConfig>(
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
     } else if (isStarknetDevnet(networkName)) {
-        networkName = HARDHAT_STARKNET_DEVNET_INTERNALLY;
+        networkName = INTEGRATED_DEVNET_INTERNALLY;
     }
 
     const network = <N>hre.config.networks[networkName];
@@ -131,10 +157,7 @@ function isMainnet(networkName: string): boolean {
 }
 
 function isStarknetDevnet(networkName: string): boolean {
-    return (
-        networkName === HARDHAT_STARKNET_DEVNET ||
-        networkName === HARDHAT_STARKNET_DEVNET_INTERNALLY
-    );
+    return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 
 export async function findPath(traversable: string, name: string) {

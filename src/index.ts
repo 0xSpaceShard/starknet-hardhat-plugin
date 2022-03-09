@@ -11,10 +11,11 @@ import {
     ALPHA_URL,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
-    VOYAGER_MAINNET_CONTRACT_API_URL
+    VOYAGER_MAINNET_CONTRACT_API_URL,
+    INTEGRATED_DEVNET_URL
 } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
-import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
+import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -99,6 +100,10 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_MAINNET_URL,
             VOYAGER_MAINNET_CONTRACT_API_URL
         );
+    }
+
+    if (!config.networks.integratedDevnet) {
+        config.networks.integratedDevnet = getDefaultHardhatNetworkConfig(INTEGRATED_DEVNET_URL);
     }
 });
 
@@ -188,12 +193,7 @@ extendEnvironment((hre) => {
         },
 
         getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(
-                address,
-                privateKey,
-                accountType,
-                hre
-            );
+            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
             return account;
         }
     };

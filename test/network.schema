@@ -7,6 +7,9 @@
         },
         "alpha": {
             "type": "boolean"
+        },
+        "integratedDevnet": {
+            "type": "boolean"
         }
     }
 }

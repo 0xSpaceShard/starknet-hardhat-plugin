@@ -3,7 +3,7 @@ import { ChildProcess, spawn } from "child_process";
 
 import { DevnetWrapper } from "./devnet-wrapper";
 
-const CONTAINER_NAME = `hardhat-starknet-devnet` as const;
+const CONTAINER_NAME = `integrated-devnet` as const;
 
 export class DockerDevnet extends DevnetWrapper {
     private docker: HardhatDocker;
@@ -26,7 +26,7 @@ export class DockerDevnet extends DevnetWrapper {
     protected async spawnChildProcess(): Promise<ChildProcess> {
         await this.pullImage();
 
-        console.log(`Starting docker container named ${CONTAINER_NAME}`);
+        console.log(`Starting  the "${CONTAINER_NAME}" Docker container`);
 
         return spawn("docker", [
             "run",
@@ -36,7 +36,7 @@ export class DockerDevnet extends DevnetWrapper {
             CONTAINER_NAME,
             "-it",
             "-p",
-            `${this.port}:5000`,
+            `${this.host}:${this.port}:5000`,
             "shardlabs/starknet-devnet"
         ]);
     }
@@ -47,12 +47,12 @@ export class DockerDevnet extends DevnetWrapper {
 
         return new Promise((resolve, reject) => {
             killContainer.on("spawn", () => {
-                console.log(`Removed ${CONTAINER_NAME} Docker container`);
+                console.log(`Removed the "${CONTAINER_NAME}" Docker container`);
                 resolve();
             });
 
             killContainer.on("error", (error) => {
-                console.error(`Failed to remove ${CONTAINER_NAME} Docker container`);
+                console.error(`Failed to remove the "${CONTAINER_NAME}" Docker container!`);
                 reject(error);
             });
         });

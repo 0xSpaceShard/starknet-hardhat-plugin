@@ -51,11 +51,11 @@ declare module "hardhat/types/config" {
     export interface NetworksConfig {
         alpha: HttpNetworkConfig;
         alphaMainnet: HttpNetworkConfig;
-        hardhatStarknetDevnet: HardhatNetworkConfig;
+        integratedDevnet: HardhatNetworkConfig;
     }
 
     export interface NetworksUserConfig {
-        hardhatStarknetDevnet?: HardhatNetworkUserConfig;
+        integratedDevnet?: HardhatNetworkUserConfig;
     }
 
     export interface HttpNetworkConfig {
@@ -63,12 +63,13 @@ declare module "hardhat/types/config" {
     }
 
     interface DevnetNetworkConfig {
-        url?: string;
         venv?: string;
         dockerizedVersion?: string;
     }
 
-    export interface HardhatNetworkConfig extends DevnetNetworkConfig {}
+    export interface HardhatNetworkConfig extends DevnetNetworkConfig {
+        url?: string;
+    }
 
     export interface HardhatNetworkUserConfig extends DevnetNetworkConfig {}
 }
@@ -161,9 +162,7 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccountFromABI: (
-                accountType: AccountImplementationType
-            ) => Promise<Account>;
+            deployAccountFromABI: (accountType: AccountImplementationType) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key
