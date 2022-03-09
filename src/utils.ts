@@ -2,7 +2,8 @@ import {
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
     HttpNetworkConfig,
-    NetworkConfig
+    NetworkConfig,
+    NetworksConfig
 } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
@@ -114,13 +115,13 @@ export function checkArtifactExists(artifactsPath: string): void {
 /**
  * Extracts the network config from `hre.config.networks` according to `networkName`.
  * @param networkName The name of the network
- * @param hre `HardhatRuntimeEnvironment` holding defined networks
- * @param origin short string describing where/how `networkName` was specified
+ * @param networks Object holding network configs
+ * @param origin Short string describing where/how `networkName` was specified
  * @returns Network config corresponding to `networkName`
  */
 export function getNetwork<N extends NetworkConfig>(
     networkName: string,
-    hre: HardhatRuntimeEnvironment,
+    networks: NetworksConfig,
     origin: string
 ): N {
     if (isMainnet(networkName)) {
@@ -131,10 +132,10 @@ export function getNetwork<N extends NetworkConfig>(
         networkName = INTEGRATED_DEVNET_INTERNALLY;
     }
 
-    const network = <N>hre.config.networks[networkName];
+    const network = <N>networks[networkName];
 
     if (!network) {
-        const available = Object.keys(hre.config.networks).join(", ");
+        const available = Object.keys(networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }

@@ -114,7 +114,7 @@ function getGatewayUrl(args: TaskArguments, hre: HardhatRuntimeEnvironment): str
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    const network = getNetwork(networkName, hre, "starknet-network");
+    const network = getNetwork(networkName, hre.config.networks, "starknet-network");
     return network.url;
 }
 
@@ -267,7 +267,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  */
 function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
     networkName ||= ALPHA_TESTNET;
-    const network = getNetwork<HttpNetworkConfig>(networkName, hre, origin);
+    const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
         throw new HardhatPluginError(
             PLUGIN_NAME,
@@ -489,16 +489,20 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     let networkConfig;
     if (args.starknetNetwork) {
         networkName = args.starknetNetwork;
-        networkConfig = getNetwork(networkName, hre, "--starknet-network");
+        networkConfig = getNetwork(networkName, hre.config.networks, "--starknet-network");
     } else if (hre.config.starknet.network) {
         networkName = hre.config.starknet.network;
-        networkConfig = getNetwork(networkName, hre, "starknet.network in hardhat.config");
+        networkConfig = getNetwork(
+            networkName,
+            hre.config.networks,
+            "starknet.network in hardhat.config"
+        );
     } else {
         networkName = DEFAULT_STARKNET_NETWORK;
-        networkConfig = getNetwork(networkName, hre, "default settings");
+        networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
-    hre.starknet.network = networkName;
-    hre.starknet.networkUrl = networkConfig.url;
+    hre.config.starknet.network = hre.starknet.network = networkName;
+    hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 

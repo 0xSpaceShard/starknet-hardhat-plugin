@@ -44,7 +44,7 @@ export class DevnetUtils implements Devnet {
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
-        return `${this.hre.starknet.networkUrl}/postman`;
+        return `${this.hre.config.starknet.networkUrl}/postman`;
     }
 
     private handleError(error: unknown) {

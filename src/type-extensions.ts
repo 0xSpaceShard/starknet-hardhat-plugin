@@ -15,6 +15,7 @@ type StarknetConfig = {
     venv?: string;
     wallets?: WalletUserConfig;
     network?: string;
+    networkUrl?: string;
 };
 
 type WalletUserConfig = {

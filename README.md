@@ -124,7 +124,7 @@ npx hardhat starknet-call --starknet-network myNetwork --contract contract --fun
 ```
 
 ### `run`
-Introduces the `--starknet-network` option to the existing `hardhat run` task.
+No CLI options introduced, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
 
 ### `test`
 Introduces the `--starknet-network` option to the existing `hardhat test` task.
@@ -146,7 +146,7 @@ To test Starknet contracts with Mocha, use the regular Hardhat `test` task which
 npx hardhat test
 ```
 
-Read more about the network used in tests in the [Testing network](#testing-network) section.
+Read more about the network used in tests in the [Runtime network](#runtime-network) section.
 These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
@@ -328,7 +328,7 @@ module.exports = {
 };
 ```
 
-### Testing network
+### Runtime network
 To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.

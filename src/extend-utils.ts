@@ -2,19 +2,12 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
-import {
-    ABI_SUFFIX,
-    PLUGIN_NAME,
-    SHORT_STRING_MAX_CHARACTERS
-} from "./constants";
+import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { Account, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 
-export async function getContractFactoryUtil(
-    hre: HardhatRuntimeEnvironment,
-    contractPath: string
-) {
+export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
     checkArtifactExists(artifactsPath);
 
@@ -43,9 +36,9 @@ export async function getContractFactoryUtil(
         starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        networkID: hre.starknet.network,
-        gatewayUrl: hre.starknet.networkUrl,
-        feederGatewayUrl: hre.starknet.networkUrl
+        networkID: hre.config.starknet.network,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        feederGatewayUrl: hre.config.starknet.networkUrl
     });
 }
 

@@ -24,6 +24,6 @@ echo "Success"
 
 echo "Testing invalid config network"
 NETWORK="$INVALID_NETWORK" npx hardhat test --no-compile test/contract-factory-test.ts 2>&1 \
-    | tail -n +2 \
+    | tail -n +1 \
     | diff - "$PREFIX/invalid-config-network.txt"
 echo "Success"

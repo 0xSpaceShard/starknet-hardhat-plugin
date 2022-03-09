@@ -9,7 +9,7 @@ import { IntegratedDevnet } from "./integrated-devnet";
 export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): IntegratedDevnet {
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
-        hre,
+        hre.config.networks,
         INTEGRATED_DEVNET
     );
     const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
