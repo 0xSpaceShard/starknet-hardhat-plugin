@@ -25,3 +25,10 @@ if [ "$TEST_SUBDIR" == "venv-tests" ]; then
     echo "starknet at: $(which starknet)"
     echo "starknet version: $(starknet --version)"
 fi
+
+if [ "$TEST_SUBDIR" == "integrated-devnet-tests" ]; then
+    which "$VENV/bin/starknet-devnet" || pip3 install starknet-devnet
+    echo "starknet-devnet at: $(which starknet-devnet)"
+    echo "starknet-devnet version: $(starknet-devnet --version)"
+fi
+
