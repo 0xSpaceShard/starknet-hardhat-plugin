@@ -33,7 +33,7 @@ function isNumeric(value: { toString: () => string }) {
  * ```
  * @param functionName the name of the function whose input is adapted
  * @param input the input object containing function arguments under their names
- * @param inputSpecs extracted from inputs
+ * @param inputSpecs ABI specifications extracted from function.inputs
  * @param abi the ABI artifact of compilation, parsed into an object
  * @returns array containing stringified function arguments in the correct order
  */

@@ -164,7 +164,7 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccountFromABI: (accountType: AccountImplementationType) => Promise<Account>;
+            deployAccount: (accountType: AccountImplementationType) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key
