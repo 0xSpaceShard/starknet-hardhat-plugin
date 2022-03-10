@@ -170,9 +170,6 @@ commands:
         steps:
             - run:
                   name: "Fetch Devnet version"
-                  command: "node -v"
-            - run:
-                  name: "Fetch Devnet version"
                   command: echo $(curl -Ls https://api.github.com/repos/Shard-Labs/starknet-devnet/commits/master | jq -r .sha) > /tmp/devnet-version
             - run:
                   name: "Set cairo-lang version"
@@ -275,8 +272,13 @@ workflows:
             - test:
                   matrix:
                       parameters:
-                          platform: [linux-node14]
-                          test-name: [test-general-tests]
+                          platform: [linux-node14, macos-node14]
+                          test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
+                      exclude:
+                          - platform: macos-node14
+                            test-name: test-general-tests
+                          - platform: macos-node14
+                            test-name: test-configuration-tests
             - npm_publish:
                   context: shardlabs
                   filters:
