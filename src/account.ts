@@ -1,17 +1,18 @@
 import { Choice, StarknetContract, StringMap } from "./types";
-import { ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH, PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
-import path from "path";
 import {
     generateRandomStarkPrivateKey,
     handleAccountContractArtifacts,
     sign
 } from "./account-utils";
+
+type InvokeResponse = string;
 
 /**
  * Representation of an Account.
@@ -36,7 +37,7 @@ export abstract class Account {
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
-    ): Promise<string>;
+    ): Promise<InvokeResponse>;
 
     /**
      * Uses the account contract as a proxy to call a function on the target contract with a signature
@@ -79,7 +80,7 @@ export class OpenZeppelinAccount extends Account {
         toContract: StarknetContract,
         functionName: string,
         calldata: StringMap = {}
-    ): Promise<string> {
+    ): Promise<InvokeResponse> {
         return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
     }
 
