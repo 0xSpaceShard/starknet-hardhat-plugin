@@ -1,4 +1,4 @@
-import { Choice, StarknetContract, StringMap } from "./types";
+import { Choice, InvokeResponse, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -35,7 +35,7 @@ export abstract class Account {
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
-    ): Promise<void>;
+    ): Promise<InvokeResponse>;
 
     /**
      * Uses the account contract as a proxy to call a function on the target contract with a signature
@@ -78,8 +78,8 @@ export class OpenZeppelinAccount extends Account {
         toContract: StarknetContract,
         functionName: string,
         calldata: StringMap = {}
-    ): Promise<void> {
-        await this.invokeOrCall("invoke", toContract, functionName, calldata);
+    ): Promise<InvokeResponse> {
+        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
     }
 
     /**
@@ -132,7 +132,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<Account> {
-        await handleAccountContractArtifacts(
+        const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
@@ -141,9 +141,7 @@ export class OpenZeppelinAccount extends Account {
         const starkPrivateKey = generateRandomStarkPrivateKey();
         const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
         const publicKey = ellipticCurve.getStarkKey(keyPair);
-        const contractFactory = await hre.starknet.getContractFactory(
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
-        );
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy({ _public_key: BigInt(publicKey) });
         const privateKey = "0x" + starkPrivateKey.toString(16);
 
@@ -155,15 +153,13 @@ export class OpenZeppelinAccount extends Account {
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<Account> {
-        await handleAccountContractArtifacts(
+        const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const contractFactory = await hre.starknet.getContractFactory(
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
-        );
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
         const { res: expectedPubKey } = await contract.call("get_public_key");
