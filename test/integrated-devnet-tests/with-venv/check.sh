@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 
-tree ..
-tree ../..
+ls
+ls ..
+ls ../..
 ../..scripts/check-devnet-is-not_running.sh
 
 check_devnet_is_not_running
