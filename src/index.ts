@@ -1,6 +1,9 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError, lazyObject } from "hardhat/plugins";
+import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
+import exitHook from "exit-hook";
+
 import "./type-extensions";
 import {
     PLUGIN_NAME,
@@ -15,8 +18,6 @@ import {
     DEFAULT_STARKNET_NETWORK,
     INTEGRATED_DEVNET_URL
 } from "./constants";
-import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
-
 import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
@@ -38,9 +39,11 @@ import {
     shortStringToBigIntUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
-import { setupExitCleanup } from "./utils/cleanup";
+import { IntegratedDevnet } from "./devnet";
 
-setupExitCleanup();
+exitHook(() => {
+    IntegratedDevnet.cleanAll();
+});
 
 // copy all user-defined cairo settings; other extendConfig calls will overwrite if needed
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
