@@ -1,7 +1,9 @@
 #!/bin/bash
 set -e
 
-../scripts/check-devnet-is-not_running.sh
+tree ..
+tree ../..
+../..scripts/check-devnet-is-not_running.sh
 
 check_devnet_is_not_running
 npx hardhat starknet-compile contracts/contract.cairo
