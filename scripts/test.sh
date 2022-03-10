@@ -37,7 +37,7 @@ function iterate_dir(){
         network_file="$test_case/network.json"
 
 
-        if [[ -f "$network_file" ]] && [ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]] && [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
