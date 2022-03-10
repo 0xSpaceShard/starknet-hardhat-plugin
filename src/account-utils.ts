@@ -98,29 +98,36 @@ export async function handleAccountContractArtifacts(
     const jsonArtifact = artifactsName + ".json";
     const abiArtifact = artifactsName + ABI_SUFFIX;
 
-    const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
+    const artifactLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
         accountType,
         "/",
         artifactsBase,
         "/"
     );
 
-    await assertArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
-    await assertArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
+    await assertArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
+    await assertArtifact(abiArtifact, artifactsTargetPath, artifactLocationUrl);
 
     return artifactsTargetPath;
 }
 
+/**
+ * Checks if the provided artifact exists in the project's artifacts folder.
+ * If it doesen't, downloads it from the GitHub repository "https://github.com/Shard-Labs/starknet-hardhat-example"
+ * @param artifact artifact file to download. E.g. "Account.json" or "Account_abi.json"
+ * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
+ * @param artifactLocationUrl url to the github folder where the artifacts are stored
+ */
 async function assertArtifact(
     artifact: string,
     artifactsTargetPath: string,
-    fileLocationUrl: string
+    artifactLocationUrl: string
 ) {
+    // Download artifact if it doesen't exist
     if (!fs.existsSync(path.join(artifactsTargetPath, artifact))) {
-        // Check if an old version of the artifacts still exists in the path, if so delete it
         fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-        const rawFileURL = fileLocationUrl.concat(artifact);
+        const rawFileURL = artifactLocationUrl.concat(artifact);
 
         const response = await axios.get(rawFileURL, {
             transformResponse: (res) => {
