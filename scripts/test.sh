@@ -27,7 +27,6 @@ fi
 
 function iterate_dir(){
     network="$1"
-
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
@@ -35,7 +34,6 @@ function iterate_dir(){
         # Skip if there is a network file that doesn't specify the current network.
         # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
-
 
         if [[ -f "$network_file" ]] && [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
@@ -69,7 +67,6 @@ function iterate_dir(){
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
-
 
 # install and build devnet
 export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
