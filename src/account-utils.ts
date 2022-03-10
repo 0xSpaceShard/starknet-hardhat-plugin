@@ -66,7 +66,7 @@ export async function handleAccountContractArtifacts(
     accountType: string,
     artifactsName: string,
     hre: HardhatRuntimeEnvironment
-) {
+): Promise<string> {
     // Name of the artifacts' parent folder
     const targetPath = artifactsName + ".cairo";
 
@@ -79,19 +79,23 @@ export async function handleAccountContractArtifacts(
     );
 
     if (!fs.existsSync(artifactsTargetPath)) {
-
         // Check if an old version of the artifacts still exists in the path, if so delete it
         const baseArtifactsPath = path.join(
             hre.config.paths.starknetArtifacts,
             ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
         );
 
-        const contents = fs.readdirSync(baseArtifactsPath);
+        if (fs.existsSync(baseArtifactsPath)) {
+            const contents = fs.readdirSync(baseArtifactsPath);
 
-        if (!(ACCOUNT_ARTIFACTS_VERSION in contents)) {
-            contents.forEach((content) => {
-                fs.rmSync(path.join(baseArtifactsPath, content), { recursive: true, force: true });
-            });
+            if (!(ACCOUNT_ARTIFACTS_VERSION in contents)) {
+                contents.forEach((content) => {
+                    fs.rmSync(path.join(baseArtifactsPath, content), {
+                        recursive: true,
+                        force: true
+                    });
+                });
+            }
         }
 
         const jsonArtifact = artifactsName + ".json";
@@ -109,6 +113,8 @@ export async function handleAccountContractArtifacts(
         await downloadArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
         await downloadArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
     }
+
+    return artifactsTargetPath;
 }
 async function downloadArtifact(
     artifactName: string,
