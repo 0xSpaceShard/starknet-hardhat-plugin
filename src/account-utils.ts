@@ -68,66 +68,67 @@ export async function handleAccountContractArtifacts(
     hre: HardhatRuntimeEnvironment
 ): Promise<string> {
     // Name of the artifacts' parent folder
-    const targetPath = artifactsName + ".cairo";
+    const artifactsBase = artifactsName + ".cairo";
+
+    const baseArtifactsPath = path.join(
+        hre.config.paths.starknetArtifacts,
+        ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
+    );
+
+    // Remove old versions from the path
+    if (fs.existsSync(baseArtifactsPath)) {
+        const contents = fs.readdirSync(baseArtifactsPath);
+        contents
+            .filter((content) => content !== ACCOUNT_ARTIFACTS_VERSION)
+            .forEach((content) => {
+                fs.rmSync(path.join(baseArtifactsPath, content), {
+                    recursive: true,
+                    force: true
+                });
+            });
+    }
 
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
-        hre.config.paths.starknetArtifacts,
-        ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
+        baseArtifactsPath,
         ACCOUNT_ARTIFACTS_VERSION,
-        targetPath
+        artifactsBase
     );
 
-    if (!fs.existsSync(artifactsTargetPath)) {
-        // Check if an old version of the artifacts still exists in the path, if so delete it
-        const baseArtifactsPath = path.join(
-            hre.config.paths.starknetArtifacts,
-            ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
-        );
+    const jsonArtifact = artifactsName + ".json";
+    const abiArtifact = artifactsName + ABI_SUFFIX;
 
-        if (fs.existsSync(baseArtifactsPath)) {
-            const contents = fs.readdirSync(baseArtifactsPath);
+    const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
+        accountType,
+        "/",
+        artifactsBase,
+        "/"
+    );
 
-            if (!(ACCOUNT_ARTIFACTS_VERSION in contents)) {
-                contents.forEach((content) => {
-                    fs.rmSync(path.join(baseArtifactsPath, content), {
-                        recursive: true,
-                        force: true
-                    });
-                });
-            }
-        }
-
-        const jsonArtifact = artifactsName + ".json";
-        const abiArtifact = artifactsName + ABI_SUFFIX;
-
-        fs.mkdirSync(artifactsTargetPath, { recursive: true });
-
-        const fileLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
-            accountType,
-            "/",
-            targetPath,
-            "/"
-        );
-
-        await downloadArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
-        await downloadArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
-    }
+    await assertArtifact(jsonArtifact, artifactsTargetPath, fileLocationUrl);
+    await assertArtifact(abiArtifact, artifactsTargetPath, fileLocationUrl);
 
     return artifactsTargetPath;
 }
-async function downloadArtifact(
-    artifactName: string,
+
+async function assertArtifact(
+    artifact: string,
     artifactsTargetPath: string,
     fileLocationUrl: string
 ) {
-    const rawFileURL = fileLocationUrl.concat(artifactName);
-    const response = await axios.get(rawFileURL, {
-        transformResponse: (res) => {
-            return res;
-        },
-        responseType: "json"
-    });
+    if (!fs.existsSync(path.join(artifactsTargetPath, artifact))) {
+        // Check if an old version of the artifacts still exists in the path, if so delete it
+        fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-    fs.writeFileSync(path.join(artifactsTargetPath, artifactName), response.data);
+        const rawFileURL = fileLocationUrl.concat(artifact);
+
+        const response = await axios.get(rawFileURL, {
+            transformResponse: (res) => {
+                return res;
+            },
+            responseType: "json"
+        });
+
+        fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
+    }
 }

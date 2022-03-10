@@ -1,4 +1,4 @@
-import { Choice, StarknetContract, StringMap } from "./types";
+import { Choice, InvokeResponse, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -11,8 +11,6 @@ import {
     handleAccountContractArtifacts,
     sign
 } from "./account-utils";
-
-type InvokeResponse = string;
 
 /**
  * Representation of an Account.
@@ -155,15 +153,13 @@ export class OpenZeppelinAccount extends Account {
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<Account> {
-        await handleAccountContractArtifacts(
+        const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const contractFactory = await hre.starknet.getContractFactory(
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
-        );
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
         const { res: expectedPubKey } = await contract.call("get_public_key");

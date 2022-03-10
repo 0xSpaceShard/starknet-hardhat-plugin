@@ -38,6 +38,8 @@ export type TxStatus =
 // Types of account implementations
 export type AccountImplementationType = "OpenZeppelin";
 
+export type InvokeResponse = string;
+
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
 };
@@ -419,7 +421,7 @@ export class StarknetContract {
         functionName: string,
         args?: StringMap,
         options: InvokeOptions = {}
-    ): Promise<string> {
+    ): Promise<InvokeResponse> {
         const executed = await this.invokeOrCall("invoke", functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
