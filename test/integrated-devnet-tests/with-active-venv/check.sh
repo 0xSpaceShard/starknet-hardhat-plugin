@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-../check_devnet_is_not_running.sh
+../scripts/check_devnet_is_not_running.sh
 
 source ../my-venv/bin/activate
 
