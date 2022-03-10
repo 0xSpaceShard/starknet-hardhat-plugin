@@ -347,6 +347,31 @@ module.exports = {
 };
 ```
 
+### Runtime network - Integrated Devnet
+
+We provide a option to use [starkent-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default it will use the latest Docker image of the Devnet on the `http://127.0.0.1:5000`.
+
+Additionaly, you can use a specified Python environment or a different Docker image by defining the `networks[integratedDevnet]`.
+
+```javascript
+module.exports = {
+  starknet: {
+    network: "integrated-devnet"
+  },
+  networks: {
+    integratedDevnet: {
+      url: "http://127.0.0.1:5000",
+      // venv: "active" <- for the active virtual environment
+      // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
+      venv: "<VENV-PATH>",
+      // or specify Docker image tag
+      dockerizedVersion: "0.1.18"
+    }
+  }
+  ...
+};
+```
+
 ### Wallet
 To configure a wallet for your project, specify it by using `wallets["walletName"]`.
 You can specify multiple wallets/accounts.
