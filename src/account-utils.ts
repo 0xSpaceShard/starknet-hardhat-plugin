@@ -1,5 +1,5 @@
-import { Numeric } from "./types";
-import { hash } from "starknet";
+import { Numeric, StarknetContract, StringMap } from "./types";
+import { Call, hash, RawCalldata } from "starknet";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { ec } from "elliptic";
@@ -14,6 +14,19 @@ import {
 } from "./constants";
 import axios from "axios";
 
+export type CallParameters = {
+    toContract: StarknetContract;
+    functionName: string;
+    calldata?: StringMap;
+};
+
+type executeCallParameters = {
+    to: bigint;
+    selector: BigNumberish;
+    data_offset: number;
+    data_len: number;
+};
+
 /*
  * Helper cryptography functions for Key generation and message signing
  */
@@ -25,6 +38,65 @@ export function generateRandomStarkPrivateKey(length = 63) {
         result += characters.charAt(Math.floor(Math.random() * characters.length));
     }
     return toBN(result, "hex");
+}
+
+export function signMultiCall(
+    publicKey: string,
+    keyPair: ec.KeyPair,
+    messageHash: string
+): bigint[] {
+    let signatures: bigint[] = [];
+    if (publicKey !== "0") {
+        const signature = ellipticCurve
+            .sign(keyPair, BigInt(messageHash).toString(16))
+            .map((str) => BigInt(str));
+        signatures.push(signature[0]);
+        signatures.push(signature[1]);
+    } else {
+        signatures.concat([BigInt(0), BigInt(0)]);
+    }
+    return signatures;
+}
+
+export function handleMultiCall(
+    accountAddress: string,
+    callParameters: CallParameters[],
+    nonce: any
+) {
+    let callArray: Call[] = [];
+
+    callParameters.forEach((callParameters) => {
+        callArray.push({
+            contractAddress: callParameters.toContract.address,
+            entrypoint: callParameters.functionName,
+            calldata: callParameters.toContract.adaptInput(
+                callParameters.functionName,
+                callParameters.calldata
+            )
+        });
+    });
+
+    let executeCallArray: executeCallParameters[] = [];
+    let rawCalldata: RawCalldata = [];
+
+    callArray.forEach((call) => {
+        executeCallArray.push({
+            to: BigInt(call.contractAddress),
+            selector: hash.starknetKeccak(call.entrypoint),
+            data_offset: rawCalldata.length,
+            data_len: call.calldata.length
+        });
+        rawCalldata = rawCalldata.concat(call.calldata);
+    });
+
+    const messageHash = hash.hashMulticall(accountAddress, callArray, nonce, "0");
+
+    const args = {
+        call_array: executeCallArray,
+        calldata: rawCalldata,
+        nonce: nonce
+    };
+    return { messageHash, args };
 }
 
 /**
@@ -54,12 +126,11 @@ export function sign(
         nonce
     ]);
 
-    const signedMessage = ellipticCurve.sign(keyPair, BigInt(msgHash).toString(16));
-    const signature = [
-        BigInt("0x" + signedMessage[0].toString(16)),
-        BigInt("0x" + signedMessage[1].toString(16))
-    ];
-    return signature;
+    const signedMessage = ellipticCurve
+        .sign(keyPair, BigInt(msgHash).toString(16))
+        .map((str) => BigInt(str));
+
+    return signedMessage;
 }
 
 export async function handleAccountContractArtifacts(

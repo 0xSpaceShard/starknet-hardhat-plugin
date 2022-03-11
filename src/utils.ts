@@ -12,6 +12,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
+import { StringMap } from "./types";
 
 const globPromise = promisify(glob);
 /**
@@ -156,4 +157,20 @@ export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironme
         accountDir = path.normalize(path.join(root, accountDir));
     }
     return accountDir;
+}
+
+export function flattenStringMap(stringMap: StringMap): string[] {
+    let result: string[] = [];
+    Object.keys(stringMap).forEach((key) => {
+        const value = stringMap[key];
+
+        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+            result = result.concat(flattenStringMap(value));
+        } else if (Array.isArray(value)) {
+            result = result.concat(value);
+        } else {
+            result.push(value);
+        }
+    });
+    return result;
 }

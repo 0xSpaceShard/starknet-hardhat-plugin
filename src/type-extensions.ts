@@ -2,13 +2,14 @@ import "hardhat/types/config";
 import "hardhat/types/runtime";
 import {
     AccountImplementationType,
+    AccountType,
     StarknetContract,
     StarknetContractFactory,
     StringMap
 } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
-import { Account } from "./account";
+import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -62,7 +63,6 @@ declare module "hardhat/types/config" {
 type StarknetContractType = StarknetContract;
 type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
-type AccountType = Account;
 
 declare module "hardhat/types/runtime" {
     interface Devnet {
@@ -147,7 +147,7 @@ declare module "hardhat/types/runtime" {
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccount: (accountType: AccountImplementationType) => Promise<Account>;
+            deployAccount: (accountType: AccountImplementationType) => Promise<AccountType>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key
@@ -161,7 +161,7 @@ declare module "hardhat/types/runtime" {
                 address: string,
                 privateKey: string,
                 accountType: AccountImplementationType
-            ) => Promise<Account>;
+            ) => Promise<AccountType>;
         };
     }
 

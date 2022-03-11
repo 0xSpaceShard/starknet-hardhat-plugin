@@ -3,8 +3,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
-import { AccountImplementationType, StarknetContractFactory } from "./types";
-import { Account, OpenZeppelinAccount } from "./account";
+import { AccountImplementationType, AccountType, StarknetContractFactory } from "./types";
+import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
@@ -91,11 +91,14 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
 export async function deployAccountUtil(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
-): Promise<Account> {
-    let account: Account;
+): Promise<AccountType> {
+    let account: AccountType;
     switch (accountType) {
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.deployFromABI(hre);
+            break;
+        case "ArgentAccount":
+            account = await ArgentAccount.deployFromABI(hre);
             break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
@@ -109,11 +112,14 @@ export async function getAccountFromAddressUtil(
     privateKey: string,
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
-): Promise<Account> {
-    let account: Account;
+): Promise<AccountType> {
+    let account: AccountType;
     switch (accountType) {
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
+            break;
+        case "ArgentAccount":
+            account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
             break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
