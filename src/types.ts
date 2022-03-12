@@ -50,6 +50,11 @@ export type TxFailureReason = {
     tx_id: string;
 };
 
+export type FeeEstimation = {
+    amount: bigint;
+    unit: string;
+};
+
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
@@ -67,7 +72,9 @@ export interface StringMap {
     [key: string]: any;
 }
 
-export type Choice = "call" | "invoke";
+export type ExecutionChoice = "invoke" | "call";
+
+export type InteractionChoice = ExecutionChoice | "estimate_fee";
 
 export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
@@ -193,13 +200,27 @@ function readAbi(abiPath: string): starknet.Abi {
 /**
  * Add `signature` elements to to `starknetArgs`, if there are any.
  * @param signature array of transaction signature elements
- * @param starknetArgs destination array
  */
 function handleSignature(signature: Array<Numeric>): string[] {
     if (signature) {
         return signature.map((s) => s.toString());
     }
     return [];
+}
+
+function parseFeeEstimation(raw: string): FeeEstimation {
+    for (const regex of [
+        /^\s*\{\s*"amount"\s*:\s*(?<amount>.*)\s*,\s*"unit"\s*:\s*"(?<unit>.*)"\s*\}\s*$/,
+        /^\s*\{\s*"unit"\s*:\s*(?<unit>.*)\s*,\s*"amount"\s*:\s*"(?<amount>.*)"\s*\}\s*$/
+    ]) {
+        const matched = raw.match(regex);
+        if (matched) {
+            return {
+                amount: BigInt(matched.groups.amount),
+                unit: matched.groups.unit
+            };
+        }
+    }
 }
 
 export interface DeployOptions {
@@ -383,7 +404,7 @@ export class StarknetContract {
     }
 
     private async invokeOrCall(
-        choice: Choice,
+        choice: InteractionChoice,
         functionName: string,
         args?: StringMap,
         options: InvokeOrCallOptions = {}
@@ -410,7 +431,8 @@ export class StarknetContract {
         });
 
         if (executed.statusCode) {
-            const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
+            const msg =
+                `Could not perform ${choice} on ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
         }
@@ -490,6 +512,22 @@ export class StarknetContract {
         }
         const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
         return this.adaptOutput(functionName, executed.stdout.toString());
+    }
+
+    /**
+     * Estimate the gas fee of executing `functionName` with `args`.
+     * @param functionName
+     * @param args arguments to Starknet contract function
+     * @param options optional execution specifications
+     * @returns an object containing the amount and the unit of the estimation
+     */
+    async estimateFee(
+        functionName: string,
+        args?: StringMap,
+        options: CallOptions = {}
+    ): Promise<FeeEstimation> {
+        const executed = await this.invokeOrCall("estimate_fee", functionName, args, options);
+        return parseFeeEstimation(executed.stdout.toString());
     }
 
     /**

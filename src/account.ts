@@ -1,4 +1,4 @@
-import { Choice, InvokeResponse, StarknetContract, StringMap } from "./types";
+import { ExecutionChoice, InvokeResponse, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -60,7 +60,7 @@ export abstract class Account {
     }
 
     private async invokeOrCall(
-        choice: Choice,
+        choice: ExecutionChoice,
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
@@ -97,7 +97,7 @@ export abstract class Account {
         return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
     }
 
-    async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
+    async multiInvokeOrMultiCall(choice: ExecutionChoice, callParameters: CallParameters[]) {
         const nonce = await this.getNonce();
 
         const { messageHash, args } = handleMultiCall(
@@ -109,8 +109,9 @@ export abstract class Account {
         const signatures = this.getSignatures(messageHash);
         const options = { signature: signatures };
 
+        const contractInteractor = this.starknetContract[choice];
         const executionFunctionName = this.getExecutionFunctionName();
-        return await this.starknetContract[choice](executionFunctionName, args, options);
+        return contractInteractor(executionFunctionName, args, options);
     }
 
     abstract getSignatures(messageHash: string): bigint[];

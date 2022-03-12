@@ -3,7 +3,7 @@ import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
-import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
+import { iterativelyCheckStatus, extractTxHash, InteractionChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
     adaptLog,
@@ -377,7 +377,7 @@ export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntim
 }
 
 async function starknetInvokeOrCallAction(
-    choice: Choice,
+    choice: InteractionChoice,
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {

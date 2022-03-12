@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
-import { Choice } from "./types";
+import { InteractionChoice } from "./types";
 import { adaptUrl } from "./utils";
 
 interface CompileWrapperOptions {
@@ -22,7 +22,7 @@ interface DeployWrapperOptions {
 }
 
 interface InvokeOrCallWrapperOptions {
-    choice: Choice;
+    choice: InteractionChoice;
     address: string;
     abi: string;
     functionName: string;
