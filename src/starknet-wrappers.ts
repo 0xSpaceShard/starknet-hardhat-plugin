@@ -4,7 +4,7 @@ import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
-import { InteractionChoice } from "./types";
+import { InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 
 interface CompileWrapperOptions {
@@ -21,8 +21,8 @@ interface DeployWrapperOptions {
     salt?: string;
 }
 
-interface InvokeOrCallWrapperOptions {
-    choice: InteractionChoice;
+interface InteractWrapperOptions {
+    choice: InteractChoice;
     address: string;
     abi: string;
     functionName: string;
@@ -89,7 +89,7 @@ export abstract class StarknetWrapper {
 
     public abstract deploy(options: DeployWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareInvokeOrCallOptions(options: InvokeOrCallWrapperOptions): string[] {
+    protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
             options.choice,
             "--abi",
@@ -132,7 +132,7 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult>;
+    public abstract interact(options: InteractWrapperOptions): Promise<ProcessResult>;
 
     protected prepareGetTxStatusOptions(options: GetTxStatusWrapperOptions): string[] {
         return [
@@ -275,7 +275,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult> {
+    public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.abi]: options.abi
         };
@@ -291,7 +291,7 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareInvokeOrCallOptions(options);
+        const preparedOptions = this.prepareInteractOptions(options);
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,
@@ -402,8 +402,8 @@ export class VenvWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async invokeOrCall(options: InvokeOrCallWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareInvokeOrCallOptions(options);
+    public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareInteractOptions(options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }

@@ -72,9 +72,9 @@ export interface StringMap {
     [key: string]: any;
 }
 
-export type ExecutionChoice = "invoke" | "call";
+export type ExecuteChoice = "invoke" | "call";
 
-export type InteractionChoice = ExecutionChoice | "estimate_fee";
+export type InteractChoice = ExecuteChoice | "estimate_fee";
 
 export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
@@ -238,7 +238,7 @@ export interface CallOptions {
     blockNumber?: string;
 }
 
-type InvokeOrCallOptions = InvokeOptions | CallOptions;
+type InteractOptions = InvokeOptions | CallOptions;
 
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
@@ -403,18 +403,18 @@ export class StarknetContract {
         return;
     }
 
-    private async invokeOrCall(
-        choice: InteractionChoice,
+    private async interact(
+        choice: InteractChoice,
         functionName: string,
         args?: StringMap,
-        options: InvokeOrCallOptions = {}
+        options: InteractOptions = {}
     ) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
 
         const adaptedInput = this.adaptInput(functionName, args);
-        const executed = await this.starknetWrapper.invokeOrCall({
+        const executed = await this.starknetWrapper.interact({
             choice,
             address: this.address,
             abi: this.abiPath,
@@ -453,7 +453,7 @@ export class StarknetContract {
         args?: StringMap,
         options: InvokeOptions = {}
     ): Promise<InvokeResponse> {
-        const executed = await this.invokeOrCall("invoke", functionName, args, options);
+        const executed = await this.interact("invoke", functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<string>((resolve, reject) => {
@@ -510,7 +510,7 @@ export class StarknetContract {
             // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
         }
-        const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
+        const executed = await this.interact("call", functionName, args, optionsCopy);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
@@ -526,7 +526,7 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<FeeEstimation> {
-        const executed = await this.invokeOrCall("estimate_fee", functionName, args, options);
+        const executed = await this.interact("estimate_fee", functionName, args, options);
         return parseFeeEstimation(executed.stdout.toString());
     }
 
