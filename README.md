@@ -468,13 +468,13 @@ function getAccountFromAddress(
 
 -   `address` is the address where the account you want to use is deployed.
 -   `privateKey` is the account's private key.
--   `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+-   `accountType` is the implementation of the Account that you want to use. `"OpenZeppelin"` and `"ArgentAccount"` are the 2 supported accounts.
 
 ```typescript
 const account = await starknet.getAccountFromAddress(
     accountAddress,
     process.env.PRIVATE_KEY,
-    "OpenZeppelin"
+    "OpenZeppelin" // or "ArgentAccount"
 );
 ```
 
@@ -483,6 +483,93 @@ You can then use the Account object to call and invoke your contracts using the 
 ```typescript
 const { res: currBalance } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
+```
+
+You can also use the Account object to perform multicalls/invokes:
+
+```typescript
+/* Multi invoke */
+const amount1 = 10n;
+const amount2 = 20n;
+
+const invokeArray = [
+    {
+        toContract: mainContract,
+        functionName: "increase_balance",
+        calldata: { amount1, amount2 }
+    },
+    {
+        toContract: mainContract,
+        functionName: "increase_balance",
+        calldata: { amount1, amount2 }
+    },
+    {
+        toContract: mainContract,
+        functionName: "increase_balance",
+        calldata: { amount1, amount2 }
+    }
+];
+
+const txHashArray = await account.multiInvoke(invokeArray);
+
+/* Multi call */
+
+const callArray = [
+    {
+        toContract: mainContract,
+        functionName: "sum_points_to_tuple",
+        calldata: {
+            points: [
+                { x: BigNumber.from(1), y: BigNumber.from(2) },
+                { x: 3, y: 4 }
+            ]
+        }
+    },
+    {
+        toContract: utilContract,
+        functionName: "almost_equal",
+        calldata: { a: 1, b: 1 }
+    },
+    {
+        toContract: utilContract,
+        functionName: "almost_equal",
+        calldata: { a: 1, b: 5 }
+    },
+    {
+        toContract: mainContract,
+        functionName: "sum_array",
+        calldata: { a: [1, 2, 3] }
+    },
+    {
+        toContract: mainContract,
+        functionName: "get_balance"
+    },
+    {
+        toContract: utilContract,
+        functionName: "almost_equal",
+        calldata: { a: 1, b: 1 }
+    }
+];
+
+const results = await account.multiCall(callArray);
+```
+
+OpenZeppelin and Argent account implementations work pretty much the same way, however Argent's has the additional signature verifications of a Guardian.
+A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`
+
+```typescript
+import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";
+
+let account: ArgentAccount;
+account = (await starknet.deployAccount("ArgentAccount")) as ArgentAccount;
+
+// or
+
+const loadedAccount = (await starknet.getAccountFromAddress(
+    accountAddress,
+    privateKey,
+    "ArgentAccount"
+)) as ArgentAccount;
 ```
 
 ## More examples
