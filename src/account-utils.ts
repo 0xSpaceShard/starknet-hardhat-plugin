@@ -13,6 +13,7 @@ import {
     GITHUB_ACCOUNT_ARTIFACTS_URL
 } from "./constants";
 import axios from "axios";
+import { flattenStringMap } from "./utils";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -25,6 +26,12 @@ type executeCallParameters = {
     selector: BigNumberish;
     data_offset: number;
     data_len: number;
+};
+
+type KeysType = {
+    publicKey: string;
+    privateKey: string;
+    keyPair: ec.KeyPair;
 };
 
 /*
@@ -53,7 +60,7 @@ export function signMultiCall(
         signatures.push(signature[0]);
         signatures.push(signature[1]);
     } else {
-        signatures.concat([BigInt(0), BigInt(0)]);
+        signatures = signatures.concat([BigInt(0), BigInt(0)]);
     }
     return signatures;
 }
@@ -71,7 +78,7 @@ export function handleMultiCall(
     callParameters: CallParameters[],
     nonce: any
 ) {
-    let callArray: Call[] = [];
+    const callArray: Call[] = [];
 
     callParameters.forEach((callParameters) => {
         callArray.push({
@@ -84,7 +91,7 @@ export function handleMultiCall(
         });
     });
 
-    let executeCallArray: executeCallParameters[] = [];
+    const executeCallArray: executeCallParameters[] = [];
     let rawCalldata: RawCalldata = [];
 
     callArray.forEach((call) => {
@@ -183,4 +190,28 @@ async function assertArtifact(
 
         fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
     }
+}
+
+export function parseMulticallOutput(
+    response: string[],
+    callParameters: CallParameters[]
+): StringMap[] {
+    const output: StringMap[] = [];
+    const tempResponse = response;
+
+    callParameters.forEach((call) => {
+        const parsedOutput = call.toContract.adaptOutput(call.functionName, tempResponse.join(" "));
+        const flattenedOutput = flattenStringMap(parsedOutput);
+        tempResponse.splice(0, flattenedOutput.length);
+        output.push(parsedOutput);
+    });
+    return output;
+}
+
+export function generateKeys(): KeysType {
+    const starkPrivateKey = generateRandomStarkPrivateKey();
+    const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
+    const publicKey = ellipticCurve.getStarkKey(keyPair);
+    const privateKey = "0x" + starkPrivateKey.toString(16);
+    return { publicKey, privateKey, keyPair };
 }

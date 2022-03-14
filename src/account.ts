@@ -7,12 +7,12 @@ import { toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
     CallParameters,
-    generateRandomStarkPrivateKey,
+    generateKeys,
     handleAccountContractArtifacts,
     handleMultiCall,
+    parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { flattenStringMap } from "./utils";
 
 /**
  * Representation of an Account.
@@ -127,14 +127,17 @@ export class OpenZeppelinAccount extends Account {
             hre
         );
 
-        const starkPrivateKey = generateRandomStarkPrivateKey();
-        const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
-        const publicKey = ellipticCurve.getStarkKey(keyPair);
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy({ public_key: BigInt(publicKey) });
-        const privateKey = "0x" + starkPrivateKey.toString(16);
+        const signer = generateKeys();
 
-        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contract = await contractFactory.deploy({ public_key: BigInt(signer.publicKey) });
+
+        return new OpenZeppelinAccount(
+            contract,
+            signer.privateKey,
+            signer.publicKey,
+            signer.keyPair
+        );
     }
 
     static async getAccountFromAddress(
@@ -175,20 +178,7 @@ export class OpenZeppelinAccount extends Account {
         const { response } = <{ response: string[] }>(
             await this.multiInvokeOrMultiCall("call", callParameters)
         );
-
-        const output: StringMap[] = [];
-        let tempResponse = response;
-
-        callParameters.forEach((call) => {
-            const parsedOutput = call.toContract.adaptOutput(
-                call.functionName,
-                tempResponse.join(" ")
-            );
-            const flattenedOutput = flattenStringMap(parsedOutput);
-            tempResponse.splice(0, flattenedOutput.length);
-            output.push(parsedOutput);
-        });
-
+        const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
     }
 
@@ -224,7 +214,7 @@ export class OpenZeppelinAccount extends Account {
 }
 
 /**
- * Wrapper for the OpenZeppelin implementation of an Account
+ * Wrapper for the Argent implementation of an Account
  */
 export class ArgentAccount extends Account {
     static readonly EXECUTION_FUNCTION_NAME = "__execute__";
@@ -305,20 +295,7 @@ export class ArgentAccount extends Account {
         const { response } = <{ response: string[] }>(
             await this.multiInvokeOrMultiCall("call", callParameters)
         );
-
-        const output: StringMap[] = [];
-        let tempResponse = response;
-
-        callParameters.forEach((call) => {
-            const parsedOutput = call.toContract.adaptOutput(
-                call.functionName,
-                tempResponse.join(" ")
-            );
-            const flattenedOutput = flattenStringMap(parsedOutput);
-            tempResponse.splice(0, flattenedOutput.length);
-            output.push(parsedOutput);
-        });
-
+        const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
     }
 
@@ -360,6 +337,11 @@ export class ArgentAccount extends Account {
         );
     }
 
+    /**
+     * Updates the guardian key in the contract
+     * @param newGuardianPrivateKey private key of the guardian to update
+     * @returns
+     */
     async setGuardian(newGuardianPrivateKey: string): Promise<string> {
         const guardianKeyPair = ellipticCurve.getKeyPair(
             toBN(newGuardianPrivateKey.substring(2), "hex")
@@ -386,29 +368,25 @@ export class ArgentAccount extends Account {
             hre
         );
 
-        const starkPrivateKey = generateRandomStarkPrivateKey();
-        const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
-        const publicKey = ellipticCurve.getStarkKey(keyPair);
+        const signer = generateKeys();
+        const guardian = generateKeys();
+
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy();
-        const privateKey = "0x" + starkPrivateKey.toString(16);
 
-        const guardianStarkPrivateKey = generateRandomStarkPrivateKey();
-        const guardianKeyPair = ellipticCurve.getKeyPair(guardianStarkPrivateKey);
-        const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
-        const guardianPrivateKey = "0x" + guardianStarkPrivateKey.toString(16);
         await contract.invoke("initialize", {
-            signer: BigInt(publicKey),
-            guardian: BigInt(guardianPublicKey)
+            signer: BigInt(signer.publicKey),
+            guardian: BigInt(guardian.publicKey)
         });
+
         return new ArgentAccount(
             contract,
-            privateKey,
-            publicKey,
-            keyPair,
-            guardianPrivateKey,
-            guardianPublicKey,
-            guardianKeyPair
+            signer.privateKey,
+            signer.publicKey,
+            signer.keyPair,
+            guardian.privateKey,
+            guardian.publicKey,
+            guardian.keyPair
         );
     }
 
