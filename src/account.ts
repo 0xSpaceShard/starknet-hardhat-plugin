@@ -2,7 +2,6 @@ import { Choice, InvokeResponse, StarknetContract, StringMap } from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
@@ -11,7 +10,6 @@ import {
     generateRandomStarkPrivateKey,
     handleAccountContractArtifacts,
     handleMultiCall,
-    sign,
     signMultiCall
 } from "./account-utils";
 import { flattenStringMap } from "./utils";
@@ -363,16 +361,22 @@ export class ArgentAccount extends Account {
     }
 
     async setGuardian(newGuardianPrivateKey: string): Promise<string> {
-        const guardianKeyPair = ellipticCurve.getKeyPair(toBN(newGuardianPrivateKey, "hex"));
+        const guardianKeyPair = ellipticCurve.getKeyPair(
+            toBN(newGuardianPrivateKey.substring(2), "hex")
+        );
         const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
 
         this.guardianPrivateKey = newGuardianPrivateKey;
         this.guardianPublicKey = guardianPublicKey;
         this.guardianKeyPair = guardianKeyPair;
 
-        return await this.starknetContract.invoke("change_guardian", {
-            new_guardian: guardianPublicKey
-        });
+        const call: CallParameters = {
+            functionName: "change_guardian",
+            toContract: this.starknetContract,
+            calldata: { new_guardian: BigInt(guardianPublicKey) }
+        };
+
+        return await this.multiInvoke([call]);
     }
 
     static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<ArgentAccount> {
@@ -393,7 +397,6 @@ export class ArgentAccount extends Account {
         const guardianKeyPair = ellipticCurve.getKeyPair(guardianStarkPrivateKey);
         const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
         const guardianPrivateKey = "0x" + guardianStarkPrivateKey.toString(16);
-
         await contract.invoke("initialize", {
             signer: BigInt(publicKey),
             guardian: BigInt(guardianPublicKey)

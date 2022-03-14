@@ -1,4 +1,4 @@
-import { Numeric, StarknetContract, StringMap } from "./types";
+import { StarknetContract, StringMap } from "./types";
 import { Call, hash, RawCalldata } from "starknet";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -58,6 +58,14 @@ export function signMultiCall(
     return signatures;
 }
 
+/**
+ * Prepares the calldata and hashes the message for the multicall execution
+ *
+ * @param accountAddress address of the account contract
+ * @param callParameters array witht the call parameters
+ * @param nonce current nonce
+ * @returns the message hash for the multicall and the arguments to execute it with
+ */
 export function handleMultiCall(
     accountAddress: string,
     callParameters: CallParameters[],
@@ -97,40 +105,6 @@ export function handleMultiCall(
         nonce: nonce
     };
     return { messageHash, args };
-}
-
-/**
- * Returns a signature which is the result of signing a message
- *
- * @param keyPair
- * @param accountAddress
- * @param nonce
- * @param functionSelector
- * @param toAddress
- * @param calldata
- * @returns the signature
- */
-export function sign(
-    keyPair: ec.KeyPair,
-    accountAddress: string,
-    nonce: BigNumberish,
-    functionSelector: string,
-    toAddress: string,
-    calldata: BigNumberish[]
-): Numeric[] {
-    const msgHash = hash.computeHashOnElements([
-        toBN(accountAddress.substring(2), "hex"),
-        toBN(toAddress.substring(2), "hex"),
-        functionSelector,
-        toBN(hash.computeHashOnElements(calldata).substring(2), "hex"),
-        nonce
-    ]);
-
-    const signedMessage = ellipticCurve
-        .sign(keyPair, BigInt(msgHash).toString(16))
-        .map((str) => BigInt(str));
-
-    return signedMessage;
 }
 
 export async function handleAccountContractArtifacts(

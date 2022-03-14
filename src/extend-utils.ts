@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
-import { AccountImplementationType, AccountType, StarknetContractFactory } from "./types";
+import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 
@@ -91,8 +91,8 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
 export async function deployAccountUtil(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
-): Promise<AccountType> {
-    let account: AccountType;
+): Promise<Account> {
+    let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.deployFromABI(hre);
@@ -112,8 +112,8 @@ export async function getAccountFromAddressUtil(
     privateKey: string,
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
-): Promise<AccountType> {
-    let account: AccountType;
+): Promise<Account> {
+    let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);

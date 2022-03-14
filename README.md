@@ -3,21 +3,25 @@
 If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
 ## Contents
-- [Install](#install)
-- [CLI commands](#cli-commands)
-- [API](#api)
-- [Testing](#test)
-  - [Important notes](#important-notes)
-  - [Examples](#test-examples)
-- [Configure the plugin](#configure-the-plugin)
-- [Account support](#account)
-- [More examples](#more-examples)
+
+-   [Install](#install)
+-   [CLI commands](#cli-commands)
+-   [API](#api)
+-   [Testing](#test)
+    -   [Important notes](#important-notes)
+    -   [Examples](#test-examples)
+-   [Configure the plugin](#configure-the-plugin)
+-   [Account support](#account)
+-   [More examples](#more-examples)
 
 ## Install
+
 ```
 npm install @shardlabs/starknet-hardhat-plugin --save-dev
 ```
+
 Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
+
 ```typescript
 import "@shardlabs/starknet-hardhat-plugin";
 // or
@@ -25,30 +29,38 @@ require("@shardlabs/starknet-hardhat-plugin");
 ```
 
 ### Requirements
+
 This plugin was tested with:
-- Node.js v12.22.4
-- npm/npx v7.21.1
-- Docker v20.10.8 (optional):
-  - Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
-  - If you opt for the containerized version, make sure you have a running Docker daemon.
-  - If you're experiencing Docker access issues, check [this](https://stackoverflow.com/questions/52364905/after-executing-following-code-of-dockerode-npm-getting-error-connect-eacces-v).
-- Linux / macOS:
-  - On Windows, we recommend using WSL 2.
+
+-   Node.js v12.22.4
+-   npm/npx v7.21.1
+-   Docker v20.10.8 (optional):
+    -   Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
+    -   If you opt for the containerized version, make sure you have a running Docker daemon.
+    -   If you're experiencing Docker access issues, check [this](https://stackoverflow.com/questions/52364905/after-executing-following-code-of-dockerode-npm-getting-error-connect-eacces-v).
+-   Linux / macOS:
+    -   On Windows, we recommend using WSL 2.
 
 ## CLI commands
+
 This plugin defines the following Hardhat commands (also called tasks):
+
 ### `starknet-compile`
+
 ```
 npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."]
 ```
+
 If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
 ### `starknet-deploy`
+
 ```
 npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <CONSTRUCTOR_ARGUMENTS>] [--salt <SALT>]
 ```
+
 If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
@@ -58,27 +70,32 @@ If the "--wait" flag is passed, the task will wait until the transaction status 
 The "--salt" parameter should be an hex string which, when provided, will add a salt to the contract address.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
+
 ```javascript
 module.exports = {
-  networks: {
-    myNetwork: {
-      url: "http://localhost:5000"
+    networks: {
+        myNetwork: {
+            url: "http://localhost:5000"
+        }
     }
-  }
-}
+};
 ```
+
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
 The Alpha networks are available by default, you don't need to define them in the config file; just pass:
-- `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
-- `--starknet-network alpha-mainnet` for Alpha Mainnet
+
+-   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
+-   `--starknet-network alpha-mainnet` for Alpha Mainnet
 
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
 ```
+
 You would typically use the input feature when deploying a single contract requiring constructor arguments. If you are deploying multiple contracts, they'll all use the same input.
 
 ### `starknet-verify`
+
 ```
 npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>]
 ```
@@ -88,6 +105,7 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
 ### `starknet-deploy-account`
+
 ```
 npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
@@ -99,6 +117,7 @@ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWall
 ```
 
 ### `starknet-invoke`
+
 ```
 npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>]
 ```
@@ -106,11 +125,13 @@ npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [-
 Invokes a function on the target contract.
 If the function takes any inputs, they should be passed as a single string, separated by space.
 If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
+
 ```
 npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20" --wallet MyWallet
 ```
 
 ### `starknet-call`
+
 ```
 npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--blockNumber <BLOCK_NUMBER>]
 ```
@@ -119,29 +140,37 @@ Calls a function on the target contract and returns its return value.
 If the function takes any inputs, they should be passed as a single string, separated by space.
 The pending block will always be queried by default, and if there's no pending block, the default behaviour is to query the last block. Using the `--blockNumber` argument will query the specified block.
 If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
+
 ```
 npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
 ```
 
 ### `run`
+
 No CLI options introduced, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
 
 ### `test`
+
 Introduces the `--starknet-network` option to the existing `hardhat test` task.
 
 ## API
+
 Adding this plugin to your project expands Hardhat's runtime with a `starknet` object. It can be imported with:
+
 ```typescript
 import { starknet } from "hardhat";
 // or
 const starknet = require("hardhat").starknet;
 ```
+
 To see all the utilities this object introduces, check [this](src/type-extensions.ts#L86) out.
 
 ## Testing
+
 Relying on the above described API makes it easier to interact with your contracts and test them.
 
 To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
+
 ```
 npx hardhat test
 ```
@@ -150,17 +179,19 @@ Read more about the network used in tests in the [Runtime network](#runtime-netw
 These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
-- `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
-- All function names, argument names and return value names should be referred to by the names specified in contract source files.
-- The argument of `getContractFactory` is the **name** or the **path** of the source of the target contract:
-  - if providing a path, it should be relative to the project root or the contracts directory:
-    - `getContractFactory("contracts/subdir/MyContract.cairo")`
-    - `getContractFactory("subdir/MyContract.cairo")`
-  - the extension can be omitted:
-    - `getContractFactory("subdir/MyContract")`
-    - `getContractFactory("MyContract")`
+
+-   `BigInt` is used because `felt` may be too big for javascript. Use it like `BigInt("10")` or, since ES2020, like `10n`.
+-   All function names, argument names and return value names should be referred to by the names specified in contract source files.
+-   The argument of `getContractFactory` is the **name** or the **path** of the source of the target contract:
+    -   if providing a path, it should be relative to the project root or the contracts directory:
+        -   `getContractFactory("contracts/subdir/MyContract.cairo")`
+        -   `getContractFactory("subdir/MyContract.cairo")`
+    -   the extension can be omitted:
+        -   `getContractFactory("subdir/MyContract")`
+        -   `getContractFactory("MyContract")`
 
 ### Test - setup
+
 ```typescript
 import { expect } from "chai";
 import { starknet } from "hardhat";
@@ -173,7 +204,8 @@ describe("My Test", function () {
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
 ```
 
-### Test - deploy / load contract 
+### Test - deploy / load contract
+
 ```typescript
   /**
    * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
@@ -181,7 +213,7 @@ describe("My Test", function () {
    * - constructor function constructor(initial_balance: felt)
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
-   */ 
+   */
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy({ initial_balance: 10 });
@@ -202,37 +234,42 @@ describe("My Test", function () {
 ```
 
 ### Test - arrays
+
 ```typescript
-  /**
-   * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
-   * The contract is assumed to have:
-   * - view function sum_array(a_len: felt, a: felt*) -> (res: felt)
-   */
-  it("should work with arrays", async function() {
+/**
+ * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
+ * The contract is assumed to have:
+ * - view function sum_array(a_len: felt, a: felt*) -> (res: felt)
+ */
+it("should work with arrays", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy(); // no constructor -> no constructor arguments
     const { res } = await contract.call("sum_array", { a: [1, 2, 3] });
     expect(res).to.deep.equal(BigInt(6));
-  });
+});
 ```
+
 ### Test - tuples
+
 ```typescript
-  /**
-   * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
-   * The contract is assumed to have:
-   * - view function sum_pair(pair: (felt, felt)) -> (res: felt)
-   */
-  it("should work with tuples", async function() {
+/**
+ * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
+ * The contract is assumed to have:
+ * - view function sum_pair(pair: (felt, felt)) -> (res: felt)
+ */
+it("should work with tuples", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = await contractFactory.deploy();
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
-  });
+});
 ```
 
 ### Test - accounts
+
 More detailed documentation can be found [here](#account).
+
 ```typescript
   /**
    * Assumes there is a file MyContract.cairo, together with OpenZeppelin Account.cairo file and its dependencies.
@@ -261,7 +298,9 @@ More detailed documentation can be found [here](#account).
 ```
 
 ### Test - L1-L2 communication (message exchange with Devnet)
+
 Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L91) for more info.
+
 ```typescript
   it("should exchange messages with Devnet", async function() {
     await starknet.devnet.loadL1MessagingContract(...);
@@ -279,37 +318,43 @@ Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 
 For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
 ## Configure the plugin
+
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
 ### Cairo version
+
 Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
 A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+
 ```javascript
 module.exports = {
   starknet: {
     // The default in this version of the plugin
-    dockerizedVersion: "0.7.1"
+    dockerizedVersion: "0.8.0"
   }
   ...
 };
 ```
 
 ### Existing virtual environment
+
 If you want to use an existing Python virtual environment, specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
+
 ```typescript
 module.exports = {
-  starknet: {
-    // venv: "active" <- for the active virtual environment
-    // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
-    venv: "<VENV_PATH>"
-  }
-}
+    starknet: {
+        // venv: "active" <- for the active virtual environment
+        // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
+        venv: "<VENV_PATH>"
+    }
+};
 ```
 
 ### Paths
+
 ```typescript
 module.exports = {
   paths: {
@@ -329,6 +374,7 @@ module.exports = {
 ```
 
 ### Runtime network
+
 To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
@@ -348,13 +394,15 @@ module.exports = {
 ```
 
 ### Wallet
+
 To configure a wallet for your project, specify it by using `wallets["walletName"]`.
 You can specify multiple wallets/accounts.
 
 The parameters for the wallet are:
-  - `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
-  - `modulePath`: The python module and wallet class of your chosen wallet provider;
-  - `accountPath`: The path where your wallet information will be saved.
+
+-   `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
+-   `modulePath`: The python module and wallet class of your chosen wallet provider;
+-   `accountPath`: The path where your wallet information will be saved.
 
 ```javascript
 module.exports = {
@@ -375,9 +423,11 @@ module.exports = {
   ...
 };
 ```
+
 Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
 
 To use the wallet in your scripts, use the `getWallet` utility function:
+
 ```typescript
 import { starknet } from "hardhat";
 ...
@@ -387,6 +437,7 @@ await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 ```
 
 ## Account
+
 An Account can be used to make proxy signed calls/transactions to other contracts.
 It's usage is exemplified [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts).
 Currently only the OpenZeppelin Account implementation is supported, and you are required to have the source files in your project.
@@ -394,37 +445,46 @@ Currently only the OpenZeppelin Account implementation is supported, and you are
 You can choose to deploy a new Account, or use an existing one.
 
 To deploy a new Account, use the `starknet` object's `deployAccount` method:
+
 ```typescript
-function deployAccount (
-    accountType: AccountImplementationType
-)
+function deployAccount(accountType: AccountImplementationType);
 ```
-  - `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+
+-   `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+
 ```typescript
 account = await starknet.deployAccount("OpenZeppelin");
 ```
 
 To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
+
 ```typescript
-function getAccountFromAddress (
+function getAccountFromAddress(
     address: string,
     privateKey: string,
     accountType: AccountImplementationType
-)
+);
 ```
-  - `address` is the address where the account you want to use is deployed.
-  - `privateKey` is the account's private key.
-  - `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+
+-   `address` is the address where the account you want to use is deployed.
+-   `privateKey` is the account's private key.
+-   `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
 
 ```typescript
-const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
+const account = await starknet.getAccountFromAddress(
+    accountAddress,
+    process.env.PRIVATE_KEY,
+    "OpenZeppelin"
+);
 ```
 
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
+
 ```typescript
 const { res: currBalance } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
 
 ## More examples
+
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).

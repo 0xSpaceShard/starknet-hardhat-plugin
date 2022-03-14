@@ -11,7 +11,6 @@ import { adaptLog } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
-import { ArgentAccount, OpenZeppelinAccount } from "./account";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -38,8 +37,6 @@ export type TxStatus =
 
 // Types of account implementations
 export type AccountImplementationType = "OpenZeppelin" | "ArgentAccount";
-
-export type AccountType = ArgentAccount | OpenZeppelinAccount;
 
 export type InvokeResponse = string;
 
