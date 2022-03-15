@@ -124,7 +124,6 @@ export abstract class Account {
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly EXECUTION_FUNCTION_NAME = "__execute__";
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
 
@@ -191,7 +190,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     getExecutionFunctionName(): string {
-        return OpenZeppelinAccount.EXECUTION_FUNCTION_NAME;
+        return "__execute__";
     }
 
     async getNonce(): Promise<string> {
@@ -204,7 +203,6 @@ export class OpenZeppelinAccount extends Account {
  * Wrapper for the Argent implementation of an Account
  */
 export class ArgentAccount extends Account {
-    static readonly EXECUTION_FUNCTION_NAME = "__execute__";
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
 
@@ -319,7 +317,7 @@ export class ArgentAccount extends Account {
     }
 
     getExecutionFunctionName(): string {
-        return ArgentAccount.EXECUTION_FUNCTION_NAME;
+        return "__execute__";
     }
 
     async getNonce(): Promise<string> {
