@@ -376,7 +376,10 @@ export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntim
     await starknetInteractAction("call", args, hre);
 }
 
-export async function starknetEstimateFeeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+export async function starknetEstimateFeeAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
     await starknetInteractAction("estimate_fee", args, hre);
 }
 
