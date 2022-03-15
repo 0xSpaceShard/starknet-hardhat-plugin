@@ -489,24 +489,18 @@ You can also use the Account object to perform multicalls/invokes:
 
 ```typescript
 /* Multi invoke */
-const amount1 = 10n;
-const amount2 = 20n;
+const amount = 10n;
 
 const invokeArray = [
     {
         toContract: mainContract,
         functionName: "increase_balance",
-        calldata: { amount1, amount2 }
+        calldata: { amount }
     },
     {
         toContract: mainContract,
         functionName: "increase_balance",
-        calldata: { amount1, amount2 }
-    },
-    {
-        toContract: mainContract,
-        functionName: "increase_balance",
-        calldata: { amount1, amount2 }
+        calldata: { amount }
     }
 ];
 
@@ -529,25 +523,11 @@ const callArray = [
         toContract: utilContract,
         functionName: "almost_equal",
         calldata: { a: 1, b: 1 }
-    },
-    {
-        toContract: utilContract,
-        functionName: "almost_equal",
-        calldata: { a: 1, b: 5 }
-    },
+    }
     {
         toContract: mainContract,
         functionName: "sum_array",
         calldata: { a: [1, 2, 3] }
-    },
-    {
-        toContract: mainContract,
-        functionName: "get_balance"
-    },
-    {
-        toContract: utilContract,
-        functionName: "almost_equal",
-        calldata: { a: 1, b: 1 }
     }
 ];
 
