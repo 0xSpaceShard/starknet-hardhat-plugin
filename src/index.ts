@@ -198,7 +198,6 @@ extendEnvironment((hre) => {
 
         deployAccount: async (accountType) => {
             const account = await deployAccountUtil(accountType, hre);
-            console.log(typeof account);
             return account;
         },
 

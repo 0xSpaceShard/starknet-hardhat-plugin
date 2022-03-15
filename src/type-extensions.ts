@@ -143,15 +143,13 @@ declare module "hardhat/types/runtime" {
 
             /**
              * Deploys an Account contract based on the ABI and the type of Account selected
-             * @param accountContract the case-sensitive contract name, same as {@link getContractFactory}
              * @param accountType the enumerator value of the type of Account to use
              * @returns an Account object
              */
-            deployAccount: (accountType: AccountImplementationType) => Promise<AccountType>;
+            deployAccount: (accountType: AccountImplementationType) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key
-             * @param accountContract the case-sensitive contract name, same as {@link getContractFactory}
              * @param address the address where the account is deployed
              * @param privateKey the private key of the account
              * @param accountType the enumerator value of the type of Account to use
@@ -161,7 +159,7 @@ declare module "hardhat/types/runtime" {
                 address: string,
                 privateKey: string,
                 accountType: AccountImplementationType
-            ) => Promise<AccountType>;
+            ) => Promise<Account>;
         };
     }
 

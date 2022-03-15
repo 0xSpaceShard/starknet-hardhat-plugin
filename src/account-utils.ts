@@ -52,17 +52,10 @@ export function signMultiCall(
     keyPair: ec.KeyPair,
     messageHash: string
 ): bigint[] {
-    let signatures: bigint[] = [];
-    if (publicKey !== "0") {
-        const signature = ellipticCurve
-            .sign(keyPair, BigInt(messageHash).toString(16))
-            .map((str) => BigInt(str));
-        signatures.push(signature[0]);
-        signatures.push(signature[1]);
-    } else {
-        signatures = signatures.concat([BigInt(0), BigInt(0)]);
+    if (publicKey === "0x0") {
+        return [0n, 0n];
     }
-    return signatures;
+    return ellipticCurve.sign(keyPair, BigInt(messageHash).toString(16)).map(BigInt);
 }
 
 /**
@@ -76,24 +69,24 @@ export function signMultiCall(
 export function handleMultiCall(
     accountAddress: string,
     callParameters: CallParameters[],
-    nonce: any
+    nonce: string
 ) {
-    const callArray: Call[] = [];
-
-    callParameters.forEach((callParameters) => {
-        callArray.push({
+    // Transform a CallParameters array into Call array, so it can be used by the hash functions
+    const callArray: Call[] = callParameters.map((callParameters) => {
+        return {
             contractAddress: callParameters.toContract.address,
             entrypoint: callParameters.functionName,
             calldata: callParameters.toContract.adaptInput(
                 callParameters.functionName,
                 callParameters.calldata
             )
-        });
+        };
     });
 
     const executeCallArray: executeCallParameters[] = [];
     let rawCalldata: RawCalldata = [];
 
+    // Parse the Call array to create the objects which will be accepted by the contract
     callArray.forEach((call) => {
         executeCallArray.push({
             to: BigInt(call.contractAddress),
@@ -111,6 +104,7 @@ export function handleMultiCall(
         calldata: rawCalldata,
         nonce: nonce
     };
+
     return { messageHash, args };
 }
 
@@ -192,17 +186,41 @@ async function assertArtifact(
     }
 }
 
+/**
+ * Parses the raw response of the multicall according to the input, into a structured array
+ * For example a multicall that performs 3 separate calls to different functions, a raw response could come as [ 6n, 2n , 3n, 5n, 10n, 15n], of which:
+ * - 6n and 2n represent the result array of the 1st response;
+ * - 3n, 5n and 10n represent the result array of the 2nd response;
+ * - 15n represents the result of the 3rd response.
+ * This function transforms that raw output into a structured one:
+ * [{ [6n, 2n] }, { [3n, 5n, 10n] }, { 15n }]
+ * In the same order of each call request in callParameters
+ *
+ * Since `adaptOutput` returns the response with the right size, i.e, it returns once the last element is adapted according to the ABI, we infer that
+ * response - adaptOutput(..., response) will give us the "remainder" of the raw response without the elements that were already adapted.
+ *
+ * @param response raw response of the multicall execution
+ * @param callParameters input of the multicall
+ * @returns a list with each output of the multicall as its own StringMap
+ */
 export function parseMulticallOutput(
     response: string[],
     callParameters: CallParameters[]
 ): StringMap[] {
     const output: StringMap[] = [];
+    // Helper array to store the raw response as parsed elements are removed
     const tempResponse = response;
 
     callParameters.forEach((call) => {
+        //For each input call, adapt the output
         const parsedOutput = call.toContract.adaptOutput(call.functionName, tempResponse.join(" "));
+
+        //Transform the structured parsed output for the call into an array
         const flattenedOutput = flattenStringMap(parsedOutput);
+
+        //"Remove" the flattened array from the original raw response
         tempResponse.splice(0, flattenedOutput.length);
+
         output.push(parsedOutput);
     });
     return output;

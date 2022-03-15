@@ -97,7 +97,7 @@ export async function deployAccountUtil(
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.deployFromABI(hre);
             break;
-        case "ArgentAccount":
+        case "Argent":
             account = await ArgentAccount.deployFromABI(hre);
             break;
         default:
@@ -118,7 +118,7 @@ export async function getAccountFromAddressUtil(
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
             break;
-        case "ArgentAccount":
+        case "Argent":
             account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
             break;
         default:

@@ -33,11 +33,13 @@ export abstract class Account {
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
      */
-    abstract invoke(
+    async invoke(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
-    ): Promise<InvokeResponse>;
+        calldata: StringMap = {}
+    ): Promise<InvokeResponse> {
+        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
+    }
 
     /**
      * Uses the account contract as a proxy to call a function on the target contract with a signature
@@ -46,15 +48,74 @@ export abstract class Account {
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
      */
-    abstract call(
+    async call(
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
-    ): Promise<StringMap>;
+    ): Promise<StringMap> {
+        const { response } = <{ response: string[] }>(
+            await this.invokeOrCall("call", toContract, functionName, calldata)
+        );
+        return toContract.adaptOutput(functionName, response.join(" "));
+    }
 
-    abstract multiCall(callParameters: CallParameters[]): Promise<StringMap>;
+    private async invokeOrCall(
+        choice: Choice,
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ) {
+        const call: CallParameters = {
+            functionName: functionName,
+            toContract: toContract,
+            calldata: calldata
+        };
 
-    abstract multiInvoke(callParameters: CallParameters[]): Promise<InvokeResponse>;
+        return await this.multiInvokeOrMultiCall(choice, [call]);
+    }
+
+    /**
+     * Performs a multicall through this account
+     * @param callParameters an array with the paramaters for each call
+     * @returns an array with each call's repsecting response object
+     */
+    async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
+        const { response } = <{ response: string[] }>(
+            await this.multiInvokeOrMultiCall("call", callParameters)
+        );
+        const output: StringMap[] = parseMulticallOutput(response, callParameters);
+        return output;
+    }
+
+    /**
+     * Performes multiple invokes as a single transaction through this account
+     * @param callParameters an array with the paramaters for each invoke
+     * @returns the transaction hash of the invoke
+     */
+    async multiInvoke(callParameters: CallParameters[]): Promise<string> {
+        // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
+        return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
+    }
+
+    async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
+        const { res: nonce } = await this.starknetContract.call("get_nonce");
+
+        const { messageHash, args } = handleMultiCall(
+            this.starknetContract.address,
+            callParameters,
+            nonce
+        );
+
+        const signatures = this.getSignatures(messageHash);
+        const options = { signature: signatures };
+
+        return await this.starknetContract[choice](
+            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
+            args,
+            options
+        );
+    }
+    abstract getSignatures(messageHash: string): bigint[];
 }
 
 /**
@@ -74,50 +135,8 @@ export class OpenZeppelinAccount extends Account {
         super(starknetContract, privateKey, publicKey, keyPair);
     }
 
-    /**
-     * Invoke a function of a contract through this account.
-     * @param toContract the contract being being invoked
-     * @param functionName the name of the function to invoke
-     * @param calldata the calldata to be passed to the function
-     */
-    async invoke(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata: StringMap = {}
-    ): Promise<InvokeResponse> {
-        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
-    }
-
-    /**
-     * Call a function of a contract through this account.
-     * @param toContract the contract being being called
-     * @param functionName the name of the function to call
-     * @param calldata the calldata to be passed to the function
-     */
-    async call(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ): Promise<StringMap> {
-        const { response } = <{ response: string[] }>(
-            await this.invokeOrCall("call", toContract, functionName, calldata)
-        );
-        return toContract.adaptOutput(functionName, response.join(" "));
-    }
-
-    private async invokeOrCall(
-        choice: Choice,
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ) {
-        const callArray: CallParameters = {
-            functionName: functionName,
-            toContract: toContract,
-            calldata: calldata
-        };
-
-        return await this.multiInvokeOrMultiCall(choice, [callArray]);
+    getSignatures(messageHash: string): bigint[] {
+        return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
     static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<OpenZeppelinAccount> {
@@ -168,49 +187,6 @@ export class OpenZeppelinAccount extends Account {
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
     }
-
-    /**
-     * Performs a multicall through this account
-     * @param callParameters an array with the paramaters for each call
-     * @returns an array with each call's repsecting response object
-     */
-    async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
-        const { response } = <{ response: string[] }>(
-            await this.multiInvokeOrMultiCall("call", callParameters)
-        );
-        const output: StringMap[] = parseMulticallOutput(response, callParameters);
-        return output;
-    }
-
-    /**
-     * Performes multiple invokes as a single transaction through this account
-     * @param callParameters an array with the paramaters for each invoke
-     * @returns the transaction hash of the invoke
-     */
-    async multiInvoke(callParameters: CallParameters[]): Promise<string> {
-        // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
-    }
-
-    private async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-
-        const { messageHash, args } = handleMultiCall(
-            this.starknetContract.address,
-            callParameters,
-            nonce
-        );
-
-        const signatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
-
-        const options = { signature: signatures };
-
-        return await this.starknetContract[choice](
-            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
-            args,
-            options
-        );
-    }
 }
 
 /**
@@ -240,101 +216,14 @@ export class ArgentAccount extends Account {
         this.guardianKeyPair = guardianKeyPair;
     }
 
-    /**
-     * Invoke a function of a contract through this account.
-     * @param toContract the contract being being invoked
-     * @param functionName the name of the function to invoke
-     * @param calldata the calldata to be passed to the function
-     */
-    async invoke(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata: StringMap = {}
-    ): Promise<InvokeResponse> {
-        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
-    }
-
-    /**
-     * Call a function of a contract through this account.
-     * @param toContract the contract being being called
-     * @param functionName the name of the function to call
-     * @param calldata the calldata to be passed to the function
-     */
-    async call(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ): Promise<StringMap> {
-        const { response } = <{ response: string[] }>(
-            await this.invokeOrCall("call", toContract, functionName, calldata)
-        );
-        return toContract.adaptOutput(functionName, response.join(" "));
-    }
-
-    private async invokeOrCall(
-        choice: Choice,
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ) {
-        const callArray: CallParameters = {
-            functionName: functionName,
-            toContract: toContract,
-            calldata: calldata
-        };
-
-        return await this.multiInvokeOrMultiCall(choice, [callArray]);
-    }
-
-    /**
-     * Performs a multicall through this account
-     * @param callParameters an array with the paramaters for each call
-     * @returns an array with each call's repsecting response object
-     */
-    async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
-        const { response } = <{ response: string[] }>(
-            await this.multiInvokeOrMultiCall("call", callParameters)
-        );
-        const output: StringMap[] = parseMulticallOutput(response, callParameters);
-        return output;
-    }
-
-    /**
-     * Performes multiple invokes as a single transaction through this account
-     * @param callParameters an array with the paramaters for each invoke
-     * @returns the transaction hash of the invoke
-     */
-    async multiInvoke(callParameters: CallParameters[]): Promise<string> {
-        // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
-    }
-
-    private async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
-        const { nonce: nonce } = await this.starknetContract.call("get_nonce");
-
-        const { messageHash, args } = handleMultiCall(
-            this.starknetContract.address,
-            callParameters,
-            nonce
-        );
-
+    getSignatures(messageHash: string): bigint[] {
         const signerSignatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
-
         const guardianSignatures = signMultiCall(
             this.guardianPublicKey,
             this.guardianKeyPair,
             messageHash
         );
-
-        const signatures = signerSignatures.concat(guardianSignatures);
-
-        const options = { signature: signatures };
-
-        return await this.starknetContract[choice](
-            ArgentAccount.EXECUTION_FUNCTION_NAME,
-            args,
-            options
-        );
+        return signerSignatures.concat(guardianSignatures);
     }
 
     /**

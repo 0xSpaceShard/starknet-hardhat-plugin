@@ -36,7 +36,7 @@ export type TxStatus =
     | "ACCEPTED_ON_L1";
 
 // Types of account implementations
-export type AccountImplementationType = "OpenZeppelin" | "ArgentAccount";
+export type AccountImplementationType = "OpenZeppelin" | "Argent";
 
 export type InvokeResponse = string;
 
