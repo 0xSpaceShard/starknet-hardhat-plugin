@@ -209,18 +209,14 @@ function handleSignature(signature: Array<Numeric>): string[] {
 }
 
 function parseFeeEstimation(raw: string): FeeEstimation {
-    for (const regex of [
-        /^\s*\{\s*"amount"\s*:\s*(?<amount>.*)\s*,\s*"unit"\s*:\s*"(?<unit>.*)"\s*\}\s*$/,
-        /^\s*\{\s*"unit"\s*:\s*(?<unit>.*)\s*,\s*"amount"\s*:\s*"(?<amount>.*)"\s*\}\s*$/
-    ]) {
-        const matched = raw.match(regex);
-        if (matched) {
-            return {
-                amount: BigInt(matched.groups.amount),
-                unit: matched.groups.unit
-            };
-        }
+    const matched = raw.match(/^The estimated fee is: (?<amount>.*) WEI \(.* ETH\)\./);
+    if (matched) {
+        return {
+            amount: BigInt(matched.groups.amount),
+            unit: "wei"
+        };
     }
+    throw new HardhatPluginError(PLUGIN_NAME, "Cannot parse fee estimation response.");
 }
 
 export interface DeployOptions {
