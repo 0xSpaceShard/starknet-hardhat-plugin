@@ -8,7 +8,7 @@ import {
 } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
-import { Account } from "./account";
+import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -63,6 +63,8 @@ type StarknetContractType = StarknetContract;
 type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
 type AccountType = Account;
+type OpenZeppelinAccountType = OpenZeppelinAccount;
+type ArgentAccountType = ArgentAccount;
 
 declare module "hardhat/types/runtime" {
     interface Devnet {
@@ -168,4 +170,6 @@ declare module "hardhat/types/runtime" {
     type StringMap = StringMapType;
     type Wallet = WalletConfig;
     type Account = AccountType;
+    type OpenZeppelinAccount = OpenZeppelinAccountType;
+    type ArgentAccount = ArgentAccountType;
 }
