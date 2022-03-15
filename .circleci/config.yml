@@ -173,7 +173,7 @@ commands:
                   command: echo $(curl -Ls https://api.github.com/repos/Shard-Labs/starknet-devnet/commits/master | jq -r .sha) > /tmp/devnet-version
             - run:
                   name: "Set cairo-lang version"
-                  command: echo 0.8.0 > /tmp/cairo-lang-version
+                  command: echo 0.7.1 > /tmp/cairo-lang-version
     restore_dependency_cache:
         parameters:
             platform:
