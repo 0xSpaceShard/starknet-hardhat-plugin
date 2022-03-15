@@ -98,7 +98,7 @@ export abstract class Account {
     }
 
     async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
+        const nonce = await this.getNonce();
 
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
@@ -109,13 +109,15 @@ export abstract class Account {
         const signatures = this.getSignatures(messageHash);
         const options = { signature: signatures };
 
-        return await this.starknetContract[choice](
-            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
-            args,
-            options
-        );
+        const executionFunctionName = this.getExecutionFunctionName();
+        return await this.starknetContract[choice](executionFunctionName, args, options);
     }
+
     abstract getSignatures(messageHash: string): bigint[];
+
+    abstract getExecutionFunctionName(): string;
+
+    abstract getNonce(): Promise<string>;
 }
 
 /**
@@ -186,6 +188,15 @@ export class OpenZeppelinAccount extends Account {
         }
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+    }
+
+    getExecutionFunctionName(): string {
+        return OpenZeppelinAccount.EXECUTION_FUNCTION_NAME;
+    }
+
+    async getNonce(): Promise<string> {
+        const { res: nonce } = await this.starknetContract.call("get_nonce");
+        return nonce.toString();
     }
 }
 
@@ -305,5 +316,14 @@ export class ArgentAccount extends Account {
         }
 
         return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null);
+    }
+
+    getExecutionFunctionName(): string {
+        return ArgentAccount.EXECUTION_FUNCTION_NAME;
+    }
+
+    async getNonce(): Promise<string> {
+        const { nonce: nonce } = await this.starknetContract.call("get_nonce");
+        return nonce.toString();
     }
 }
