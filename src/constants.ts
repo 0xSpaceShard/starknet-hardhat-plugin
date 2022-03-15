@@ -7,7 +7,7 @@ export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const DEFAULT_DOCKER_IMAGE_TAG = "0.7.1";
 
 export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
-export const ACCOUNT_ARTIFACTS_VERSION = "0.1.0";
+export const ACCOUNT_ARTIFACTS_VERSION = "0.2.0";
 export const GITHUB_ACCOUNT_ARTIFACTS_URL = `https://raw.githubusercontent.com/Shard-Labs/starknet-hardhat-example/plugin/${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/${ACCOUNT_ARTIFACTS_VERSION}/`;
 
 export const ALPHA_TESTNET = "alpha-goerli";
@@ -28,3 +28,5 @@ export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/cont
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
 export const PENDING_BLOCK_NUMBER = "pending";
+
+export const PREFIX_TRANSACTION = "StarkNet Transaction";

@@ -36,7 +36,7 @@ export type TxStatus =
     | "ACCEPTED_ON_L1";
 
 // Types of account implementations
-export type AccountImplementationType = "OpenZeppelin";
+export type AccountImplementationType = "OpenZeppelin" | "Argent";
 
 export type InvokeResponse = string;
 
@@ -359,10 +359,10 @@ export class StarknetContract {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
     private abiPath: string;
-    public address: string;
     private networkID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
+    private _address: string;
 
     constructor(config: StarknetContractConfig) {
         this.starknetWrapper = config.starknetWrapper;
@@ -371,6 +371,15 @@ export class StarknetContract {
         this.networkID = config.networkID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
+    }
+
+    get address(): string {
+        return this._address;
+    }
+
+    set address(address: string) {
+        this._address = address;
+        return;
     }
 
     private async invokeOrCall(
