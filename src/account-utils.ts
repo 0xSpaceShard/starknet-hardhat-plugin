@@ -151,8 +151,8 @@ export async function handleAccountContractArtifacts(
         "/"
     );
 
-    await assertArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
-    await assertArtifact(abiArtifact, artifactsTargetPath, artifactLocationUrl);
+    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
+    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactLocationUrl);
 
     return artifactsTargetPath;
 }
@@ -164,7 +164,7 @@ export async function handleAccountContractArtifacts(
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
  * @param artifactLocationUrl url to the github folder where the artifacts are stored
  */
-async function assertArtifact(
+async function ensureArtifact(
     artifact: string,
     artifactsTargetPath: string,
     artifactLocationUrl: string
