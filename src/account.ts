@@ -1,4 +1,5 @@
 import {
+    ContractInteractionFunction,
     FeeEstimation,
     InteractChoice,
     InvokeResponse,
@@ -45,7 +46,7 @@ export abstract class Account {
         functionName: string,
         calldata: StringMap = {}
     ): Promise<InvokeResponse> {
-        return (await this.interact("invoke", toContract, functionName, calldata)).toString();
+        return (await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)).toString();
     }
 
     /**
@@ -61,7 +62,7 @@ export abstract class Account {
         calldata?: StringMap
     ): Promise<StringMap> {
         const { response } = <{ response: string[] }>(
-            await this.interact("call", toContract, functionName, calldata)
+            await this.interact(InteractChoice.CALL, toContract, functionName, calldata)
         );
         return toContract.adaptOutput(functionName, response.join(" "));
     }
@@ -72,7 +73,7 @@ export abstract class Account {
         calldata?: StringMap
     ): Promise<FeeEstimation> {
         const executed = <string>(
-            await this.interact("estimate_fee", toContract, functionName, calldata)
+            await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata)
         );
         return parseFeeEstimation(executed);
     }
@@ -99,7 +100,7 @@ export abstract class Account {
      */
     async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
         const { response } = <{ response: string[] }>(
-            await this.multiInteract("call", callParameters)
+            await this.multiInteract(InteractChoice.CALL, callParameters)
         );
         const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
@@ -112,7 +113,7 @@ export abstract class Account {
      */
     async multiInvoke(callParameters: CallParameters[]): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInteract("invoke", callParameters)).toString();
+        return (await this.multiInteract(InteractChoice.INVOKE, callParameters)).toString();
     }
 
     /**
@@ -121,7 +122,7 @@ export abstract class Account {
      * @returns the total estimated fee
      */
     async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
-        const rawFeeEstimation = await this.multiInteract("estimate_fee", callParameters);
+        const rawFeeEstimation = await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
         return parseFeeEstimation(rawFeeEstimation);
     }
 
@@ -137,7 +138,7 @@ export abstract class Account {
         const signatures = this.getSignatures(messageHash);
         const options = { signature: signatures };
 
-        const contractInteractor = this.starknetContract[choice];
+        const contractInteractor = <ContractInteractionFunction>this.starknetContract[choice.internalCommand];
         const executionFunctionName = this.getExecutionFunctionName();
         return contractInteractor(executionFunctionName, args, options);
     }

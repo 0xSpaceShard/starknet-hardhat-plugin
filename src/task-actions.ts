@@ -369,18 +369,18 @@ function handleMultiPartContractVerification(
 }
 
 export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await starknetInteractAction("invoke", args, hre);
+    await starknetInteractAction(InteractChoice.INVOKE, args, hre);
 }
 
 export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await starknetInteractAction("call", args, hre);
+    await starknetInteractAction(InteractChoice.CALL, args, hre);
 }
 
 export async function starknetEstimateFeeAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    await starknetInteractAction("estimate_fee", args, hre);
+    await starknetInteractAction(InteractChoice.ESTIMATE_FEE, args, hre);
 }
 
 async function starknetInteractAction(
@@ -422,7 +422,7 @@ async function starknetInteractAction(
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 
-    if (choice === "invoke" && args.wait) {
+    if (choice === InteractChoice.INVOKE && args.wait) {
         // If the "wait" flag was passed as an argument, check the transaction hash for its status
         console.log(`Checking ${choice} transaction...`);
         const executedOutput = executed.stdout.toString();

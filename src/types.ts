@@ -72,9 +72,27 @@ export interface StringMap {
     [key: string]: any;
 }
 
-export type ExecuteChoice = "invoke" | "call";
+/**
+ * Enumerates the ways of interacting with a contract.
+ */
+export class InteractChoice {
+    static readonly INVOKE = new InteractChoice("invoke", "invoke");
 
-export type InteractChoice = ExecuteChoice | "estimate_fee";
+    static readonly CALL = new InteractChoice("call", "call");
+
+    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee");
+
+    private constructor(
+        /**
+         * The way it's supposed to be used passed to CLI commands.
+         */
+        public readonly cliCommand: string,
+        /**
+         * The way it's supposed to be used internally in code.
+         */
+        public readonly internalCommand: keyof StarknetContract
+    ) {}
+}
 
 export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
@@ -235,6 +253,12 @@ export interface CallOptions {
 }
 
 type InteractOptions = InvokeOptions | CallOptions;
+
+export type ContractInteractionFunction = (
+    functionName: string,
+    args?: StringMap,
+    options?: InteractOptions
+) => Promise<any>;
 
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
@@ -449,7 +473,7 @@ export class StarknetContract {
         args?: StringMap,
         options: InvokeOptions = {}
     ): Promise<InvokeResponse> {
-        const executed = await this.interact("invoke", functionName, args, options);
+        const executed = await this.interact(InteractChoice.INVOKE, functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<string>((resolve, reject) => {
@@ -506,7 +530,7 @@ export class StarknetContract {
             // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
         }
-        const executed = await this.interact("call", functionName, args, optionsCopy);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, optionsCopy);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
@@ -522,7 +546,12 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<FeeEstimation> {
-        const executed = await this.interact("estimate_fee", functionName, args, options);
+        const executed = await this.interact(
+            InteractChoice.ESTIMATE_FEE,
+            functionName,
+            args,
+            options
+        );
         return parseFeeEstimation(executed.stdout.toString());
     }
 
