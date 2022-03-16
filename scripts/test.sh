@@ -3,6 +3,8 @@ set -e
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
+./scripts/ensure-python.sh
+
 # setup example repo
 rm -rf starknet-hardhat-example
 git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
@@ -66,7 +68,7 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
 fi
 
 # install, build and run devnet
-export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
+# export PATH="$PATH:/opt/circleci/.pyenv/shims:/usr/local/bin"
 which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
 starknet-devnet & # assuming the default (localhost:5000)
