@@ -168,7 +168,7 @@ declare module "hardhat/types/runtime" {
 
             getTransaction: (txHash: string) => Promise<Transaction>;
 
-            getTxReceipt: (txHash: string) => Promise<TransactionReceipt>;
+            getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
         };
     }
 

@@ -146,11 +146,11 @@ export async function getTransactionUtil(
     return txReceipt;
 }
 
-export async function getTxReceiptUtil(
+export async function getTransactionReceiptUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<TransactionReceipt> {
-    const executed = await hre.starknetWrapper.getTxReceipt({
+    const executed = await hre.starknetWrapper.getTransactionReceipt({
         feederGatewayUrl: hre.config.starknet.networkUrl,
         gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash

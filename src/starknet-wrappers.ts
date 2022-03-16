@@ -134,10 +134,7 @@ export abstract class StarknetWrapper {
 
     public abstract interact(options: InteractWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareGetTxQueryOptions(
-        command: string,
-        options: TxHashQueryWrapperOptions
-    ): string[] {
+    protected prepareTxQueryOptions(command: string, options: TxHashQueryWrapperOptions): string[] {
         return [
             command,
             "--hash",
@@ -181,7 +178,9 @@ export abstract class StarknetWrapper {
 
     public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
 
-    public abstract getTxReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
+    public abstract getTransactionReceipt(
+        options: TxHashQueryWrapperOptions
+    ): Promise<ProcessResult>;
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 }
@@ -317,7 +316,7 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
-        const preparedOptions = this.prepareGetTxQueryOptions("tx_status", options);
+        const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
 
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
@@ -350,7 +349,7 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async getTxReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
+    public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {};
 
         const dockerOptions = {
@@ -358,7 +357,7 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
-        const preparedOptions = this.prepareGetTxQueryOptions("get_transaction_receipt", options);
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
 
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
@@ -377,7 +376,7 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
-        const preparedOptions = this.prepareGetTxQueryOptions("get_transaction", options);
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
 
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
@@ -455,7 +454,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareGetTxQueryOptions("tx_status", options);
+        const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
@@ -466,14 +465,14 @@ export class VenvWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async getTxReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareGetTxQueryOptions("get_transaction_receipt", options);
+    public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareGetTxQueryOptions("get_transaction", options);
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }

@@ -33,7 +33,7 @@ import {
     getAccountFromAddressUtil,
     getContractFactoryUtil,
     getTransactionUtil,
-    getTxReceiptUtil,
+    getTransactionReceiptUtil,
     getWalletUtil,
     shortStringToBigIntUtil
 } from "./extend-utils";
@@ -214,8 +214,8 @@ extendEnvironment((hre) => {
             return transaction;
         },
 
-        getTxReceipt: async (txHash) => {
-            const txReceipt = await getTxReceiptUtil(txHash, hre);
+        getTransactionReceipt: async (txHash) => {
+            const txReceipt = await getTransactionReceiptUtil(txHash, hre);
             return txReceipt;
         }
     };
