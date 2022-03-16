@@ -11,7 +11,7 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poet
 
 git clone -b master --single-branch git@github.com:Shard-Labs/starknet-devnet.git
 
-source "$HOME/.poetry/env"
+# source "$HOME/.poetry/env"
 
 cd starknet-devnet 
 poetry env use "$(which python)"
