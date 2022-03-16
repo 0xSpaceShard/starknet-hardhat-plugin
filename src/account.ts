@@ -38,7 +38,7 @@ export abstract class Account {
         functionName: string,
         calldata: StringMap = {}
     ): Promise<InvokeResponse> {
-        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
+        return (await this.interact("invoke", toContract, functionName, calldata)).toString();
     }
 
     /**
@@ -54,12 +54,12 @@ export abstract class Account {
         calldata?: StringMap
     ): Promise<StringMap> {
         const { response } = <{ response: string[] }>(
-            await this.invokeOrCall("call", toContract, functionName, calldata)
+            await this.interact("call", toContract, functionName, calldata)
         );
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
-    private async invokeOrCall(
+    private async interact(
         choice: ExecuteChoice,
         toContract: StarknetContract,
         functionName: string,
@@ -71,7 +71,7 @@ export abstract class Account {
             calldata: calldata
         };
 
-        return await this.multiInvokeOrMultiCall(choice, [call]);
+        return await this.multiInteract(choice, [call]);
     }
 
     /**
@@ -81,7 +81,7 @@ export abstract class Account {
      */
     async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
         const { response } = <{ response: string[] }>(
-            await this.multiInvokeOrMultiCall("call", callParameters)
+            await this.multiInteract("call", callParameters)
         );
         const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
@@ -94,10 +94,10 @@ export abstract class Account {
      */
     async multiInvoke(callParameters: CallParameters[]): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
+        return (await this.multiInteract("invoke", callParameters)).toString();
     }
 
-    async multiInvokeOrMultiCall(choice: ExecuteChoice, callParameters: CallParameters[]) {
+    async multiInteract(choice: ExecuteChoice, callParameters: CallParameters[]) {
         const nonce = await this.getNonce();
 
         const { messageHash, args } = handleMultiCall(
