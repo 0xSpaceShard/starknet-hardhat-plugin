@@ -1,4 +1,11 @@
-import { ExecuteChoice, InvokeResponse, StarknetContract, StringMap } from "./types";
+import {
+    FeeEstimation,
+    InteractChoice,
+    InvokeResponse,
+    parseFeeEstimation,
+    StarknetContract,
+    StringMap
+} from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -59,8 +66,19 @@ export abstract class Account {
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
+    async estimateFee(
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ): Promise<FeeEstimation> {
+        const executed = <string>(
+            await this.interact("estimate_fee", toContract, functionName, calldata)
+        );
+        return parseFeeEstimation(executed);
+    }
+
     private async interact(
-        choice: ExecuteChoice,
+        choice: InteractChoice,
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
@@ -97,7 +115,17 @@ export abstract class Account {
         return (await this.multiInteract("invoke", callParameters)).toString();
     }
 
-    async multiInteract(choice: ExecuteChoice, callParameters: CallParameters[]) {
+    /**
+     * Etimate the fee of the multicall.
+     * @param callParameters an array with the parameters for each call
+     * @returns the total estimated fee
+     */
+    async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
+        const rawFeeEstimation = await this.multiInteract("estimate_fee", callParameters);
+        return parseFeeEstimation(rawFeeEstimation);
+    }
+
+    async multiInteract(choice: InteractChoice, callParameters: CallParameters[]) {
         const nonce = await this.getNonce();
 
         const { messageHash, args } = handleMultiCall(

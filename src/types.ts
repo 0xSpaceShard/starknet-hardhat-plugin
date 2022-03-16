@@ -208,7 +208,7 @@ function handleSignature(signature: Array<Numeric>): string[] {
     return [];
 }
 
-function parseFeeEstimation(raw: string): FeeEstimation {
+export function parseFeeEstimation(raw: string): FeeEstimation {
     const matched = raw.match(/^The estimated fee is: (?<amount>.*) WEI \(.* ETH\)\./);
     if (matched) {
         return {
