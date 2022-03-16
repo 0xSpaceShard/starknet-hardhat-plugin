@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Ensures that pyenv uses the desired Python version (on Linux).
+
 set -e
 
 PY_VERSION=3.8.9
