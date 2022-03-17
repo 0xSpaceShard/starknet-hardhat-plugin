@@ -139,7 +139,7 @@ export async function getTransactionUtil(
         hash: txHash
     });
     if (executed.statusCode) {
-        const msg = `Could not get the transaction. Error: ${executed.stderr.toString()}`;
+        const msg = `Could not get the transaction. ${executed.stderr.toString()}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as Transaction;
