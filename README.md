@@ -326,10 +326,27 @@ Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 
 ### Test - fee estimation
 
 ```typescript
-  it("should estimate fee", async function () {
+it("should estimate fee", async function () {
     const fee = contract.estimateFee("increase_balance", { amount: 10n });
     console.log("Estimated fee:", fee.amount, fee.unit);
-  });
+});
+```
+
+### Test - transaction information and receipt
+
+```typescript
+it("should return transaction data and transaction receipt", async function () {
+    const contract: StarknetContract = await contractFactory.deploy();
+    console.log("Deployment transaction hash:", contract.deployTxHash);
+
+    const transaction = await starknet.getTransaction(contract.deployTxHash);
+    console.log(transaction);
+
+    const txHash = await contract.invoke("increase_balance", { amount: 10 });
+
+    const receipt = await starknet.getTransactionReceipt(txHash);
+    console.log(receipt);
+});
 ```
 
 For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
