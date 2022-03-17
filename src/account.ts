@@ -1,4 +1,11 @@
-import { Choice, InvokeResponse, StarknetContract, StringMap } from "./types";
+import {
+    ContractInteractionFunction,
+    FeeEstimation,
+    InteractChoice,
+    InvokeResponse,
+    StarknetContract,
+    StringMap
+} from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -38,7 +45,9 @@ export abstract class Account {
         functionName: string,
         calldata: StringMap = {}
     ): Promise<InvokeResponse> {
-        return (await this.invokeOrCall("invoke", toContract, functionName, calldata)).toString();
+        return (
+            await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)
+        ).toString();
     }
 
     /**
@@ -54,13 +63,21 @@ export abstract class Account {
         calldata?: StringMap
     ): Promise<StringMap> {
         const { response } = <{ response: string[] }>(
-            await this.invokeOrCall("call", toContract, functionName, calldata)
+            await this.interact(InteractChoice.CALL, toContract, functionName, calldata)
         );
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
-    private async invokeOrCall(
-        choice: Choice,
+    async estimateFee(
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ): Promise<FeeEstimation> {
+        return await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata);
+    }
+
+    private async interact(
+        choice: InteractChoice,
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
@@ -71,7 +88,7 @@ export abstract class Account {
             calldata: calldata
         };
 
-        return await this.multiInvokeOrMultiCall(choice, [call]);
+        return await this.multiInteract(choice, [call]);
     }
 
     /**
@@ -81,7 +98,7 @@ export abstract class Account {
      */
     async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
         const { response } = <{ response: string[] }>(
-            await this.multiInvokeOrMultiCall("call", callParameters)
+            await this.multiInteract(InteractChoice.CALL, callParameters)
         );
         const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
@@ -94,10 +111,19 @@ export abstract class Account {
      */
     async multiInvoke(callParameters: CallParameters[]): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInvokeOrMultiCall("invoke", callParameters)).toString();
+        return await this.multiInteract(InteractChoice.INVOKE, callParameters);
     }
 
-    async multiInvokeOrMultiCall(choice: Choice, callParameters: CallParameters[]) {
+    /**
+     * Etimate the fee of the multicall.
+     * @param callParameters an array with the parameters for each call
+     * @returns the total estimated fee
+     */
+    async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
+        return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
+    }
+
+    async multiInteract(choice: InteractChoice, callParameters: CallParameters[]) {
         const nonce = await this.getNonce();
 
         const { messageHash, args } = handleMultiCall(
@@ -109,8 +135,11 @@ export abstract class Account {
         const signatures = this.getSignatures(messageHash);
         const options = { signature: signatures };
 
+        const contractInteractor = (<ContractInteractionFunction>(
+            this.starknetContract[choice.internalCommand]
+        )).bind(this.starknetContract);
         const executionFunctionName = this.getExecutionFunctionName();
-        return await this.starknetContract[choice](executionFunctionName, args, options);
+        return contractInteractor(executionFunctionName, args, options);
     }
 
     abstract getSignatures(messageHash: string): bigint[];

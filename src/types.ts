@@ -50,6 +50,11 @@ export type TxFailureReason = {
     tx_id: string;
 };
 
+export type FeeEstimation = {
+    amount: bigint;
+    unit: string;
+};
+
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
@@ -67,7 +72,27 @@ export interface StringMap {
     [key: string]: any;
 }
 
-export type Choice = "call" | "invoke";
+/**
+ * Enumerates the ways of interacting with a contract.
+ */
+export class InteractChoice {
+    static readonly INVOKE = new InteractChoice("invoke", "invoke");
+
+    static readonly CALL = new InteractChoice("call", "call");
+
+    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee");
+
+    private constructor(
+        /**
+         * The way it's supposed to be used passed to CLI commands.
+         */
+        public readonly cliCommand: string,
+        /**
+         * The way it's supposed to be used internally in code.
+         */
+        public readonly internalCommand: keyof StarknetContract
+    ) {}
+}
 
 export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
@@ -193,13 +218,23 @@ function readAbi(abiPath: string): starknet.Abi {
 /**
  * Add `signature` elements to to `starknetArgs`, if there are any.
  * @param signature array of transaction signature elements
- * @param starknetArgs destination array
  */
 function handleSignature(signature: Array<Numeric>): string[] {
     if (signature) {
         return signature.map((s) => s.toString());
     }
     return [];
+}
+
+export function parseFeeEstimation(raw: string): FeeEstimation {
+    const matched = raw.match(/^The estimated fee is: (?<amount>.*) WEI \(.* ETH\)\./);
+    if (matched) {
+        return {
+            amount: BigInt(matched.groups.amount),
+            unit: "wei"
+        };
+    }
+    throw new HardhatPluginError(PLUGIN_NAME, "Cannot parse fee estimation response.");
 }
 
 export interface DeployOptions {
@@ -217,7 +252,13 @@ export interface CallOptions {
     blockNumber?: string;
 }
 
-type InvokeOrCallOptions = InvokeOptions | CallOptions;
+type InteractOptions = InvokeOptions | CallOptions;
+
+export type ContractInteractionFunction = (
+    functionName: string,
+    args?: StringMap,
+    options?: InteractOptions
+) => Promise<any>;
 
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
@@ -382,18 +423,18 @@ export class StarknetContract {
         return;
     }
 
-    private async invokeOrCall(
-        choice: Choice,
+    private async interact(
+        choice: InteractChoice,
         functionName: string,
         args?: StringMap,
-        options: InvokeOrCallOptions = {}
+        options: InteractOptions = {}
     ) {
         if (!this.address) {
             throw new HardhatPluginError(PLUGIN_NAME, "Contract not deployed");
         }
 
         const adaptedInput = this.adaptInput(functionName, args);
-        const executed = await this.starknetWrapper.invokeOrCall({
+        const executed = await this.starknetWrapper.interact({
             choice,
             address: this.address,
             abi: this.abiPath,
@@ -410,7 +451,8 @@ export class StarknetContract {
         });
 
         if (executed.statusCode) {
-            const msg = `Could not ${choice} ${functionName}:\n` + executed.stderr.toString();
+            const msg =
+                `Could not perform ${choice} on ${functionName}:\n` + executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
         }
@@ -431,7 +473,7 @@ export class StarknetContract {
         args?: StringMap,
         options: InvokeOptions = {}
     ): Promise<InvokeResponse> {
-        const executed = await this.invokeOrCall("invoke", functionName, args, options);
+        const executed = await this.interact(InteractChoice.INVOKE, functionName, args, options);
         const txHash = extractTxHash(executed.stdout.toString());
 
         return new Promise<string>((resolve, reject) => {
@@ -488,8 +530,29 @@ export class StarknetContract {
             // using || operator would not handle the zero case correctly
             optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
         }
-        const executed = await this.invokeOrCall("call", functionName, args, optionsCopy);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, optionsCopy);
         return this.adaptOutput(functionName, executed.stdout.toString());
+    }
+
+    /**
+     * Estimate the gas fee of executing `functionName` with `args`.
+     * @param functionName
+     * @param args arguments to Starknet contract function
+     * @param options optional execution specifications
+     * @returns an object containing the amount and the unit of the estimation
+     */
+    async estimateFee(
+        functionName: string,
+        args?: StringMap,
+        options: CallOptions = {}
+    ): Promise<FeeEstimation> {
+        const executed = await this.interact(
+            InteractChoice.ESTIMATE_FEE,
+            functionName,
+            args,
+            options
+        );
+        return parseFeeEstimation(executed.stdout.toString());
     }
 
     /**

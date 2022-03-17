@@ -1,4 +1,4 @@
-Error in plugin Starknet: Could not invoke increase_balance:
+Error in plugin Starknet: Could not perform invoke of increase_balance:
 Error: AssertionError: Expected at least 2 inputs, got 1.
 
 
