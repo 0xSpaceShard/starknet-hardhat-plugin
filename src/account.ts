@@ -3,7 +3,6 @@ import {
     FeeEstimation,
     InteractChoice,
     InvokeResponse,
-    parseFeeEstimation,
     StarknetContract,
     StringMap
 } from "./types";
@@ -46,7 +45,9 @@ export abstract class Account {
         functionName: string,
         calldata: StringMap = {}
     ): Promise<InvokeResponse> {
-        return (await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)).toString();
+        return (
+            await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)
+        ).toString();
     }
 
     /**
@@ -72,10 +73,7 @@ export abstract class Account {
         functionName: string,
         calldata?: StringMap
     ): Promise<FeeEstimation> {
-        const executed = <string>(
-            await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata)
-        );
-        return parseFeeEstimation(executed);
+        return await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata);
     }
 
     private async interact(
@@ -113,7 +111,7 @@ export abstract class Account {
      */
     async multiInvoke(callParameters: CallParameters[]): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return (await this.multiInteract(InteractChoice.INVOKE, callParameters)).toString();
+        return await this.multiInteract(InteractChoice.INVOKE, callParameters);
     }
 
     /**
@@ -122,8 +120,7 @@ export abstract class Account {
      * @returns the total estimated fee
      */
     async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
-        const rawFeeEstimation = await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
-        return parseFeeEstimation(rawFeeEstimation);
+        return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
     }
 
     async multiInteract(choice: InteractChoice, callParameters: CallParameters[]) {
@@ -138,7 +135,9 @@ export abstract class Account {
         const signatures = this.getSignatures(messageHash);
         const options = { signature: signatures };
 
-        const contractInteractor = <ContractInteractionFunction>this.starknetContract[choice.internalCommand];
+        const contractInteractor = (<ContractInteractionFunction>(
+            this.starknetContract[choice.internalCommand]
+        )).bind(this.starknetContract);
         const executionFunctionName = this.getExecutionFunctionName();
         return contractInteractor(executionFunctionName, args, options);
     }

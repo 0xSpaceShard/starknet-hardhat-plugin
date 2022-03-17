@@ -417,14 +417,16 @@ async function starknetInteractAction(
     const statusCode = processExecuted(executed, true);
 
     if (statusCode) {
-        const msg = `Could not ${choice} ${args.function}:\n` + executed.stderr.toString();
+        const msg =
+            `Could not perform ${choice.cliCommand} of ${args.function}:\n` +
+            executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 
     if (choice === InteractChoice.INVOKE && args.wait) {
         // If the "wait" flag was passed as an argument, check the transaction hash for its status
-        console.log(`Checking ${choice} transaction...`);
+        console.log("Checking transaction...");
         const executedOutput = executed.stdout.toString();
         const txHash = extractTxHash(executedOutput);
         await new Promise<void>((resolve, reject) =>
