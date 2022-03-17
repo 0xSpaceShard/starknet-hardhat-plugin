@@ -340,6 +340,7 @@ export class StarknetContractFactory {
             gatewayUrl: this.gatewayUrl
         });
         contract.address = address;
+        contract.deployTxHash = txHash;
 
         return new Promise<StarknetContract>((resolve, reject) => {
             iterativelyCheckStatus(
@@ -404,6 +405,7 @@ export class StarknetContract {
     private gatewayUrl: string;
     private feederGatewayUrl: string;
     private _address: string;
+    public deployTxHash: string;
 
     constructor(config: StarknetContractConfig) {
         this.starknetWrapper = config.starknetWrapper;

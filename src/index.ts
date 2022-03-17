@@ -32,6 +32,8 @@ import {
     deployAccountUtil,
     getAccountFromAddressUtil,
     getContractFactoryUtil,
+    getTransactionUtil,
+    getTransactionReceiptUtil,
     getWalletUtil,
     shortStringToBigIntUtil
 } from "./extend-utils";
@@ -205,6 +207,16 @@ extendEnvironment((hre) => {
         getAccountFromAddress: async (address, privateKey, accountType) => {
             const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
             return account;
+        },
+
+        getTransaction: async (txHash) => {
+            const transaction = await getTransactionUtil(txHash, hre);
+            return transaction;
+        },
+
+        getTransactionReceipt: async (txHash) => {
+            const txReceipt = await getTransactionReceiptUtil(txHash, hre);
+            return txReceipt;
         }
     };
 });

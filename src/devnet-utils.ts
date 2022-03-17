@@ -3,8 +3,9 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { PLUGIN_NAME } from "./constants";
+import { L2ToL1Message } from "./starknet-types";
 
-interface L1Message {
+interface L1ToL2Message {
     address: string;
     args: {
         from_address: string;
@@ -21,17 +22,11 @@ interface L1Message {
     transactionIndex: number;
 }
 
-interface L2Message {
-    from_address: string;
-    to_address: string;
-    payload: Array<string>;
-}
-
 export interface FlushResponse {
     l1_provider: string;
     consumed_messages: {
-        from_l1: Array<L1Message>;
-        from_l2: Array<L2Message>;
+        from_l1: Array<L1ToL2Message>;
+        from_l2: Array<L2ToL1Message>;
     };
 }
 
