@@ -1,0 +1,5 @@
+Error in plugin Starknet: Could not perform call of sum_points_to_tuple:
+Error: AssertionError: Expected at least 4 inputs, got 3.
+
+
+For more info run Hardhat with --show-stack-traces
