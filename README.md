@@ -133,17 +133,25 @@ npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --f
 ### `starknet-call`
 
 ```
-npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--blockNumber <BLOCK_NUMBER>]
+npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--block-number <BLOCK_NUMBER>]
 ```
 
 Calls a function on the target contract and returns its return value.
 If the function takes any inputs, they should be passed as a single string, separated by space.
-The pending block will always be queried by default, and if there's no pending block, the default behaviour is to query the last block. Using the `--blockNumber` argument will query the specified block.
+The pending block will always be queried by default, and if there's no pending block, the default behaviour is to query the last block. Using the `--block-number` argument will query the specified block.
 If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
 
 ```
 npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
 ```
+
+### `starknet-estimate-fee`
+
+```
+npx hardhat starknet-estimate-fee [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--block-number <BLOCK_NUMBER>]
+```
+
+Estimates the gas fee of a function execution.
 
 ### `run`
 
@@ -315,6 +323,15 @@ Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 
   });
 ```
 
+### Test - fee estimation
+
+```typescript
+  it("should estimate fee", async function () {
+    const fee = contract.estimateFee("increase_balance", { amount: 10n });
+    console.log("Estimated fee:", fee.amount, fee.unit);
+  });
+```
+
 For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
 ## Configure the plugin
@@ -444,16 +461,21 @@ Currently only the OpenZeppelin Account implementation is supported, and you are
 
 You can choose to deploy a new Account, or use an existing one.
 
+### Supported Account Implementations
+
+-   `"OpenZeppelin"`
+-   `"Argent"`
+
 To deploy a new Account, use the `starknet` object's `deployAccount` method:
 
 ```typescript
 function deployAccount(accountType: AccountImplementationType);
 ```
 
--   `accountType` is the implementation of the Account that you want to use. Currently only `"OpenZeppelin"` is supported.
+-   `accountType` is the implementation of the Account that you want to use.
 
 ```typescript
-account = await starknet.deployAccount("OpenZeppelin");
+const account = await starknet.deployAccount("OpenZeppelin");
 ```
 
 To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
@@ -468,13 +490,13 @@ function getAccountFromAddress(
 
 -   `address` is the address where the account you want to use is deployed.
 -   `privateKey` is the account's private key.
--   `accountType` is the implementation of the Account that you want to use. `"OpenZeppelin"` and `"ArgentAccount"` are the 2 supported accounts.
+-   `accountType` is the implementation of the Account that you want to use.
 
 ```typescript
 const account = await starknet.getAccountFromAddress(
     accountAddress,
     process.env.PRIVATE_KEY,
-    "OpenZeppelin" // or "ArgentAccount"
+    "OpenZeppelin"
 );
 ```
 
@@ -485,53 +507,24 @@ const { res: currBalance } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
 
-You can also use the Account object to perform multicalls/invokes:
+You can also use the Account object to perform multi{calls, invokes, fee estimations}.
 
 ```typescript
-/* Multi invoke */
-const amount = 10n;
-
 const invokeArray = [
     {
-        toContract: mainContract,
+        toContract: contract1,
         functionName: "increase_balance",
-        calldata: { amount }
+        calldata: { amount: 10n }
     },
     {
-        toContract: mainContract,
+        toContract: contract2,
         functionName: "increase_balance",
-        calldata: { amount }
+        calldata: { amount: 20n }
     }
 ];
-
-const txHashArray = await account.multiInvoke(invokeArray);
-
-/* Multi call */
-
-const callArray = [
-    {
-        toContract: mainContract,
-        functionName: "sum_points_to_tuple",
-        calldata: {
-            points: [
-                { x: BigNumber.from(1), y: BigNumber.from(2) },
-                { x: 3, y: 4 }
-            ]
-        }
-    },
-    {
-        toContract: utilContract,
-        functionName: "almost_equal",
-        calldata: { a: 1, b: 1 }
-    }
-    {
-        toContract: mainContract,
-        functionName: "sum_array",
-        calldata: { a: [1, 2, 3] }
-    }
-];
-
-const results = await account.multiCall(callArray);
+const fee = await account.multiEstimateFee(invokeArray);
+const txHash = await account.multiInvoke(invokeArray);
+const results = await account.multiCall(invokeArray);
 ```
 
 OpenZeppelin and Argent account implementations work pretty much the same way, however Argent's has the additional signature verifications of a Guardian.
@@ -540,15 +533,14 @@ A key pair is generated for the Guardian the same way it is for the Signer, howe
 ```typescript
 import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";
 
-let account: ArgentAccount;
-account = (await starknet.deployAccount("ArgentAccount")) as ArgentAccount;
+const account: ArgentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
 
 // or
 
 const loadedAccount = (await starknet.getAccountFromAddress(
     accountAddress,
     privateKey,
-    "ArgentAccount"
+    "Argent"
 )) as ArgentAccount;
 ```
 
