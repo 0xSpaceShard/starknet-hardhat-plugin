@@ -1,7 +1,11 @@
 import {
+    CallOptions,
     ContractInteractionFunction,
+    EstimateFeeOptions,
     FeeEstimation,
     InteractChoice,
+    InteractOptions,
+    InvokeOptions,
     InvokeResponse,
     StarknetContract,
     StringMap
@@ -43,10 +47,11 @@ export abstract class Account {
     async invoke(
         toContract: StarknetContract,
         functionName: string,
-        calldata: StringMap = {}
+        calldata?: StringMap,
+        options?: InvokeOptions
     ): Promise<InvokeResponse> {
         return (
-            await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)
+            await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata, options)
         ).toString();
     }
 
@@ -60,10 +65,11 @@ export abstract class Account {
     async call(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
+        calldata?: StringMap,
+        options?: CallOptions
     ): Promise<StringMap> {
         const { response } = <{ response: string[] }>(
-            await this.interact(InteractChoice.CALL, toContract, functionName, calldata)
+            await this.interact(InteractChoice.CALL, toContract, functionName, calldata, options)
         );
         return toContract.adaptOutput(functionName, response.join(" "));
     }
@@ -71,16 +77,24 @@ export abstract class Account {
     async estimateFee(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
+        calldata?: StringMap,
+        options?: EstimateFeeOptions
     ): Promise<FeeEstimation> {
-        return await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata);
+        return await this.interact(
+            InteractChoice.ESTIMATE_FEE,
+            toContract,
+            functionName,
+            calldata,
+            options
+        );
     }
 
     private async interact(
         choice: InteractChoice,
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
+        calldata?: StringMap,
+        options?: InteractOptions
     ) {
         const call: CallParameters = {
             functionName: functionName,
@@ -88,7 +102,7 @@ export abstract class Account {
             calldata: calldata
         };
 
-        return await this.multiInteract(choice, [call]);
+        return await this.multiInteract(choice, [call], options);
     }
 
     /**
@@ -96,9 +110,12 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
      */
-    async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
+    async multiCall(
+        callParameters: CallParameters[],
+        options?: CallOptions
+    ): Promise<StringMap[]> {
         const { response } = <{ response: string[] }>(
-            await this.multiInteract(InteractChoice.CALL, callParameters)
+            await this.multiInteract(InteractChoice.CALL, callParameters, options)
         );
         const output: StringMap[] = parseMulticallOutput(response, callParameters);
         return output;
@@ -109,9 +126,12 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each invoke
      * @returns the transaction hash of the invoke
      */
-    async multiInvoke(callParameters: CallParameters[]): Promise<string> {
+    async multiInvoke(
+        callParameters: CallParameters[],
+        options?: InvokeOptions
+    ): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
-        return await this.multiInteract(InteractChoice.INVOKE, callParameters);
+        return await this.multiInteract(InteractChoice.INVOKE, callParameters, options);
     }
 
     /**
@@ -119,12 +139,19 @@ export abstract class Account {
      * @param callParameters an array with the parameters for each call
      * @returns the total estimated fee
      */
-    async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
-        return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
+    async multiEstimateFee(
+        callParameters: CallParameters[],
+        options?: EstimateFeeOptions
+    ): Promise<FeeEstimation> {
+        return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters, options);
     }
 
-    async multiInteract(choice: InteractChoice, callParameters: CallParameters[]) {
-        const nonce = await this.getNonce();
+    async multiInteract(
+        choice: InteractChoice,
+        callParameters: CallParameters[],
+        options: InteractOptions = {}
+    ) {
+        const nonce = options?.nonce?.toString() || (await this.getNonce());
 
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
@@ -133,20 +160,20 @@ export abstract class Account {
         );
 
         const signatures = this.getSignatures(messageHash);
-        const options = { signature: signatures };
+        const contractInteractOptions = { signature: signatures, ...options };
 
         const contractInteractor = (<ContractInteractionFunction>(
             this.starknetContract[choice.internalCommand]
         )).bind(this.starknetContract);
         const executionFunctionName = this.getExecutionFunctionName();
-        return contractInteractor(executionFunctionName, args, options);
+        return contractInteractor(executionFunctionName, args, contractInteractOptions);
     }
 
-    abstract getSignatures(messageHash: string): bigint[];
+    protected abstract getSignatures(messageHash: string): bigint[];
 
-    abstract getExecutionFunctionName(): string;
+    protected abstract getExecutionFunctionName(): string;
 
-    abstract getNonce(): Promise<string>;
+    protected abstract getNonce(): Promise<string>;
 }
 
 /**

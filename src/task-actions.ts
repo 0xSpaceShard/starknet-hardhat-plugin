@@ -411,7 +411,9 @@ async function starknetInteractAction(
         gatewayUrl: gatewayUrl,
         feederGatewayUrl: gatewayUrl,
         blockNumber: args.blockNumber ? args.blockNumber : undefined,
-        networkID: wallet ? args.starknetNetwork : undefined
+        networkID: wallet ? args.starknetNetwork : undefined,
+        maxFee: args.maxFee ? args.maxFee : undefined,
+        nonce: args.nonce ? args.nonce : undefined
     });
 
     const statusCode = processExecuted(executed, true);

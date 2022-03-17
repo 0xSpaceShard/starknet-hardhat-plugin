@@ -157,7 +157,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming constructor input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"\n` +
+            "Pass them as a single string; e.g. --inputs '1 2 3'\n" +
             "You would typically use this feature when deploying a single contract.\n" +
             "If you're deploying multiple contracts, they'll all use the same input."
     )
@@ -243,13 +243,14 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
         "wallet",
         "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when invoking."
     )
+    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
     .setAction(starknetInvokeAction);
 
 task("starknet-call", "Invokes a function on a contract in the provided address.")
@@ -261,7 +262,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -272,6 +273,8 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "blockNumber",
         "The number of the block to call. If omitted, the pending block will be queried."
     )
+    .addOptionalParam("nonce", "The nonce to provide to your account")
+    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
     .setAction(starknetCallAction);
 
 task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
@@ -283,7 +286,7 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -294,6 +297,7 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
         "blockNumber",
         "The number of the block to call. If omitted, the pending block will be queried."
     )
+    .addOptionalParam("nonce", "The nonce to provide to your account")
     .setAction(starknetEstimateFeeAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")

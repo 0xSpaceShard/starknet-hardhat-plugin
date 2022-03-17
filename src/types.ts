@@ -244,15 +244,21 @@ export interface DeployOptions {
 export interface InvokeOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
 export interface CallOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
     blockNumber?: string;
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
-type InteractOptions = InvokeOptions | CallOptions;
+export type EstimateFeeOptions = CallOptions;
+
+export type InteractOptions = InvokeOptions | CallOptions | EstimateFeeOptions;
 
 export type ContractInteractionFunction = (
     functionName: string,
@@ -449,12 +455,15 @@ export class StarknetContract {
             networkID: this.networkID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
-            blockNumber: "blockNumber" in options ? options.blockNumber : undefined
+            blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
+            maxFee: options.maxFee ? options.maxFee.toString() : undefined,
+            nonce: options.nonce ? options.maxFee.toString() : undefined
         });
 
         if (executed.statusCode) {
             const msg =
-                `Could not perform ${choice} on ${functionName}:\n` + executed.stderr.toString();
+                `Could not perform ${choice.cliCommand} on ${functionName}:\n` +
+                executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
         }
@@ -546,7 +555,7 @@ export class StarknetContract {
     async estimateFee(
         functionName: string,
         args?: StringMap,
-        options: CallOptions = {}
+        options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,

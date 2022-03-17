@@ -22,6 +22,8 @@ interface DeployWrapperOptions {
 }
 
 interface InteractWrapperOptions {
+    maxFee: string;
+    nonce: string;
     choice: InteractChoice;
     address: string;
     abi: string;
@@ -127,6 +129,14 @@ export abstract class StarknetWrapper {
             }
         } else {
             prepared.push("--no_wallet");
+        }
+
+        if (options.maxFee) {
+            prepared.push("--max_fee", options.maxFee);
+        }
+
+        if (options.nonce) {
+            prepared.push("--nonce", options.nonce);
         }
 
         return prepared;
