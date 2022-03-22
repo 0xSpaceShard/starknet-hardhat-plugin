@@ -52,11 +52,13 @@ export function adaptUrl(url: string): string {
 
 export function getDefaultHttpNetworkConfig(
     url: string,
-    verificationUrl: string
+    verificationUrl: string,
+    chainID: string
 ): HttpNetworkConfig {
     return {
         url,
-        verificationUrl: verificationUrl,
+        verificationUrl,
+        chainID,
         accounts: undefined,
         gas: undefined,
         gasMultiplier: undefined,

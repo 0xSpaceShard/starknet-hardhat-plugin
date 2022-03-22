@@ -34,6 +34,7 @@ interface InteractWrapperOptions {
     account?: string;
     accountDir?: string;
     networkID?: string;
+    chainID?: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
     blockNumber?: string;
@@ -120,6 +121,7 @@ export abstract class StarknetWrapper {
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
             prepared.push("--network_id", options.networkID);
+            prepared.push("--chain_id", options.chainID);
 
             if (options.account) {
                 prepared.push("--account", options.account);

@@ -12,7 +12,9 @@ import {
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
     VOYAGER_MAINNET_CONTRACT_API_URL,
-    DEFAULT_STARKNET_NETWORK
+    DEFAULT_STARKNET_NETWORK,
+    TESTNET_CHAIN_ID,
+    ALPHA_MAINNET_CHAIN_ID
 } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
@@ -92,14 +94,16 @@ extendConfig((config: HardhatConfig) => {
     if (!config.networks.alpha) {
         config.networks.alpha = getDefaultHttpNetworkConfig(
             ALPHA_URL,
-            VOYAGER_GOERLI_CONTRACT_API_URL
+            VOYAGER_GOERLI_CONTRACT_API_URL,
+            TESTNET_CHAIN_ID
         );
     }
 
     if (!config.networks.alphaMainnet) {
         config.networks.alphaMainnet = getDefaultHttpNetworkConfig(
             ALPHA_MAINNET_URL,
-            VOYAGER_MAINNET_CONTRACT_API_URL
+            VOYAGER_MAINNET_CONTRACT_API_URL,
+            ALPHA_MAINNET_CHAIN_ID
         );
     }
 });
@@ -117,6 +121,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
         "starknet.network in hardhat.config"
     );
     config.starknet.networkUrl = networkConfig.url;
+    config.starknet.networkConfig = networkConfig;
 });
 
 // add venv wrapper or docker wrapper of starknet

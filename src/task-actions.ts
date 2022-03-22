@@ -502,6 +502,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     }
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
+    hre.config.starknet.networkConfig = networkConfig;
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 

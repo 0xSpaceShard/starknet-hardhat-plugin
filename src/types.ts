@@ -59,6 +59,7 @@ export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
     networkID: string;
+    chainID: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
@@ -273,6 +274,7 @@ export class StarknetContractFactory {
     private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
     private networkID: string;
+    private chainID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -281,6 +283,7 @@ export class StarknetContractFactory {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.networkID = config.networkID;
+        this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -342,6 +345,7 @@ export class StarknetContractFactory {
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
             networkID: this.networkID,
+            chainID: this.chainID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -391,6 +395,7 @@ export class StarknetContractFactory {
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
             networkID: this.networkID,
+            chainID: this.chainID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -408,6 +413,7 @@ export class StarknetContract {
     private abi: starknet.Abi;
     private abiPath: string;
     private networkID: string;
+    private chainID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
     private _address: string;
@@ -453,6 +459,7 @@ export class StarknetContract {
             account: options.wallet?.accountName,
             accountDir: options.wallet?.accountPath,
             networkID: this.networkID,
+            chainID: this.chainID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,

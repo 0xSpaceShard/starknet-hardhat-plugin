@@ -69,7 +69,8 @@ export function signMultiCall(
 export function handleMultiCall(
     accountAddress: string,
     callParameters: CallParameters[],
-    nonce: string
+    nonce: string,
+    maxFee: string
 ) {
     // Transform a CallParameters array into Call array, so it can be used by the hash functions
     const callArray: Call[] = callParameters.map((callParameters) => {
@@ -97,7 +98,7 @@ export function handleMultiCall(
         rawCalldata = rawCalldata.concat(call.calldata);
     });
 
-    const messageHash = hash.hashMulticall(accountAddress, callArray, nonce, "0");
+    const messageHash = hash.hashMulticall(accountAddress, callArray, nonce, maxFee);
 
     const args = {
         call_array: executeCallArray,

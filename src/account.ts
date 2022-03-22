@@ -110,10 +110,7 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
      */
-    async multiCall(
-        callParameters: CallParameters[],
-        options?: CallOptions
-    ): Promise<StringMap[]> {
+    async multiCall(callParameters: CallParameters[], options?: CallOptions): Promise<StringMap[]> {
         const { response } = <{ response: string[] }>(
             await this.multiInteract(InteractChoice.CALL, callParameters, options)
         );
@@ -126,10 +123,7 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each invoke
      * @returns the transaction hash of the invoke
      */
-    async multiInvoke(
-        callParameters: CallParameters[],
-        options?: InvokeOptions
-    ): Promise<string> {
+    async multiInvoke(callParameters: CallParameters[], options?: InvokeOptions): Promise<string> {
         // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
         return await this.multiInteract(InteractChoice.INVOKE, callParameters, options);
     }
@@ -152,11 +146,14 @@ export abstract class Account {
         options: InteractOptions = {}
     ) {
         const nonce = options?.nonce?.toString() || (await this.getNonce());
+        const maxFee = "0x" + (options?.maxFee?.toString(16) || "0");
 
+        console.log("DEBUG nonce maxfee options", nonce, maxFee, options);
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
             callParameters,
-            nonce
+            nonce,
+            maxFee
         );
 
         const signatures = this.getSignatures(messageHash);
