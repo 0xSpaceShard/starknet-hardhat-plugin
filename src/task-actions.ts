@@ -155,7 +155,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 file,
                 output: outputPath,
                 abi: abiPath,
-                cairoPath
+                cairoPath,
+                accountContract: args.accountContract
             });
 
             statusCode += processExecuted(executed, true);

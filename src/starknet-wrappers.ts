@@ -12,6 +12,7 @@ interface CompileWrapperOptions {
     output: string;
     abi: string;
     cairoPath: string;
+    accountContract: boolean;
 }
 
 interface DeployWrapperOptions {
@@ -57,7 +58,7 @@ interface DeployAccountWrapperOptions {
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
-        return [
+        const ret = [
             options.file,
             "--abi",
             options.abi,
@@ -66,6 +67,12 @@ export abstract class StarknetWrapper {
             "--cairo_path",
             options.cairoPath
         ];
+
+        if (options.accountContract) {
+            ret.push("--account_contract");
+        }
+
+        return ret;
     }
 
     public abstract compile(options: CompileWrapperOptions): Promise<ProcessResult>;

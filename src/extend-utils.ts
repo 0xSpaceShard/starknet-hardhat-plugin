@@ -2,7 +2,12 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
-import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS, TESTNET_CHAIN_ID } from "./constants";
+import {
+    ABI_SUFFIX,
+    PLUGIN_NAME,
+    SHORT_STRING_MAX_CHARACTERS,
+    TESTNET_CHAIN_ID
+} from "./constants";
 import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";

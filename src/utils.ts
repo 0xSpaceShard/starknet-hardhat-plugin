@@ -22,7 +22,10 @@ const globPromise = promisify(glob);
  * @returns the log message with adaptation replacements
  */
 export function adaptLog(msg: string): string {
-    return msg.replace("--network", "--starknet-network").replace("gateway_url", "gateway-url");
+    return msg
+        .replace("--network", "--starknet-network")
+        .replace("gateway_url", "gateway-url")
+        .replace("--account_contract", "--account-contract");
 }
 
 const DOCKER_HOST = "host.docker.internal";
