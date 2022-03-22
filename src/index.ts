@@ -28,13 +28,16 @@ import {
     starknetCallAction,
     starknetDeployAccountAction,
     starknetTestAction,
-    starknetRunAction
+    starknetRunAction,
+    starknetEstimateFeeAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
     deployAccountUtil,
     getAccountFromAddressUtil,
     getContractFactoryUtil,
+    getTransactionUtil,
+    getTransactionReceiptUtil,
     getWalletUtil,
     shortStringToBigIntUtil
 } from "./extend-utils";
@@ -217,6 +220,16 @@ extendEnvironment((hre) => {
         getAccountFromAddress: async (address, privateKey, accountType) => {
             const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
             return account;
+        },
+
+        getTransaction: async (txHash) => {
+            const transaction = await getTransactionUtil(txHash, hre);
+            return transaction;
+        },
+
+        getTransactionReceipt: async (txHash) => {
+            const txReceipt = await getTransactionReceiptUtil(txHash, hre);
+            return txReceipt;
         }
     };
 });
@@ -273,6 +286,28 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "The number of the block to call. If omitted, the pending block will be queried."
     )
     .setAction(starknetCallAction);
+
+task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
+    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
+    .addParam("contract", "The name of the contract to invoke from")
+    .addParam("function", "The name of the function to invoke")
+    .addParam("address", "The address where the contract is deployed")
+    .addOptionalParam(
+        "inputs",
+        "Space separated values forming function input.\n" +
+            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+    )
+    .addOptionalParam("signature", "The call signature")
+    .addOptionalParam(
+        "wallet",
+        "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling."
+    )
+    .addOptionalParam(
+        "blockNumber",
+        "The number of the block to call. If omitted, the pending block will be queried."
+    )
+    .setAction(starknetEstimateFeeAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")

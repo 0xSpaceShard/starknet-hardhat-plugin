@@ -4,8 +4,9 @@ import * as path from "path";
 
 import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { AccountImplementationType, StarknetContractFactory } from "./types";
-import { Account, OpenZeppelinAccount } from "./account";
+import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
+import { Transaction, TransactionReceipt } from "./starknet-types";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -97,6 +98,9 @@ export async function deployAccountUtil(
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.deployFromABI(hre);
             break;
+        case "Argent":
+            account = await ArgentAccount.deployFromABI(hre);
+            break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
@@ -115,9 +119,46 @@ export async function getAccountFromAddressUtil(
         case "OpenZeppelin":
             account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
             break;
+        case "Argent":
+            account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
+            break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
 
     return account;
+}
+
+export async function getTransactionUtil(
+    txHash: string,
+    hre: HardhatRuntimeEnvironment
+): Promise<Transaction> {
+    const executed = await hre.starknetWrapper.getTransaction({
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        hash: txHash
+    });
+    if (executed.statusCode) {
+        const msg = `Could not get the transaction. ${executed.stderr.toString()}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    const txReceipt = JSON.parse(executed.stdout.toString()) as Transaction;
+    return txReceipt;
+}
+
+export async function getTransactionReceiptUtil(
+    txHash: string,
+    hre: HardhatRuntimeEnvironment
+): Promise<TransactionReceipt> {
+    const executed = await hre.starknetWrapper.getTransactionReceipt({
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        hash: txHash
+    });
+    if (executed.statusCode) {
+        const msg = `Could not get the transaction receipt. Error: ${executed.stderr.toString()}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
+    return txReceipt;
 }

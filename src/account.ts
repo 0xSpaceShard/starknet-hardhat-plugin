@@ -1,15 +1,24 @@
-import { Choice, StarknetContract, StringMap } from "./types";
+import {
+    ContractInteractionFunction,
+    FeeEstimation,
+    InteractChoice,
+    InvokeResponse,
+    StarknetContract,
+    StringMap
+} from "./types";
 import { PLUGIN_NAME } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { hash } from "starknet";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
-    generateRandomStarkPrivateKey,
+    CallParameters,
+    generateKeys,
     handleAccountContractArtifacts,
-    sign
+    handleMultiCall,
+    parseMulticallOutput,
+    signMultiCall
 } from "./account-utils";
 
 /**
@@ -31,11 +40,15 @@ export abstract class Account {
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
      */
-    abstract invoke(
+    async invoke(
         toContract: StarknetContract,
         functionName: string,
-        calldata?: StringMap
-    ): Promise<void>;
+        calldata: StringMap = {}
+    ): Promise<InvokeResponse> {
+        return (
+            await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata)
+        ).toString();
+    }
 
     /**
      * Uses the account contract as a proxy to call a function on the target contract with a signature
@@ -44,18 +57,102 @@ export abstract class Account {
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
      */
-    abstract call(
+    async call(
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap
-    ): Promise<StringMap>;
+    ): Promise<StringMap> {
+        const { response } = <{ response: string[] }>(
+            await this.interact(InteractChoice.CALL, toContract, functionName, calldata)
+        );
+        return toContract.adaptOutput(functionName, response.join(" "));
+    }
+
+    async estimateFee(
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ): Promise<FeeEstimation> {
+        return await this.interact(InteractChoice.ESTIMATE_FEE, toContract, functionName, calldata);
+    }
+
+    private async interact(
+        choice: InteractChoice,
+        toContract: StarknetContract,
+        functionName: string,
+        calldata?: StringMap
+    ) {
+        const call: CallParameters = {
+            functionName: functionName,
+            toContract: toContract,
+            calldata: calldata
+        };
+
+        return await this.multiInteract(choice, [call]);
+    }
+
+    /**
+     * Performs a multicall through this account
+     * @param callParameters an array with the paramaters for each call
+     * @returns an array with each call's repsecting response object
+     */
+    async multiCall(callParameters: CallParameters[]): Promise<StringMap[]> {
+        const { response } = <{ response: string[] }>(
+            await this.multiInteract(InteractChoice.CALL, callParameters)
+        );
+        const output: StringMap[] = parseMulticallOutput(response, callParameters);
+        return output;
+    }
+
+    /**
+     * Performes multiple invokes as a single transaction through this account
+     * @param callParameters an array with the paramaters for each invoke
+     * @returns the transaction hash of the invoke
+     */
+    async multiInvoke(callParameters: CallParameters[]): Promise<string> {
+        // Invoke only returns one transaction hash, as the multiple invokes are done by the account contract, but only one is sent to it.
+        return await this.multiInteract(InteractChoice.INVOKE, callParameters);
+    }
+
+    /**
+     * Etimate the fee of the multicall.
+     * @param callParameters an array with the parameters for each call
+     * @returns the total estimated fee
+     */
+    async multiEstimateFee(callParameters: CallParameters[]): Promise<FeeEstimation> {
+        return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters);
+    }
+
+    async multiInteract(choice: InteractChoice, callParameters: CallParameters[]) {
+        const nonce = await this.getNonce();
+
+        const { messageHash, args } = handleMultiCall(
+            this.starknetContract.address,
+            callParameters,
+            nonce
+        );
+
+        const signatures = this.getSignatures(messageHash);
+        const options = { signature: signatures };
+
+        const contractInteractor = (<ContractInteractionFunction>(
+            this.starknetContract[choice.internalCommand]
+        )).bind(this.starknetContract);
+        const executionFunctionName = this.getExecutionFunctionName();
+        return contractInteractor(executionFunctionName, args, options);
+    }
+
+    abstract getSignatures(messageHash: string): bigint[];
+
+    abstract getExecutionFunctionName(): string;
+
+    abstract getNonce(): Promise<string>;
 }
 
 /**
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly EXECUTION_FUNCTION_NAME = "execute";
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
 
@@ -68,102 +165,42 @@ export class OpenZeppelinAccount extends Account {
         super(starknetContract, privateKey, publicKey, keyPair);
     }
 
-    /**
-     * Invoke a function of a contract through this account.
-     * @param toContract the contract being being invoked
-     * @param functionName the name of the function to invoke
-     * @param calldata the calldata to be passed to the function
-     */
-    async invoke(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata: StringMap = {}
-    ): Promise<void> {
-        await this.invokeOrCall("invoke", toContract, functionName, calldata);
+    getSignatures(messageHash: string): bigint[] {
+        return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
-    /**
-     * Call a function of a contract through this account.
-     * @param toContract the contract being being called
-     * @param functionName the name of the function to call
-     * @param calldata the calldata to be passed to the function
-     */
-    async call(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ): Promise<StringMap> {
-        const { response } = <{ response: string[] }>(
-            await this.invokeOrCall("call", toContract, functionName, calldata)
-        );
-        return toContract.adaptOutput(functionName, response.join(" "));
-    }
-
-    private async invokeOrCall(
-        choice: Choice,
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap
-    ) {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        const selector = hash.starknetKeccak(functionName);
-        const adaptedCalldata = toContract.adaptInput(functionName, calldata);
-        const signature = sign(
-            this.keyPair,
-            this.starknetContract.address,
-            nonce.toString(),
-            selector.toString(),
-            toContract.address,
-            adaptedCalldata
-        );
-        const args = {
-            to: BigInt(toContract.address),
-            selector,
-            calldata: adaptedCalldata,
-            nonce
-        };
-
-        const options = { signature };
-        return this.starknetContract[choice](
-            OpenZeppelinAccount.EXECUTION_FUNCTION_NAME,
-            args,
-            options
-        );
-    }
-
-    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<Account> {
-        await handleAccountContractArtifacts(
+    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<OpenZeppelinAccount> {
+        const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const starkPrivateKey = generateRandomStarkPrivateKey();
-        const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
-        const publicKey = ellipticCurve.getStarkKey(keyPair);
-        const contractFactory = await hre.starknet.getContractFactory(
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
-        );
-        const contract = await contractFactory.deploy({ _public_key: BigInt(publicKey) });
-        const privateKey = "0x" + starkPrivateKey.toString(16);
+        const signer = generateKeys();
 
-        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contract = await contractFactory.deploy({ public_key: BigInt(signer.publicKey) });
+
+        return new OpenZeppelinAccount(
+            contract,
+            signer.privateKey,
+            signer.publicKey,
+            signer.keyPair
+        );
     }
 
     static async getAccountFromAddress(
         address: string,
         privateKey: string,
         hre: HardhatRuntimeEnvironment
-    ): Promise<Account> {
-        await handleAccountContractArtifacts(
+    ): Promise<OpenZeppelinAccount> {
+        const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const contractFactory = await hre.starknet.getContractFactory(
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME
-        );
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
         const { res: expectedPubKey } = await contract.call("get_public_key");
@@ -179,5 +216,141 @@ export class OpenZeppelinAccount extends Account {
         }
 
         return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+    }
+
+    getExecutionFunctionName(): string {
+        return "__execute__";
+    }
+
+    async getNonce(): Promise<string> {
+        const { res: nonce } = await this.starknetContract.call("get_nonce");
+        return nonce.toString();
+    }
+}
+
+/**
+ * Wrapper for the Argent implementation of an Account
+ */
+export class ArgentAccount extends Account {
+    static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
+    static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
+
+    public guardianPublicKey: string;
+    public guardianPrivateKey: string;
+    public guardianKeyPair: ec.KeyPair;
+
+    constructor(
+        starknetContract: StarknetContract,
+        privateKey: string,
+        publicKey: string,
+        keyPair: ec.KeyPair,
+        guardianPrivateKey: string,
+        guardianPublicKey: string,
+        guardianKeyPair: ec.KeyPair
+    ) {
+        super(starknetContract, privateKey, publicKey, keyPair);
+        this.guardianPublicKey = guardianPublicKey;
+        this.guardianPrivateKey = guardianPrivateKey;
+        this.guardianKeyPair = guardianKeyPair;
+    }
+
+    getSignatures(messageHash: string): bigint[] {
+        const signerSignatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
+        const guardianSignatures = signMultiCall(
+            this.guardianPublicKey,
+            this.guardianKeyPair,
+            messageHash
+        );
+        return signerSignatures.concat(guardianSignatures);
+    }
+
+    /**
+     * Updates the guardian key in the contract
+     * @param newGuardianPrivateKey private key of the guardian to update
+     * @returns
+     */
+    async setGuardian(newGuardianPrivateKey: string): Promise<string> {
+        const guardianKeyPair = ellipticCurve.getKeyPair(
+            toBN(newGuardianPrivateKey.substring(2), "hex")
+        );
+        const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
+
+        this.guardianPrivateKey = newGuardianPrivateKey;
+        this.guardianPublicKey = guardianPublicKey;
+        this.guardianKeyPair = guardianKeyPair;
+
+        const call: CallParameters = {
+            functionName: "change_guardian",
+            toContract: this.starknetContract,
+            calldata: { new_guardian: BigInt(guardianPublicKey) }
+        };
+
+        return await this.multiInvoke([call]);
+    }
+
+    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<ArgentAccount> {
+        const contractPath = await handleAccountContractArtifacts(
+            ArgentAccount.ACCOUNT_TYPE_NAME,
+            ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
+        const signer = generateKeys();
+        const guardian = generateKeys();
+
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contract = await contractFactory.deploy();
+
+        await contract.invoke("initialize", {
+            signer: BigInt(signer.publicKey),
+            guardian: BigInt(guardian.publicKey)
+        });
+
+        return new ArgentAccount(
+            contract,
+            signer.privateKey,
+            signer.publicKey,
+            signer.keyPair,
+            guardian.privateKey,
+            guardian.publicKey,
+            guardian.keyPair
+        );
+    }
+
+    static async getAccountFromAddress(
+        address: string,
+        privateKey: string,
+        hre: HardhatRuntimeEnvironment
+    ): Promise<ArgentAccount> {
+        const contractPath = await handleAccountContractArtifacts(
+            ArgentAccount.ACCOUNT_TYPE_NAME,
+            ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            hre
+        );
+
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contract = contractFactory.getContractAt(address);
+
+        const { signer: expectedPubKey } = await contract.call("get_signer");
+        const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
+        const publicKey = ellipticCurve.getStarkKey(keyPair);
+
+        if (BigInt(publicKey) !== expectedPubKey) {
+            throw new HardhatPluginError(
+                PLUGIN_NAME,
+                "The provided private key is not compatible with the public key stored in the contract."
+            );
+        }
+
+        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null);
+    }
+
+    getExecutionFunctionName(): string {
+        return "__execute__";
+    }
+
+    async getNonce(): Promise<string> {
+        const { nonce: nonce } = await this.starknetContract.call("get_nonce");
+        return nonce.toString();
     }
 }

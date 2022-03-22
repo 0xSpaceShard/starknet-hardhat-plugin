@@ -9,7 +9,7 @@ import {
     DEFAULT_STARKNET_NETWORK,
     INTEGRATED_DEVNET
 } from "./constants";
-import { iterativelyCheckStatus, extractTxHash, Choice } from "./types";
+import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
     adaptLog,
@@ -381,15 +381,22 @@ function handleMultiPartContractVerification(
 }
 
 export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await starknetInvokeOrCallAction("invoke", args, hre);
+    await starknetInteractAction(InteractChoice.INVOKE, args, hre);
 }
 
 export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await starknetInvokeOrCallAction("call", args, hre);
+    await starknetInteractAction(InteractChoice.CALL, args, hre);
 }
 
-async function starknetInvokeOrCallAction(
-    choice: Choice,
+export async function starknetEstimateFeeAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    await starknetInteractAction(InteractChoice.ESTIMATE_FEE, args, hre);
+}
+
+async function starknetInteractAction(
+    choice: InteractChoice,
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
@@ -403,7 +410,7 @@ async function starknetInvokeOrCallAction(
         accountDir = getAccountPath(wallet.accountPath, hre);
     }
 
-    const executed = await hre.starknetWrapper.invokeOrCall({
+    const executed = await hre.starknetWrapper.interact({
         choice: choice,
         address: args.address,
         abi: abiPath,
@@ -422,14 +429,16 @@ async function starknetInvokeOrCallAction(
     const statusCode = processExecuted(executed, true);
 
     if (statusCode) {
-        const msg = `Could not ${choice} ${args.function}:\n` + executed.stderr.toString();
+        const msg =
+            `Could not perform ${choice.cliCommand} of ${args.function}:\n` +
+            executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
     }
 
-    if (choice === "invoke" && args.wait) {
+    if (choice === InteractChoice.INVOKE && args.wait) {
         // If the "wait" flag was passed as an argument, check the transaction hash for its status
-        console.log(`Checking ${choice} transaction...`);
+        console.log("Checking transaction...");
         const executedOutput = executed.stdout.toString();
         const txHash = extractTxHash(executedOutput);
         await new Promise<void>((resolve, reject) =>

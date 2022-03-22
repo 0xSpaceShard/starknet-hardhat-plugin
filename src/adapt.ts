@@ -7,7 +7,15 @@ function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
         return false;
     }
-    return /^-?\d+$/.test(value.toString());
+    const strValue = value.toString();
+
+    const decimalRegex = /^-?\d+$/;
+    const hexadecimalRegex = /^0x[0-9a-fA-F]+?$/;
+    return decimalRegex.test(strValue) || hexadecimalRegex.test(strValue);
+}
+
+function toNumericString(value: { toString: () => string }) {
+    return BigInt(value.toString()).toString();
 }
 
 /**
@@ -65,7 +73,7 @@ export function adaptInputUtil(
         if (inputSpec.type === "felt") {
             const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
             if (isNumeric(currentValue)) {
-                adapted.push(currentValue.toString());
+                adapted.push(toNumericString(currentValue));
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const nextSpec = inputSpecs[i + 1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
@@ -136,7 +144,7 @@ function adaptComplexInput(
 
     if (type === "felt") {
         if (isNumeric(input)) {
-            adaptedArray.push(input.toString());
+            adaptedArray.push(toNumericString(input));
             return;
         }
         const msg = `Expected ${inputSpec.name} to be a felt`;

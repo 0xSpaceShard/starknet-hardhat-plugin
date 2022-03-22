@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "allowJs": true,
-        "target": "es2016",
+        "target": "es2020",
         "sourceMap": true,
         "esModuleInterop": true,
         "strict": true,
