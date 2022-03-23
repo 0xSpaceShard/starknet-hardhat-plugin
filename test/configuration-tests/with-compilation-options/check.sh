@@ -14,4 +14,4 @@ npx hardhat starknet-compile "contracts/$CONTRACT_NAME" 2>&1 \
     | diff - "$PREFIX/without-account-flag.txt"
 echo "Success"
 
-npx hardhat starknet-compile "contracts/$CONTRACT_NAME" --acount-contract
+npx hardhat starknet-compile "contracts/$CONTRACT_NAME" --account-contract
