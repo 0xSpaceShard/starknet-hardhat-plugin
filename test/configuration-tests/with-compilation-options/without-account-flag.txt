@@ -1,5 +1,1 @@
 Only account contracts may have a function named "__execute__". Use --account-contract flag.
-
-        Failed
-
-Error in plugin Starknet: Failed compilation of 1 contract.
