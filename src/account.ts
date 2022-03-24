@@ -148,7 +148,6 @@ export abstract class Account {
         const nonce = options?.nonce?.toString() || (await this.getNonce());
         const maxFee = "0x" + (options?.maxFee?.toString(16) || "0");
 
-        console.log("DEBUG nonce maxfee options", nonce, maxFee, options);
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
             callParameters,
