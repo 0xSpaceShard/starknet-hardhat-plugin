@@ -24,6 +24,7 @@ import {
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
+import { copyWithBigint } from "./utils";
 
 /**
  * Representation of an Account.
@@ -145,14 +146,16 @@ export abstract class Account {
         callParameters: CallParameters[],
         options: InteractOptions = {}
     ) {
-        const nonce = options?.nonce?.toString() || (await this.getNonce());
-        const maxFee = "0x" + (options?.maxFee?.toString(16) || "0");
+        options = copyWithBigint(options);
+        options.maxFee = BigInt(options?.maxFee || "0");
+        const nonce = options.nonce || (await this.getNonce());
+        delete options.nonce; // the options object is incompatible if passed on with nonce
 
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
             callParameters,
             nonce,
-            maxFee
+            options.maxFee
         );
 
         const signatures = this.getSignatures(messageHash);
@@ -169,7 +172,7 @@ export abstract class Account {
 
     protected abstract getExecutionFunctionName(): string;
 
-    protected abstract getNonce(): Promise<string>;
+    protected abstract getNonce(): Promise<bigint>;
 }
 
 /**
@@ -245,9 +248,9 @@ export class OpenZeppelinAccount extends Account {
         return "__execute__";
     }
 
-    async getNonce(): Promise<string> {
+    async getNonce(): Promise<bigint> {
         const { res: nonce } = await this.starknetContract.call("get_nonce");
-        return nonce.toString();
+        return nonce;
     }
 }
 
@@ -372,8 +375,8 @@ export class ArgentAccount extends Account {
         return "__execute__";
     }
 
-    async getNonce(): Promise<string> {
-        const { nonce: nonce } = await this.starknetContract.call("get_nonce");
-        return nonce.toString();
+    async getNonce(): Promise<bigint> {
+        const { nonce } = await this.starknetContract.call("get_nonce");
+        return nonce;
     }
 }

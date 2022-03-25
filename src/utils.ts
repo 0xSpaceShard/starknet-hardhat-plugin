@@ -179,3 +179,11 @@ export function flattenStringMap(stringMap: StringMap): string[] {
     });
     return result;
 }
+
+export function copyWithBigint(object: unknown): unknown {
+    return JSON.parse(
+        JSON.stringify(object, (_key, value) =>
+            typeof value === "bigint" ? value.toString() : value
+        )
+    );
+}

@@ -1,4 +1,4 @@
-import { StarknetContract, StringMap } from "./types";
+import { Numeric, StarknetContract, StringMap } from "./types";
 import { Call, hash, RawCalldata } from "starknet";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -69,8 +69,8 @@ export function signMultiCall(
 export function handleMultiCall(
     accountAddress: string,
     callParameters: CallParameters[],
-    nonce: string,
-    maxFee: string
+    nonce: Numeric,
+    maxFee: Numeric
 ) {
     // Transform a CallParameters array into Call array, so it can be used by the hash functions
     const callArray: Call[] = callParameters.map((callParameters) => {
@@ -98,12 +98,14 @@ export function handleMultiCall(
         rawCalldata = rawCalldata.concat(call.calldata);
     });
 
-    const messageHash = hash.hashMulticall(accountAddress, callArray, nonce, maxFee);
+    const adaptedNonce = nonce.toString();
+    const adaptedMaxFee = "0x" + maxFee.toString(16);
+    const messageHash = hash.hashMulticall(accountAddress, callArray, adaptedNonce, adaptedMaxFee);
 
     const args = {
         call_array: executeCallArray,
         calldata: rawCalldata,
-        nonce: nonce
+        nonce: adaptedNonce
     };
 
     return { messageHash, args };

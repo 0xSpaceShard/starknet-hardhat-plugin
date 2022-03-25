@@ -140,7 +140,7 @@ export abstract class StarknetWrapper {
             prepared.push("--no_wallet");
         }
 
-        if (options.maxFee) {
+        if (options.choice.allowsMaxFee && options.maxFee) {
             prepared.push("--max_fee", options.maxFee);
         }
 

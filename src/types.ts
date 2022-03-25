@@ -7,7 +7,7 @@ import {
     PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
-import { adaptLog } from "./utils";
+import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
@@ -77,11 +77,11 @@ export interface StringMap {
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke");
+    static readonly INVOKE = new InteractChoice("invoke", "invoke", true);
 
-    static readonly CALL = new InteractChoice("call", "call");
+    static readonly CALL = new InteractChoice("call", "call", true);
 
-    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee");
+    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee", false);
 
     private constructor(
         /**
@@ -91,7 +91,12 @@ export class InteractChoice {
         /**
          * The way it's supposed to be used internally in code.
          */
-        public readonly internalCommand: keyof StarknetContract
+        public readonly internalCommand: keyof StarknetContract,
+
+        /**
+         * Indicates whether the belonging CLI option allows specifying max_fee.
+         */
+        public readonly allowsMaxFee: boolean
     ) {}
 }
 
@@ -424,6 +429,7 @@ export class StarknetContract {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.networkID = config.networkID;
+        this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
@@ -463,8 +469,8 @@ export class StarknetContract {
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
-            maxFee: options.maxFee ? options.maxFee.toString() : undefined,
-            nonce: options.nonce ? options.maxFee.toString() : undefined
+            maxFee: options.maxFee?.toString() || "0",
+            nonce: options.nonce?.toString()
         });
 
         if (executed.statusCode) {
@@ -538,17 +544,13 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const optionsCopy: CallOptions = JSON.parse(
-            JSON.stringify(options, (_key, value) =>
-                typeof value === "bigint" ? value.toString() : value
-            )
-        ); // copy because of potential changes to the object
+        options = copyWithBigint(options); // copy because of potential changes to the object
 
-        if (optionsCopy.blockNumber === undefined) {
+        if (options.blockNumber === undefined) {
             // using || operator would not handle the zero case correctly
-            optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
+            options.blockNumber = PENDING_BLOCK_NUMBER;
         }
-        const executed = await this.interact(InteractChoice.CALL, functionName, args, optionsCopy);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
