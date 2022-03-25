@@ -13,6 +13,7 @@ interface CompileWrapperOptions {
     abi: string;
     cairoPath: string;
     accountContract: boolean;
+    disableHintValidation: boolean;
 }
 
 interface DeployWrapperOptions {
@@ -58,7 +59,7 @@ interface DeployAccountWrapperOptions {
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
-        const ret = [
+        const compileOpt = [
             options.file,
             "--abi",
             options.abi,
@@ -69,10 +70,14 @@ export abstract class StarknetWrapper {
         ];
 
         if (options.accountContract) {
-            ret.push("--account_contract");
+            compileOpt.push("--account_contract");
         }
 
-        return ret;
+        if (options.disableHintValidation) {
+            compileOpt.push("--disable_hint_validation");
+        }
+
+        return compileOpt;
     }
 
     public abstract compile(options: CompileWrapperOptions): Promise<ProcessResult>;

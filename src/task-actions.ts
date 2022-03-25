@@ -130,7 +130,6 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
             cairoPaths[i] = path.normalize(path.join(root, cairoPaths[i]));
         }
     }
-
     const cairoPath = cairoPaths.join(":");
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
@@ -156,7 +155,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 output: outputPath,
                 abi: abiPath,
                 cairoPath,
-                accountContract: args.accountContract
+                accountContract: args.accountContract,
+                disableHintValidation: args.disableHintValidation
             });
 
             statusCode += processExecuted(executed, true);
