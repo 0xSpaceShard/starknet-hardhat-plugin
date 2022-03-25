@@ -48,7 +48,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 ### `starknet-compile`
 
 ```
-npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract]
+npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
 If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
@@ -56,6 +56,7 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
 `--account-contract` allows compiling an account contract.
+`--disable-hint-validation` allows compiling a contract without hint validation, meaning you can use any python code/lib you want in hints (ex: print ...)
 
 ### `starknet-deploy`
 
