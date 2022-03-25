@@ -6,7 +6,7 @@ module.exports = {
     },
     networks: {
         integratedDevnet: {
-            dockerizedVersion: "latest",
+            dockerizedVersion: "0.1.19",
             url: "http://127.0.0.1:5000"
         }
     }

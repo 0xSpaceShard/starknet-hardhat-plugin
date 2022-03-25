@@ -2,6 +2,7 @@ import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 
 import {
+    DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
     DEVNET_DOCKER_REPOSITORY,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_URL,
@@ -38,7 +39,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     return new DockerDevnet(
         {
             repository: DEVNET_DOCKER_REPOSITORY,
-            tag: devnetNetwork.dockerizedVersion || "latest"
+            tag: devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG
         },
         hostname,
         port
