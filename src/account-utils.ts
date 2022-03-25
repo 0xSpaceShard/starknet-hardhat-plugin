@@ -53,7 +53,7 @@ export function signMultiCall(
     messageHash: string
 ): bigint[] {
     if (publicKey === "0x0") {
-        return [0n, 0n];
+        return [BigInt(0), BigInt(0)];
     }
     return ellipticCurve.sign(keyPair, BigInt(messageHash).toString(16)).map(BigInt);
 }
