@@ -55,7 +55,7 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
-`--account-contract` allows compiling a contract containing account implementation.
+`--account-contract` allows compiling an account contract.
 
 ### `starknet-deploy`
 

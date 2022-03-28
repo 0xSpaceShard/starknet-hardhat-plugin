@@ -153,7 +153,7 @@ task("starknet-compile", "Compiles Starknet contracts")
         "Allows specifying the locations of imported files, if necessary.\n" +
             "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
-    .addFlag("accountContract", "Use this flag if you are compiling an account contract")
+    .addFlag("accountContract", "Allows compiling an account contract.")
     .setAction(starknetCompileAction);
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
