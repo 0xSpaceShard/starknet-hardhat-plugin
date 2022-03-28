@@ -141,7 +141,7 @@ export abstract class Account {
         return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters, options);
     }
 
-    async multiInteract(
+    private async multiInteract(
         choice: InteractChoice,
         callParameters: CallParameters[],
         options: InteractOptions = {}
