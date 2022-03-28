@@ -22,6 +22,8 @@ export const ALPHA_URL = "https://alpha4.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
 export const INTEGRATED_DEVNET = "integrated-devnet";
 export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
+export const TESTNET_CHAIN_ID = "SN_GOERLI";
+export const ALPHA_MAINNET_CHAIN_ID = "SN_MAIN";
 
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms

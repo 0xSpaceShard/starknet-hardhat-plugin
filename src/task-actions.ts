@@ -167,7 +167,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 file,
                 output: outputPath,
                 abi: abiPath,
-                cairoPath
+                cairoPath,
+                accountContract: args.accountContract
             });
 
             statusCode += processExecuted(executed, true);
@@ -423,7 +424,9 @@ async function starknetInteractAction(
         gatewayUrl: gatewayUrl,
         feederGatewayUrl: gatewayUrl,
         blockNumber: args.blockNumber ? args.blockNumber : undefined,
-        networkID: wallet ? args.starknetNetwork : undefined
+        networkID: wallet ? args.starknetNetwork : undefined,
+        maxFee: args.maxFee ? args.maxFee : undefined,
+        nonce: args.nonce ? args.nonce : undefined
     });
 
     const statusCode = processExecuted(executed, true);
@@ -512,6 +515,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     }
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
+    hre.config.starknet.networkConfig = networkConfig;
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 
