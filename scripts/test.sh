@@ -14,6 +14,9 @@ cd starknet-hardhat-example
 git log -n 1
 npm install
 
+# run hardhat to pull Docker image
+npx hardhat
+
 # used by some cases
 ../scripts/setup-venv.sh
 
@@ -30,6 +33,7 @@ fi
 function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
+
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
 
@@ -79,6 +83,8 @@ iterate_dir integrated-devnet
 
 # run devnet
 starknet-devnet & # assuming the default (localhost:5000)
+sleep 5
+
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"
