@@ -156,7 +156,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 output: outputPath,
                 abi: abiPath,
                 cairoPath,
-                accountContract: args.accountContract
+                accountContract: args.accountContract,
+                disableHintValidation: args.disableHintValidation
             });
 
             statusCode += processExecuted(executed, true);

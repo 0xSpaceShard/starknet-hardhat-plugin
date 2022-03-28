@@ -154,6 +154,7 @@ task("starknet-compile", "Compiles Starknet contracts")
             "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .addFlag("accountContract", "Allows compiling an account contract.")
+    .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
