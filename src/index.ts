@@ -12,7 +12,9 @@ import {
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
     VOYAGER_MAINNET_CONTRACT_API_URL,
-    DEFAULT_STARKNET_NETWORK
+    DEFAULT_STARKNET_NETWORK,
+    TESTNET_CHAIN_ID,
+    ALPHA_MAINNET_CHAIN_ID
 } from "./constants";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
@@ -92,14 +94,16 @@ extendConfig((config: HardhatConfig) => {
     if (!config.networks.alpha) {
         config.networks.alpha = getDefaultHttpNetworkConfig(
             ALPHA_URL,
-            VOYAGER_GOERLI_CONTRACT_API_URL
+            VOYAGER_GOERLI_CONTRACT_API_URL,
+            TESTNET_CHAIN_ID
         );
     }
 
     if (!config.networks.alphaMainnet) {
         config.networks.alphaMainnet = getDefaultHttpNetworkConfig(
             ALPHA_MAINNET_URL,
-            VOYAGER_MAINNET_CONTRACT_API_URL
+            VOYAGER_MAINNET_CONTRACT_API_URL,
+            ALPHA_MAINNET_CHAIN_ID
         );
     }
 });
@@ -117,6 +121,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
         "starknet.network in hardhat.config"
     );
     config.starknet.networkUrl = networkConfig.url;
+    config.starknet.networkConfig = networkConfig;
 });
 
 // add venv wrapper or docker wrapper of starknet
@@ -148,6 +153,7 @@ task("starknet-compile", "Compiles Starknet contracts")
         "Allows specifying the locations of imported files, if necessary.\n" +
             "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
+    .addFlag("accountContract", "Allows compiling an account contract.")
     .setAction(starknetCompileAction);
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
@@ -157,7 +163,7 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming constructor input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"\n` +
+            "Pass them as a single string; e.g. --inputs '1 2 3'\n" +
             "You would typically use this feature when deploying a single contract.\n" +
             "If you're deploying multiple contracts, they'll all use the same input."
     )
@@ -243,13 +249,14 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
         "wallet",
         "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when invoking."
     )
+    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
     .setAction(starknetInvokeAction);
 
 task("starknet-call", "Invokes a function on a contract in the provided address.")
@@ -261,7 +268,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -272,6 +279,8 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
         "blockNumber",
         "The number of the block to call. If omitted, the pending block will be queried."
     )
+    .addOptionalParam("nonce", "The nonce to provide to your account")
+    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
     .setAction(starknetCallAction);
 
 task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
@@ -283,7 +292,7 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-            `Pass them as a single string; e.g. --inputs "${"1 2 3"}"`
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -294,6 +303,7 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
         "blockNumber",
         "The number of the block to call. If omitted, the pending block will be queried."
     )
+    .addOptionalParam("nonce", "The nonce to provide to your account")
     .setAction(starknetEstimateFeeAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")

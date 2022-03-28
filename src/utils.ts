@@ -22,7 +22,10 @@ const globPromise = promisify(glob);
  * @returns the log message with adaptation replacements
  */
 export function adaptLog(msg: string): string {
-    return msg.replace("--network", "--starknet-network").replace("gateway_url", "gateway-url");
+    return msg
+        .replace("--network", "--starknet-network")
+        .replace("gateway_url", "gateway-url")
+        .replace("--account_contract", "--account-contract");
 }
 
 const DOCKER_HOST = "host.docker.internal";
@@ -52,11 +55,13 @@ export function adaptUrl(url: string): string {
 
 export function getDefaultHttpNetworkConfig(
     url: string,
-    verificationUrl: string
+    verificationUrl: string,
+    chainID: string
 ): HttpNetworkConfig {
     return {
         url,
-        verificationUrl: verificationUrl,
+        verificationUrl,
+        chainID,
         accounts: undefined,
         gas: undefined,
         gasMultiplier: undefined,
@@ -173,4 +178,12 @@ export function flattenStringMap(stringMap: StringMap): string[] {
         }
     });
     return result;
+}
+
+export function copyWithBigint(object: unknown): unknown {
+    return JSON.parse(
+        JSON.stringify(object, (_key, value) =>
+            typeof value === "bigint" ? value.toString() : value
+        )
+    );
 }

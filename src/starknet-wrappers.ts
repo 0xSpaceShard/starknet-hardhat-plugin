@@ -12,6 +12,7 @@ interface CompileWrapperOptions {
     output: string;
     abi: string;
     cairoPath: string;
+    accountContract: boolean;
 }
 
 interface DeployWrapperOptions {
@@ -22,6 +23,8 @@ interface DeployWrapperOptions {
 }
 
 interface InteractWrapperOptions {
+    maxFee: string;
+    nonce: string;
     choice: InteractChoice;
     address: string;
     abi: string;
@@ -32,6 +35,7 @@ interface InteractWrapperOptions {
     account?: string;
     accountDir?: string;
     networkID?: string;
+    chainID?: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
     blockNumber?: string;
@@ -54,7 +58,7 @@ interface DeployAccountWrapperOptions {
 
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
-        return [
+        const ret = [
             options.file,
             "--abi",
             options.abi,
@@ -63,6 +67,12 @@ export abstract class StarknetWrapper {
             "--cairo_path",
             options.cairoPath
         ];
+
+        if (options.accountContract) {
+            ret.push("--account_contract");
+        }
+
+        return ret;
     }
 
     public abstract compile(options: CompileWrapperOptions): Promise<ProcessResult>;
@@ -118,6 +128,7 @@ export abstract class StarknetWrapper {
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
             prepared.push("--network_id", options.networkID);
+            prepared.push("--chain_id", options.chainID);
 
             if (options.account) {
                 prepared.push("--account", options.account);
@@ -127,6 +138,14 @@ export abstract class StarknetWrapper {
             }
         } else {
             prepared.push("--no_wallet");
+        }
+
+        if (options.choice.allowsMaxFee && options.maxFee) {
+            prepared.push("--max_fee", options.maxFee);
+        }
+
+        if (options.nonce) {
+            prepared.push("--nonce", options.nonce);
         }
 
         return prepared;

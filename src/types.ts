@@ -7,7 +7,7 @@ import {
     PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
-import { adaptLog } from "./utils";
+import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
@@ -59,6 +59,7 @@ export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
     networkID: string;
+    chainID: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
@@ -76,11 +77,11 @@ export interface StringMap {
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke");
+    static readonly INVOKE = new InteractChoice("invoke", "invoke", true);
 
-    static readonly CALL = new InteractChoice("call", "call");
+    static readonly CALL = new InteractChoice("call", "call", true);
 
-    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee");
+    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee", false);
 
     private constructor(
         /**
@@ -90,7 +91,12 @@ export class InteractChoice {
         /**
          * The way it's supposed to be used internally in code.
          */
-        public readonly internalCommand: keyof StarknetContract
+        public readonly internalCommand: keyof StarknetContract,
+
+        /**
+         * Indicates whether the belonging CLI option allows specifying max_fee.
+         */
+        public readonly allowsMaxFee: boolean
     ) {}
 }
 
@@ -244,15 +250,21 @@ export interface DeployOptions {
 export interface InvokeOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
 export interface CallOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
     blockNumber?: string;
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
-type InteractOptions = InvokeOptions | CallOptions;
+export type EstimateFeeOptions = CallOptions;
+
+export type InteractOptions = InvokeOptions | CallOptions | EstimateFeeOptions;
 
 export type ContractInteractionFunction = (
     functionName: string,
@@ -267,6 +279,7 @@ export class StarknetContractFactory {
     private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
     private networkID: string;
+    private chainID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
 
@@ -275,6 +288,7 @@ export class StarknetContractFactory {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.networkID = config.networkID;
+        this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
@@ -336,6 +350,7 @@ export class StarknetContractFactory {
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
             networkID: this.networkID,
+            chainID: this.chainID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -385,6 +400,7 @@ export class StarknetContractFactory {
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,
             networkID: this.networkID,
+            chainID: this.chainID,
             feederGatewayUrl: this.feederGatewayUrl,
             gatewayUrl: this.gatewayUrl
         });
@@ -402,6 +418,7 @@ export class StarknetContract {
     private abi: starknet.Abi;
     private abiPath: string;
     private networkID: string;
+    private chainID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
     private _address: string;
@@ -412,6 +429,7 @@ export class StarknetContract {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.networkID = config.networkID;
+        this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
         this.feederGatewayUrl = config.feederGatewayUrl;
     }
@@ -447,14 +465,18 @@ export class StarknetContract {
             account: options.wallet?.accountName,
             accountDir: options.wallet?.accountPath,
             networkID: this.networkID,
+            chainID: this.chainID,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
-            blockNumber: "blockNumber" in options ? options.blockNumber : undefined
+            blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
+            maxFee: options.maxFee?.toString() || "0",
+            nonce: options.nonce?.toString()
         });
 
         if (executed.statusCode) {
             const msg =
-                `Could not perform ${choice} on ${functionName}:\n` + executed.stderr.toString();
+                `Could not perform ${choice.cliCommand} on ${functionName}:\n` +
+                executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
         }
@@ -522,17 +544,13 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const optionsCopy: CallOptions = JSON.parse(
-            JSON.stringify(options, (_key, value) =>
-                typeof value === "bigint" ? value.toString() : value
-            )
-        ); // copy because of potential changes to the object
+        options = copyWithBigint(options); // copy because of potential changes to the object
 
-        if (optionsCopy.blockNumber === undefined) {
+        if (options.blockNumber === undefined) {
             // using || operator would not handle the zero case correctly
-            optionsCopy.blockNumber = PENDING_BLOCK_NUMBER;
+            options.blockNumber = PENDING_BLOCK_NUMBER;
         }
-        const executed = await this.interact(InteractChoice.CALL, functionName, args, optionsCopy);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
@@ -546,7 +564,7 @@ export class StarknetContract {
     async estimateFee(
         functionName: string,
         args?: StringMap,
-        options: CallOptions = {}
+        options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,
