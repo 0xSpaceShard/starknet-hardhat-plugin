@@ -14,8 +14,9 @@ cd starknet-hardhat-example
 git log -n 1
 npm install
 
-# run hardhat to pull Docker image
-npx hardhat
+# pull docker image
+DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/constants.js').DOCKER_REPOSITORY_WITH_TAG)")
+docker pull "$DOCKER_REPOSITORY_WITH_TAG"
 
 # used by some cases
 ../scripts/setup-venv.sh
@@ -33,7 +34,6 @@ fi
 function iterate_dir(){
     network="$1"
     echo "Starting tests on $network"
-
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
 

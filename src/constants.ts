@@ -9,6 +9,8 @@ export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
 export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = "0.1.19";
 export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5000";
 
+export const DOCKER_REPOSITORY_WITH_TAG = `${DOCKER_REPOSITORY}:${DEFAULT_DOCKER_IMAGE_TAG}`;
+
 export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
 export const ACCOUNT_ARTIFACTS_VERSION = "0.2.0";
 export const GITHUB_ACCOUNT_ARTIFACTS_URL = `https://raw.githubusercontent.com/Shard-Labs/starknet-hardhat-example/plugin/${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/${ACCOUNT_ARTIFACTS_VERSION}/`;
