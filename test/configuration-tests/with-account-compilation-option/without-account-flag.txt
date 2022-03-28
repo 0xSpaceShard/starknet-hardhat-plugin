@@ -1,0 +1,1 @@
+Only account contracts may have a function named "__execute__". Use --account-contract flag.
