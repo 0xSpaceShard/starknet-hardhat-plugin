@@ -10,7 +10,7 @@ import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt } from "./starknet-types";
-import { HttpNetworkConfig } from "hardhat/types/config";
+import { NetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -18,7 +18,7 @@ type StarknetConfig = {
     wallets?: WalletUserConfig;
     network?: string;
     networkUrl?: string;
-    networkConfig?: HttpNetworkConfig;
+    networkConfig?: NetworkConfig;
 };
 
 type WalletUserConfig = {
