@@ -243,6 +243,17 @@ export function parseFeeEstimation(raw: string): FeeEstimation {
     throw new HardhatPluginError(PLUGIN_NAME, "Cannot parse fee estimation response.");
 }
 
+/**
+ * Modifies the passed object by setting its blockNumber to pending.
+ * @param options the options object with a blockNumber key
+ */
+function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void {
+    if (options.blockNumber === undefined) {
+        // using || operator would not handle the zero case correctly
+        options.blockNumber = PENDING_BLOCK_NUMBER;
+    }
+}
+
 export interface DeployOptions {
     salt?: string;
 }
@@ -545,11 +556,7 @@ export class StarknetContract {
         options: CallOptions = {}
     ): Promise<StringMap> {
         options = copyWithBigint(options); // copy because of potential changes to the object
-
-        if (options.blockNumber === undefined) {
-            // using || operator would not handle the zero case correctly
-            options.blockNumber = PENDING_BLOCK_NUMBER;
-        }
+        defaultToPendingBlock(options);
         const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
@@ -566,6 +573,7 @@ export class StarknetContract {
         args?: StringMap,
         options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
+        defaultToPendingBlock(options);
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,
             functionName,
