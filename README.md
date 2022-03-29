@@ -522,14 +522,14 @@ const account = await starknet.getAccountFromAddress(
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
 
 ```typescript
-const { res: currBalance } = await account.call(contract, "get_balance");
+const { res: amount } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
 
 You can also use the Account object to perform multi{calls, invokes, fee estimations}.
 
 ```typescript
-const invokeArray = [
+const interactionArray = [
     {
         toContract: contract1,
         functionName: "increase_balance",
@@ -541,9 +541,9 @@ const invokeArray = [
         calldata: { amount: 20n }
     }
 ];
-const fee = await account.multiEstimateFee(invokeArray);
-const txHash = await account.multiInvoke(invokeArray);
-const results = await account.multiCall(invokeArray);
+const fee = await account.multiEstimateFee(interactionArray);
+const txHash = await account.multiInvoke(interactionArray);
+const results = await account.multiCall(interactionArray);
 ```
 
 OpenZeppelin and Argent account implementations work pretty much the same way, however Argent's has the additional signature verifications of a Guardian.
