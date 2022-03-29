@@ -13,6 +13,7 @@ interface CompileWrapperOptions {
     abi: string;
     cairoPath: string;
     accountContract: boolean;
+    disableHintValidation: boolean;
 }
 
 interface DeployWrapperOptions {
@@ -70,6 +71,10 @@ export abstract class StarknetWrapper {
 
         if (options.accountContract) {
             ret.push("--account_contract");
+        }
+
+        if (options.disableHintValidation) {
+            ret.push("--disable_hint_validation");
         }
 
         return ret;
