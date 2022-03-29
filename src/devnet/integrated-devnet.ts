@@ -22,7 +22,7 @@ export abstract class IntegratedDevnet {
 
         return new Promise((resolve, reject) => {
             this.childProcess.on("spawn", () => {
-                resolve();
+                setTimeout(resolve, 1000);
             });
 
             this.childProcess.on("error", (error) => {
