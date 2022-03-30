@@ -309,9 +309,14 @@ More detailed documentation can be found [here](#account).
 });
 ```
 
-### Test - L1-L2 communication (message exchange with Devnet)
+### Test - L1-L2 communication (Postman message exchange with Devnet)
 
-Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L91) for more info.
+Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache), [Hardhat node](https://hardhat.org/hardhat-network/#running-stand-alone-in-order-to-support-wallets-and-other-software), Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin:
+
+-   Ensure there is an available L1 network and that you know its RPC endpoint URL.
+-   Load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`.
+-   Call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message.
+-   Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L98) for more info.
 
 ```typescript
   it("should exchange messages with Devnet", async function() {
