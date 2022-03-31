@@ -316,6 +316,7 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
 -   Ensure there is an available L1 network and that you know its RPC endpoint URL.
 -   Load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`.
 -   Call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message.
+-   When running a hardhat test or script which relies on `network["config"]`, specify the name of an L1 network you defined in `hardhat.config`. Use `npx hardhat test --network <NETWORK_NAME>`. Network `localhost` is predefined in hardhat so `--network localhost` should work if you're using e.g. `npx hardhat node` as the L1 network.
 -   Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L98) for more info.
 
 ```typescript
