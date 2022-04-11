@@ -175,7 +175,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities this object introduces, check [this](src/type-extensions.ts#L86) out.
+To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L100) out.
 
 ## Testing
 
