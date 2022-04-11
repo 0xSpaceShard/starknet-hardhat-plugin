@@ -6,4 +6,4 @@ curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poet
 
 source "$HOME/.poetry/env"
 
-pip install starknet-devnet==0.1.20
+pip3 install starknet-devnet==0.1.20
