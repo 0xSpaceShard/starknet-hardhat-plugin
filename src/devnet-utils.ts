@@ -39,32 +39,36 @@ export class DevnetUtils implements Devnet {
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
-        return `${this.hre.config.starknet.networkUrl}/postman`;
+        return `${this.hre.config.starknet.networkUrl}`;
     }
 
-    private handleError(error: unknown) {
-        const parent = error instanceof Error && error;
-
-        throw new HardhatPluginError(
-            PLUGIN_NAME,
-            "Request failed. Make sure your network has the /postman endpoint",
-            parent
-        );
-    }
-
-    public async flush() {
+    private async withErrorHandler<T>(asyncFn: () => Promise<T>, errorMessage: string) {
         try {
-            const response = await axios.post<FlushResponse>(`${this.endpoint}/flush`);
-            return response.data;
+            return await asyncFn();
         } catch (error) {
-            this.handleError(error);
+            const parent = error instanceof Error && error;
+
+            throw new HardhatPluginError(PLUGIN_NAME, errorMessage, parent);
         }
     }
 
+    public async restart() {
+        return this.withErrorHandler<void>(async () => {
+            await axios.post(`${this.endpoint}/restart`);
+        }, "Failed to restart the devnet!");
+    }
+
+    public async flush() {
+        return this.withErrorHandler<FlushResponse>(async () => {
+            const response = await axios.post<FlushResponse>(`${this.endpoint}/postman/flush`);
+            return response.data;
+        }, "Request failed. Make sure your network has the /postman endpoint");
+    }
+
     public async loadL1MessagingContract(networkUrl: string, address?: string, networkId?: string) {
-        try {
+        return this.withErrorHandler<LoadL1MessagingContractResponse>(async () => {
             const response = await axios.post<LoadL1MessagingContractResponse>(
-                `${this.endpoint}/load_l1_messaging_contract`,
+                `${this.endpoint}/postman/load_l1_messaging_contract`,
                 {
                     networkId,
                     address,
@@ -73,8 +77,6 @@ export class DevnetUtils implements Devnet {
             );
 
             return response.data;
-        } catch (error) {
-            this.handleError(error);
-        }
+        }, "Request failed. Make sure your network has the /postman endpoint");
     }
 }
