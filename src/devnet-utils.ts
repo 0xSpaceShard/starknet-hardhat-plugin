@@ -14,12 +14,12 @@ interface L1ToL2Message {
         selector: string;
         to_address: string;
     };
-    blockHash: string;
-    blockNumber: number;
+    block_hash: string;
+    block_number: number;
     event: string;
-    logIndex: number;
-    transactionHash: string;
-    transactionIndex: number;
+    log_index: number;
+    transaction_hash: string;
+    transaction_index: number;
 }
 
 export interface FlushResponse {
