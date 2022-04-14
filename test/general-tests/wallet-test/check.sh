@@ -6,4 +6,4 @@ output=$(npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wal
 echo $output
 
 echo "This is skipped because it doesn't work with the cairo version 0.8.0"
-# npx hardhat test --no-compile test/wallet-test.ts
+npx hardhat test --no-compile test/wallet-test.ts

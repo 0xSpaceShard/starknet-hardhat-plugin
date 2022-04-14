@@ -2,4 +2,4 @@
 
 set -e
 
-pip3 install starknet-devnet==0.1.20
+pip3 install starknet-devnet==0.1.21
