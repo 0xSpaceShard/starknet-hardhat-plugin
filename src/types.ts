@@ -73,15 +73,23 @@ export interface StringMap {
     [key: string]: any;
 }
 
+const TRANSACTION_VERSION = 0;
+const QUERY_VERSION = BigInt(2 ** 128);
+
 /**
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke", true);
+    static readonly INVOKE = new InteractChoice("invoke", "invoke", true, TRANSACTION_VERSION);
 
-    static readonly CALL = new InteractChoice("call", "call", true);
+    static readonly CALL = new InteractChoice("call", "call", true, QUERY_VERSION);
 
-    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee", false);
+    static readonly ESTIMATE_FEE = new InteractChoice(
+        "estimate_fee",
+        "estimateFee",
+        false,
+        QUERY_VERSION
+    );
 
     private constructor(
         /**
@@ -96,7 +104,12 @@ export class InteractChoice {
         /**
          * Indicates whether the belonging CLI option allows specifying max_fee.
          */
-        public readonly allowsMaxFee: boolean
+        public readonly allowsMaxFee: boolean,
+
+        /**
+         * The version of the transaction.
+         */
+        public readonly transactionVersion: Numeric
     ) {}
 }
 
