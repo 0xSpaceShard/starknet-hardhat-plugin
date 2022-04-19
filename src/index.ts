@@ -174,6 +174,10 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
             "If the salt is not supplied, the contract will be deployed with a random salt."
     )
+    .addOptionalParam(
+        "token",
+        "An optional token indicating that your deployment is whitelisted on mainnet"
+    )
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths to be used for deployment.\n" +

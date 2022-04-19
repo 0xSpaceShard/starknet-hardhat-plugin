@@ -71,7 +71,9 @@ If you're passing constructor arguments, pass them space separated, but as a sin
 
 If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
 
-The "--salt" parameter should be an hex string which, when provided, will add a salt to the contract address.
+The "--salt" parameter should be a hex string which, when provided, causes the contract to always be deployed to the same address.
+
+The "--token" parameter indicates that your deployment is whitelisted on alpha-mainnet.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 
