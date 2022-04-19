@@ -21,6 +21,7 @@ interface DeployWrapperOptions {
     gatewayUrl: string;
     inputs?: string[];
     salt?: string;
+    token?: string;
 }
 
 interface InteractWrapperOptions {
@@ -97,6 +98,10 @@ export abstract class StarknetWrapper {
 
         if (options.salt) {
             prepared.push("--salt", options.salt);
+        }
+
+        if (options.token) {
+            prepared.push("--token", options.token);
         }
 
         return prepared;

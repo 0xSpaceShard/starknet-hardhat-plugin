@@ -256,6 +256,7 @@ function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void 
 
 export interface DeployOptions {
     salt?: string;
+    token?: string;
 }
 
 export interface InvokeOptions {
@@ -346,7 +347,8 @@ export class StarknetContractFactory {
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
             gatewayUrl: this.gatewayUrl,
-            salt: options.salt
+            salt: options.salt,
+            token: options.token
         });
         if (executed.statusCode) {
             const msg =
