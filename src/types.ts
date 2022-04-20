@@ -109,7 +109,7 @@ export class InteractChoice {
         /**
          * The version of the transaction.
          */
-        public readonly transactionVersion: Numeric
+        public transactionVersion: Numeric
     ) {}
 }
 
@@ -287,7 +287,10 @@ export interface CallOptions {
     maxFee?: Numeric;
 }
 
-export type EstimateFeeOptions = CallOptions;
+export interface EstimateFeeOptions extends CallOptions {
+    // Workaround for devnet version mismatch
+    transactionVersion?: Numeric;
+}
 
 export type InteractOptions = InvokeOptions | CallOptions | EstimateFeeOptions;
 

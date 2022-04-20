@@ -138,6 +138,12 @@ export abstract class Account {
         callParameters: CallParameters[],
         options?: EstimateFeeOptions
     ): Promise<FeeEstimation> {
+        const choice = Object.assign({}, InteractChoice.ESTIMATE_FEE);
+
+        if (options?.transactionVersion) {
+            choice.transactionVersion = options.transactionVersion;
+        }
+
         return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters, options);
     }
 
