@@ -74,7 +74,7 @@ export interface StringMap {
 }
 
 const TRANSACTION_VERSION = 0;
-const QUERY_VERSION = BigInt(2 ** 128);
+const QUERY_VERSION = BigInt(2) ** BigInt(128);
 
 /**
  * Enumerates the ways of interacting with a contract.
