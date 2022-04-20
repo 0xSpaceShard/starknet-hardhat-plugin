@@ -155,7 +155,8 @@ export abstract class Account {
             this.starknetContract.address,
             callParameters,
             nonce,
-            options.maxFee
+            options.maxFee,
+            choice.transactionVersion
         );
 
         const signatures = this.getSignatures(messageHash);

@@ -70,7 +70,7 @@ fi
 # install, build and run devnet
 which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
-starknet-devnet & # assuming the default (localhost:5000)
+starknet-devnet --host 127.0.0.1 --port 5000 &
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"
