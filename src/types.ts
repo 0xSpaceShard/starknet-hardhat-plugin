@@ -88,7 +88,7 @@ export class InteractChoice {
         "estimate_fee",
         "estimateFee",
         false,
-        TRANSACTION_VERSION
+        QUERY_VERSION
     );
 
     private constructor(
