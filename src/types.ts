@@ -73,15 +73,23 @@ export interface StringMap {
     [key: string]: any;
 }
 
+const TRANSACTION_VERSION = 0;
+const QUERY_VERSION = BigInt(2) ** BigInt(128);
+
 /**
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke", true);
+    static readonly INVOKE = new InteractChoice("invoke", "invoke", true, TRANSACTION_VERSION);
 
-    static readonly CALL = new InteractChoice("call", "call", true);
+    static readonly CALL = new InteractChoice("call", "call", true, QUERY_VERSION);
 
-    static readonly ESTIMATE_FEE = new InteractChoice("estimate_fee", "estimateFee", false);
+    static readonly ESTIMATE_FEE = new InteractChoice(
+        "estimate_fee",
+        "estimateFee",
+        false,
+        QUERY_VERSION
+    );
 
     private constructor(
         /**
@@ -96,7 +104,12 @@ export class InteractChoice {
         /**
          * Indicates whether the belonging CLI option allows specifying max_fee.
          */
-        public readonly allowsMaxFee: boolean
+        public readonly allowsMaxFee: boolean,
+
+        /**
+         * The version of the transaction.
+         */
+        public transactionVersion: Numeric
     ) {}
 }
 
@@ -256,6 +269,7 @@ function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void 
 
 export interface DeployOptions {
     salt?: string;
+    token?: string;
 }
 
 export interface InvokeOptions {
@@ -273,7 +287,10 @@ export interface CallOptions {
     maxFee?: Numeric;
 }
 
-export type EstimateFeeOptions = CallOptions;
+export interface EstimateFeeOptions extends CallOptions {
+    // Workaround for devnet version mismatch
+    transactionVersion?: Numeric;
+}
 
 export type InteractOptions = InvokeOptions | CallOptions | EstimateFeeOptions;
 
@@ -346,7 +363,8 @@ export class StarknetContractFactory {
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
             gatewayUrl: this.gatewayUrl,
-            salt: options.salt
+            salt: options.salt,
+            token: options.token
         });
         if (executed.statusCode) {
             const msg =
