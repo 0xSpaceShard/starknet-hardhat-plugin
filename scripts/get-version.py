@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 """
 Returns the version used in this project of the tool provided as a CLI argument.
