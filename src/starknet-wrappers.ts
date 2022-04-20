@@ -13,6 +13,7 @@ interface CompileWrapperOptions {
     abi: string;
     cairoPath: string;
     accountContract: boolean;
+    disableHintValidation: boolean;
 }
 
 interface DeployWrapperOptions {
@@ -20,6 +21,7 @@ interface DeployWrapperOptions {
     gatewayUrl: string;
     inputs?: string[];
     salt?: string;
+    token?: string;
 }
 
 interface InteractWrapperOptions {
@@ -72,6 +74,10 @@ export abstract class StarknetWrapper {
             ret.push("--account_contract");
         }
 
+        if (options.disableHintValidation) {
+            ret.push("--disable_hint_validation");
+        }
+
         return ret;
     }
 
@@ -92,6 +98,10 @@ export abstract class StarknetWrapper {
 
         if (options.salt) {
             prepared.push("--salt", options.salt);
+        }
+
+        if (options.token) {
+            prepared.push("--token", options.token);
         }
 
         return prepared;

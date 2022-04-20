@@ -3,3 +3,4 @@ node_modules
 starknet-hardhat-example
 starknet-hardhat-example-link
 cache
+.vscode

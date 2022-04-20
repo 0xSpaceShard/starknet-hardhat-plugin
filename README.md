@@ -48,7 +48,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 ### `starknet-compile`
 
 ```
-npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract]
+npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
 If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
@@ -56,6 +56,8 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
 `--account-contract` allows compiling an account contract.
+
+`--disable-hint-validation` allows compiling a contract without hint validation (any python code is allowed in hints, ex: print ...).
 
 ### `starknet-deploy`
 
@@ -69,7 +71,9 @@ If you're passing constructor arguments, pass them space separated, but as a sin
 
 If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
 
-The "--salt" parameter should be an hex string which, when provided, will add a salt to the contract address.
+The "--salt" parameter should be a hex string which, when provided, causes the contract to always be deployed to the same address.
+
+The "--token" parameter indicates that your deployment is whitelisted on alpha-mainnet.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 
@@ -173,7 +177,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities this object introduces, check [this](src/type-extensions.ts#L86) out.
+To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L100) out.
 
 ## Testing
 
@@ -307,9 +311,15 @@ More detailed documentation can be found [here](#account).
 });
 ```
 
-### Test - L1-L2 communication (message exchange with Devnet)
+### Test - L1-L2 communication (Postman message exchange with Devnet)
 
-Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin. To achieve this, first load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`, then call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message. Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L91) for more info.
+Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache), [Hardhat node](https://hardhat.org/hardhat-network/#running-stand-alone-in-order-to-support-wallets-and-other-software), Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin:
+
+-   Ensure there is an available L1 network and that you know its RPC endpoint URL.
+-   Load an L1 Messaging contract using `starknet.devnet.loadL1MessagingContract`.
+-   Call `starknet.devnet.flush` after you `invoke` your contract and want to propagate your message.
+-   When running a hardhat test or script which relies on `network["config"]`, specify the name of an L1 network you defined in `hardhat.config`. Use `npx hardhat test --network <NETWORK_NAME>`. Network `localhost` is predefined in hardhat so `--network localhost` should work if you're using e.g. `npx hardhat node` as the L1 network.
+-   Check [this example](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#L98) for more info.
 
 ```typescript
   it("should exchange messages with Devnet", async function() {
@@ -330,6 +340,20 @@ Exchanging messages between L1 (Ganache, hardhat node, Ethereum testnet) and L2 
 ```typescript
 it("should estimate fee", async function () {
     const fee = contract.estimateFee("increase_balance", { amount: 10n });
+    console.log("Estimated fee:", fee.amount, fee.unit);
+});
+```
+
+Currently there are incompatibilities between Devnet and Plugin so, to support fee estimation on Devnet when using accounts, you temporarily have to provide `transactionVersion`:
+
+```typescript
+it("should estimate fee on Devnet", async function () {
+    const fee = account.estimateFee(
+        contract,
+        "increase_balance",
+        { amount: 10n },
+        { transactionVersion: 0 }
+    );
     console.log("Estimated fee:", fee.amount, fee.unit);
 });
 ```
@@ -367,7 +391,7 @@ A list of available versions can be found [here](https://hub.docker.com/r/shardl
 module.exports = {
   starknet: {
     // The default in this version of the plugin
-    dockerizedVersion: "0.8.0"
+    dockerizedVersion: "0.8.1"
   }
   ...
 };
@@ -547,14 +571,14 @@ const account = await starknet.getAccountFromAddress(
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
 
 ```typescript
-const { res: currBalance } = await account.call(contract, "get_balance");
+const { res: amount } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
 
 You can also use the Account object to perform multi{calls, invokes, fee estimations}.
 
 ```typescript
-const invokeArray = [
+const interactionArray = [
     {
         toContract: contract1,
         functionName: "increase_balance",
@@ -566,9 +590,9 @@ const invokeArray = [
         calldata: { amount: 20n }
     }
 ];
-const fee = await account.multiEstimateFee(invokeArray);
-const txHash = await account.multiInvoke(invokeArray);
-const results = await account.multiCall(invokeArray);
+const fee = await account.multiEstimateFee(interactionArray);
+const txHash = await account.multiInvoke(interactionArray);
+const results = await account.multiCall(interactionArray);
 ```
 
 OpenZeppelin and Argent account implementations work pretty much the same way, however Argent's has the additional signature verifications of a Guardian.

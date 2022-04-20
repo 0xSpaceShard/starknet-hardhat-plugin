@@ -151,11 +151,18 @@ export abstract class Account {
         const nonce = options.nonce || (await this.getNonce());
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
+        // temporary solution to support fee estimation on Devnet
+        if ("transactionVersion" in options) {
+            choice = Object.assign({}, choice);
+            choice.transactionVersion = options.transactionVersion;
+        }
+
         const { messageHash, args } = handleMultiCall(
             this.starknetContract.address,
             callParameters,
             nonce,
-            options.maxFee
+            options.maxFee,
+            choice.transactionVersion
         );
 
         const signatures = this.getSignatures(messageHash);

@@ -4,9 +4,9 @@ export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
 export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";
 export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
 export const DOCKER_REPOSITORY = "shardlabs/cairo-cli";
-export const DEFAULT_DOCKER_IMAGE_TAG = "0.8.0";
+export const DEFAULT_DOCKER_IMAGE_TAG = "0.8.1";
 export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
-export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = "0.1.19";
+export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = "0.1.22";
 export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5000";
 
 export const DOCKER_REPOSITORY_WITH_TAG = `${DOCKER_REPOSITORY}:${DEFAULT_DOCKER_IMAGE_TAG}`;

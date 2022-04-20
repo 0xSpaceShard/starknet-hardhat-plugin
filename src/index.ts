@@ -167,6 +167,7 @@ task("starknet-compile", "Compiles Starknet contracts")
             "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .addFlag("accountContract", "Allows compiling an account contract.")
+    .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
 
 task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
@@ -185,6 +186,10 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
         "An optional salt controlling where the contract will be deployed.\n" +
             "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
             "If the salt is not supplied, the contract will be deployed with a random salt."
+    )
+    .addOptionalParam(
+        "token",
+        "An optional token indicating that your deployment is whitelisted on mainnet"
     )
     .addOptionalVariadicPositionalParam(
         "paths",

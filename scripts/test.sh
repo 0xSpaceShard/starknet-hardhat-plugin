@@ -85,7 +85,7 @@ echo "starknet-devnet at: $(which starknet-devnet)"
 # iterate_dir integrated-devnet
 
 # run devnet
-starknet-devnet & # assuming the default (localhost:5000)
+starknet-devnet --host 127.0.0.1 --port 5000 &
 sleep 5
 
 iterate_dir devnet
