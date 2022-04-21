@@ -455,7 +455,7 @@ module.exports = {
 
 ### Runtime network - Integrated Devnet
 
-We provide a option to use [starkent-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default it will use the latest Docker image of the Devnet on the `http://127.0.0.1:5000`.
+We provide a option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default it will use the latest Docker image of the Devnet on the `http://127.0.0.1:5000`.
 
 Additionaly, you can use a specified Python environment or a different Docker image by defining the `networks[integratedDevnet]`.
 
