@@ -82,7 +82,7 @@ which starknet-devnet || ../scripts/install-devnet.sh
 echo "starknet-devnet at: $(which starknet-devnet)"
 
 # test integrated devnet
-# iterate_dir integrated-devnet
+iterate_dir integrated-devnet
 
 # run devnet
 starknet-devnet --host 127.0.0.1 --port 5000 &
