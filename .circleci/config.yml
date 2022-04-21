@@ -168,7 +168,7 @@ commands:
         steps:
             - run:
                   name: "Fetch Devnet version"
-                  command: echo $(curl -Ls https://api.github.com/repos/Shard-Labs/starknet-devnet/commits/master | jq -r .sha) > /tmp/devnet-version
+                  command: ./scripts/get-version.py starknet-devnet > /tmp/devnet-version
             - run:
                   name: "Set cairo-lang version"
                   command: echo 0.8.1 > /tmp/cairo-lang-version
