@@ -344,20 +344,6 @@ it("should estimate fee", async function () {
 });
 ```
 
-Currently there are incompatibilities between Devnet and Plugin so, to support fee estimation on Devnet when using accounts, you temporarily have to provide `transactionVersion`:
-
-```typescript
-it("should estimate fee on Devnet", async function () {
-    const fee = account.estimateFee(
-        contract,
-        "increase_balance",
-        { amount: 10n },
-        { transactionVersion: 0 }
-    );
-    console.log("Estimated fee:", fee.amount, fee.unit);
-});
-```
-
 ### Test - transaction information and receipt
 
 ```typescript
