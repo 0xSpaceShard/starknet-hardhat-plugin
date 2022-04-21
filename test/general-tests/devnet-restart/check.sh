@@ -1,4 +1,4 @@
 #!/bin/bash
 set -e
 
-npx hardhat test test/devnet-restart.test.ts
+npx hardhat test --no-compile test/devnet-restart.test.ts
