@@ -12,7 +12,7 @@ if len(sys.argv) != 2:
 tool = sys.argv[1].strip()
 
 TOOLS_USED = {
-    "starknet-devnet": "0.1.22"
+    "starknet-devnet": "0.1.23"
 }
 
 if tool not in TOOLS_USED:
