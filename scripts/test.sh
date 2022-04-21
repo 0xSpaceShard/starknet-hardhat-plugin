@@ -86,7 +86,6 @@ echo "starknet-devnet at: $(which starknet-devnet)"
 
 # run devnet
 starknet-devnet --host 127.0.0.1 --port 5000 &
-sleep 5
 
 iterate_dir devnet
 
