@@ -10,7 +10,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 -   [Testing](#test)
     -   [Important notes](#important-notes)
     -   [Examples](#test-examples)
-    -   [Devnet examples](#devnet)
+    -   [Devnet examples](#devnet-examples)
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
