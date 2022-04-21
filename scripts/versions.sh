@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Logs used versions
+
 set -e
 
 echo "node: $(node --version)"
