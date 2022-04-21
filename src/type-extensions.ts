@@ -75,6 +75,13 @@ type TransactionType = Transaction;
 declare module "hardhat/types/runtime" {
     interface Devnet {
         /**
+         * Restarts the devnet.
+         * @returns void
+         * @throws {@link HardhatPluginError}
+         */
+        restart(): Promise<void>;
+
+        /**
          * Handles all pending L1 to L2 messages and sends them to the other layer
          * @returns {Promise} - Metadata for the flushed messages
          */
