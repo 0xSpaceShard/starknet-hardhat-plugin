@@ -86,3 +86,14 @@ export interface Transaction {
     transaction: TransactionData;
     transaction_index: number;
 }
+
+export interface Block {
+    block_hash: string;
+    parent_block_hash: string;
+    block_number: number;
+    state_root: string;
+    status: string;
+    timestamp: number;
+    transaction_receipts: Object[];
+    transactions: Object[];
+}

@@ -58,6 +58,12 @@ interface DeployAccountWrapperOptions {
     network: string;
 }
 
+interface BlockQueryWrapperOptions {
+    number: number;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+}
+
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
         const ret = [
@@ -212,6 +218,20 @@ export abstract class StarknetWrapper {
     ): Promise<ProcessResult>;
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
+
+    protected prepareBlockQueryOptions(command: string, options: BlockQueryWrapperOptions): string[] {
+        return [
+            command,
+            "--block_number",
+            options.number.toString(),
+            "--gateway_url",
+            options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl
+        ];
+    }
+
+    public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
@@ -415,6 +435,25 @@ export class DockerWrapper extends StarknetWrapper {
         );
         return executed;
     }
+
+    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
+        const binds: String2String = {};
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+
+        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
+        return executed;
+    }
 }
 
 function checkCommandPath(commandPath: string): void {
@@ -502,6 +541,12 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
+
+    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }

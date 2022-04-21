@@ -1,5 +1,5 @@
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import {
@@ -167,4 +167,22 @@ export async function getTransactionReceiptUtil(
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
     return txReceipt;
+}
+
+export async function getBlockUtil(
+    blockNumber: number,
+    hre: HardhatRuntimeEnvironment
+): Promise<Block> {
+    const executed = await hre.starknetWrapper.getBlock({
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        number: blockNumber
+    });
+
+    if (executed.statusCode) {
+        const msg = `Could not get block. Error: ${executed.stderr.toString()}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    const block = JSON.parse(executed.stdout.toString()) as Block;
+    return block;
 }
