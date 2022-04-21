@@ -287,10 +287,7 @@ export interface CallOptions {
     maxFee?: Numeric;
 }
 
-export interface EstimateFeeOptions extends CallOptions {
-    // Workaround for devnet version mismatch
-    transactionVersion?: Numeric;
-}
+export type EstimateFeeOptions = CallOptions;
 
 export type InteractOptions = InvokeOptions | CallOptions | EstimateFeeOptions;
 
