@@ -17,7 +17,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre.config.networks,
-        INTEGRATED_DEVNET
+        `networks["${INTEGRATED_DEVNET}"]`
     );
     const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
 
