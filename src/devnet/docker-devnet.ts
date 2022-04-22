@@ -35,7 +35,6 @@ export class DockerDevnet extends IntegratedDevnet {
             "--rm",
             "--name",
             CONTAINER_NAME,
-            "-it",
             "-p",
             `${this.host}:${this.port}:5000`,
             DEVNET_DOCKER_REPOSITORY
