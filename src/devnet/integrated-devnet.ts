@@ -36,6 +36,6 @@ export abstract class IntegratedDevnet {
             return;
         }
 
-        this.cleanup?.();
+        this.cleanup();
     }
 }
