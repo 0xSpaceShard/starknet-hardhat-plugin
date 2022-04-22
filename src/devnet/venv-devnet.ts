@@ -4,10 +4,12 @@ import { getPrefixedCommand, normalizeVenvPath } from "../utils/venv";
 import { IntegratedDevnet } from "./integrated-devnet";
 
 export class VenvDevnet extends IntegratedDevnet {
-    private command = "starknet-devnet";
+    private command: string;
 
     constructor(venvPath: string, host: string, port: string) {
         super(host, port);
+
+        this.command = "starknet-devnet";
 
         if (venvPath !== "active") {
             this.command = getPrefixedCommand(normalizeVenvPath(venvPath), this.command);
