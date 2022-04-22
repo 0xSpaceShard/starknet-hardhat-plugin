@@ -26,7 +26,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
+        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for contract ${metadataSearchTarget}`);
     }
 
     const abiSearchTarget = path.join(
