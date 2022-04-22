@@ -167,11 +167,16 @@ commands:
         description: "Fetch the dependencies version"
         steps:
             - run:
+                  name: "Loads config enviroment variables at runtime"
+                  command: |
+                      tail -n +2 ./scripts/load-config.sh >> $BASH_ENV
+                      source $BASH_ENV
+            - run:
                   name: "Fetch Devnet version"
-                  command: ./scripts/get-version.py starknet-devnet > /tmp/devnet-version
+                  command: echo "$STARKNET_DEVNET" > /tmp/devnet-version
             - run:
                   name: "Set cairo-lang version"
-                  command: echo 0.8.1 > /tmp/cairo-lang-version
+                  command: echo "$CAIRO_LANG"> /tmp/cairo-lang-version
     restore_dependency_cache:
         parameters:
             platform:

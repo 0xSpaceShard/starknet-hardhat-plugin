@@ -6,7 +6,7 @@ module.exports = {
     },
     networks: {
         integratedDevnet: {
-            dockerizedVersion: "0.1.23",
+            dockerizedVersion: process.env.STARKNET_DEVNET,
             url: "http://127.0.0.1:5000"
         }
     }
