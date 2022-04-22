@@ -4,7 +4,7 @@ import { DEVNET_DOCKER_REPOSITORY } from "../constants";
 
 import { IntegratedDevnet } from "./integrated-devnet";
 
-const CONTAINER_NAME = "integrated-devnet" as const;
+const CONTAINER_NAME = "integrated-devnet";
 
 export class DockerDevnet extends IntegratedDevnet {
     private docker: HardhatDocker;
