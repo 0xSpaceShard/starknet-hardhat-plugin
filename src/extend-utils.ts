@@ -170,14 +170,25 @@ export async function getTransactionReceiptUtil(
 }
 
 export async function getBlockUtil(
-    blockNumber: number,
-    hre: HardhatRuntimeEnvironment
+    hre: HardhatRuntimeEnvironment,
+    blockNumber?: number,
+    hash?: string,
 ): Promise<Block> {
-    const executed = await hre.starknetWrapper.getBlock({
+    const blockOptions = {
         feederGatewayUrl: hre.config.starknet.networkUrl,
         gatewayUrl: hre.config.starknet.networkUrl,
-        number: blockNumber
-    });
+        number: blockNumber,
+        hash: hash
+    };
+
+    // If blockNumber and hash are both provided, it will get the block by hash
+    // If none of them are provided, it will get the latest block
+    if (!blockOptions.number && !blockOptions.hash) {
+        delete blockOptions.number;
+        delete blockOptions.hash;
+    }
+
+    const executed = await hre.starknetWrapper.getBlock(blockOptions);
 
     if (executed.statusCode) {
         const msg = `Could not get block. Error: ${executed.stderr.toString()}`;

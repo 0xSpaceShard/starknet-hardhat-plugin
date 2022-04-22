@@ -59,7 +59,8 @@ interface DeployAccountWrapperOptions {
 }
 
 interface BlockQueryWrapperOptions {
-    number: number;
+    number?: number;
+    hash?: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
 }
@@ -220,15 +221,21 @@ export abstract class StarknetWrapper {
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
     protected prepareBlockQueryOptions(command: string, options: BlockQueryWrapperOptions): string[] {
-        return [
+
+        const commandArr = [
             command,
-            "--block_number",
-            options.number.toString(),
+            options?.hash ? "--hash" : "",
+            options?.hash ? options.hash : "",
+            options?.number ? "--number" : "",
+            options?.number ? options?.number.toString() : "",
             "--gateway_url",
             options.gatewayUrl,
             "--feeder_gateway_url",
             options.feederGatewayUrl
         ];
+
+        // delete empty elements/strings
+        return commandArr.filter(e => e);
     }
 
     public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;
