@@ -9,8 +9,8 @@ import {
     PLUGIN_NAME,
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
-    DEFAULT_DOCKER_IMAGE_TAG,
-    DOCKER_REPOSITORY,
+    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
+    CAIRO_CLI_DOCKER_REPOSITORY,
     ALPHA_URL,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
@@ -148,8 +148,8 @@ extendEnvironment((hre) => {
         }
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
-        const repository = DOCKER_REPOSITORY;
-        const tag = hre.config.starknet.dockerizedVersion || DEFAULT_DOCKER_IMAGE_TAG;
+        const repository = CAIRO_CLI_DOCKER_REPOSITORY;
+        const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });

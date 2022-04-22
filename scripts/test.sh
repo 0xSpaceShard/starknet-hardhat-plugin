@@ -15,10 +15,10 @@ git log -n 1
 npm install
 
 # if docker is available on the system pull docker image
-DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/constants.js').DOCKER_REPOSITORY_WITH_TAG)")
+CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
 
 if docker --version > /dev/null 2>&1; then
-  docker pull "$DOCKER_REPOSITORY_WITH_TAG"
+  docker pull "$CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG"
 fi
 
 # used by some cases
