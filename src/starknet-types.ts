@@ -94,6 +94,6 @@ export interface Block {
     state_root: string;
     status: string;
     timestamp: number;
-    transaction_receipts: Object[];
-    transactions: Object[];
+    transaction_receipts: Record<string, unknown>;
+    transactions: Record<string, unknown>;
 }

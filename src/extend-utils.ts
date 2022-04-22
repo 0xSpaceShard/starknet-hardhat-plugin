@@ -172,7 +172,7 @@ export async function getTransactionReceiptUtil(
 export async function getBlockUtil(
     hre: HardhatRuntimeEnvironment,
     blockNumber?: number,
-    hash?: string,
+    hash?: string
 ): Promise<Block> {
     const blockOptions = {
         feederGatewayUrl: hre.config.starknet.networkUrl,
