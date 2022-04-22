@@ -79,7 +79,8 @@ fi
 
 # install and build devnet
 which starknet-devnet || ../scripts/install-devnet.sh
-echo "starknet-devnet at: $(which starknet-devnet)"
+STARKNET_DEVNET_PATH=$(which starknet-devnet)
+echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
 
 # test integrated devnet
 iterate_dir integrated-devnet
