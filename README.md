@@ -323,7 +323,7 @@ it("should estimate fee", async function () {
 });
 ```
 
-#### Transaction information and receipt
+#### Transaction information and receipt with events
 
 ```typescript
 it("should return transaction data and transaction receipt", async function () {
@@ -336,7 +336,7 @@ it("should return transaction data and transaction receipt", async function () {
     const txHash = await contract.invoke("increase_balance", { amount: 10 });
 
     const receipt = await starknet.getTransactionReceipt(txHash);
-    console.log(receipt);
+    console.log(receipt.events);
 });
 ```
 
