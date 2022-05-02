@@ -2,5 +2,4 @@
 
 set -e
 
-DEVNET_VERSION=$(../scripts/get-version.py starknet-devnet)
-pip3 install "starknet-devnet==$DEVNET_VERSION"
+pip3 install "starknet-devnet==$STARKNET_DEVNET"

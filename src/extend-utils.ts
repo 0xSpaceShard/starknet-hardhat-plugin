@@ -43,7 +43,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
         metadataPath,
         abiPath,
         networkID: hre.config.starknet.network,
-        chainID: hre.config.starknet.networkConfig.chainID || TESTNET_CHAIN_ID,
+        chainID: hre.config.starknet.networkConfig.starknetChainId || TESTNET_CHAIN_ID,
         gatewayUrl: hre.config.starknet.networkUrl,
         feederGatewayUrl: hre.config.starknet.networkUrl
     });

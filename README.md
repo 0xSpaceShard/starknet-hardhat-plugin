@@ -393,8 +393,7 @@ A list of available dockerized versions can be found [here](https://hub.docker.c
 ```javascript
 module.exports = {
   starknet: {
-    // The default in this version of the plugin
-    dockerizedVersion: "0.8.1" // append "-arm" if running on ARM architecture (e.g. M1)
+    dockerizedVersion: "0.8.1"
   }
   ...
 };
@@ -452,6 +451,31 @@ module.exports = {
   networks: {
     myNetwork: {
       url: "http://localhost:5000" // caveat: localhost on MacOS might not be bound to 127.0.0.1
+    }
+  }
+  ...
+};
+```
+
+### Runtime network - Integrated Devnet
+
+We provide a option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5000`.
+
+Additionaly, you can use a specified Python environment or a different Docker image by defining the `networks["integratedDevnet"]`.
+
+```javascript
+module.exports = {
+  starknet: {
+    network: "integrated-devnet"
+  },
+  networks: {
+    integratedDevnet: {
+      url: "http://127.0.0.1:5000",
+      // venv: "active" <- for the active virtual environment
+      // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
+      venv: "<VENV-PATH>",
+      // or specify Docker image tag
+      dockerizedVersion: "0.1.18"
     }
   }
   ...

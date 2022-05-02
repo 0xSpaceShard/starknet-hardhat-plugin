@@ -1,8 +1,8 @@
-import "../dist/index.js";
+import "../dist/src/index.js";
 
 module.exports = {
     starknet: {
-        dockerizedVersion: "0.8.1",
+        dockerizedVersion: process.env.CAIRO_LANG,
         network: process.env.NETWORK
     },
     networks: {

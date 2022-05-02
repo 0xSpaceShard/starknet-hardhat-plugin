@@ -2,7 +2,13 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
+import {
+    PLUGIN_NAME,
+    ABI_SUFFIX,
+    ALPHA_TESTNET,
+    DEFAULT_STARKNET_NETWORK,
+    INTEGRATED_DEVNET
+} from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -13,8 +19,14 @@ import {
     findPath,
     getAccountPath
 } from "./utils";
-import { HardhatRuntimeEnvironment, RunSuperFunction, TaskArguments } from "hardhat/types";
+import {
+    HardhatRuntimeEnvironment,
+    HttpNetworkConfig,
+    RunSuperFunction,
+    TaskArguments
+} from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
+import { createIntegratedDevnet } from "./devnet";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -258,7 +270,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  */
 function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
     networkName ||= ALPHA_TESTNET;
-    const network = getNetwork(networkName, hre.config.networks, origin);
+    const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
         throw new HardhatPluginError(
             PLUGIN_NAME,
@@ -509,11 +521,39 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 
+async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<unknown>) {
+    if (hre.starknet.network !== INTEGRATED_DEVNET) {
+        await fn();
+        return;
+    }
+
+    const devnet = createIntegratedDevnet(hre);
+
+    await devnet.start();
+    await fn();
+    devnet.stop();
+}
+
 export async function starknetTestAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
     setRuntimeNetwork(args, hre);
-    await runSuper(args);
+
+    await runWithDevnet(hre, async () => {
+        await runSuper(args);
+    });
+}
+
+export async function starknetRunAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment,
+    runSuper: RunSuperFunction<TaskArguments>
+) {
+    setRuntimeNetwork(args, hre);
+
+    await runWithDevnet(hre, async () => {
+        await runSuper(args);
+    });
 }

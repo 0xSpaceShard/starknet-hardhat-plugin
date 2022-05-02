@@ -1,4 +1,10 @@
-import { HardhatRuntimeEnvironment, HttpNetworkConfig, NetworksConfig } from "hardhat/types";
+import {
+    HardhatNetworkConfig,
+    HardhatRuntimeEnvironment,
+    HttpNetworkConfig,
+    NetworkConfig,
+    NetworksConfig
+} from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
     ALPHA_MAINNET,
@@ -6,6 +12,8 @@ import {
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
+    INTEGRATED_DEVNET,
+    INTEGRATED_DEVNET_INTERNALLY,
     PLUGIN_NAME
 } from "./constants";
 import * as path from "path";
@@ -56,18 +64,39 @@ export function adaptUrl(url: string): string {
 export function getDefaultHttpNetworkConfig(
     url: string,
     verificationUrl: string,
-    chainID: string
+    starknetChainId: string
 ): HttpNetworkConfig {
     return {
         url,
         verificationUrl,
-        chainID,
+        starknetChainId,
         accounts: undefined,
         gas: undefined,
         gasMultiplier: undefined,
         gasPrice: undefined,
         httpHeaders: undefined,
         timeout: undefined
+    };
+}
+
+export function getDefaultHardhatNetworkConfig(url: string): HardhatNetworkConfig {
+    return {
+        url,
+        chainId: undefined,
+        gas: undefined,
+        gasPrice: undefined,
+        gasMultiplier: undefined,
+        hardfork: undefined,
+        mining: undefined,
+        accounts: undefined,
+        blockGasLimit: undefined,
+        minGasPrice: undefined,
+        throwOnTransactionFailures: undefined,
+        throwOnCallFailures: undefined,
+        allowUnlimitedContractSize: undefined,
+        initialDate: undefined,
+        loggingEnabled: undefined,
+        chains: undefined
     };
 }
 
@@ -96,18 +125,21 @@ export function checkArtifactExists(artifactsPath: string): void {
  * @param origin Short string describing where/how `networkName` was specified
  * @returns Network config corresponding to `networkName`
  */
-export function getNetwork(
+export function getNetwork<N extends NetworkConfig>(
     networkName: string,
     networks: NetworksConfig,
     origin: string
-): HttpNetworkConfig {
+): N {
     if (isMainnet(networkName)) {
         networkName = ALPHA_MAINNET_INTERNALLY;
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
+    } else if (isStarknetDevnet(networkName)) {
+        networkName = INTEGRATED_DEVNET_INTERNALLY;
     }
 
-    const network = <HttpNetworkConfig>networks[networkName];
+    const network = <N>networks[networkName];
+
     if (!network) {
         const available = Object.keys(networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
@@ -129,6 +161,10 @@ function isTestnet(networkName: string): boolean {
 
 function isMainnet(networkName: string): boolean {
     return networkName === ALPHA_MAINNET || networkName === ALPHA_MAINNET_INTERNALLY;
+}
+
+function isStarknetDevnet(networkName: string): boolean {
+    return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 
 export async function findPath(traversable: string, name: string) {

@@ -11,5 +11,5 @@
         "declaration": true,
         "module": "commonjs"
     },
-    "include": ["./src"]
+    "include": ["./src", "config.json"]
 }

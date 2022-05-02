@@ -167,11 +167,16 @@ commands:
         description: "Fetch the dependencies version"
         steps:
             - run:
+                  name: "Loads config enviroment variables at runtime"
+                  command: |
+                      tail -n +2 ./scripts/load-config.sh >> $BASH_ENV
+                      source $BASH_ENV
+            - run:
                   name: "Fetch Devnet version"
-                  command: ./scripts/get-version.py starknet-devnet > /tmp/devnet-version
+                  command: echo "$STARKNET_DEVNET" > /tmp/devnet-version
             - run:
                   name: "Set cairo-lang version"
-                  command: echo 0.8.1 > /tmp/cairo-lang-version
+                  command: echo "$CAIRO_LANG"> /tmp/cairo-lang-version
     restore_dependency_cache:
         parameters:
             platform:
@@ -271,12 +276,20 @@ workflows:
                   matrix:
                       parameters:
                           platform: [linux-node14, macos-node14]
-                          test-name: [test-general-tests, test-configuration-tests, test-venv-tests]
+                          test-name:
+                              [
+                                  test-general-tests,
+                                  test-configuration-tests,
+                                  test-venv-tests,
+                                  test-integrated-devnet-tests
+                              ]
                       exclude:
                           - platform: macos-node14
                             test-name: test-general-tests
                           - platform: macos-node14
                             test-name: test-configuration-tests
+                          - platform: macos-node14
+                            test-name: test-integrated-devnet-tests
             - npm_publish:
                   context: shardlabs
                   filters:
