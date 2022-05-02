@@ -10,6 +10,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 -   [Testing](#test)
     -   [Important notes](#important-notes)
     -   [Examples](#test-examples)
+    -   [Devnet examples](#devnet-examples)
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
@@ -177,7 +178,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L100) out.
+To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L104) out.
 
 ## Testing
 
@@ -204,7 +205,9 @@ These examples are inspired by the official [Starknet Python tutorial](https://w
         -   `getContractFactory("subdir/MyContract")`
         -   `getContractFactory("MyContract")`
 
-### Test - setup
+### Test examples
+
+#### Setup
 
 ```typescript
 import { expect } from "chai";
@@ -218,7 +221,7 @@ describe("My Test", function () {
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
 ```
 
-### Test - deploy / load contract
+#### Deploy / load contract
 
 ```typescript
   /**
@@ -247,7 +250,7 @@ describe("My Test", function () {
   });
 ```
 
-### Test - arrays
+#### Arrays
 
 ```typescript
 /**
@@ -263,7 +266,7 @@ it("should work with arrays", async function () {
 });
 ```
 
-### Test - tuples
+#### Tuples
 
 ```typescript
 /**
@@ -280,7 +283,7 @@ it("should work with tuples", async function () {
 });
 ```
 
-### Test - accounts
+#### Accounts
 
 More detailed documentation can be found [here](#account).
 
@@ -311,7 +314,37 @@ More detailed documentation can be found [here](#account).
 });
 ```
 
-### Test - L1-L2 communication (Postman message exchange with Devnet)
+#### Fee estimation
+
+```typescript
+it("should estimate fee", async function () {
+    const fee = contract.estimateFee("increase_balance", { amount: 10n });
+    console.log("Estimated fee:", fee.amount, fee.unit);
+});
+```
+
+#### Transaction information and receipt with events
+
+```typescript
+it("should return transaction data and transaction receipt", async function () {
+    const contract: StarknetContract = await contractFactory.deploy();
+    console.log("Deployment transaction hash:", contract.deployTxHash);
+
+    const transaction = await starknet.getTransaction(contract.deployTxHash);
+    console.log(transaction);
+
+    const txHash = await contract.invoke("increase_balance", { amount: 10 });
+
+    const receipt = await starknet.getTransactionReceipt(txHash);
+    console.log(receipt.events);
+});
+```
+
+For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
+
+### Devnet examples
+
+#### L1-L2 communication (Postman message exchange with Devnet)
 
 Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache), [Hardhat node](https://hardhat.org/hardhat-network/#running-stand-alone-in-order-to-support-wallets-and-other-software), Ethereum testnet) and L2 (only supported for [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet)) can be done using this plugin:
 
@@ -335,33 +368,13 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
   });
 ```
 
-### Test - fee estimation
+#### Restart
+
+Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deployed contracts, blocks and storage updates will be restarted to the empty state.
 
 ```typescript
-it("should estimate fee", async function () {
-    const fee = contract.estimateFee("increase_balance", { amount: 10n });
-    console.log("Estimated fee:", fee.amount, fee.unit);
-});
+await starknet.devnet.restart();
 ```
-
-### Test - transaction information and receipt
-
-```typescript
-it("should return transaction data and transaction receipt", async function () {
-    const contract: StarknetContract = await contractFactory.deploy();
-    console.log("Deployment transaction hash:", contract.deployTxHash);
-
-    const transaction = await starknet.getTransaction(contract.deployTxHash);
-    console.log(transaction);
-
-    const txHash = await contract.invoke("increase_balance", { amount: 10 });
-
-    const receipt = await starknet.getTransactionReceipt(txHash);
-    console.log(receipt);
-});
-```
-
-For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
 ## Configure the plugin
 
@@ -369,9 +382,13 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 ### Cairo version
 
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
 
-A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+By default, the images are amd64 compliant. Append the `-arm` suffix to the version name to use an image adapted for arm64 architecture (e.g. `dockerizedVersion: "0.8.1-arm"`).
+
+If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+
+A list of available dockerized versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 
 ```javascript
 module.exports = {
@@ -384,9 +401,11 @@ module.exports = {
 
 ### Existing virtual environment
 
-If you want to use an existing Python virtual environment, specify it by using `starknet["venv"]`.
+If you want to use an existing Python virtual environment (pyenv, poetry, conda, miniconda), specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
+
+If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
 
 ```typescript
 module.exports = {
