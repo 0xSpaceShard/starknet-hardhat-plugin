@@ -269,7 +269,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  * @param hre the runtime environment from which network data is extracted
  * @param origin short string describing where/how `networkName` was specified
  */
-function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
+function getVerificationNetwork(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
     networkName ||= ALPHA_TESTNET;
     const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
@@ -278,20 +278,17 @@ function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment,
             `Network ${networkName} does not support Voyager verification.`
         );
     }
-    return network.verificationUrl;
+    return network;
 }
 
 export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    const verificationUrl = getVerificationUrl(args.starknetNetwork, hre, "starknet-network");
-    const voyagerUrl = `${verificationUrl}${args.address}/code`;
+    const network = getVerificationNetwork(args.starknetNetwork, hre, "--starknet-network");
+    const voyagerUrl = `${network.verificationUrl}${args.address}/code`;
+    const verifiedUrl = `${network.verifiedUrl}${args.address}#code`;
+
     let isVerified = false;
     try {
-        const resp = await axios.get(voyagerUrl, {
-            // headers: { TODO remove
-            //     Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            //     "Content-Type": "application/json"
-            // }
-        });
+        const resp = await axios.get(voyagerUrl);
         const data = resp.data;
 
         if (data.contract) {
@@ -300,15 +297,15 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
             }
         }
     } catch (error) {
-        console.log("DEBUG error response", error);
-        const msg = `Something went wrong when trying to verify the code at address ${args.address} lmao`;
+        const msg = "Something went wrong while checking if the contract has already been verified.";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
     if (isVerified) {
         console.log(`Contract at address ${args.address} has already been verified`);
+        console.log(`Check it out on Voyager: ${verifiedUrl}`);
     } else {
-        await handleContractVerification(args, voyagerUrl, hre);
+        await handleContractVerification(args, voyagerUrl, verifiedUrl, hre);
     }
 }
 
@@ -325,6 +322,7 @@ function getMainVerificationPath(contractPath: string, root: string) {
 async function handleContractVerification(
     args: TaskArguments,
     voyagerUrl: string,
+    verifiedUrl: string,
     hre: HardhatRuntimeEnvironment
 ) {
     // Set main contract path
@@ -347,25 +345,19 @@ async function handleContractVerification(
         {
             headers: bodyFormData.getHeaders()
         }
-    ).catch((error) => {
-        switch (error.response.status) {
-            case 400: {
-                const msg = `Contract at address ${args.address} does not match the provided code`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            case 404: {
-                const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            default: {
-                console.log("DEBUG error", error.response.status);
-                const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-        }
+    ).catch(() => {
+        throw new HardhatPluginError(PLUGIN_NAME, `\
+Could not verify the contract at address ${args.address}.
+It is hard to tell exactly what happened, but possible reasons include:
+- Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
+- Wrong contract address
+- Wrong files provided
+- Wrong main contract chosen (first after --path)
+- Voyager is down`);
     });
-    console.log(`Contract has been successfuly verified at address ${args.address}. `);
-    // TODO print link to verified contract
+
+    console.log(`Contract has been successfuly verified at address ${args.address}`);
+    console.log(`Check it out on Voyager: ${verifiedUrl}`);
 }
 
 function handleMultiPartContractVerification(
@@ -373,7 +365,6 @@ function handleMultiPartContractVerification(
     paths: string[],
     root: string
 ) {
-    console.log("DEBUG paths", paths);
     paths.forEach(function (item: string, index: number) {
         if (!path.isAbsolute(item)) {
             paths[index] = path.normalize(path.join(root, item));

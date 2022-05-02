@@ -64,11 +64,13 @@ export function adaptUrl(url: string): string {
 export function getDefaultHttpNetworkConfig(
     url: string,
     verificationUrl: string,
+    verifiedUrl: string,
     starknetChainId: string
 ): HttpNetworkConfig {
     return {
         url,
         verificationUrl,
+        verifiedUrl,
         starknetChainId,
         accounts: undefined,
         gas: undefined,
