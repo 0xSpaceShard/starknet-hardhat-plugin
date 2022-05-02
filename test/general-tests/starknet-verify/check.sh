@@ -1,27 +1,33 @@
 #!/bin/bash
 set -e
 
-echo "The starknet-verify test is temporarily disabled."
-echo "To enable it back, uncomment the lines in its check.sh."
+MAIN_CONTRACT=contracts/contract.cairo
+UTIL_CONTRACT=contracts/util.cairo
 
-### The util contract is only being compiled with the purpose of testing a Single part contract verification, as it does not have any dependencies
-# npx hardhat starknet-compile contracts/contract.cairo contracts/util.cairo
+npx hardhat starknet-compile $MAIN_CONTRACT $UTIL_CONTRACT
 
-# output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-artifacts/contracts/util.cairo/)
-# util_address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
-# echo "Util contract address: $util_address"
+echo "Waiting for deployment to be accepted"
+output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" contract --inputs 10 --wait)
+address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
 
-# output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-artifacts/contracts/contract.cairo/)
-# main_address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
-# echo "Main contract address: $main_address"
+echo "Sleeping to allow Voyager to index the deployment"
+sleep 30s
 
+echo "Verifying contract at $address"
+npx hardhat starknet-verify --starknet-network "$NETWORK" --path $MAIN_CONTRACT $UTIL_CONTRACT --address $address
 
-# sleep 5m
+echo "Sleeping before curling"
+sleep 10s
 
-### Single contract verification
+VERIFICATION_RESP="/tmp/verification-resp.json"
+curl "https://goerli.voyager.online/api/contract/$address/code" > $VERIFICATION_RESP
 
-# npx hardhat starknet-verify --starknet-network "$NETWORK" --path contracts/util.cairo --address $util_address
+CONTRACT_RESP="/tmp/contract-resp.cairo"
+jq -r '.contract | ."contract.cairo" | join("\n")' $VERIFICATION_RESP > $CONTRACT_RESP
+diff -B $CONTRACT_RESP $MAIN_CONTRACT
 
-### Multi part contract verification
+UTIL_RESP="/tmp/util-resp.cairo"
+jq -r '.contract | ."util.cairo" | join("\n")' $VERIFICATION_RESP > $UTIL_RESP
+diff -B $UTIL_RESP $UTIL_CONTRACT
 
-# npx hardhat starknet-verify --starknet-network "$NETWORK" --path contracts/contract.cairo --address $main_address contracts/util.cairo
+echo "Contracts from the response matching the original ones."
