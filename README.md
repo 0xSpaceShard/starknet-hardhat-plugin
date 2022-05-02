@@ -376,7 +376,6 @@ A list of available versions can be found [here](https://hub.docker.com/r/shardl
 ```javascript
 module.exports = {
   starknet: {
-    // The default in this version of the plugin
     dockerizedVersion: "0.8.1"
   }
   ...
