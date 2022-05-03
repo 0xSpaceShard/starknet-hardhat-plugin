@@ -172,7 +172,9 @@ commands:
             - run:
                   name: "Load config enviroment variables at runtime"
                   command: |
-                      tail -n +2 ./scripts/load-config.sh >> $BASH_ENV
+                      for key in $(jq -r 'keys[]' config.json); do
+                          echo $key=$(jq -r .[\""$key"\"] config.json) >> $BASH_ENV
+                      done
             - run:
                   name: "Fetch Devnet version"
                   command: echo "$STARKNET_DEVNET" > /tmp/devnet-version
