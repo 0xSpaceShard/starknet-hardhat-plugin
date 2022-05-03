@@ -199,7 +199,12 @@ declare module "hardhat/types/runtime" {
 
             getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
 
-            getBlock: (identifier: BlockIdentifier) => Promise<Block>;
+            /**
+             * Returns an entire block and the transactions contained within it.
+             * @param optional block identifier (by block number or hash). To query the last block, simply remove the identifier.
+             * @returns a block object
+             */
+            getBlock: (identifier?: BlockIdentifier) => Promise<Block>;
         };
     }
 
