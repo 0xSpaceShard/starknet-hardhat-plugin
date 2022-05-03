@@ -58,6 +58,13 @@ interface DeployAccountWrapperOptions {
     network: string;
 }
 
+interface BlockQueryWrapperOptions {
+    number?: number;
+    hash?: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+}
+
 export abstract class StarknetWrapper {
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
         const ret = [
@@ -212,6 +219,31 @@ export abstract class StarknetWrapper {
     ): Promise<ProcessResult>;
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
+
+    protected prepareBlockQueryOptions(command: string, options: BlockQueryWrapperOptions): string[] {
+
+        const commandArr = [
+            command,
+            "--gateway_url",
+            options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl
+        ];
+
+        if (options?.hash) {
+            commandArr.push("--hash");
+            commandArr.push(options.hash);
+        }
+
+        if (options?.number) {
+            commandArr.push("--number");
+            commandArr.push(options.number.toString());
+        }
+
+        return commandArr;
+    }
+
+    public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
@@ -415,6 +447,25 @@ export class DockerWrapper extends StarknetWrapper {
         );
         return executed;
     }
+
+    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
+        const binds: String2String = {};
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+
+        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
+        return executed;
+    }
 }
 
 export class VenvWrapper extends StarknetWrapper {
@@ -489,6 +540,12 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
+        return executed;
+    }
+
+    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
         const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }

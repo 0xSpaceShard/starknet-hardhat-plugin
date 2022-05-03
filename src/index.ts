@@ -41,7 +41,8 @@ import {
     getTransactionUtil,
     getTransactionReceiptUtil,
     getWalletUtil,
-    shortStringToBigIntUtil
+    shortStringToBigIntUtil,
+    getBlockUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { IntegratedDevnet } from "./devnet";
@@ -241,6 +242,11 @@ extendEnvironment((hre) => {
         getTransactionReceipt: async (txHash) => {
             const txReceipt = await getTransactionReceiptUtil(txHash, hre);
             return txReceipt;
+        },
+
+        getBlock: async (identifier) => {
+            const block = await getBlockUtil(hre, identifier);
+            return block;
         }
     };
 });

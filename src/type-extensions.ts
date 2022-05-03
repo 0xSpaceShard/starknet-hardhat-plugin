@@ -9,7 +9,7 @@ import {
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { Transaction, TransactionReceipt } from "./starknet-types";
+import { Transaction, TransactionReceipt, Block, BlockIdentifier } from "./starknet-types";
 import { NetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
@@ -89,6 +89,7 @@ type OpenZeppelinAccountType = OpenZeppelinAccount;
 type ArgentAccountType = ArgentAccount;
 type TransactionReceiptType = TransactionReceipt;
 type TransactionType = Transaction;
+type BlockType = Block;
 
 declare module "hardhat/types/runtime" {
     interface Devnet {
@@ -197,6 +198,13 @@ declare module "hardhat/types/runtime" {
             getTransaction: (txHash: string) => Promise<Transaction>;
 
             getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
+
+            /**
+             * Returns an entire block and the transactions contained within it.
+             * @param optional block identifier (by block number or hash). To query the last block, simply remove the identifier.
+             * @returns a block object
+             */
+            getBlock: (identifier?: BlockIdentifier) => Promise<Block>;
         };
     }
 
@@ -209,4 +217,5 @@ declare module "hardhat/types/runtime" {
     type ArgentAccount = ArgentAccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;
+    type Block = BlockType;
 }

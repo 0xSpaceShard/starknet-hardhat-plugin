@@ -1,5 +1,5 @@
 import { HardhatPluginError } from "hardhat/plugins";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import {
@@ -11,7 +11,7 @@ import {
 import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
-import { Transaction, TransactionReceipt } from "./starknet-types";
+import { Transaction, TransactionReceipt, BlockIdentifier } from "./starknet-types";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -26,7 +26,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for ${contractPath}`);
+        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for contract "${contractPath}.cairo"`);
     }
 
     const abiSearchTarget = path.join(
@@ -167,4 +167,32 @@ export async function getTransactionReceiptUtil(
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
     return txReceipt;
+}
+
+export async function getBlockUtil(
+    hre: HardhatRuntimeEnvironment,
+    identifier?: BlockIdentifier
+): Promise<Block> {
+    const blockOptions = {
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        number: identifier?.blockNumber,
+        hash: identifier?.blockHash
+    };
+
+    // If blockNumber and hash are both provided, it will get the block by hash
+    // If none of them are provided, it will get the latest block
+    if (!blockOptions.number && !blockOptions.hash) {
+        delete blockOptions.number;
+        delete blockOptions.hash;
+    }
+
+    const executed = await hre.starknetWrapper.getBlock(blockOptions);
+
+    if (executed.statusCode) {
+        const msg = `Could not get block. Error: ${executed.stderr.toString()}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+    const block = JSON.parse(executed.stdout.toString()) as Block;
+    return block;
 }
