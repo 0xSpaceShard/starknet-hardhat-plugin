@@ -167,6 +167,9 @@ commands:
         description: "Fetch the dependencies version"
         steps:
             - run:
+                  name: "DEBUG BEFORE sourcing BASH_ENV"
+                  command: echo $STARKNET_DEVNET $CAIRO_LANG
+            - run:
                   name: "Loads config enviroment variables at runtime"
                   command: |
                       tail -n +2 ./scripts/load-config.sh >> $BASH_ENV
@@ -177,6 +180,9 @@ commands:
             - run:
                   name: "Set cairo-lang version"
                   command: echo "$CAIRO_LANG"> /tmp/cairo-lang-version
+            - run:
+                  name: "DEBUG AFTER sourcing BASH_ENV"
+                  command: echo $STARKNET_DEVNET $CAIRO_LANG
     restore_dependency_cache:
         parameters:
             platform:
