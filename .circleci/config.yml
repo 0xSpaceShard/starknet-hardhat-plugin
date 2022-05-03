@@ -170,10 +170,9 @@ commands:
                   name: "DEBUG BEFORE sourcing BASH_ENV"
                   command: echo $STARKNET_DEVNET $CAIRO_LANG
             - run:
-                  name: "Loads config enviroment variables at runtime"
+                  name: "Load config enviroment variables at runtime"
                   command: |
                       tail -n +2 ./scripts/load-config.sh >> $BASH_ENV
-                      source $BASH_ENV
             - run:
                   name: "Fetch Devnet version"
                   command: echo "$STARKNET_DEVNET" > /tmp/devnet-version
@@ -281,21 +280,21 @@ workflows:
             - test:
                   matrix:
                       parameters:
-                          platform: [linux-node14, macos-node14]
+                          platform: [linux-node14] #, macos-node14]
                           test-name:
                               [
                                   test-general-tests,
-                                  test-configuration-tests,
-                                  test-venv-tests,
-                                  test-integrated-devnet-tests
+                                #   test-configuration-tests,
+                                #   test-venv-tests,
+                                #   test-integrated-devnet-tests
                               ]
-                      exclude:
-                          - platform: macos-node14
-                            test-name: test-general-tests
-                          - platform: macos-node14
-                            test-name: test-configuration-tests
-                          - platform: macos-node14
-                            test-name: test-integrated-devnet-tests
+                    #   exclude:
+                    #       - platform: macos-node14
+                    #         test-name: test-general-tests
+                    #       - platform: macos-node14
+                    #         test-name: test-configuration-tests
+                    #       - platform: macos-node14
+                    #         test-name: test-integrated-devnet-tests
             - npm_publish:
                   context: shardlabs
                   filters:
