@@ -11,7 +11,7 @@ import {
 import { AccountImplementationType, StarknetContractFactory } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
-import { Transaction, TransactionReceipt } from "./starknet-types";
+import { Transaction, TransactionReceipt, BlockIdentifier } from "./starknet-types";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -26,7 +26,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for contract ${metadataSearchTarget}`);
+        throw new HardhatPluginError(PLUGIN_NAME, `Could not find metadata for contract "${contractPath}.cairo"`);
     }
 
     const abiSearchTarget = path.join(
@@ -171,14 +171,13 @@ export async function getTransactionReceiptUtil(
 
 export async function getBlockUtil(
     hre: HardhatRuntimeEnvironment,
-    blockNumber?: number,
-    hash?: string
+    identifier: BlockIdentifier
 ): Promise<Block> {
     const blockOptions = {
         feederGatewayUrl: hre.config.starknet.networkUrl,
         gatewayUrl: hre.config.starknet.networkUrl,
-        number: blockNumber,
-        hash: hash
+        number: identifier?.blockNumber,
+        hash: identifier?.blockHash
     };
 
     // If blockNumber and hash are both provided, it will get the block by hash

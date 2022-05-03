@@ -97,3 +97,8 @@ export interface Block {
     transaction_receipts: Record<string, unknown>;
     transactions: Record<string, unknown>;
 }
+
+export interface BlockIdentifier {
+    blockNumber?: number;
+    blockHash?: string;
+}

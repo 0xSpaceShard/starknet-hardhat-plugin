@@ -224,18 +224,23 @@ export abstract class StarknetWrapper {
 
         const commandArr = [
             command,
-            options?.hash ? "--hash" : "",
-            options?.hash ? options.hash : "",
-            options?.number ? "--number" : "",
-            options?.number ? options?.number.toString() : "",
             "--gateway_url",
             options.gatewayUrl,
             "--feeder_gateway_url",
             options.feederGatewayUrl
         ];
 
-        // delete empty elements/strings
-        return commandArr.filter(e => e);
+        if (options?.hash) {
+            commandArr.push("--hash");
+            commandArr.push(options.hash);
+        }
+
+        if (options?.number) {
+            commandArr.push("--number");
+            commandArr.push(options.number.toString());
+        }
+
+        return commandArr;
     }
 
     public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;

@@ -231,8 +231,8 @@ extendEnvironment((hre) => {
             return txReceipt;
         },
 
-        getBlock: async (blockNumber?: number, hash?: string) => {
-            const block = await getBlockUtil(hre, blockNumber, hash);
+        getBlock: async (identifier) => {
+            const block = await getBlockUtil(hre, identifier);
             return block;
         }
     };

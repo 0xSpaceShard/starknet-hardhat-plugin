@@ -9,7 +9,7 @@ import {
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { Transaction, TransactionReceipt, Block } from "./starknet-types";
+import { Transaction, TransactionReceipt, Block, BlockIdentifier } from "./starknet-types";
 import { HttpNetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
@@ -181,7 +181,7 @@ declare module "hardhat/types/runtime" {
 
             getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
 
-            getBlock: (blockNumber?: number, hash?: string) => Promise<Block>;
+            getBlock: (identifier: BlockIdentifier) => Promise<Block>;
         };
     }
 
