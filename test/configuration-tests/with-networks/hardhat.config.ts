@@ -1,4 +1,4 @@
-import "../dist/index.js";
+import "../dist/src/index.js";
 
 module.exports = {
     starknet: {

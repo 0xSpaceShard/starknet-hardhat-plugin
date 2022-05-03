@@ -1,11 +1,11 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
-import * as fs from "fs";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
 import { InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
+import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
 interface CompileWrapperOptions {
     file: string;
@@ -468,36 +468,23 @@ export class DockerWrapper extends StarknetWrapper {
     }
 }
 
-function checkCommandPath(commandPath: string): void {
-    if (!fs.existsSync(commandPath)) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Command ${commandPath} not found.`);
-    }
-}
-
 export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
     private starknetPath: string;
 
     constructor(venvPath: string) {
         super();
+
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
             this.starknetCompilePath = "starknet-compile";
             this.starknetPath = "starknet";
         } else {
-            if (venvPath[0] === "~") {
-                venvPath = path.join(process.env.HOME, venvPath.slice(1));
-            }
-            venvPath = path.normalize(venvPath);
+            venvPath = normalizeVenvPath(venvPath);
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
 
-            const venvPrefix = path.join(venvPath, "bin");
-
-            this.starknetCompilePath = path.join(venvPrefix, "starknet-compile");
-            checkCommandPath(this.starknetCompilePath);
-
-            this.starknetPath = path.join(venvPrefix, "starknet");
-            checkCommandPath(this.starknetPath);
+            this.starknetCompilePath = getPrefixedCommand(venvPath, "starknet-compile");
+            this.starknetPath = getPrefixedCommand(venvPath, "starknet");
         }
     }
 

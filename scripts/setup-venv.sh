@@ -25,3 +25,4 @@ if [ "$TEST_SUBDIR" == "venv-tests" ]; then
     echo "starknet at: $(which starknet)"
     echo "starknet version: $(starknet --version)"
 fi
+

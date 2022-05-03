@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+trap 'kill $(jobs -p)' EXIT
+
 CONFIG_FILE_NAME="hardhat.config.ts"
 
 ./scripts/ensure-python.sh
@@ -11,6 +13,13 @@ git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-e
 cd starknet-hardhat-example
 git log -n 1
 npm install
+
+# if docker is available on the system pull docker image
+CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/src/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
+
+if docker --version > /dev/null 2>&1; then
+  docker pull "$CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG"
+fi
 
 # used by some cases
 ../scripts/setup-venv.sh
@@ -34,7 +43,8 @@ function iterate_dir(){
         # Skip if there is a network file that doesn't specify the current network.
         # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
-        if [[ -f "$network_file" ]] && [[ $(jq ".$network" "$network_file") != true ]]; then
+
+        if [[ -f "$network_file" ]] && [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
@@ -67,10 +77,17 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
 
-# install, build and run devnet
+# install and build devnet
 which starknet-devnet || ../scripts/install-devnet.sh
-echo "starknet-devnet at: $(which starknet-devnet)"
+STARKNET_DEVNET_PATH=$(which starknet-devnet)
+echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
+
+# test integrated devnet
+iterate_dir integrated-devnet
+
+# run devnet
 starknet-devnet --host 127.0.0.1 --port 5000 &
+
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"

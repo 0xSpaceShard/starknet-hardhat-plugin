@@ -1,23 +1,26 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { HardhatPluginError, lazyObject } from "hardhat/plugins";
+import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
+import exitHook from "exit-hook";
+
 import "./type-extensions";
 import {
     PLUGIN_NAME,
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
-    DEFAULT_DOCKER_IMAGE_TAG,
-    DOCKER_REPOSITORY,
+    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
+    CAIRO_CLI_DOCKER_REPOSITORY,
     ALPHA_URL,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
     VOYAGER_MAINNET_CONTRACT_API_URL,
     DEFAULT_STARKNET_NETWORK,
+    INTEGRATED_DEVNET_URL,
     TESTNET_CHAIN_ID,
     ALPHA_MAINNET_CHAIN_ID
 } from "./constants";
-import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
-import { getDefaultHttpNetworkConfig, getNetwork } from "./utils";
+import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -27,6 +30,7 @@ import {
     starknetCallAction,
     starknetDeployAccountAction,
     starknetTestAction,
+    starknetRunAction,
     starknetEstimateFeeAction
 } from "./task-actions";
 import {
@@ -41,6 +45,11 @@ import {
     getBlockUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
+import { IntegratedDevnet } from "./devnet";
+
+exitHook(() => {
+    IntegratedDevnet.cleanAll();
+});
 
 // copy all user-defined cairo settings; other extendConfig calls will overwrite if needed
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
@@ -107,6 +116,10 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_MAINNET_CHAIN_ID
         );
     }
+
+    if (!config.networks.integratedDevnet) {
+        config.networks.integratedDevnet = getDefaultHardhatNetworkConfig(INTEGRATED_DEVNET_URL);
+    }
 });
 
 // set network as specified in userConfig
@@ -136,8 +149,8 @@ extendEnvironment((hre) => {
         }
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
-        const repository = DOCKER_REPOSITORY;
-        const tag = hre.config.starknet.dockerizedVersion || DEFAULT_DOCKER_IMAGE_TAG;
+        const repository = CAIRO_CLI_DOCKER_REPOSITORY;
+        const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
@@ -328,3 +341,5 @@ const STARKNET_NETWORK_DESCRIPTION =
 task("test")
     .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
     .setAction(starknetTestAction);
+
+task("run").setAction(starknetRunAction);

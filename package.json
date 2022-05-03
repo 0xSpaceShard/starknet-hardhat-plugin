@@ -2,7 +2,7 @@
     "name": "@shardlabs/starknet-hardhat-plugin",
     "version": "0.5.3",
     "description": "Plugin for using Starknet tools within Hardhat projects",
-    "main": "dist/index.js",
+    "main": "dist/src/index.js",
     "files": [
         "dist"
     ],
@@ -24,6 +24,7 @@
         "test-configuration-tests": "TEST_SUBDIR=configuration-tests ./scripts/test.sh",
         "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
         "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
+        "test-integrated-devnet-tests": "TEST_SUBDIR=integrated-devnet-tests ./scripts/test.sh",
         "build": "rm -rf dist && tsc",
         "lint": "eslint src test"
     },
@@ -32,6 +33,7 @@
     "dependencies": {
         "@nomiclabs/hardhat-docker": "^2.0.2",
         "axios": "^0.24.0",
+        "exit-hook": "2.2.1",
         "glob": "^7.2.0",
         "starknet": "^3.5.1"
     },

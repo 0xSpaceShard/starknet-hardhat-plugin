@@ -178,7 +178,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L100) out.
+To see all the utilities introduced by the `starknet` object, check [this](src/type-extensions.ts#L104) out.
 
 ## Testing
 
@@ -314,7 +314,7 @@ More detailed documentation can be found [here](#account).
 });
 ```
 
-### Fee estimation
+#### Fee estimation
 
 ```typescript
 it("should estimate fee", async function () {
@@ -323,21 +323,7 @@ it("should estimate fee", async function () {
 });
 ```
 
-Currently there are incompatibilities between Devnet and Plugin so, to support fee estimation on Devnet when using accounts, you temporarily have to provide `transactionVersion`:
-
-```typescript
-it("should estimate fee on Devnet", async function () {
-    const fee = account.estimateFee(
-        contract,
-        "increase_balance",
-        { amount: 10n },
-        { transactionVersion: 0 }
-    );
-    console.log("Estimated fee:", fee.amount, fee.unit);
-});
-```
-
-#### Transaction information and receipt
+#### Transaction information and receipt with events
 
 ```typescript
 it("should return transaction data and transaction receipt", async function () {
@@ -350,24 +336,7 @@ it("should return transaction data and transaction receipt", async function () {
     const txHash = await contract.invoke("increase_balance", { amount: 10 });
 
     const receipt = await starknet.getTransactionReceipt(txHash);
-    console.log(receipt);
-});
-```
-
-### Transaction information and receipt
-
-```typescript
-it("should return transaction data and transaction receipt", async function () {
-    const contract: StarknetContract = await contractFactory.deploy();
-    console.log("Deployment transaction hash:", contract.deployTxHash);
-
-    const transaction = await starknet.getTransaction(contract.deployTxHash);
-    console.log(transaction);
-
-    const txHash = await contract.invoke("increase_balance", { amount: 10 });
-
-    const receipt = await starknet.getTransactionReceipt(txHash);
-    console.log(receipt);
+    console.log(receipt.events);
 });
 ```
 
@@ -413,14 +382,17 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 ### Cairo version
 
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container. If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
 
-A list of available versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+By default, the images are amd64 compliant. Append the `-arm` suffix to the version name to use an image adapted for arm64 architecture (e.g. `dockerizedVersion: "0.8.1-arm"`).
+
+If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+
+A list of available dockerized versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 
 ```javascript
 module.exports = {
   starknet: {
-    // The default in this version of the plugin
     dockerizedVersion: "0.8.1"
   }
   ...
@@ -429,9 +401,11 @@ module.exports = {
 
 ### Existing virtual environment
 
-If you want to use an existing Python virtual environment, specify it by using `starknet["venv"]`.
+If you want to use an existing Python virtual environment (pyenv, poetry, conda, miniconda), specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
+
+If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
 
 ```typescript
 module.exports = {
@@ -477,6 +451,31 @@ module.exports = {
   networks: {
     myNetwork: {
       url: "http://localhost:5000" // caveat: localhost on MacOS might not be bound to 127.0.0.1
+    }
+  }
+  ...
+};
+```
+
+### Runtime network - Integrated Devnet
+
+We provide a option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5000`.
+
+Additionaly, you can use a specified Python environment or a different Docker image by defining the `networks["integratedDevnet"]`.
+
+```javascript
+module.exports = {
+  starknet: {
+    network: "integrated-devnet"
+  },
+  networks: {
+    integratedDevnet: {
+      url: "http://127.0.0.1:5000",
+      // venv: "active" <- for the active virtual environment
+      // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
+      venv: "<VENV-PATH>",
+      // or specify Docker image tag
+      dockerizedVersion: "0.1.18"
     }
   }
   ...
