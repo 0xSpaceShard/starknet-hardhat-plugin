@@ -8,7 +8,12 @@ import {
     SHORT_STRING_MAX_CHARACTERS,
     TESTNET_CHAIN_ID
 } from "./constants";
-import { AccountImplementationType, BlockIdentifier, StarknetContractFactory } from "./types";
+import {
+    AccountImplementationType,
+    BlockIdentifier,
+    DeployAccountOptions,
+    StarknetContractFactory
+} from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt } from "./starknet-types";
@@ -38,7 +43,10 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Could not find ABI for ${contractPath}`);
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            `Could not find ABI for contract "${contractPath}.cairo"`
+        );
     }
 
     return new StarknetContractFactory({
@@ -100,15 +108,16 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
 
 export async function deployAccountUtil(
     accountType: AccountImplementationType,
-    hre: HardhatRuntimeEnvironment
+    hre: HardhatRuntimeEnvironment,
+    options?: DeployAccountOptions
 ): Promise<Account> {
     let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
-            account = await OpenZeppelinAccount.deployFromABI(hre);
+            account = await OpenZeppelinAccount.deployFromABI(hre, options);
             break;
         case "Argent":
-            account = await ArgentAccount.deployFromABI(hre);
+            account = await ArgentAccount.deployFromABI(hre, options);
             break;
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");

@@ -272,6 +272,11 @@ export interface DeployOptions {
     token?: string;
 }
 
+export interface DeployAccountOptions extends DeployOptions {
+    /** Optional hex string. If not provided, a random value is generated. */
+    privateKey?: string;
+}
+
 export interface InvokeOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
@@ -370,8 +375,7 @@ export class StarknetContractFactory {
             token: options.token
         });
         if (executed.statusCode) {
-            const msg =
-                "Could not deploy contract. Check the network url in config. Is it responsive?";
+            const msg = `Could not deploy contract: ${executed.stderr.toString()}`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
