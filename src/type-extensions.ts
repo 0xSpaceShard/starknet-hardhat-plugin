@@ -2,6 +2,7 @@ import "hardhat/types/config";
 import "hardhat/types/runtime";
 import {
     AccountImplementationType,
+    BlockIdentifier,
     StarknetContract,
     StarknetContractFactory,
     StringMap
@@ -9,7 +10,7 @@ import {
 import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { Transaction, TransactionReceipt, Block, BlockIdentifier } from "./starknet-types";
+import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { NetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
