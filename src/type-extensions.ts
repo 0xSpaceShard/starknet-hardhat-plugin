@@ -64,6 +64,7 @@ declare module "hardhat/types/config" {
 
     export interface HttpNetworkConfig {
         verificationUrl?: string;
+        verifiedUrl?: string;
         starknetChainId?: string;
     }
 

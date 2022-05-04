@@ -29,12 +29,15 @@ export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
 export const TESTNET_CHAIN_ID = "SN_GOERLI";
 export const ALPHA_MAINNET_CHAIN_ID = "SN_MAIN";
 
+export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
+export const VOYAGER_GOERLI_VERIFIED_URL = "https://goerli.voyager.online/contract/";
+export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
+export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
+
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
 
 export const LEN_SUFFIX = "_len";
-export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
-export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 

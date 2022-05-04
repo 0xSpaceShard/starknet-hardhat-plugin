@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
+import FormData = require("form-data");
 import { HardhatPluginError } from "hardhat/plugins";
 import {
     PLUGIN_NAME,
@@ -268,7 +269,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  * @param hre the runtime environment from which network data is extracted
  * @param origin short string describing where/how `networkName` was specified
  */
-function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
+function getVerificationNetwork(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
     networkName ||= ALPHA_TESTNET;
     const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
@@ -277,20 +278,17 @@ function getVerificationUrl(networkName: string, hre: HardhatRuntimeEnvironment,
             `Network ${networkName} does not support Voyager verification.`
         );
     }
-    return network.verificationUrl;
+    return network;
 }
 
 export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    const verificationUrl = getVerificationUrl(args.starknetNetwork, hre, "starknet-network");
-    const voyagerUrl = `${verificationUrl}${args.address}/code`;
+    const network = getVerificationNetwork(args.starknetNetwork, hre, "--starknet-network");
+    const voyagerUrl = `${network.verificationUrl}${args.address}/code`;
+    const verifiedUrl = `${network.verifiedUrl}${args.address}#code`;
+
     let isVerified = false;
     try {
-        const resp = await axios.get(voyagerUrl, {
-            headers: {
-                Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                "Content-Type": "application/json"
-            }
-        });
+        const resp = await axios.get(voyagerUrl);
         const data = resp.data;
 
         if (data.contract) {
@@ -299,87 +297,88 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
             }
         }
     } catch (error) {
-        const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
+        const msg = "Something went wrong while checking if the contract has already been verified.";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
     if (isVerified) {
         console.log(`Contract at address ${args.address} has already been verified`);
+        console.log(`Check it out on Voyager: ${verifiedUrl}`);
     } else {
-        await handleContractVerification(args, voyagerUrl, hre);
+        await handleContractVerification(args, voyagerUrl, verifiedUrl, hre);
     }
+}
+
+function getMainVerificationPath(contractPath: string, root: string) {
+    if (!path.isAbsolute(contractPath)) {
+        contractPath = path.normalize(path.join(root, contractPath));
+        if (!fs.existsSync(contractPath)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
+        }
+    }
+    return contractPath;
 }
 
 async function handleContractVerification(
     args: TaskArguments,
     voyagerUrl: string,
+    verifiedUrl: string,
     hre: HardhatRuntimeEnvironment
 ) {
     // Set main contract path
-    let contractPath = args.path;
-    if (!path.isAbsolute(contractPath)) {
-        contractPath = path.normalize(path.join(hre.config.paths.root, contractPath));
-        if (!fs.existsSync(contractPath)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
-        }
-    }
-    // The other option for the formData would be to add a new dependency 'form-data', but the URLSearchParams works exactly the same
-    const bodyFormData = new URLSearchParams();
-    bodyFormData.append("contract-name", path.parse(contractPath).base);
+    const mainPath = getMainVerificationPath(args.path, hre.config.paths.root);
+    const paths = [mainPath];
 
-    // If the contract has dependencies, insert them into the form
+    const bodyFormData = new FormData();
+    bodyFormData.append("contract-name", path.parse(mainPath).base);
+
+    // Dependencies (non-main contracts) are in args.paths
     if (args.paths) {
-        handleMultiPartContractVerification(bodyFormData, contractPath, args, hre);
-    } else {
-        handleSingleContractVerification(bodyFormData, contractPath);
+        paths.push(...args.paths);
     }
 
-    await axios.post(voyagerUrl, bodyFormData).catch((error) => {
-        switch (error.response.status) {
-            case 400: {
-                const msg = `Contract at address ${args.address} does not match the provided code`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            case 500: {
-                const msg = `There is no contract deployed at address ${args.address}, or the transaction was not finished`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            default: {
-                const msg = `Something went wrong when trying to verify the code at address ${args.address}`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-        }
-    });
-    console.log(`Contract has been successfuly verified at address ${args.address}`);
-}
+    handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root);
 
-function handleSingleContractVerification(bodyFormData: URLSearchParams, contractPath: string) {
-    const file = fs.readFileSync(contractPath);
-    const fileContent = file.toString().split(/\r?\n|\r/);
-    bodyFormData.append("code", JSON.stringify(fileContent));
+    await axios.post(
+        voyagerUrl,
+        bodyFormData.getBuffer(),
+        {
+            headers: bodyFormData.getHeaders()
+        }
+    ).catch(() => {
+        throw new HardhatPluginError(PLUGIN_NAME, `\
+Could not verify the contract at address ${args.address}.
+It is hard to tell exactly what happened, but possible reasons include:
+- Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
+- Wrong contract address
+- Wrong files provided
+- Wrong main contract chosen (first after --path)
+- Voyager is down`);
+    });
+
+    console.log(`Contract has been successfuly verified at address ${args.address}`);
+    console.log(`Check it out on Voyager: ${verifiedUrl}`);
 }
 
 function handleMultiPartContractVerification(
-    bodyFormData: URLSearchParams,
-    contractPath: string,
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
+    bodyFormData: FormData,
+    paths: string[],
+    root: string
 ) {
-    bodyFormData.append("filename", path.parse(contractPath).base);
-    bodyFormData.append("file", fs.readFileSync(contractPath).toString());
-
-    args.paths.forEach(function (item: string, index: number) {
+    paths.forEach(function (item: string, index: number) {
         if (!path.isAbsolute(item)) {
-            args.paths[index] = path.normalize(path.join(hre.config.paths.root, item));
-            if (!fs.existsSync(args.paths[index])) {
+            paths[index] = path.normalize(path.join(root, item));
+            if (!fs.existsSync(paths[index])) {
                 throw new HardhatPluginError(
                     PLUGIN_NAME,
-                    `File ${args.paths[index]} does not exist`
+                    `File ${paths[index]} does not exist`
                 );
             }
-            bodyFormData.append("filename", path.parse(args.paths[index]).base);
-            bodyFormData.append("file", fs.readFileSync(args.paths[index]).toString());
         }
+        bodyFormData.append("file" + index, fs.readFileSync(paths[index]), {
+            filename: paths[index],
+            contentType: "application/octet-stream"
+        });
     });
 }
 
