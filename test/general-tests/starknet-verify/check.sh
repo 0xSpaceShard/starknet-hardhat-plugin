@@ -17,12 +17,12 @@ echo "Verifying contract at $address"
 npx hardhat starknet-verify --starknet-network "$NETWORK" --path $MAIN_CONTRACT $UTIL_CONTRACT --address $address
 
 echo "Sleeping before fetching the verified code - seems to be necessary"
-sleep 10s
+sleep 30s
 
 is_verified=$(curl "https://goerli.voyager.online/api/contract/$address/code" | jq ".abiVerified")
 if [ is_verified == "true" ]; then
     echo "Successfully verified!"
 else
-    echo "Not verified!"
+    echo "Error: Not verified!"
     exit 1
 fi
