@@ -1,3 +1,7 @@
+/**
+ * Contains typing of Starknet specific objects: ABI related and network response related.
+ */
+
 export interface Member {
     name: string;
     offset: number;
@@ -94,11 +98,6 @@ export interface Block {
     state_root: string;
     status: string;
     timestamp: number;
-    transaction_receipts: Record<string, unknown>;
-    transactions: Record<string, unknown>;
-}
-
-export interface BlockIdentifier {
-    blockNumber?: number;
-    blockHash?: string;
+    transaction_receipts: TransactionReceipt[];
+    transactions: TransactionData[];
 }

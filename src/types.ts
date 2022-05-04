@@ -297,6 +297,12 @@ export type ContractInteractionFunction = (
     options?: InteractOptions
 ) => Promise<any>;
 
+
+export interface BlockIdentifier {
+    blockNumber?: number;
+    blockHash?: string;
+}
+
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
