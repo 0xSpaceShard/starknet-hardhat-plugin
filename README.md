@@ -33,8 +33,8 @@ require("@shardlabs/starknet-hardhat-plugin");
 
 This plugin was tested with:
 
--   Node.js v12.22.4
--   npm/npx v7.21.1
+-   Node.js v14.17.3
+-   npm/npx v7.19.1
 -   Docker v20.10.8 (optional):
     -   Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
     -   If you opt for the containerized version, make sure you have a running Docker daemon.
