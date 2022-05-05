@@ -22,7 +22,10 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
 
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-        throw new HardhatPluginError(PLUGIN_NAME, "Integreated devnet works only with localhost");
+        throw new HardhatPluginError(
+            PLUGIN_NAME,
+            "Integrated devnet works only with localhost and 127.0.0.1"
+        );
     }
 
     if (devnetNetwork.venv) {
@@ -32,7 +35,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     if (hostname === "localhost") {
         throw new HardhatPluginError(
             PLUGIN_NAME,
-            "Docker integrated devnet works only with 127.0.0.1 host"
+            "Dockerized integrated devnet works only with host 127.0.0.1"
         );
     }
 
