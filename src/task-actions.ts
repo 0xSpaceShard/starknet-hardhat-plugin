@@ -7,8 +7,7 @@ import {
     PLUGIN_NAME,
     ABI_SUFFIX,
     ALPHA_TESTNET,
-    DEFAULT_STARKNET_NETWORK,
-    INTEGRATED_DEVNET
+    DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
@@ -18,7 +17,8 @@ import {
     checkArtifactExists,
     getNetwork,
     findPath,
-    getAccountPath
+    getAccountPath,
+    isStarknetDevnet
 } from "./utils";
 import {
     HardhatRuntimeEnvironment,
@@ -521,7 +521,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
 }
 
 async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<unknown>) {
-    if (hre.starknet.network !== INTEGRATED_DEVNET) {
+    if (!isStarknetDevnet(hre.starknet.network)) {
         await fn();
         return;
     }
