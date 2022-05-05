@@ -86,7 +86,7 @@ echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
 iterate_dir integrated-devnet
 
 # run devnet
-starknet-devnet --host 127.0.0.1 --port 5000 &
+starknet-devnet --host 127.0.0.1 --port 5050 &
 
 iterate_dir devnet
 
