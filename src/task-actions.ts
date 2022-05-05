@@ -28,6 +28,7 @@ import {
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
+import { handleCache } from "./utils/recompiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -538,6 +539,7 @@ export async function starknetTestAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
+    await handleCache(args, hre);
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
