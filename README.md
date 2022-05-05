@@ -33,8 +33,8 @@ require("@shardlabs/starknet-hardhat-plugin");
 
 This plugin was tested with:
 
--   Node.js v12.22.4
--   npm/npx v7.21.1
+-   Node.js v14.17.3
+-   npm/npx v7.19.1
 -   Docker v20.10.8 (optional):
     -   Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
     -   If you opt for the containerized version, make sure you have a running Docker daemon.
@@ -82,7 +82,7 @@ Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` en
 module.exports = {
     networks: {
         myNetwork: {
-            url: "http://localhost:5000"
+            url: "http://127.0.0.1:5050"
         }
     }
 };
@@ -90,10 +90,11 @@ module.exports = {
 
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha networks are available by default, you don't need to define them in the config file; just pass:
+The Alpha networks and integrated Devnet are available by default, you don't need to define them in the config file; just pass:
 
 -   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 -   `--starknet-network alpha-mainnet` for Alpha Mainnet
+-   `--starknet-network integrated-devnet` for integrated Devnet
 
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
@@ -450,7 +451,7 @@ module.exports = {
   },
   networks: {
     myNetwork: {
-      url: "http://localhost:5000" // caveat: localhost on MacOS might not be bound to 127.0.0.1
+      url: "http://127.0.0.1:5050"
     }
   }
   ...
@@ -459,9 +460,12 @@ module.exports = {
 
 ### Runtime network - Integrated Devnet
 
-We provide a option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without a need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5000`.
+We provide the option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without the need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5050`.
 
-Additionaly, you can use a specified Python environment or a different Docker image by defining the `networks["integratedDevnet"]`.
+Additionaly, by defining `networks["integratedDevnet"]`, you can specify:
+
+-   a Python environment with starknet-devnet preinstalled
+-   a different Docker image.
 
 ```javascript
 module.exports = {
@@ -470,10 +474,12 @@ module.exports = {
   },
   networks: {
     integratedDevnet: {
-      url: "http://127.0.0.1:5000",
+      url: "http://127.0.0.1:5050",
+
       // venv: "active" <- for the active virtual environment
       // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
       venv: "<VENV-PATH>",
+
       // or specify Docker image tag
       dockerizedVersion: "0.1.18"
     }
@@ -539,17 +545,20 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    - `"OpenZeppelin"`
-    - `"Argent"`
+    -   `"OpenZeppelin"`
+    -   `"Argent"`
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
     -   `privateKey` - if you don't provide one, it will be randomly generated
     -   `token` - for indicating that the account is whitelisted on alpha-mainnet
 
 Use it like this:
+
 ```typescript
 const account = await starknet.deployAccount("OpenZeppelin");
-const accountWithPredefinedKey = await starknet.deployAccount("OpenZeppelin", { privateKey: process.env.MY_KEY });
+const accountWithPredefinedKey = await starknet.deployAccount("OpenZeppelin", {
+    privateKey: process.env.MY_KEY
+});
 ```
 
 To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
