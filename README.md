@@ -70,11 +70,11 @@ If no paths are provided, all Starknet artifacts from the default artifacts dire
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 
-If the "--wait" flag is passed, the task will wait until the transaction status of the deployment is "PENDING" before ending.
+If the `--wait` flag is passed, the task will wait until the transaction status of the deployment is one of (`PENDING`, `ACCEPTED_ON_L2`, `ACCEPTED_ON_L1`).
 
-The "--salt" parameter should be a hex string which, when provided, causes the contract to always be deployed to the same address.
+The `--salt` parameter should be a hex string which, when provided, causes the contract to always be deployed to the same address.
 
-The "--token" parameter indicates that your deployment is whitelisted on alpha-mainnet.
+The `--token` parameter indicates that your deployment is whitelisted on alpha-mainnet.
 
 Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
 
@@ -162,7 +162,7 @@ Estimates the gas fee of a function execution.
 
 ### `run`
 
-No CLI options introduced, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
+No CLI options introduced to the original `hardhat run`, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
 
 ### `test`
 
@@ -528,26 +528,28 @@ await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 ## Account
 
 An Account can be used to make proxy signed calls/transactions to other contracts.
-It's usage is exemplified [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/account-test.ts).
-Currently only the OpenZeppelin Account implementation is supported, and you are required to have the source files in your project.
+Its usage is exemplified [earlier in the docs](#accounts) and [in the example repo](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/oz-account-test.ts).
 
 You can choose to deploy a new Account, or use an existing one.
-
-### Supported Account Implementations
-
--   `"OpenZeppelin"`
--   `"Argent"`
 
 To deploy a new Account, use the `starknet` object's `deployAccount` method:
 
 ```typescript
-function deployAccount(accountType: AccountImplementationType);
+function deployAccount(accountType: AccountImplementationType, options?: DeployAccountOptions);
 ```
 
--   `accountType` is the implementation of the Account that you want to use.
+-   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
+    - `"OpenZeppelin"`
+    - `"Argent"`
+-   `options` - optional deployment parameters:
+    -   `salt` - for fixing the account address
+    -   `privateKey` - if you don't provide one, it will be randomly generated
+    -   `token` - for indicating that the account is whitelisted on alpha-mainnet
 
+Use it like this:
 ```typescript
 const account = await starknet.deployAccount("OpenZeppelin");
+const accountWithPredefinedKey = await starknet.deployAccount("OpenZeppelin", { privateKey: process.env.MY_KEY });
 ```
 
 To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:

@@ -3,6 +3,7 @@ import "hardhat/types/runtime";
 import {
     AccountImplementationType,
     BlockIdentifier,
+    DeployAccountOptions,
     StarknetContract,
     StarknetContractFactory,
     StringMap
@@ -180,9 +181,13 @@ declare module "hardhat/types/runtime" {
             /**
              * Deploys an Account contract based on the ABI and the type of Account selected
              * @param accountType the enumerator value of the type of Account to use
+             * @param options optional deployment options
              * @returns an Account object
              */
-            deployAccount: (accountType: AccountImplementationType) => Promise<Account>;
+            deployAccount: (
+                accountType: AccountImplementationType,
+                options?: DeployAccountOptions
+            ) => Promise<Account>;
 
             /**
              * Returns an Account already deployed based on the address and validated by the private key

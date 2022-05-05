@@ -220,8 +220,10 @@ export abstract class StarknetWrapper {
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareBlockQueryOptions(command: string, options: BlockQueryWrapperOptions): string[] {
-
+    protected prepareBlockQueryOptions(
+        command: string,
+        options: BlockQueryWrapperOptions
+    ): string[] {
         const commandArr = [
             command,
             "--gateway_url",

@@ -1,6 +1,7 @@
 import {
     CallOptions,
     ContractInteractionFunction,
+    DeployAccountOptions,
     EstimateFeeOptions,
     FeeEstimation,
     InteractChoice,
@@ -196,17 +197,23 @@ export class OpenZeppelinAccount extends Account {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
-    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<OpenZeppelinAccount> {
+    static async deployFromABI(
+        hre: HardhatRuntimeEnvironment,
+        options: DeployAccountOptions = {}
+    ): Promise<OpenZeppelinAccount> {
         const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const signer = generateKeys();
+        const signer = generateKeys(options.privateKey);
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy({ public_key: BigInt(signer.publicKey) });
+        const contract = await contractFactory.deploy(
+            { public_key: BigInt(signer.publicKey) },
+            options
+        );
 
         return new OpenZeppelinAccount(
             contract,
@@ -315,18 +322,21 @@ export class ArgentAccount extends Account {
         return await this.multiInvoke([call]);
     }
 
-    static async deployFromABI(hre: HardhatRuntimeEnvironment): Promise<ArgentAccount> {
+    static async deployFromABI(
+        hre: HardhatRuntimeEnvironment,
+        options: DeployAccountOptions = {}
+    ): Promise<ArgentAccount> {
         const contractPath = await handleAccountContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
             hre
         );
 
-        const signer = generateKeys();
+        const signer = generateKeys(options.privateKey);
         const guardian = generateKeys();
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy();
+        const contract = await contractFactory.deploy({}, options);
 
         await contract.invoke("initialize", {
             signer: BigInt(signer.publicKey),
