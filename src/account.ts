@@ -160,6 +160,11 @@ export abstract class Account {
             choice.transactionVersion
         );
 
+        if (options.signature) {
+            const msg =
+                "Custom signature cannot be specified when using Account (it is calculated automatically)";
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
         const signatures = this.getSignatures(messageHash);
         const contractInteractOptions = { signature: signatures, ...options };
 
