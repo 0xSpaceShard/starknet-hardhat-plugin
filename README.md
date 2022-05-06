@@ -94,7 +94,7 @@ The Alpha networks and integrated Devnet are available by default, you don't nee
 
 -   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 -   `--starknet-network alpha-mainnet` for Alpha Mainnet
--   `--starknet-network integrated-devnet` for integrated Devnet
+-   `--starknet-network integrated-devnet` for integrated Devnet (experimental)
 
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
@@ -458,9 +458,9 @@ module.exports = {
 };
 ```
 
-### Runtime network - Integrated Devnet
+### Runtime network - Integrated Devnet - Experimental
 
-We provide the option to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without the need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5050`.
+As an experimental feature, you can use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without the need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5050`.
 
 Additionaly, by defining `networks["integratedDevnet"]`, you can specify:
 
