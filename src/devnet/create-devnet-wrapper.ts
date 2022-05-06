@@ -14,6 +14,7 @@ import { VenvDevnet } from "./venv-devnet";
 import { IntegratedDevnet } from "./integrated-devnet";
 
 export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): IntegratedDevnet {
+    console.warn("\x1b[33m%s\x1b[0m", "Warning! Using experimental feature: integrated-devnet");
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre.config.networks,
