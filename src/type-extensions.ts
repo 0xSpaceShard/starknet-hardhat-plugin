@@ -71,14 +71,14 @@ declare module "hardhat/types/config" {
     }
 
     export interface HardhatNetworkConfig {
-        url: string;
+        url?: string;
         venv?: string;
         dockerizedVersion?: string;
         starknetChainId?: string;
     }
 
     export interface HardhatNetworkUserConfig {
-        url: string;
+        url?: string;
         venv?: string;
         dockerizedVersion?: string;
     }
