@@ -262,8 +262,7 @@ jobs:
                   platform: << parameters.platform >>
                   test-name: << parameters.test-name >>
     npm_publish:
-        docker:
-            - image: cimg/node:14.18.1
+        executor: linux-node14
         steps:
             - checkout
             - run:

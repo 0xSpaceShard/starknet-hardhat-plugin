@@ -1,10 +1,10 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { ChildProcess, spawn, spawnSync } from "child_process";
-import { DEVNET_DOCKER_REPOSITORY } from "../constants";
 
 import { IntegratedDevnet } from "./integrated-devnet";
 
 const CONTAINER_NAME = "integrated-devnet";
+const DEVNET_DOCKER_INTERNAL_PORT = 5050;
 
 export class DockerDevnet extends IntegratedDevnet {
     private docker: HardhatDocker;
@@ -36,8 +36,8 @@ export class DockerDevnet extends IntegratedDevnet {
             "--name",
             CONTAINER_NAME,
             "-p",
-            `${this.host}:${this.port}:5000`,
-            DEVNET_DOCKER_REPOSITORY
+            `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
+            `${this.image.repository}:${this.image.tag}`
         ]);
     }
 

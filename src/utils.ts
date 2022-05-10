@@ -165,7 +165,7 @@ function isMainnet(networkName: string): boolean {
     return networkName === ALPHA_MAINNET || networkName === ALPHA_MAINNET_INTERNALLY;
 }
 
-function isStarknetDevnet(networkName: string): boolean {
+export function isStarknetDevnet(networkName: string): boolean {
     return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 

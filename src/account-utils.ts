@@ -237,8 +237,10 @@ export function parseMulticallOutput(
     return output;
 }
 
-export function generateKeys(): KeysType {
-    const starkPrivateKey = generateRandomStarkPrivateKey();
+export function generateKeys(providedKey?: string): KeysType {
+    const starkPrivateKey = providedKey
+        ? toBN(providedKey.replace(/^0x/, ""), 16)
+        : generateRandomStarkPrivateKey();
     const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
     const publicKey = ellipticCurve.getStarkKey(keyPair);
     const privateKey = "0x" + starkPrivateKey.toString(16);

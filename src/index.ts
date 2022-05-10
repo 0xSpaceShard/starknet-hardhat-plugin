@@ -228,8 +228,8 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccount: async (accountType) => {
-            const account = await deployAccountUtil(accountType, hre);
+        deployAccount: async (accountType, options) => {
+            const account = await deployAccountUtil(accountType, hre, options);
             return account;
         },
 

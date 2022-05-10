@@ -7,7 +7,7 @@ module.exports = {
     networks: {
         integratedDevnet: {
             venv: process.env.STARKNET_DEVNET_PATH,
-            url: "http://127.0.0.1:5000"
+            url: "http://127.0.0.1:5050"
         }
     }
 };
