@@ -1,14 +1,11 @@
 import fs from "fs";
 import path from "path";
-import util from "util";
-import { exec } from "child_process";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 
 const fsPromises = fs.promises;
 const ok = Object.keys;
-// Profisifies execution of child process
-const execAsync = util.promisify(exec);
+
 // FileName - HashPair
 export interface NameHashPair {
     [key: string]: string;
@@ -33,18 +30,18 @@ const upsertFile = async () => {
     const dirpath = path.join(defaultSourcesPath, "../cache/cairo-files-cache.json");
     const cacheDirpath = path.join(defaultSourcesPath, "../cache");
 
-    // Creates cache directory if it doesn"t exist
+    // Creates cache directory if it doesn't exist
     if (!fs.existsSync(cacheDirpath)) {
         fs.mkdirSync(cacheDirpath);
     }
 
     if (!fs.existsSync(dirpath)) {
-        // create file, if it"s not found
+        // create file, if it's not found
         await fsPromises.writeFile(dirpath, JSON.stringify({}));
     } else {
         // try to read file
         const oldNameHashPair = await fsPromises.readFile(dirpath, "utf8");
-        tracker = JSON.parse(oldNameHashPair);
+        tracker = JSON.parse(oldNameHashPair || "{}");
     }
 };
 
@@ -76,7 +73,7 @@ const checkArtifacts = async () => {
         const files = await fsPromises.readdir(dirpath);
         for (const name of ok(nameHashPair)) {
             if (!files.includes(name)) {
-                changed.add(`contracts/${name}`);
+                changed.add(`${defaultSourcesPath}/${name}`);
             }
         }
     } catch (err) {
@@ -85,18 +82,18 @@ const checkArtifacts = async () => {
 };
 
 // Compile changed contracts
-const compileChangedContracts = async () => {
+const compileChangedContracts = async (hre: HardhatRuntimeEnvironment): Promise<boolean> => {
     if (ok(nameHashPair).length === ok(tracker).length) {
         ok(nameHashPair).forEach(contractName => {
             if (nameHashPair[contractName] !== tracker[contractName]) {
-                changed.add(`contracts/${contractName}`);
+                changed.add(`${defaultSourcesPath}/${contractName}`);
             }
         });
     } else {
         // Compile only that are not in tracker
         ok(nameHashPair).forEach(contractName => {
             if (nameHashPair[contractName] !== tracker[contractName]) {
-                changed.add(`contracts/${contractName}`);
+                changed.add(`${defaultSourcesPath}/${contractName}`);
             }
         });
     }
@@ -105,26 +102,33 @@ const compileChangedContracts = async () => {
         try {
             // Compiles contracts
             console.log("Compiling contracts...");
-            await execAsync(`npx hardhat starknet-compile ${[...changed].join(" ")}`);
+            await hre.run("starknet-compile", {
+                paths: [...changed]
+            });
         } catch (err) {
             console.log(err);
+            return false;
         }
     }
+    return true;
 };
 
-export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnvironment) => {
+export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnvironment): Promise<boolean> => {
     defaultSourcesPath = hre.config.paths.starknetSources;
     // sourcesPaths = args.paths || [defaultSourcesPath];
     await upsertFile();
     await getContractHash();
     await checkArtifacts();
-    await compileChangedContracts();
+    const compiledSuccessfully = await compileChangedContracts(hre);
+    if (!compiledSuccessfully) return false;
 
     try {
         // Write to file new NameHashPair of contracts
         const dirPath = path.join(defaultSourcesPath, "../cache/cairo-files-cache.json");
         await fsPromises.writeFile(dirPath, JSON.stringify(nameHashPair, null, " "));
+        return true;
     } catch (err) {
         console.log(err);
+        return false;
     }
 };

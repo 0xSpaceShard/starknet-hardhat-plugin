@@ -539,7 +539,8 @@ export async function starknetTestAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
-    await handleCache(args, hre);
+    const cached = await handleCache(args, hre);
+    if (!cached) return;
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
