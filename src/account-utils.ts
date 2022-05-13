@@ -8,7 +8,6 @@ import * as fs from "fs";
 import path from "path";
 import {
     ABI_SUFFIX,
-    ACCOUNT_ARTIFACTS_VERSION,
     ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
     GITHUB_ACCOUNT_ARTIFACTS_URL,
     TransactionHashPrefix
@@ -142,6 +141,7 @@ export function handleMultiInteract(
 export async function handleAccountContractArtifacts(
     accountType: string,
     artifactsName: string,
+    artifactsVersion: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<string> {
     // Name of the artifacts' parent folder
@@ -152,23 +152,11 @@ export async function handleAccountContractArtifacts(
         ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
     );
 
-    // Remove old versions from the path
-    if (fs.existsSync(baseArtifactsPath)) {
-        const contents = fs.readdirSync(baseArtifactsPath);
-        contents
-            .filter((content) => content !== ACCOUNT_ARTIFACTS_VERSION)
-            .forEach((content) => {
-                fs.rmSync(path.join(baseArtifactsPath, content), {
-                    recursive: true,
-                    force: true
-                });
-            });
-    }
-
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
         baseArtifactsPath,
-        ACCOUNT_ARTIFACTS_VERSION,
+        accountType,
+        artifactsVersion,
         artifactsBase
     );
 
@@ -190,7 +178,7 @@ export async function handleAccountContractArtifacts(
 
 /**
  * Checks if the provided artifact exists in the project's artifacts folder.
- * If it doesen't, downloads it from the GitHub repository "https://github.com/Shard-Labs/starknet-hardhat-example"
+ * If it doesn't exist, it is downloaded from the GitHub repository.
  * @param artifact artifact file to download. E.g. "Account.json" or "Account_abi.json"
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
  * @param artifactLocationUrl url to the github folder where the artifacts are stored

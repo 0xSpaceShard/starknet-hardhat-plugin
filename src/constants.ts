@@ -14,8 +14,12 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
 export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
-export const ACCOUNT_ARTIFACTS_VERSION = "0.2.0";
-export const GITHUB_ACCOUNT_ARTIFACTS_URL = `https://raw.githubusercontent.com/Shard-Labs/starknet-hardhat-example/plugin/${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/${ACCOUNT_ARTIFACTS_VERSION}/`;
+export const GITHUB_ACCOUNT_ARTIFACTS_URL =
+    "https://raw.githubusercontent.com/" +
+    "Shard-Labs/" +
+    "starknet-hardhat-plugin/" +
+    "account-artifacts/" +
+    ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH;
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";
@@ -48,5 +52,5 @@ export const PENDING_BLOCK_NUMBER = "pending";
 
 export enum TransactionHashPrefix {
     DEPLOY = "110386840629113", // BigInt("0x" + Buffer.from("deploy").toString("hex")).toString()
-    INVOKE = "115923154332517"  // BigInt("0x" + Buffer.from("invoke").toString("hex")).toString()
+    INVOKE = "115923154332517" // BigInt("0x" + Buffer.from("invoke").toString("hex")).toString()
 }

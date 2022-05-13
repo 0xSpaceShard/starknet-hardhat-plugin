@@ -213,6 +213,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
+    static readonly VERSION = "0.1.0";
 
     constructor(
         starknetContract: StarknetContract,
@@ -235,6 +236,7 @@ export class OpenZeppelinAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            OpenZeppelinAccount.VERSION,
             hre
         );
 
@@ -263,6 +265,7 @@ export class OpenZeppelinAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            OpenZeppelinAccount.VERSION,
             hre
         );
 
@@ -304,6 +307,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
+    static readonly VERSION = "0.2.1";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -366,6 +370,7 @@ export class ArgentAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            ArgentAccount.VERSION,
             hre
         );
 
@@ -400,6 +405,7 @@ export class ArgentAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            ArgentAccount.VERSION,
             hre
         );
 
