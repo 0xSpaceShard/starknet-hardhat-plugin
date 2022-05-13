@@ -8,7 +8,7 @@ import {
     ABI_SUFFIX,
     ALPHA_TESTNET,
     DEFAULT_STARKNET_NETWORK,
-    TESTNET_CHAIN_ID
+    ChainID
 } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
@@ -520,7 +520,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
         networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
 
-    networkConfig.starknetChainId ||= TESTNET_CHAIN_ID;
+    networkConfig.starknetChainId ||= ChainID.TESTNET;
 
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;

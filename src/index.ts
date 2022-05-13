@@ -17,8 +17,7 @@ import {
     VOYAGER_MAINNET_CONTRACT_API_URL,
     DEFAULT_STARKNET_NETWORK,
     INTEGRATED_DEVNET_URL,
-    TESTNET_CHAIN_ID,
-    ALPHA_MAINNET_CHAIN_ID,
+    ChainID,
     VOYAGER_GOERLI_VERIFIED_URL,
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
@@ -108,7 +107,7 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_URL,
             VOYAGER_GOERLI_CONTRACT_API_URL,
             VOYAGER_GOERLI_VERIFIED_URL,
-            TESTNET_CHAIN_ID
+            ChainID.TESTNET
         );
     }
 
@@ -117,7 +116,7 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_MAINNET_URL,
             VOYAGER_MAINNET_CONTRACT_API_URL,
             VOYAGER_MAINNET_VERIFIED_URL,
-            ALPHA_MAINNET_CHAIN_ID
+            ChainID.MAINNET
         );
     }
 
