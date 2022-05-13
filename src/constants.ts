@@ -18,7 +18,7 @@ export const GITHUB_ACCOUNT_ARTIFACTS_URL =
     "https://raw.githubusercontent.com/" +
     "Shard-Labs/" +
     "starknet-hardhat-plugin/" +
-    "account-artifacts/" +
+    "master/" +
     ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH;
 
 export const ALPHA_TESTNET = "alpha-goerli";
