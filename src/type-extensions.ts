@@ -12,7 +12,7 @@ import { StarknetWrapper } from "./starknet-wrappers";
 import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
-import { NetworkConfig } from "hardhat/types/config";
+import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -169,6 +169,11 @@ declare module "hardhat/types/runtime" {
              * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
              */
             networkUrl?: string;
+
+            /**
+             * The configuration object of the selected starknet-network.
+             */
+            networkConfig?: HardhatNetworkConfig;
 
             /**
              * @param name the name of the wallet to get

@@ -10,7 +10,8 @@ import {
     ABI_SUFFIX,
     ACCOUNT_ARTIFACTS_VERSION,
     ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
-    GITHUB_ACCOUNT_ARTIFACTS_URL
+    GITHUB_ACCOUNT_ARTIFACTS_URL,
+    TransactionHashPrefix
 } from "./constants";
 import axios from "axios";
 import { flattenStringMap } from "./utils";
@@ -64,14 +65,20 @@ export function signMultiCall(
  * @param accountAddress address of the account contract
  * @param callParameters array witht the call parameters
  * @param nonce current nonce
+ * @param maxFee the maximum fee amoutn set for the contract interaction
+ * @param version the transaction version
+ * @param chainId the chain identifier
+ * @param executionFunctionName the name of the cairo function that performs the execution
  * @returns the message hash for the multicall and the arguments to execute it with
  */
-export function handleMultiCall(
+export function handleMultiInteract(
     accountAddress: string,
     callParameters: CallParameters[],
     nonce: Numeric,
     maxFee: Numeric,
-    version: Numeric
+    version: Numeric,
+    chainId: Numeric,
+    executionFunctionName: string
 ) {
     // Transform a CallParameters array into Call array, so it can be used by the hash functions
     const callArray: Call[] = callParameters.map((callParameters) => {
@@ -85,8 +92,9 @@ export function handleMultiCall(
         };
     });
 
+    const hashable: Array<BigNumberish> = [callArray.length];
     const executeCallArray: executeCallParameters[] = [];
-    let rawCalldata: RawCalldata = [];
+    const rawCalldata: RawCalldata = [];
 
     // Parse the Call array to create the objects which will be accepted by the contract
     callArray.forEach((call) => {
@@ -96,19 +104,31 @@ export function handleMultiCall(
             data_offset: rawCalldata.length,
             data_len: call.calldata.length
         });
-        rawCalldata = rawCalldata.concat(call.calldata);
+        hashable.push(
+            call.contractAddress,
+            hash.starknetKeccak(call.entrypoint),
+            rawCalldata.length,
+            call.calldata.length
+        );
+        rawCalldata.push(...call.calldata);
     });
 
     const adaptedNonce = nonce.toString();
     const adaptedMaxFee = "0x" + maxFee.toString(16);
     const adaptedVersion = "0x" + version.toString(16);
-    const messageHash = hash.hashMulticall(
+    const adaptedChainId = chainId.toString();
+
+    hashable.push(rawCalldata.length, ...rawCalldata, adaptedNonce);
+    const calldataHash = hash.computeHashOnElements(hashable);
+    const messageHash = hash.computeHashOnElements([
+        TransactionHashPrefix.INVOKE,
+        adaptedVersion,
         accountAddress,
-        callArray,
-        adaptedNonce,
+        hash.getSelectorFromName(executionFunctionName),
+        calldataHash,
         adaptedMaxFee,
-        adaptedVersion
-    );
+        adaptedChainId
+    ]);
 
     const args = {
         call_array: executeCallArray,

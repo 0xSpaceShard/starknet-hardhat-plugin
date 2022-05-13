@@ -21,7 +21,7 @@ import {
     CallParameters,
     generateKeys,
     handleAccountContractArtifacts,
-    handleMultiCall,
+    handleMultiInteract,
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
@@ -36,7 +36,8 @@ export abstract class Account {
         public starknetContract: StarknetContract,
         public privateKey: string,
         public publicKey: string,
-        public keyPair: ec.KeyPair
+        public keyPair: ec.KeyPair,
+        private hre: HardhatRuntimeEnvironment
     ) {}
 
     /**
@@ -68,11 +69,17 @@ export abstract class Account {
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap,
-        options?: CallOptions
+        options: CallOptions = {}
     ): Promise<StringMap> {
+        if (this.hasRawOutput()) {
+            options = copyWithBigint(options);
+            options.rawOutput = true;
+        }
+
         const { response } = <{ response: string[] }>(
             await this.interact(InteractChoice.CALL, toContract, functionName, calldata, options)
         );
+
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
@@ -112,7 +119,15 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
      */
-    async multiCall(callParameters: CallParameters[], options?: CallOptions): Promise<StringMap[]> {
+    async multiCall(
+        callParameters: CallParameters[],
+        options: CallOptions = {}
+    ): Promise<StringMap[]> {
+        if (this.hasRawOutput()) {
+            options = copyWithBigint(options);
+            options.rawOutput = true;
+        }
+
         const { response } = <{ response: string[] }>(
             await this.multiInteract(InteractChoice.CALL, callParameters, options)
         );
@@ -152,12 +167,17 @@ export abstract class Account {
         const nonce = options.nonce || (await this.getNonce());
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
-        const { messageHash, args } = handleMultiCall(
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+        const adaptedChainId = BigInt("0x" + Buffer.from(chainId).toString("hex"));
+
+        const { messageHash, args } = handleMultiInteract(
             this.starknetContract.address,
             callParameters,
             nonce,
             options.maxFee,
-            choice.transactionVersion
+            choice.transactionVersion,
+            adaptedChainId,
+            this.getExecutionFunctionName()
         );
 
         if (options.signature) {
@@ -180,6 +200,11 @@ export abstract class Account {
     protected abstract getExecutionFunctionName(): string;
 
     protected abstract getNonce(): Promise<bigint>;
+
+    /**
+     * Whether the execution method of this accout returns raw output or not.
+     */
+    protected abstract hasRawOutput(): boolean;
 }
 
 /**
@@ -193,12 +218,13 @@ export class OpenZeppelinAccount extends Account {
         starknetContract: StarknetContract,
         privateKey: string,
         publicKey: string,
-        keyPair: ec.KeyPair
+        keyPair: ec.KeyPair,
+        hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair);
+        super(starknetContract, privateKey, publicKey, keyPair, hre);
     }
 
-    getSignatures(messageHash: string): bigint[] {
+    protected getSignatures(messageHash: string): bigint[] {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
@@ -224,7 +250,8 @@ export class OpenZeppelinAccount extends Account {
             contract,
             signer.privateKey,
             signer.publicKey,
-            signer.keyPair
+            signer.keyPair,
+            hre
         );
     }
 
@@ -254,16 +281,20 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair, hre);
     }
 
-    getExecutionFunctionName(): string {
+    protected getExecutionFunctionName(): string {
         return "__execute__";
     }
 
-    async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<bigint> {
         const { res: nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
+    }
+
+    protected hasRawOutput(): boolean {
+        return false;
     }
 }
 
@@ -285,15 +316,16 @@ export class ArgentAccount extends Account {
         keyPair: ec.KeyPair,
         guardianPrivateKey: string,
         guardianPublicKey: string,
-        guardianKeyPair: ec.KeyPair
+        guardianKeyPair: ec.KeyPair,
+        hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair);
+        super(starknetContract, privateKey, publicKey, keyPair, hre);
         this.guardianPublicKey = guardianPublicKey;
         this.guardianPrivateKey = guardianPrivateKey;
         this.guardianKeyPair = guardianKeyPair;
     }
 
-    getSignatures(messageHash: string): bigint[] {
+    protected getSignatures(messageHash: string): bigint[] {
         const signerSignatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
         const guardianSignatures = signMultiCall(
             this.guardianPublicKey,
@@ -355,7 +387,8 @@ export class ArgentAccount extends Account {
             signer.keyPair,
             guardian.privateKey,
             guardian.publicKey,
-            guardian.keyPair
+            guardian.keyPair,
+            hre
         );
     }
 
@@ -384,15 +417,19 @@ export class ArgentAccount extends Account {
             );
         }
 
-        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null);
+        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null, hre);
     }
 
-    getExecutionFunctionName(): string {
+    protected getExecutionFunctionName(): string {
         return "__execute__";
     }
 
-    async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<bigint> {
         const { nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
+    }
+
+    protected hasRawOutput(): boolean {
+        return true;
     }
 }

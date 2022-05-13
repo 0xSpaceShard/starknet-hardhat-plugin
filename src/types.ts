@@ -290,6 +290,7 @@ export interface CallOptions {
     blockNumber?: string;
     nonce?: Numeric;
     maxFee?: Numeric;
+    rawOutput?: boolean;
 }
 
 export type EstimateFeeOptions = CallOptions;
@@ -301,7 +302,6 @@ export type ContractInteractionFunction = (
     args?: StringMap,
     options?: InteractOptions
 ) => Promise<any>;
-
 
 export interface BlockIdentifier {
     blockNumber?: number;
@@ -570,6 +570,9 @@ export class StarknetContract {
      * ```text
      * > 10n
      * ```
+     *
+     * If options.rawOutput, the Promised object holds a property `response` with an array of strings.
+     *
      * @param functionName
      * @param args arguments to Starknet contract function
      * @param options optional additions to calling
@@ -583,6 +586,9 @@ export class StarknetContract {
         options = copyWithBigint(options); // copy because of potential changes to the object
         defaultToPendingBlock(options);
         const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
+        if (options.rawOutput) {
+            return { response: executed.stdout.toString().split(" ") };
+        }
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 

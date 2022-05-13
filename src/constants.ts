@@ -43,4 +43,9 @@ export const SHORT_STRING_MAX_CHARACTERS = 31;
 
 export const PENDING_BLOCK_NUMBER = "pending";
 
+export enum TransactionHashPrefix {
+    DEPLOY = "110386840629113", // BigInt("0x" + Buffer.from("deploy").toString("hex")).toString()
+    INVOKE = "115923154332517"  // BigInt("0x" + Buffer.from("invoke").toString("hex")).toString()
+}
+
 export const PREFIX_TRANSACTION = "StarkNet Transaction";

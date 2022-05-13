@@ -2,12 +2,7 @@ import { HardhatPluginError } from "hardhat/plugins";
 import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
-import {
-    ABI_SUFFIX,
-    PLUGIN_NAME,
-    SHORT_STRING_MAX_CHARACTERS,
-    TESTNET_CHAIN_ID
-} from "./constants";
+import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import {
     AccountImplementationType,
     BlockIdentifier,
@@ -54,7 +49,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
         metadataPath,
         abiPath,
         networkID: hre.config.starknet.network,
-        chainID: hre.config.starknet.networkConfig.starknetChainId || TESTNET_CHAIN_ID,
+        chainID: hre.config.starknet.networkConfig.starknetChainId,
         gatewayUrl: hre.config.starknet.networkUrl,
         feederGatewayUrl: hre.config.starknet.networkUrl
     });
