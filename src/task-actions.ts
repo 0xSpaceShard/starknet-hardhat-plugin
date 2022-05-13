@@ -504,7 +504,7 @@ export async function starknetDeployAccountAction(
  */
 function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     let networkName;
-    let networkConfig;
+    let networkConfig: HardhatNetworkConfig;
     if (args.starknetNetwork) {
         networkName = args.starknetNetwork;
         networkConfig = getNetwork(networkName, hre.config.networks, "--starknet-network");
@@ -524,8 +524,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
 
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
-    hre.config.starknet.networkConfig = hre.starknet.networkConfig =
-        networkConfig as HardhatNetworkConfig;
+    hre.config.starknet.networkConfig = hre.starknet.networkConfig = networkConfig;
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 

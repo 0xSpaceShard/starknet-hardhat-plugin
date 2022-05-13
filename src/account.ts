@@ -202,7 +202,7 @@ export abstract class Account {
     protected abstract getNonce(): Promise<bigint>;
 
     /**
-     * Whether the execution method of this accout returns raw output or not.
+     * Whether the execution method of this account returns raw output or not.
      */
     protected abstract hasRawOutput(): boolean;
 }
