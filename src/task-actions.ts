@@ -418,7 +418,7 @@ async function starknetInteractAction(
         abi: abiPath,
         functionName: args.function,
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
-        signature: args.signature,
+        signature: args.signature?.split(/\s+/),
         wallet: wallet ? wallet.modulePath : undefined,
         account: wallet ? wallet.accountName : undefined,
         accountDir: wallet ? accountDir : undefined,
