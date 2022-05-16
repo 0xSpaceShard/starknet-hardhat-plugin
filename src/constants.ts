@@ -19,7 +19,7 @@ export const GITHUB_ACCOUNT_ARTIFACTS_URL =
     "Shard-Labs/" +
     "starknet-hardhat-plugin/" +
     "master/" +
-    ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH;
+    `${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/`;
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";

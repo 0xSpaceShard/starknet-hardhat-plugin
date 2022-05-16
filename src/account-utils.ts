@@ -164,10 +164,9 @@ export async function handleAccountContractArtifacts(
     const abiArtifact = artifactsName + ABI_SUFFIX;
 
     const artifactLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
-        accountType,
-        "/",
-        artifactsBase,
-        "/"
+        `${accountType}/`,
+        `${artifactsVersion}/`,
+        `${artifactsBase}/`
     );
 
     await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
