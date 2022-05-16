@@ -9,7 +9,7 @@ signature="1 2 3 4 5 6"
 npx hardhat starknet-compile contracts/signatures.cairo
 
 # deploy contract
-output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-artifacts/contracts/signatures.cairo/)
+output=$(npx hardhat starknet-deploy --wait --starknet-network "$NETWORK" starknet-artifacts/contracts/signatures.cairo/)
 echo $output
 
 address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
@@ -31,7 +31,7 @@ if [[ "$call_output" != *"$signature_len $signature"* ]]; then
 fi
 
 # test invoke
-npx hardhat starknet-invoke \
+npx hardhat starknet-invoke --wait \
     --contract "signatures" --address "$address" \
     --function "set_signature_len" --starknet-network "$NETWORK" \
     --signature "$signature"
@@ -43,7 +43,7 @@ call_output=$(npx hardhat starknet-call \
 
 echo $call_output
 
-if [[ "$call_output" != *" $signature_len "* ]]; then
+if [[ $call_output != *"$signature_len"* ]]; then
     echo "Call output does not contain correct signature length"
     exit 1
 fi
