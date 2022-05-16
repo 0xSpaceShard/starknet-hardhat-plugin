@@ -79,7 +79,7 @@ function isStarknetCompilationArtifact(filePath: string) {
  * Unlinking/deleting is necessary if user switched from docker to venv.
  * @param filePath the file to be recreated
  */
-function initializeFile(filePath: string) {
+export function initializeFile(filePath: string) {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
@@ -540,7 +540,7 @@ export async function starknetTestAction(
     runSuper: RunSuperFunction<TaskArguments>
 ) {
     const cached = await handleCache(args, hre);
-    if (!cached) return;
+    if (!cached) process.exit(1);
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
