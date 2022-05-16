@@ -303,7 +303,7 @@ More detailed documentation can be found [here](#account).
     const account = await starknet.deployAccount("OpenZeppelin");
     // or
     const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
-    console.log("Account:", account.starknetContract.address, account.privateKey, account.publicKey);
+    console.log("Account:", account.address, account.privateKey, account.publicKey);
 
     const { res: currBalance } = await account.call(contract, "get_balance");
     const amount = BigInt(10);
