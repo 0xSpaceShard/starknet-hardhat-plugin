@@ -31,12 +31,19 @@ if [[ "$call_output" != *"$signature_len $signature"* ]]; then
 fi
 
 # test invoke
-invoke_output=$(npx hardhat starknet-call \
+npx hardhat starknet-invoke \
     --contract "signatures" --address "$address" \
-    --function "get_signature" --starknet-network "$NETWORK" \
+    --function "set_signature_len" --starknet-network "$NETWORK" \
+    --signature "$signature"
+
+call_output=$(npx hardhat starknet-call \
+    --contract "signatures" --address "$address" \
+    --function "get_signature_len" --starknet-network "$NETWORK" \
     --signature "$signature")
 
-if [[ "$invoke_output" != *"$signature_len $signature"* ]]; then
-    echo "Invoke output does not contain correct length and signature"
+echo $call_output
+
+if [[ "$call_output" != *" $signature_len "* ]]; then
+    echo "Call output does not contain correct signature length"
     exit 1
 fi
