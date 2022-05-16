@@ -9,7 +9,7 @@ signature="1 2 3 4 5 6"
 npx hardhat starknet-compile contracts/signatures.cairo
 
 # deploy contract
-output=$(npx hardhat starknet-deploy --starknet-network devnet starknet-artifacts/contracts/signatures.cairo/)
+output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-artifacts/contracts/signatures.cairo/)
 echo $output
 
 address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
