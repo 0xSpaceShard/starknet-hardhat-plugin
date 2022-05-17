@@ -27,6 +27,8 @@ echo $call_output
 
 if [[ "$call_output" != *"$signature_len $signature"* ]]; then
     echo "Call output does not contain correct length and signature"
+    echo "Expected: $signature_len $signature"
+    echo "Actual: $call_output"
     exit 1
 fi
 
@@ -36,14 +38,16 @@ npx hardhat starknet-invoke --wait \
     --function "set_signature_len" --starknet-network "$NETWORK" \
     --signature "$signature"
 
-call_output=$(npx hardhat starknet-call \
+output_after_invoke=$(npx hardhat starknet-call \
     --contract "signatures" --address "$address" \
     --function "get_signature_len" --starknet-network "$NETWORK" \
-    --signature "$signature")
+    --signature "$signature" \
+    | sed -n 2p)
 
-echo $call_output
 
-if [[ $call_output != *"$signature_len"* ]]; then
+if [[ $output_after_invoke != "$signature_len" ]]; then
     echo "Call output does not contain correct signature length"
+    echo "Expected: $signature_len"
+    echo "Actual: $output_after_invoke"
     exit 1
 fi
