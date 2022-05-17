@@ -599,6 +599,7 @@ export class StarknetContract {
         args?: StringMap,
         options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
+        options = copyWithBigint(options); // copy because of potential changes to the object
         defaultToPendingBlock(options);
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,
