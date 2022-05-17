@@ -11,7 +11,7 @@ interface NameHashPair {
     [key: string]: string;
 }
 // Cache file name
-export const CACHE_FILE_NAME = "cairo-files-cache.json";
+const CACHE_FILE_NAME = "cairo-files-cache.json";
 // File containing contract hash
 let oldNameHashPair: NameHashPair = {};
 // New FileNameHashPair

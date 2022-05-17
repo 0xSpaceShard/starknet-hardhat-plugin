@@ -79,7 +79,7 @@ function isStarknetCompilationArtifact(filePath: string) {
  * Unlinking/deleting is necessary if user switched from docker to venv.
  * @param filePath the file to be recreated
  */
-export function initializeFile(filePath: string) {
+function initializeFile(filePath: string) {
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
     }
