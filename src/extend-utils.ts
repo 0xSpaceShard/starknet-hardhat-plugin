@@ -192,6 +192,10 @@ export async function getBlockUtil(
         hash: identifier?.blockHash
     };
 
+    if (blockOptions.number == null && !blockOptions.hash) {
+        blockOptions.number = "latest";
+    }
+
     const executed = await hre.starknetWrapper.getBlock(blockOptions);
 
     if (executed.statusCode) {

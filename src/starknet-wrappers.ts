@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
-import { InteractChoice } from "./types";
+import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
@@ -40,7 +40,7 @@ interface InteractWrapperOptions {
     chainID?: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
-    blockNumber?: string;
+    blockNumber?: BlockNumber;
 }
 
 interface TxHashQueryWrapperOptions {
@@ -59,7 +59,7 @@ interface DeployAccountWrapperOptions {
 }
 
 interface BlockQueryWrapperOptions {
-    number?: number;
+    number?: BlockNumber;
     hash?: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
@@ -139,8 +139,8 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
-        if (options.blockNumber) {
-            prepared.push("--block_number", options.blockNumber);
+        if (options.blockNumber !== undefined && options.blockNumber !== null) {
+            prepared.push("--block_number", options.blockNumber.toString());
         }
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);

@@ -4,7 +4,6 @@ import { HardhatPluginError } from "hardhat/plugins";
 import {
     PLUGIN_NAME,
     CHECK_STATUS_TIMEOUT,
-    PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
@@ -263,7 +262,7 @@ export function parseFeeEstimation(raw: string): FeeEstimation {
 function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void {
     if (options.blockNumber === undefined) {
         // using || operator would not handle the zero case correctly
-        options.blockNumber = PENDING_BLOCK_NUMBER;
+        options.blockNumber = "pending";
     }
 }
 
@@ -287,7 +286,7 @@ export interface InvokeOptions {
 export interface CallOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
-    blockNumber?: string;
+    blockNumber?: BlockNumber;
     nonce?: Numeric;
     maxFee?: Numeric;
 }
@@ -303,8 +302,10 @@ export type ContractInteractionFunction = (
 ) => Promise<any>;
 
 
+export type BlockNumber = number | "pending" | "latest";
+
 export interface BlockIdentifier {
-    blockNumber?: number;
+    blockNumber?: BlockNumber;
     blockHash?: string;
 }
 
