@@ -66,6 +66,10 @@ export abstract class Account {
         ).toString();
     }
 
+    get address() {
+        return this.starknetContract.address;
+    }
+
     /**
      * Uses the account contract as a proxy to call a function on the target contract with a signature
      *
