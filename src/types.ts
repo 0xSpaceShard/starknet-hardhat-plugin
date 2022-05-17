@@ -256,14 +256,16 @@ export function parseFeeEstimation(raw: string): FeeEstimation {
 }
 
 /**
- * Modifies the passed object by setting its blockNumber to pending.
+ * Returns a modified copy of the provided object with its blockNumber set to pending.
  * @param options the options object with a blockNumber key
  */
-function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void {
-    if (options.blockNumber === undefined) {
+function defaultToPendingBlock<T extends { blockNumber?: BlockNumber }>(options: T): T {
+    const adaptedOptions = copyWithBigint<T>(options);
+    if (adaptedOptions.blockNumber === undefined) {
         // using || operator would not handle the zero case correctly
-        options.blockNumber = "pending";
+        adaptedOptions.blockNumber = "pending";
     }
+    return adaptedOptions;
 }
 
 export interface DeployOptions {
@@ -581,9 +583,8 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        options = copyWithBigint(options); // copy because of potential changes to the object
-        defaultToPendingBlock(options);
-        const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
+        const adaptedOptions = defaultToPendingBlock(options);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, adaptedOptions);
         return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
@@ -599,13 +600,12 @@ export class StarknetContract {
         args?: StringMap,
         options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
-        options = copyWithBigint(options); // copy because of potential changes to the object
-        defaultToPendingBlock(options);
+        const adaptedOptions = defaultToPendingBlock(options);
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,
             functionName,
             args,
-            options
+            adaptedOptions
         );
         return parseFeeEstimation(executed.stdout.toString());
     }
