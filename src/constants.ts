@@ -13,13 +13,7 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
-export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
-export const GITHUB_ACCOUNT_ARTIFACTS_URL =
-    "https://raw.githubusercontent.com/" +
-    "Shard-Labs/" +
-    "starknet-hardhat-plugin/" +
-    "master/" +
-    `${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/`;
+export const ACCOUNT_ARTIFACTS_DIR = "account-contract-artifacts";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";

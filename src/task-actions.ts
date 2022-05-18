@@ -196,7 +196,9 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     for (let artifactsPath of artifactsPaths) {
         if (intRegex.test(artifactsPath)) {
             console.warn(
-                `WARNING: found an integer "${artifactsPath}" as an artifact path. Make sure that all inputs are passed within a single string (e.g --inputs "10 20 30")`
+                "\x1b[33m%s\x1b[0m",
+                `Warning! Found an integer "${artifactsPath}" as an artifact path.\n` +
+                    "Make sure that all inputs are passed within a single string (e.g --inputs '10 20 30')"
             );
         }
         // Check if input is the name of the contract and not a path

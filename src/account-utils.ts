@@ -5,12 +5,7 @@ import { ec } from "elliptic";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as fs from "fs";
 import path from "path";
-import {
-    ABI_SUFFIX,
-    ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
-    GITHUB_ACCOUNT_ARTIFACTS_URL
-} from "./constants";
-import axios from "axios";
+import { ABI_SUFFIX, ACCOUNT_ARTIFACTS_DIR } from "./constants";
 import { flattenStringMap } from "./utils";
 
 export type CallParameters = {
@@ -58,10 +53,7 @@ export async function handleAccountContractArtifacts(
     // Name of the artifacts' parent folder
     const artifactsBase = artifactsName + ".cairo";
 
-    const baseArtifactsPath = path.join(
-        hre.config.paths.starknetArtifacts,
-        ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
-    );
+    const baseArtifactsPath = path.join(hre.config.paths.starknetArtifacts, ACCOUNT_ARTIFACTS_DIR);
 
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
@@ -74,14 +66,17 @@ export async function handleAccountContractArtifacts(
     const jsonArtifact = artifactsName + ".json";
     const abiArtifact = artifactsName + ABI_SUFFIX;
 
-    const artifactLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
-        `${accountType}/`,
-        `${artifactsVersion}/`,
-        `${artifactsBase}/`
+    const artifactsSourcePath = path.join(
+        __dirname,
+        "..", // necessary since artifact dir is in the root, not in src
+        ACCOUNT_ARTIFACTS_DIR,
+        accountType,
+        artifactsVersion,
+        artifactsBase
     );
 
-    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
-    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactLocationUrl);
+    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactsSourcePath);
+    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactsSourcePath);
 
     return artifactsTargetPath;
 }
@@ -89,29 +84,21 @@ export async function handleAccountContractArtifacts(
 /**
  * Checks if the provided artifact exists in the project's artifacts folder.
  * If it doesn't exist, it is downloaded from the GitHub repository.
- * @param artifact artifact file to download. E.g. "Account.json" or "Account_abi.json"
+ * @param fileName artifact file to download. E.g. "Account.json" or "Account_abi.json"
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
- * @param artifactLocationUrl url to the github folder where the artifacts are stored
+ * @param artifactSourcePath path to the folder where the artifacts are stored
  */
 async function ensureArtifact(
-    artifact: string,
+    fileName: string,
     artifactsTargetPath: string,
-    artifactLocationUrl: string
+    artifactSourcePath: string
 ) {
-    // Download artifact if it doesen't exist
-    if (!fs.existsSync(path.join(artifactsTargetPath, artifact))) {
+    const finalTargetPath = path.join(artifactsTargetPath, fileName);
+    if (!fs.existsSync(finalTargetPath)) {
         fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-        const rawFileURL = artifactLocationUrl.concat(artifact);
-
-        const response = await axios.get(rawFileURL, {
-            transformResponse: (res) => {
-                return res;
-            },
-            responseType: "json"
-        });
-
-        fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
+        const finalSourcePath = path.join(artifactSourcePath, fileName);
+        fs.copyFileSync(finalSourcePath, finalTargetPath);
     }
 }
 
