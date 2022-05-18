@@ -4,7 +4,6 @@ import { HardhatPluginError } from "hardhat/plugins";
 import {
     PLUGIN_NAME,
     CHECK_STATUS_TIMEOUT,
-    PENDING_BLOCK_NUMBER,
     CHECK_STATUS_RECOVER_TIMEOUT
 } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
@@ -257,14 +256,16 @@ export function parseFeeEstimation(raw: string): FeeEstimation {
 }
 
 /**
- * Modifies the passed object by setting its blockNumber to pending.
+ * Returns a modified copy of the provided object with its blockNumber set to pending.
  * @param options the options object with a blockNumber key
  */
-function defaultToPendingBlock(options: CallOptions | EstimateFeeOptions): void {
-    if (options.blockNumber === undefined) {
+function defaultToPendingBlock<T extends { blockNumber?: BlockNumber }>(options: T): T {
+    const adaptedOptions = copyWithBigint<T>(options);
+    if (adaptedOptions.blockNumber === undefined) {
         // using || operator would not handle the zero case correctly
-        options.blockNumber = PENDING_BLOCK_NUMBER;
+        adaptedOptions.blockNumber = "pending";
     }
+    return adaptedOptions;
 }
 
 export interface DeployOptions {
@@ -287,7 +288,7 @@ export interface InvokeOptions {
 export interface CallOptions {
     signature?: Array<Numeric>;
     wallet?: Wallet;
-    blockNumber?: string;
+    blockNumber?: BlockNumber;
     nonce?: Numeric;
     maxFee?: Numeric;
     rawOutput?: boolean;
@@ -303,8 +304,10 @@ export type ContractInteractionFunction = (
     options?: InteractOptions
 ) => Promise<any>;
 
+export type BlockNumber = number | "pending" | "latest";
+
 export interface BlockIdentifier {
-    blockNumber?: number;
+    blockNumber?: BlockNumber;
     blockHash?: string;
 }
 
@@ -583,9 +586,8 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        options = copyWithBigint(options); // copy because of potential changes to the object
-        defaultToPendingBlock(options);
-        const executed = await this.interact(InteractChoice.CALL, functionName, args, options);
+        const adaptedOptions = defaultToPendingBlock(options);
+        const executed = await this.interact(InteractChoice.CALL, functionName, args, adaptedOptions);
         if (options.rawOutput) {
             return { response: executed.stdout.toString().split(" ") };
         }
@@ -604,12 +606,12 @@ export class StarknetContract {
         args?: StringMap,
         options: EstimateFeeOptions = {}
     ): Promise<FeeEstimation> {
-        defaultToPendingBlock(options);
+        const adaptedOptions = defaultToPendingBlock(options);
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,
             functionName,
             args,
-            options
+            adaptedOptions
         );
         return parseFeeEstimation(executed.stdout.toString());
     }
