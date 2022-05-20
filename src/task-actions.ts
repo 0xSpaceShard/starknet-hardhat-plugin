@@ -185,6 +185,14 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
 }
 
 export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    try {
+        const cacheHandled = await handleCache(args, hre);
+        if (!cacheHandled) process.exit(1);
+    } catch (error) {
+        console.error(error);
+        process.exit(1);
+    }
+
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -384,6 +392,14 @@ function handleMultiPartContractVerification(
 }
 
 export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    try {
+        const cacheHandled = await handleCache(args, hre);
+        if (!cacheHandled) process.exit(1);
+    } catch (error) {
+        console.error(error);
+        process.exit(1);
+    }
+
     await starknetInteractAction(InteractChoice.INVOKE, args, hre);
 }
 
@@ -539,8 +555,14 @@ export async function starknetTestAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
-    const cached = await handleCache(args, hre);
-    if (!cached) process.exit(1);
+    try {
+        const cacheHandled = await handleCache(args, hre);
+        if (!cacheHandled) process.exit(1);
+    } catch (error) {
+        console.error(error);
+        process.exit(1);
+    }
+
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
@@ -553,6 +575,14 @@ export async function starknetRunAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
+    try {
+        const cacheHandled = await handleCache(args, hre);
+        if (!cacheHandled) process.exit(1);
+    } catch (error) {
+        console.error(error);
+        process.exit(1);
+    }
+
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
