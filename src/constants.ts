@@ -41,6 +41,4 @@ export const LEN_SUFFIX = "_len";
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
-export const PENDING_BLOCK_NUMBER = "pending";
-
 export const PREFIX_TRANSACTION = "StarkNet Transaction";
