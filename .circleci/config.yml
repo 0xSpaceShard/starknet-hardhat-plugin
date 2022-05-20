@@ -281,7 +281,8 @@ workflows:
                                   test-general-tests,
                                   test-configuration-tests,
                                   test-venv-tests,
-                                  test-integrated-devnet-tests
+                                  test-integrated-devnet-tests,
+                                  test-recompilation-tests
                               ]
                       exclude:
                           - platform: macos-node14
@@ -290,6 +291,8 @@ workflows:
                             test-name: test-configuration-tests
                           - platform: macos-node14
                             test-name: test-integrated-devnet-tests
+                          - platform: macos-node14
+                            test-name: test-recompilation-tests
             - npm_publish:
                   context: shardlabs
                   filters:
