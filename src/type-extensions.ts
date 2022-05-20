@@ -21,6 +21,7 @@ type StarknetConfig = {
     network?: string;
     networkUrl?: string;
     networkConfig?: NetworkConfig;
+    recompile?: boolean;
 };
 
 type WalletUserConfig = {
