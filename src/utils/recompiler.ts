@@ -3,7 +3,7 @@ import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { starknetCompileAction } from "../task-actions";
-import { traverseFiles } from "../utils";
+import { getArtifactPath, traverseDirectories, traverseFiles } from "../utils";
 
 const fsPromises = fs.promises;
 
@@ -55,17 +55,23 @@ const getContractHash = async (defaultSourcesPath: string): Promise<NameHashPair
 
 // Checks artifacts availability
 const checkArtifacts = async (
-    defaultSourcesPath: string,
-    starknetArtifacts: string,
+    hre: HardhatRuntimeEnvironment,
     newNameHashPair: NameHashPair,
     changed: Set<string>
 ): Promise<void> => {
+    const { starknetSources: defaultSourcesPath, starknetArtifacts } = hre.config.paths;
+    const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
+
+    const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
+    const artifactsPathRegex = new RegExp("^" + artifactsDir + "/");
     // traverse on artifacts directory
-    const dirpath = path.join(starknetArtifacts, "contracts");
-    const files = await fsPromises.readdir(dirpath);
+    let artifactsDirList = await traverseDirectories(artifactsDir, "*.cairo");
+    artifactsDirList = artifactsDirList.map(file => file.replace(artifactsPathRegex, ""));
+
     for (const name in newNameHashPair) {
-        if (!files.includes(name)) {
-            changed.add(`${defaultSourcesPath}/${name}`);
+        const filePath = name.replace(sourceRegex, "");
+        if (!artifactsDirList.includes(filePath)) {
+            changed.add(name);
         }
     }
 };
@@ -110,7 +116,7 @@ export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnviro
 
     const oldNameHashPair = await upsertFile(cacheDirName);
     const newNameHashPair = await getContractHash(defaultSourcesPath);
-    await checkArtifacts(defaultSourcesPath, starknetArtifacts, hre, newNameHashPair, changed);
+    await checkArtifacts(hre, newNameHashPair, changed);
     await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
 
 
