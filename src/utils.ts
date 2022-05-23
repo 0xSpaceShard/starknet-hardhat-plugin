@@ -113,6 +113,23 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     return files;
 }
 
+export async function traverseDirectories(traversable: string, fileCriteria = "*") {
+    let paths: string[] = [];
+    if (fs.lstatSync(traversable).isDirectory()) {
+        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+    } else {
+        paths.push(traversable);
+    }
+    const directories = paths.filter((file) => fs.lstatSync(file).isDirectory());
+    return directories;
+}
+
+export function getArtifactPath(sourcePath: string, hre: HardhatRuntimeEnvironment): string {
+    const rootRegex = new RegExp("^" + hre.config.paths.root);
+    const suffix = sourcePath.replace(rootRegex, "");
+    return path.join(hre.config.paths.starknetArtifacts, suffix);
+}
+
 export function checkArtifactExists(artifactsPath: string): void {
     if (!fs.existsSync(artifactsPath)) {
         const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
