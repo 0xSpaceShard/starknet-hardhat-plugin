@@ -3,6 +3,7 @@ import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { starknetCompileAction } from "../task-actions";
+import { traverseFiles } from "../utils";
 
 const fsPromises = fs.promises;
 
@@ -39,13 +40,11 @@ const upsertFile = async (cacheDirName: string): Promise<NameHashPair> => {
 // Gets hash of each .cairo file inside contracts
 const getContractHash = async (defaultSourcesPath: string): Promise<NameHashPair> => {
     const newNameHashPair: NameHashPair = {};
-    // traverse directory contracts/
-    const files = await fsPromises.readdir(defaultSourcesPath);
-    // check only cairo file extensions
-    const filesList = files.filter((el) => path.extname(el).toLowerCase() === ".cairo");
+    // get soucrces from source path. check only cairo file extensions
+    const filesList = await traverseFiles(defaultSourcesPath, "*.cairo");
     // select file name
     for (const cairoContract of filesList) {
-        const data = await fsPromises.readFile(defaultSourcesPath.concat(`/${cairoContract}`));
+        const data = await fsPromises.readFile(cairoContract);
         const hash = createHash("sha256");
         hash.update(data);
         newNameHashPair[cairoContract] = hash.digest("hex").toString();
