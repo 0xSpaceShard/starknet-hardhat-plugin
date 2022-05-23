@@ -105,7 +105,7 @@ const compileChangedContracts = async (
 
 export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnvironment): Promise<boolean> => {
     // If recompile is not enabled, do nothing
-    if (!hre.userConfig?.starknet?.recompile || hre.userConfig?.starknet?.recompile === undefined) return true;
+    if (!hre.userConfig?.starknet?.recompile) return true;
 
     // Get cache directory, default source directory and artifacts directory from hre.config
     const { starknetSources: defaultSourcesPath, cache: cacheDirName, starknetArtifacts } = hre.config.paths;
