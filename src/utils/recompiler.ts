@@ -78,20 +78,17 @@ const compileChangedContracts = async (
     oldNameHashPair: NameHashPair,
     changed: Set<string>
 ): Promise<boolean> => {
-    const defaultSourcesPath = hre.config.paths.starknetSources;
-    const getKeys = Object.keys;
-
-    getKeys(newNameHashPair).forEach(contractName => {
+    for (const contractName in newNameHashPair) {
         // Add new contracts that are not in cache before
         if (!oldNameHashPair[contractName]) {
-            changed.add(`${defaultSourcesPath}/${contractName}`);
+            changed.add(contractName);
         }
 
         // Add contracts that contiain a change in content
         if (newNameHashPair[contractName] !== oldNameHashPair[contractName]) {
-            changed.add(`${defaultSourcesPath}/${contractName}`);
+            changed.add(contractName);
         }
-    });
+    }
 
     if (changed.size > 0) {
         // Compiles contracts
