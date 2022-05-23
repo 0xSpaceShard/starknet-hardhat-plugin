@@ -16,7 +16,7 @@ const CACHE_FILE_NAME = "cairo-files-cache.json";
 
 // Creates cache file only if it doesn't exist in cache
 const upsertFile = async (cacheDirName: string): Promise<NameHashPair> => {
-    const dirpath = path.join(cacheDirName, CACHE_FILE_NAME);
+    const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
     const cacheDirpath = path.join(cacheDirName);
 
     // Creates cache directory if it doesn't exist
@@ -24,13 +24,13 @@ const upsertFile = async (cacheDirName: string): Promise<NameHashPair> => {
         fs.mkdirSync(cacheDirpath);
     }
 
-    if (!fs.existsSync(dirpath)) {
+    if (!fs.existsSync(cacheFile)) {
         // create file, if it's not found
-        await fsPromises.writeFile(dirpath, JSON.stringify({}));
+        await fsPromises.writeFile(cacheFile, JSON.stringify({}));
         return {};
     } else {
         // try to read file
-        const oldFile = await fsPromises.readFile(dirpath);
+        const oldFile = await fsPromises.readFile(cacheFile);
         const oldNameHashPair: NameHashPair = JSON.parse(oldFile.toString() || "{}");
         return oldNameHashPair;
     }
@@ -121,7 +121,7 @@ export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnviro
     if (!compiledSuccessfully) return false;
 
     // Write to file new NameHashPair of contracts
-    const dirPath = path.join(cacheDirName, CACHE_FILE_NAME);
-    await fsPromises.writeFile(dirPath, JSON.stringify(newNameHashPair, null, " "));
+    const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
+    await fsPromises.writeFile(cacheFile, JSON.stringify(newNameHashPair, null, " "));
     return true;
 };
