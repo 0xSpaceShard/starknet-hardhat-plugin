@@ -77,7 +77,7 @@ const compileChangedContracts = async (
     newNameHashPair: NameHashPair,
     oldNameHashPair: NameHashPair,
     changed: Set<string>
-): Promise<boolean> => {
+): Promise<void> => {
     for (const contractName in newNameHashPair) {
         // Add new contracts that are not in cache before
         if (!oldNameHashPair[contractName]) {
@@ -96,8 +96,6 @@ const compileChangedContracts = async (
         args.paths = [...changed];
         await starknetCompileAction(args, hre);
     }
-
-    return true;
 };
 
 export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnvironment): Promise<boolean> => {
@@ -112,9 +110,9 @@ export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnviro
 
     const oldNameHashPair = await upsertFile(cacheDirName);
     const newNameHashPair = await getContractHash(defaultSourcesPath);
-    await checkArtifacts(defaultSourcesPath, starknetArtifacts, newNameHashPair, changed);
-    const compiledSuccessfully = await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
-    if (!compiledSuccessfully) return false;
+    await checkArtifacts(defaultSourcesPath, starknetArtifacts, hre, newNameHashPair, changed);
+    await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
+
 
     // Write to file new NameHashPair of contracts
     const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
