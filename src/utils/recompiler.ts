@@ -59,7 +59,7 @@ const checkArtifacts = async (
     newNameHashPair: NameHashPair,
     changed: Set<string>
 ): Promise<void> => {
-    const { starknetSources: defaultSourcesPath, starknetArtifacts } = hre.config.paths;
+    const { starknetSources: defaultSourcesPath } = hre.config.paths;
     const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
 
     const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
@@ -109,7 +109,7 @@ export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnviro
     if (!hre.userConfig?.starknet?.recompile) return true;
 
     // Get cache directory, default source directory and artifacts directory from hre.config
-    const { starknetSources: defaultSourcesPath, cache: cacheDirName, starknetArtifacts } = hre.config.paths;
+    const { starknetSources: defaultSourcesPath, cache: cacheDirName } = hre.config.paths;
 
     // Set to save contracts with changed content & unavailable artifacts
     const changed: Set<string> = new Set();
