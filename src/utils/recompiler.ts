@@ -114,14 +114,19 @@ export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnviro
     // Set to save contracts with changed content & unavailable artifacts
     const changed: Set<string> = new Set();
 
-    const oldNameHashPair = await upsertFile(cacheDirName);
-    const newNameHashPair = await getContractHash(defaultSourcesPath);
-    await checkArtifacts(hre, newNameHashPair, changed);
-    await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
+    try {
+        const oldNameHashPair = await upsertFile(cacheDirName);
+        const newNameHashPair = await getContractHash(defaultSourcesPath);
+        await checkArtifacts(hre, newNameHashPair, changed);
+        await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
 
-
-    // Write to file new NameHashPair of contracts
-    const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
-    await fsPromises.writeFile(cacheFile, JSON.stringify(newNameHashPair, null, " "));
-    return true;
+        // Write to file new NameHashPair of contracts
+        const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
+        await fsPromises.writeFile(cacheFile, JSON.stringify(newNameHashPair, null, " "));
+        return true;
+    } catch (error) {
+        // If there is an error, do not recompile
+        console.error(error);
+        return false;
+    }
 };
