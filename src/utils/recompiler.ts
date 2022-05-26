@@ -96,10 +96,10 @@ const getHashEntry = async (
 };
 
 // Updates cache entry with new contracts
-const getUpdatedCashEntry = async (
+const getUpdatedCashEntry = (
     oldCacheEntry: CacheEntry,
     newCacheEntry: CacheEntry
-): Promise<CacheEntry> => {
+): CacheEntry => {
     const updatedCacheEntry: CacheEntry = oldCacheEntry;
     for (const contractName in newCacheEntry) {
         if (oldCacheEntry[contractName]?.contentHash !== newCacheEntry[contractName].contentHash) {
@@ -195,7 +195,7 @@ export const saveCacheEntry = async (
     const { cache: cacheDirName } = hre.config.paths;
     const oldCacheEntry = await upsertFile(cacheDirName);
     const newCacheEntry = await getHashEntry(file, output, abi);
-    const updatedCacheEntry = await getUpdatedCashEntry(oldCacheEntry, newCacheEntry);
+    const updatedCacheEntry = getUpdatedCashEntry(oldCacheEntry, newCacheEntry);
     const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
     await fsPromises.writeFile(cacheFile, JSON.stringify(updatedCacheEntry, null, " "));
 };
