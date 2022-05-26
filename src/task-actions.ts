@@ -28,7 +28,7 @@ import {
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
-import { handleCache } from "./utils/recompiler";
+import { handleCache, saveCacheEntry } from "./utils/recompiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -174,6 +174,9 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 disableHintValidation: args.disableHintValidation
             });
 
+            if (hre.userConfig?.starknet?.recompile) {
+                await saveCacheEntry(file, outputPath, abiPath, hre);
+            }
             statusCode += processExecuted(executed, true);
         }
     }
