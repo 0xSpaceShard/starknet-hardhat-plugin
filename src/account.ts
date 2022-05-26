@@ -8,24 +8,32 @@ import {
     InteractOptions,
     InvokeOptions,
     InvokeResponse,
+    Numeric,
     StarknetContract,
     StringMap
 } from "./types";
-import { PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME, TransactionHashPrefix } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { toBN } from "starknet/utils/number";
+import { BigNumberish, toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
     CallParameters,
     generateKeys,
     handleAccountContractArtifacts,
-    handleMultiCall,
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
 import { copyWithBigint } from "./utils";
+import { Call, hash, RawCalldata } from "starknet";
+
+type ExecuteCallParameters = {
+    to: bigint;
+    selector: BigNumberish;
+    data_offset: number;
+    data_len: number;
+};
 
 /**
  * Representation of an Account.
@@ -36,7 +44,8 @@ export abstract class Account {
         public starknetContract: StarknetContract,
         public privateKey: string,
         public publicKey: string,
-        public keyPair: ec.KeyPair
+        public keyPair: ec.KeyPair,
+        protected hre: HardhatRuntimeEnvironment
     ) {}
 
     /**
@@ -72,11 +81,17 @@ export abstract class Account {
         toContract: StarknetContract,
         functionName: string,
         calldata?: StringMap,
-        options?: CallOptions
+        options: CallOptions = {}
     ): Promise<StringMap> {
+        if (this.hasRawOutput()) {
+            options = copyWithBigint(options);
+            options.rawOutput = true;
+        }
+
         const { response } = <{ response: string[] }>(
             await this.interact(InteractChoice.CALL, toContract, functionName, calldata, options)
         );
+
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
@@ -116,7 +131,15 @@ export abstract class Account {
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
      */
-    async multiCall(callParameters: CallParameters[], options?: CallOptions): Promise<StringMap[]> {
+    async multiCall(
+        callParameters: CallParameters[],
+        options: CallOptions = {}
+    ): Promise<StringMap[]> {
+        if (this.hasRawOutput()) {
+            options = copyWithBigint(options);
+            options.rawOutput = true;
+        }
+
         const { response } = <{ response: string[] }>(
             await this.multiInteract(InteractChoice.CALL, callParameters, options)
         );
@@ -156,7 +179,7 @@ export abstract class Account {
         const nonce = options.nonce || (await this.getNonce());
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
-        const { messageHash, args } = handleMultiCall(
+        const { messageHash, args } = this.handleMultiInteract(
             this.starknetContract.address,
             callParameters,
             nonce,
@@ -179,11 +202,88 @@ export abstract class Account {
         return contractInteractor(executionFunctionName, args, contractInteractOptions);
     }
 
+    /**
+     * Prepares the calldata and hashes the message for the multicall execution
+     *
+     * @param accountAddress address of the account contract
+     * @param callParameters array witht the call parameters
+     * @param nonce current nonce
+     * @param maxFee the maximum fee amoutn set for the contract interaction
+     * @param version the transaction version
+     * @param chainId the chain identifier
+     * @param executionFunctionName the name of the cairo function that performs the execution
+     * @returns the message hash for the multicall and the arguments to execute it with
+     */
+    private handleMultiInteract(
+        accountAddress: string,
+        callParameters: CallParameters[],
+        nonce: Numeric,
+        maxFee: Numeric,
+        version: Numeric
+    ) {
+        const callArray: Call[] = callParameters.map((callParameters) => {
+            return {
+                contractAddress: callParameters.toContract.address,
+                entrypoint: callParameters.functionName,
+                calldata: callParameters.toContract.adaptInput(
+                    callParameters.functionName,
+                    callParameters.calldata
+                )
+            };
+        });
+
+        const executeCallArray: ExecuteCallParameters[] = [];
+        const rawCalldata: RawCalldata = [];
+
+        // Parse the Call array to create the objects which will be accepted by the contract
+        callArray.forEach((call) => {
+            executeCallArray.push({
+                to: BigInt(call.contractAddress),
+                selector: hash.starknetKeccak(call.entrypoint),
+                data_offset: rawCalldata.length,
+                data_len: call.calldata.length
+            });
+            rawCalldata.push(...call.calldata);
+        });
+
+        const adaptedNonce = nonce.toString();
+        const adaptedMaxFee = "0x" + maxFee.toString(16);
+        const adaptedVersion = "0x" + version.toString(16);
+        const messageHash = this.getMessageHash(
+            accountAddress,
+            callArray,
+            adaptedNonce,
+            adaptedMaxFee,
+            adaptedVersion
+        );
+
+        const args = {
+            call_array: executeCallArray,
+            calldata: rawCalldata,
+            nonce: adaptedNonce
+        };
+
+        return { messageHash, args };
+    }
+
+    protected abstract getMessageHash(
+        accountAddress: string,
+        callArray: Call[],
+        nonce: string,
+        maxFee: string,
+        version: string
+    ): string;
+
     protected abstract getSignatures(messageHash: string): bigint[];
 
     protected abstract getExecutionFunctionName(): string;
 
     protected abstract getNonce(): Promise<bigint>;
+
+    /**
+     * Whether the execution method of this account returns raw output or not.
+     */
+    protected abstract hasRawOutput(): boolean;
 }
 
 /**
@@ -192,17 +292,29 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
+    static readonly VERSION = "0.1.0";
 
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
         publicKey: string,
-        keyPair: ec.KeyPair
+        keyPair: ec.KeyPair,
+        hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair);
+        super(starknetContract, privateKey, publicKey, keyPair, hre);
     }
 
-    getSignatures(messageHash: string): bigint[] {
+    protected getMessageHash(
+        accountAddress: string,
+        callArray: Call[],
+        nonce: string,
+        maxFee: string,
+        version: string
+    ): string {
+        return hash.hashMulticall(accountAddress, callArray, nonce, maxFee, version);
+    }
+
+    protected getSignatures(messageHash: string): bigint[] {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
@@ -213,6 +325,7 @@ export class OpenZeppelinAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            OpenZeppelinAccount.VERSION,
             hre
         );
 
@@ -228,7 +341,8 @@ export class OpenZeppelinAccount extends Account {
             contract,
             signer.privateKey,
             signer.publicKey,
-            signer.keyPair
+            signer.keyPair,
+            hre
         );
     }
 
@@ -240,6 +354,7 @@ export class OpenZeppelinAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            OpenZeppelinAccount.VERSION,
             hre
         );
 
@@ -258,16 +373,20 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair);
+        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair, hre);
     }
 
-    getExecutionFunctionName(): string {
+    protected getExecutionFunctionName(): string {
         return "__execute__";
     }
 
-    async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<bigint> {
         const { res: nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
+    }
+
+    protected hasRawOutput(): boolean {
+        return false;
     }
 }
 
@@ -277,6 +396,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
+    static readonly VERSION = "0.2.1";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -289,15 +409,51 @@ export class ArgentAccount extends Account {
         keyPair: ec.KeyPair,
         guardianPrivateKey: string,
         guardianPublicKey: string,
-        guardianKeyPair: ec.KeyPair
+        guardianKeyPair: ec.KeyPair,
+        hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair);
+        super(starknetContract, privateKey, publicKey, keyPair, hre);
         this.guardianPublicKey = guardianPublicKey;
         this.guardianPrivateKey = guardianPrivateKey;
         this.guardianKeyPair = guardianKeyPair;
     }
 
-    getSignatures(messageHash: string): bigint[] {
+    protected getMessageHash(
+        accountAddress: string,
+        callArray: Call[],
+        nonce: string,
+        maxFee: string,
+        version: string
+    ): string {
+        const hashable: Array<BigNumberish> = [callArray.length];
+        const rawCalldata: RawCalldata = [];
+        callArray.forEach((call) => {
+            hashable.push(
+                call.contractAddress,
+                hash.starknetKeccak(call.entrypoint),
+                rawCalldata.length,
+                call.calldata.length
+            );
+            rawCalldata.push(...call.calldata);
+        });
+
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+        const adaptedChainId = BigInt("0x" + Buffer.from(chainId).toString("hex")).toString();
+
+        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        const calldataHash = hash.computeHashOnElements(hashable);
+        return hash.computeHashOnElements([
+            TransactionHashPrefix.INVOKE,
+            version,
+            accountAddress,
+            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            calldataHash,
+            maxFee,
+            adaptedChainId
+        ]);
+    }
+
+    protected getSignatures(messageHash: string): bigint[] {
         const signerSignatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
         const guardianSignatures = signMultiCall(
             this.guardianPublicKey,
@@ -338,6 +494,7 @@ export class ArgentAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            ArgentAccount.VERSION,
             hre
         );
 
@@ -359,7 +516,8 @@ export class ArgentAccount extends Account {
             signer.keyPair,
             guardian.privateKey,
             guardian.publicKey,
-            guardian.keyPair
+            guardian.keyPair,
+            hre
         );
     }
 
@@ -371,6 +529,7 @@ export class ArgentAccount extends Account {
         const contractPath = await handleAccountContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
+            ArgentAccount.VERSION,
             hre
         );
 
@@ -388,15 +547,19 @@ export class ArgentAccount extends Account {
             );
         }
 
-        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null);
+        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null, hre);
     }
 
-    getExecutionFunctionName(): string {
+    protected getExecutionFunctionName(): string {
         return "__execute__";
     }
 
-    async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<bigint> {
         const { nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
+    }
+
+    protected hasRawOutput(): boolean {
+        return true;
     }
 }

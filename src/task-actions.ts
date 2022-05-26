@@ -7,7 +7,8 @@ import {
     PLUGIN_NAME,
     ABI_SUFFIX,
     ALPHA_TESTNET,
-    DEFAULT_STARKNET_NETWORK
+    DEFAULT_STARKNET_NETWORK,
+    ChainID
 } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
@@ -21,6 +22,7 @@ import {
     isStarknetDevnet
 } from "./utils";
 import {
+    HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
     HttpNetworkConfig,
     RunSuperFunction,
@@ -194,7 +196,9 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     for (let artifactsPath of artifactsPaths) {
         if (intRegex.test(artifactsPath)) {
             console.warn(
-                `WARNING: found an integer "${artifactsPath}" as an artifact path. Make sure that all inputs are passed within a single string (e.g --inputs "10 20 30")`
+                "\x1b[33m%s\x1b[0m",
+                `Warning! Found an integer "${artifactsPath}" as an artifact path.\n` +
+                    "Make sure that all inputs are passed within a single string (e.g --inputs '10 20 30')"
             );
         }
         // Check if input is the name of the contract and not a path
@@ -269,7 +273,11 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
  * @param hre the runtime environment from which network data is extracted
  * @param origin short string describing where/how `networkName` was specified
  */
-function getVerificationNetwork(networkName: string, hre: HardhatRuntimeEnvironment, origin: string) {
+function getVerificationNetwork(
+    networkName: string,
+    hre: HardhatRuntimeEnvironment,
+    origin: string
+) {
     networkName ||= ALPHA_TESTNET;
     const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
@@ -297,7 +305,8 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
             }
         }
     } catch (error) {
-        const msg = "Something went wrong while checking if the contract has already been verified.";
+        const msg =
+            "Something went wrong while checking if the contract has already been verified.";
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
@@ -339,22 +348,23 @@ async function handleContractVerification(
 
     handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root);
 
-    await axios.post(
-        voyagerUrl,
-        bodyFormData.getBuffer(),
-        {
+    await axios
+        .post(voyagerUrl, bodyFormData.getBuffer(), {
             headers: bodyFormData.getHeaders()
-        }
-    ).catch(() => {
-        throw new HardhatPluginError(PLUGIN_NAME, `\
+        })
+        .catch(() => {
+            throw new HardhatPluginError(
+                PLUGIN_NAME,
+                `\
 Could not verify the contract at address ${args.address}.
 It is hard to tell exactly what happened, but possible reasons include:
 - Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
 - Wrong contract address
 - Wrong files provided
 - Wrong main contract chosen (first after --path)
-- Voyager is down`);
-    });
+- Voyager is down`
+            );
+        });
 
     console.log(`Contract has been successfuly verified at address ${args.address}`);
     console.log(`Check it out on Voyager: ${verifiedUrl}`);
@@ -369,10 +379,7 @@ function handleMultiPartContractVerification(
         if (!path.isAbsolute(item)) {
             paths[index] = path.normalize(path.join(root, item));
             if (!fs.existsSync(paths[index])) {
-                throw new HardhatPluginError(
-                    PLUGIN_NAME,
-                    `File ${paths[index]} does not exist`
-                );
+                throw new HardhatPluginError(PLUGIN_NAME, `File ${paths[index]} does not exist`);
             }
         }
         bodyFormData.append("file" + index, fs.readFileSync(paths[index]), {
@@ -499,7 +506,7 @@ export async function starknetDeployAccountAction(
  */
 function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     let networkName;
-    let networkConfig;
+    let networkConfig: HardhatNetworkConfig;
     if (args.starknetNetwork) {
         networkName = args.starknetNetwork;
         networkConfig = getNetwork(networkName, hre.config.networks, "--starknet-network");
@@ -514,9 +521,12 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
         networkName = DEFAULT_STARKNET_NETWORK;
         networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
+
+    networkConfig.starknetChainId ||= ChainID.TESTNET;
+
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
-    hre.config.starknet.networkConfig = networkConfig;
+    hre.config.starknet.networkConfig = hre.starknet.networkConfig = networkConfig;
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
 }
 

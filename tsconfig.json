@@ -11,5 +11,5 @@
         "declaration": true,
         "module": "commonjs"
     },
-    "include": ["./src", "config.json"]
+    "include": ["./src", "config.json", "account-contract-artifacts/**/*.json"]
 }
