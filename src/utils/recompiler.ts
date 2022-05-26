@@ -3,20 +3,27 @@ import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { starknetCompileAction } from "../task-actions";
-import { getArtifactPath, traverseDirectories, traverseFiles } from "../utils";
+import { getArtifactPath, traverseFiles } from "../utils";
+import { ABI_SUFFIX } from "../constants";
 
 const fsPromises = fs.promises;
 
+interface ContractData {
+    contentHash: string;
+    outputPath: string;
+    abiPath: string;
+}
+
 // FileName - HashPair
-interface NameHashPair {
-    [key: string]: string;
+interface CacheEntry {
+    [key: string]: ContractData;
 }
 
 // Cache file name
 const CACHE_FILE_NAME = "cairo-files-cache.json";
 
 // Creates cache file only if it doesn't exist in cache
-const upsertFile = async (cacheDirName: string): Promise<NameHashPair> => {
+const upsertFile = async (cacheDirName: string): Promise<CacheEntry> => {
     const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
     const cacheDirpath = path.join(cacheDirName);
 
@@ -32,14 +39,19 @@ const upsertFile = async (cacheDirName: string): Promise<NameHashPair> => {
     } else {
         // try to read file
         const oldFile = await fsPromises.readFile(cacheFile);
-        const oldNameHashPair: NameHashPair = JSON.parse(oldFile.toString() || "{}");
-        return oldNameHashPair;
+        const oldCacheEntry: CacheEntry = JSON.parse(oldFile.toString() || "{}");
+        return oldCacheEntry;
     }
 };
 
 // Gets hash of each .cairo file inside contracts
-const getContractHash = async (defaultSourcesPath: string): Promise<NameHashPair> => {
-    const newNameHashPair: NameHashPair = {};
+const getContractHash = async (hre: HardhatRuntimeEnvironment): Promise<CacheEntry> => {
+    const { starknetSources: defaultSourcesPath } = hre.config.paths;
+
+    const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
+    const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
+
+    const newCacheEntry: CacheEntry = {};
     // get soucrces from source path. check only cairo file extensions
     const filesList = await traverseFiles(defaultSourcesPath, "*.cairo");
     // select file name
@@ -47,51 +59,95 @@ const getContractHash = async (defaultSourcesPath: string): Promise<NameHashPair
         const data = await fsPromises.readFile(cairoContract);
         const hash = createHash("sha256");
         hash.update(data);
-        newNameHashPair[cairoContract] = hash.digest("hex").toString();
+        const suffix = cairoContract.replace(sourceRegex, "");
+
+        const fileName = path.basename(suffix, ".cairo");
+        const abiPath = path.join(artifactsDir, suffix, `${fileName}${ABI_SUFFIX}`);
+        const outputPath = path.join(artifactsDir, suffix, `${fileName}.json`);
+
+        newCacheEntry[cairoContract] = {
+            contentHash: hash.digest("hex").toString(),
+            outputPath: newCacheEntry[cairoContract] ? newCacheEntry[cairoContract].outputPath : outputPath,
+            abiPath: newCacheEntry[cairoContract] ? newCacheEntry[cairoContract].abiPath : abiPath
+        };
     }
 
-    return newNameHashPair;
+    return newCacheEntry;
+};
+
+// Gets cache entry of a given cairo file plus artifacts
+const getHashEntry = async (
+    file: string,
+    output: string,
+    abi: string
+): Promise<CacheEntry> => {
+    const data = await fsPromises.readFile(file);
+    const hash = createHash("sha256");
+    hash.update(data);
+
+    const newCacheEntry: CacheEntry = {};
+    newCacheEntry[file] = {
+        contentHash: hash.digest("hex").toString(),
+        outputPath: output,
+        abiPath: abi
+    };
+
+    return newCacheEntry;
+};
+
+// Updates cache entry with new contracts
+const getUpdatedCashEntry = async (
+    oldCacheEntry: CacheEntry,
+    newCacheEntry: CacheEntry
+): Promise<CacheEntry> => {
+    const updatedCacheEntry: CacheEntry = oldCacheEntry;
+    for (const contractName in newCacheEntry) {
+        if (oldCacheEntry[contractName]?.contentHash !== newCacheEntry[contractName].contentHash) {
+            updatedCacheEntry[contractName] = newCacheEntry[contractName];
+        }
+    }
+
+    return updatedCacheEntry;
 };
 
 // Checks artifacts availability
 const checkArtifacts = async (
     hre: HardhatRuntimeEnvironment,
-    newNameHashPair: NameHashPair,
-    changed: Set<string>
-): Promise<void> => {
+    newCacheEntry: CacheEntry
+): Promise<Set<string>> => {
+    // Set to save contracts with changed content & unavailable artifacts
+    const changed: Set<string> = new Set();
     const { starknetSources: defaultSourcesPath } = hre.config.paths;
-    const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
-
     const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
-    const artifactsPathRegex = new RegExp("^" + artifactsDir + "/");
     // traverse on artifacts directory
-    let artifactsDirList = await traverseDirectories(artifactsDir, "*.cairo");
-    artifactsDirList = artifactsDirList.map(file => file.replace(artifactsPathRegex, ""));
-
-    for (const name in newNameHashPair) {
-        const filePath = name.replace(sourceRegex, "");
-        if (!artifactsDirList.includes(filePath)) {
+    const artifactsList = await traverseFiles(artifactsDir, "*.json");
+    for (const name in newCacheEntry) {
+        const outputPath = newCacheEntry[name].outputPath;
+        const abiPath = newCacheEntry[name].abiPath;
+        if (!artifactsList.includes(outputPath) || !artifactsList.includes(abiPath)) {
             changed.add(name);
         }
     }
+
+    return changed;
 };
 
 // Compile changed contracts
 const compileChangedContracts = async (
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment,
-    newNameHashPair: NameHashPair,
-    oldNameHashPair: NameHashPair,
+    newCacheEntry: CacheEntry,
+    oldCacheEntry: CacheEntry,
     changed: Set<string>
 ): Promise<void> => {
-    for (const contractName in newNameHashPair) {
+    for (const contractName in newCacheEntry) {
         // Add new contracts that are not in cache before
-        if (!oldNameHashPair[contractName]) {
+        if (!oldCacheEntry[contractName]) {
             changed.add(contractName);
         }
 
         // Add contracts that contiain a change in content
-        if (newNameHashPair[contractName] !== oldNameHashPair[contractName]) {
+        if (newCacheEntry[contractName].contentHash !== oldCacheEntry[contractName]?.contentHash) {
             changed.add(contractName);
         }
     }
@@ -99,34 +155,47 @@ const compileChangedContracts = async (
     if (changed.size > 0) {
         // Compiles contracts
         console.log("Compiling contracts...");
+        const copyPaths = args.paths;
         args.paths = [...changed];
         await starknetCompileAction(args, hre);
+        // Restore paths
+        args.paths = copyPaths;
     }
 };
 
+// Handles cache on Starknet cli calls
 export const handleCache = async (args: TaskArguments, hre: HardhatRuntimeEnvironment): Promise<boolean> => {
     // If recompile is not enabled, do nothing
     if (!hre.userConfig?.starknet?.recompile) return true;
 
-    // Get cache directory, default source directory and artifacts directory from hre.config
-    const { starknetSources: defaultSourcesPath, cache: cacheDirName } = hre.config.paths;
-
-    // Set to save contracts with changed content & unavailable artifacts
-    const changed: Set<string> = new Set();
+    // Get cache directory from hre.config
+    const { cache: cacheDirName } = hre.config.paths;
 
     try {
-        const oldNameHashPair = await upsertFile(cacheDirName);
-        const newNameHashPair = await getContractHash(defaultSourcesPath);
-        await checkArtifacts(hre, newNameHashPair, changed);
-        await compileChangedContracts(args, hre, newNameHashPair, oldNameHashPair, changed);
+        const oldCacheEntry = await upsertFile(cacheDirName);
+        const newCacheEntry = await getContractHash(hre);
+        const changedContracts = await checkArtifacts(hre, newCacheEntry);
+        await compileChangedContracts(args, hre, newCacheEntry, oldCacheEntry, changedContracts);
 
-        // Write to file new NameHashPair of contracts
-        const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
-        await fsPromises.writeFile(cacheFile, JSON.stringify(newNameHashPair, null, " "));
         return true;
     } catch (error) {
         // If there is an error, do not recompile
         console.error(error);
         return false;
     }
+};
+
+// Save cache entry to file
+export const saveCacheEntry = async (
+    file: string,
+    output: string,
+    abi: string,
+    hre: HardhatRuntimeEnvironment
+): Promise<void> => {
+    const { cache: cacheDirName } = hre.config.paths;
+    const oldCacheEntry = await upsertFile(cacheDirName);
+    const newCacheEntry = await getHashEntry(file, output, abi);
+    const updatedCacheEntry = await getUpdatedCashEntry(oldCacheEntry, newCacheEntry);
+    const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
+    await fsPromises.writeFile(cacheFile, JSON.stringify(updatedCacheEntry, null, " "));
 };
