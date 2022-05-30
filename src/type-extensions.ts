@@ -9,7 +9,7 @@ import {
     StringMap
 } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
+import { FlushResponse, IncreaseTimeResponse, LoadL1MessagingContractResponse, SetTimeResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
@@ -121,6 +121,21 @@ declare module "hardhat/types/runtime" {
             address?: string,
             networkId?: string
         ) => Promise<LoadL1MessagingContractResponse>;
+
+
+        /**
+         * Increases the block timestamp offset.
+         * @param seconds the new timestamp in seconds
+         * @returns a timestamp
+         */
+        increaseTime: (seconds: number) => Promise<IncreaseTimeResponse>;
+
+        /**
+         * Sets the block timestamp offset.
+         * @param seconds the new timestamp offset in seconds
+         * @returns a timestamp offset
+         */
+        setTime: (seconds: number) => Promise<SetTimeResponse>;
     }
 
     interface HardhatRuntimeEnvironment {
