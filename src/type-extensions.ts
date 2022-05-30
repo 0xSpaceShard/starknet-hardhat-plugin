@@ -213,7 +213,7 @@ declare module "hardhat/types/runtime" {
 
             /**
              * Returns an entire block and the transactions contained within it.
-             * @param optional block identifier (by block number or hash). To query the latest block, remove the identifier.
+             * @param identifier optional block identifier (by block number or hash). To query the latest block, remove the identifier.
              * @returns a block object
              */
             getBlock: (identifier?: BlockIdentifier) => Promise<Block>;
