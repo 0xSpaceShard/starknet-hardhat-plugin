@@ -122,17 +122,16 @@ declare module "hardhat/types/runtime" {
             networkId?: string
         ) => Promise<LoadL1MessagingContractResponse>;
 
-
         /**
-         * Increases the block timestamp offset.
+         * Increases the block time by the given time.
          * @param seconds the new timestamp in seconds
          * @returns a timestamp
          */
         increaseTime: (seconds: number) => Promise<IncreaseTimeResponse>;
 
         /**
-         * Sets the block timestamp offset.
-         * @param seconds the new timestamp offset in seconds
+         * Sets the timestamp of next block
+         * @param seconds the new timestamp in seconds
          * @returns a timestamp offset
          */
         setTime: (seconds: number) => Promise<SetTimeResponse>;
