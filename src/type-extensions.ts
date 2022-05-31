@@ -123,16 +123,16 @@ declare module "hardhat/types/runtime" {
         ) => Promise<LoadL1MessagingContractResponse>;
 
         /**
-         * Increases the block time by the given time.
-         * @param seconds the new timestamp in seconds
-         * @returns a timestamp
+         * Increases block time offset
+         * @param seconds the offset increase in seconds
+         * @returns an object containing the increased block time offset
          */
         increaseTime: (seconds: number) => Promise<IncreaseTimeResponse>;
 
         /**
          * Sets the timestamp of next block
-         * @param seconds the new timestamp in seconds
-         * @returns a timestamp offset
+         * @param seconds timestamp in seconds
+         * @returns an object containg next block timestamp
          */
         setTime: (seconds: number) => Promise<SetTimeResponse>;
     }
