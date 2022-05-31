@@ -377,6 +377,17 @@ Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deplo
 await starknet.devnet.restart();
 ```
 
+#### Time Advancing
+
+The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`, and the time for the next block can be set by calling  `starknet.devnet.setTime()` and subsequent blocks will keep the set offset.
+
+Warning: *block time can be set in the past and lead to unexpected behaviour!*
+
+```typescript
+await starknet.devnet.setTime(1000); // time in seconds
+await starknet.devnet.increaseTime(1000); // time in seconds
+```
+
 ## Configure the plugin
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
