@@ -377,9 +377,10 @@ Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deplo
 await starknet.devnet.restart();
 ```
 
-#### Time Advancing
+#### Advancing time
 
-The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`, and the time for the next block can be set by calling  `starknet.devnet.setTime()` and subsequent blocks will keep the set offset.
+The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
+The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`. The time for the next block can be set by calling `starknet.devnet.setTime()`, with subsequent blocks keeping the set offset.
 
 Warning: *block time can be set in the past and lead to unexpected behaviour!*
 
