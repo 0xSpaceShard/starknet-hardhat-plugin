@@ -105,12 +105,16 @@ You would typically use the input feature when deploying a single contract requi
 ### `starknet-verify`
 
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
+
+The verifier expects `--compiler-version` to be passed on request. The following are supported compiler versions. `0.6.0`, `0.6.1`, `0.6.2`, `0.7.0`, `0.7.1`, `0.8.0`, and `0.8.1`.
+
+For `--license` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
 ### `starknet-deploy-account`
 

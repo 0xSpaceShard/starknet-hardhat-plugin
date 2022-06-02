@@ -340,6 +340,8 @@ async function handleContractVerification(
 
     const bodyFormData = new FormData();
     bodyFormData.append("contract-name", path.parse(mainPath).base);
+    bodyFormData.append("compiler-version", args.compilerVersion);
+    bodyFormData.append("license", args.license || "No License (None)");
 
     // Dependencies (non-main contracts) are in args.paths
     if (args.paths) {
@@ -348,22 +350,26 @@ async function handleContractVerification(
 
     handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root);
 
-    await axios
-        .post(voyagerUrl, bodyFormData.getBuffer(), {
-            headers: bodyFormData.getHeaders()
-        })
-        .catch(() => {
+    await axios({
+        method: "POST",
+        url: voyagerUrl,
+        data: bodyFormData,
+        headers: { ...bodyFormData.getHeaders() }
+    })
+        .catch((err) => {
             throw new HardhatPluginError(
                 PLUGIN_NAME,
                 `\
 Could not verify the contract at address ${args.address}.
-It is hard to tell exactly what happened, but possible reasons include:
+${err.response.data.message ? err.response.data.message :
+                    `It is hard to tell exactly what happened, but possible reasons include:
 - Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
 - Wrong contract address
 - Wrong files provided
 - Wrong main contract chosen (first after --path)
 - Voyager is down`
-            );
+                }
+            `);
         });
 
     console.log(`Contract has been successfuly verified at address ${args.address}`);
