@@ -1,1 +1,0 @@
-HardhatPluginError: Could not find metadata for contract "contract.cairo"
