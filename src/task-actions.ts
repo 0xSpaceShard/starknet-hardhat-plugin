@@ -174,9 +174,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 disableHintValidation: args.disableHintValidation
             });
 
-            if (hre.userConfig?.starknet?.recompile) {
-                await saveCacheEntry(file, outputPath, abiPath, hre);
-            }
+            // Save to cache entry after compilation
+            await saveCacheEntry(file, outputPath, abiPath, hre);
             statusCode += processExecuted(executed, true);
         }
     }
