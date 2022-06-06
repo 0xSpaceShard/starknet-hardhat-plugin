@@ -1,15 +1,11 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { Provider } from "starknet";
 
+import { AccountImplementationType, DeployAccountOptions } from "../types";
+import { deployAccount, getAccountFromAddress } from "./account-utils";
+import { getContractFactory } from "./contract-utils";
 import { DevnetUtils } from "./devnet-utils";
-import {
-    bigIntToShortStringUtil,
-    deployAccountUtil,
-    getAccountFromAddressUtil,
-    getContractFactoryUtil,
-    shortStringToBigIntUtil
-} from "./extend-utils";
-import { AccountImplementationType, DeployAccountOptions } from "./types";
+import { bigIntToShortString, shortStringToBigInt } from "./string-utils";
 
 export class StarknetUtils {
     public readonly devnet: DevnetUtils;
@@ -26,7 +22,7 @@ export class StarknetUtils {
      * @returns a factory for generating instances of the desired contract
      */
     async getContractFactory(contractPath: string) {
-        const contractFactory = await getContractFactoryUtil(this.hre, contractPath);
+        const contractFactory = await getContractFactory(this.hre, contractPath);
         return contractFactory;
     }
 
@@ -41,8 +37,7 @@ export class StarknetUtils {
      * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
      */
     shortStringToBigInt(convertableString: string) {
-        const convertedString = shortStringToBigIntUtil(convertableString);
-        return convertedString;
+        return shortStringToBigInt(convertableString);
     }
 
     /**
@@ -51,8 +46,7 @@ export class StarknetUtils {
      * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
      */
     bigIntToShortString(convertableBigInt: BigInt) {
-        const convertedBigInt = bigIntToShortStringUtil(convertableBigInt);
-        return convertedBigInt;
+        return bigIntToShortString(convertableBigInt);
     }
 
     /**
@@ -62,7 +56,7 @@ export class StarknetUtils {
      * @returns an Account object
      */
     async deployAccount(accountType: AccountImplementationType, options: DeployAccountOptions) {
-        const account = await deployAccountUtil(accountType, this.hre, options);
+        const account = await deployAccount(accountType, this.hre, options);
         return account;
     }
 
@@ -78,7 +72,7 @@ export class StarknetUtils {
         privateKey: string,
         accountType: AccountImplementationType
     ) {
-        const account = await getAccountFromAddressUtil(address, privateKey, accountType, this.hre);
+        const account = await getAccountFromAddress(address, privateKey, accountType, this.hre);
         return account;
     }
 }

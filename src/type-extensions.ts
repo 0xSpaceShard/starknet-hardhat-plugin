@@ -1,20 +1,13 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import {
-    AccountImplementationType,
-    BlockIdentifier,
-    DeployAccountOptions,
-    StarknetContract,
-    StarknetContractFactory,
-    StringMap
-} from "./types";
+import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
-import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
+import { NetworkConfig } from "hardhat/types/config";
 import { StarknetCompiler } from "./compiler";
 import { StarknetUtils } from "./starknet-utils";
+import { FlushResponse, LoadL1MessagingContractResponse } from "./starknet-utils/devnet-utils";
 
 type StarknetConfig = {
     dockerizedVersion?: string;

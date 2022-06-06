@@ -2,8 +2,8 @@ import axios from "axios";
 import { HardhatPluginError } from "hardhat/plugins";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { PLUGIN_NAME } from "./constants";
-import { L2ToL1Message } from "./starknet-types";
+import { PLUGIN_NAME } from "../constants";
+import { L2ToL1Message } from "../starknet-types";
 
 interface L1ToL2Message {
     address: string;
