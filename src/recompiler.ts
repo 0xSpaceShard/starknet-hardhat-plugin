@@ -117,10 +117,14 @@ const checkArtifacts = async (
 ): Promise<Set<string>> => {
     // Set to save contracts with changed content & unavailable artifacts
     const changed: Set<string> = new Set();
-    const { starknetSources: defaultSourcesPath } = hre.config.paths;
+    const { starknetSources: defaultSourcesPath, starknetArtifacts } = hre.config.paths;
     const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
     // Traverse on artifacts directory
     // Create if it doesn't exist
+    if (!fs.existsSync(starknetArtifacts)) {
+        fs.mkdirSync(starknetArtifacts);
+    }
+
     if (!fs.existsSync(artifactsDir)) {
         fs.mkdirSync(artifactsDir);
     }
