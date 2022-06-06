@@ -28,7 +28,7 @@ import {
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
-import { handleCache, saveCacheEntry } from "./utils/recompiler";
+import { handleCache, updateCache } from "./recompiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -174,8 +174,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
                 disableHintValidation: args.disableHintValidation
             });
 
-            // Save to cache entry after compilation
-            await saveCacheEntry(file, outputPath, abiPath, hre);
+            // Update cache after compilation
+            await updateCache(file, outputPath, abiPath, hre);
             statusCode += processExecuted(executed, true);
         }
     }
@@ -187,10 +187,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
 }
 
 export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-
-    const cacheHandled = await handleCache(args, hre);
-    if (!cacheHandled) process.exit(1);
-
+    await handleCache(hre);
     const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -390,10 +387,7 @@ function handleMultiPartContractVerification(
 }
 
 export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-
-    const cacheHandled = await handleCache(args, hre);
-    if (!cacheHandled) process.exit(1);
-
+    await handleCache(hre);
     await starknetInteractAction(InteractChoice.INVOKE, args, hre);
 }
 
@@ -550,10 +544,7 @@ export async function starknetTestAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
-
-    const cacheHandled = await handleCache(args, hre);
-    if (!cacheHandled) process.exit(1);
-
+    await handleCache(hre);
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
@@ -566,9 +557,7 @@ export async function starknetRunAction(
     hre: HardhatRuntimeEnvironment,
     runSuper: RunSuperFunction<TaskArguments>
 ) {
-    const cacheHandled = await handleCache(args, hre);
-    if (!cacheHandled) process.exit(1);
-
+    await handleCache(hre);
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
