@@ -398,6 +398,7 @@ export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRunt
 }
 
 export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    await handleCache(hre);
     await starknetInteractAction(InteractChoice.CALL, args, hre);
 }
 
