@@ -34,20 +34,9 @@ import {
     starknetRunAction,
     starknetEstimateFeeAction
 } from "./task-actions";
-import {
-    bigIntToShortStringUtil,
-    deployAccountUtil,
-    getAccountFromAddressUtil,
-    getContractFactoryUtil,
-    getTransactionUtil,
-    getTransactionReceiptUtil,
-    getWalletUtil,
-    shortStringToBigIntUtil,
-    getBlockUtil
-} from "./extend-utils";
-import { DevnetUtils } from "./devnet-utils";
 import { IntegratedDevnet } from "./devnet";
 import { DockerCompiler, VenvCompiler } from "./compiler";
+import { StarknetUtils } from "./starknet-utils";
 
 exitHook(() => {
     IntegratedDevnet.cleanAll();
@@ -161,6 +150,10 @@ extendEnvironment((hre) => {
     }
 });
 
+extendEnvironment((hre) => {
+    hre.starknet = lazyObject(() => new StarknetUtils(hre));
+});
+
 task("starknet-compile", "Compiles Starknet contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
@@ -205,57 +198,6 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
             "If no paths are provided, the default artifacts directory is traversed."
     )
     .setAction(starknetDeployAction);
-
-extendEnvironment((hre) => {
-    hre.starknet = {
-        getContractFactory: async (contractPath) => {
-            const contractFactory = await getContractFactoryUtil(hre, contractPath);
-            return contractFactory;
-        },
-
-        shortStringToBigInt: (convertableString) => {
-            const convertedString = shortStringToBigIntUtil(convertableString);
-            return convertedString;
-        },
-
-        bigIntToShortString: (convertableBigInt) => {
-            const convertedBigInt = bigIntToShortStringUtil(convertableBigInt);
-            return convertedBigInt;
-        },
-
-        getWallet: (name) => {
-            const wallet = getWalletUtil(name, hre);
-            return wallet;
-        },
-
-        devnet: lazyObject(() => new DevnetUtils(hre)),
-
-        deployAccount: async (accountType, options) => {
-            const account = await deployAccountUtil(accountType, hre, options);
-            return account;
-        },
-
-        getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
-            return account;
-        },
-
-        getTransaction: async (txHash) => {
-            const transaction = await getTransactionUtil(txHash, hre);
-            return transaction;
-        },
-
-        getTransactionReceipt: async (txHash) => {
-            const txReceipt = await getTransactionReceiptUtil(txHash, hre);
-            return txReceipt;
-        },
-
-        getBlock: async (identifier) => {
-            const block = await getBlockUtil(hre, identifier);
-            return block;
-        }
-    };
-});
 
 task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")

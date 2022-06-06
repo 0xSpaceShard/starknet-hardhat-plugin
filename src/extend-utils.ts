@@ -1,17 +1,11 @@
 import { HardhatPluginError } from "hardhat/plugins";
-import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import { ABI_SUFFIX, PLUGIN_NAME, SHORT_STRING_MAX_CHARACTERS } from "./constants";
-import {
-    AccountImplementationType,
-    BlockIdentifier,
-    DeployAccountOptions,
-    StarknetContractFactory
-} from "./types";
+import { AccountImplementationType, DeployAccountOptions, StarknetContractFactory } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { checkArtifactExists, findPath, getAccountPath } from "./utils";
-import { Transaction, TransactionReceipt } from "./starknet-types";
+import { checkArtifactExists, findPath } from "./utils";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -90,17 +84,6 @@ export function bigIntToShortStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 
-export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
-    const wallet = hre.config.starknet.wallets[name];
-    if (!wallet) {
-        const available = Object.keys(hre.config.starknet.wallets).join(", ");
-        const msg = `Invalid wallet name provided: ${name}.\nValid wallets: ${available}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-    wallet.accountPath = getAccountPath(wallet.accountPath, hre);
-    return wallet;
-}
-
 export async function deployAccountUtil(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment,
@@ -140,63 +123,4 @@ export async function getAccountFromAddressUtil(
     }
 
     return account;
-}
-
-export async function getTransactionUtil(
-    txHash: string,
-    hre: HardhatRuntimeEnvironment
-): Promise<Transaction> {
-    const executed = await hre.starknetWrapper.getTransaction({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        hash: txHash
-    });
-    if (executed.statusCode) {
-        const msg = `Could not get the transaction. ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-    const txReceipt = JSON.parse(executed.stdout.toString()) as Transaction;
-    return txReceipt;
-}
-
-export async function getTransactionReceiptUtil(
-    txHash: string,
-    hre: HardhatRuntimeEnvironment
-): Promise<TransactionReceipt> {
-    const executed = await hre.starknetWrapper.getTransactionReceipt({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        hash: txHash
-    });
-    if (executed.statusCode) {
-        const msg = `Could not get the transaction receipt. Error: ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-    const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
-    return txReceipt;
-}
-
-export async function getBlockUtil(
-    hre: HardhatRuntimeEnvironment,
-    identifier?: BlockIdentifier
-): Promise<Block> {
-    const blockOptions = {
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        number: identifier?.blockNumber,
-        hash: identifier?.blockHash
-    };
-
-    if (blockOptions.number == null && !blockOptions.hash) {
-        blockOptions.number = "latest";
-    }
-
-    const executed = await hre.starknetWrapper.getBlock(blockOptions);
-
-    if (executed.statusCode) {
-        const msg = `Could not get block. Error: ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-    const block = JSON.parse(executed.stdout.toString()) as Block;
-    return block;
 }
