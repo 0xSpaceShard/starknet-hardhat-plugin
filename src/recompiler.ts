@@ -120,6 +120,11 @@ const checkArtifacts = async (
     const { starknetSources: defaultSourcesPath } = hre.config.paths;
     const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
     // Traverse on artifacts directory
+    // Create if it doesn't exist
+    if (!fs.existsSync(artifactsDir)) {
+        fs.mkdirSync(artifactsDir);
+    }
+
     const artifactsList = await traverseFiles(artifactsDir, "*.json");
     for (const name in newCacheEntry) {
         const outputPath = newCacheEntry[name].outputPath;
