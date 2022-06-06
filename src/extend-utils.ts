@@ -77,9 +77,8 @@ export function shortStringToBigIntUtil(convertableString: string) {
 
     const invalidCharArray = Object.keys(invalidChars);
     if (invalidCharArray.length) {
-        const msg = `Non-standard-ASCII character${
-            invalidCharArray.length === 1 ? "" : "s"
-        }: ${invalidCharArray.join(", ")}`;
+        const msg = `Non-standard-ASCII character${invalidCharArray.length === 1 ? "" : "s"
+            }: ${invalidCharArray.join(", ")}`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
