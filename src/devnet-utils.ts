@@ -35,8 +35,16 @@ export interface LoadL1MessagingContractResponse {
     l1_provider: string;
 }
 
+export interface SetTimeResponse {
+    next_block_timestamp: number;
+}
+
+export interface IncreaseTimeResponse {
+    timestamp_increased_by: number;
+}
+
 export class DevnetUtils implements Devnet {
-    constructor(private hre: HardhatRuntimeEnvironment) {}
+    constructor(private hre: HardhatRuntimeEnvironment) { }
 
     private get endpoint() {
         return `${this.hre.config.starknet.networkUrl}`;
@@ -78,5 +86,27 @@ export class DevnetUtils implements Devnet {
 
             return response.data;
         }, "Request failed. Make sure your network has the /postman endpoint");
+    }
+
+    public async increaseTime(seconds: number) {
+        return this.withErrorHandler<IncreaseTimeResponse>(async () => {
+            const response = await axios.post<IncreaseTimeResponse>(
+                `${this.endpoint}/increase_time`,
+                {
+                    time: seconds
+                });
+            return response.data;
+        }, "Request failed. Make sure your network has the /increase_time endpoint");
+    }
+
+    public async setTime(seconds: number) {
+        return this.withErrorHandler<SetTimeResponse>(async () => {
+            const response = await axios.post<SetTimeResponse>(
+                `${this.endpoint}/set_time`,
+                {
+                    time: seconds
+                });
+            return response.data;
+        }, "Request failed. Make sure your network has the /set_time endpoint");
     }
 }

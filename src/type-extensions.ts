@@ -9,10 +9,10 @@ import {
     StringMap
 } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
+import { FlushResponse, IncreaseTimeResponse, LoadL1MessagingContractResponse, SetTimeResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
-import { NetworkConfig } from "hardhat/types/config";
+import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -122,6 +122,20 @@ declare module "hardhat/types/runtime" {
             address?: string,
             networkId?: string
         ) => Promise<LoadL1MessagingContractResponse>;
+
+        /**
+         * Increases block time offset
+         * @param seconds the offset increase in seconds
+         * @returns an object containing the increased block time offset
+         */
+        increaseTime: (seconds: number) => Promise<IncreaseTimeResponse>;
+
+        /**
+         * Sets the timestamp of next block
+         * @param seconds timestamp in seconds
+         * @returns an object containg next block timestamp
+         */
+        setTime: (seconds: number) => Promise<SetTimeResponse>;
     }
 
     interface HardhatRuntimeEnvironment {
@@ -172,6 +186,11 @@ declare module "hardhat/types/runtime" {
             networkUrl?: string;
 
             /**
+             * The configuration object of the selected starknet-network.
+             */
+            networkConfig?: HardhatNetworkConfig;
+
+            /**
              * @param name the name of the wallet to get
              * @returns a wallet
              */
@@ -209,7 +228,7 @@ declare module "hardhat/types/runtime" {
 
             /**
              * Returns an entire block and the transactions contained within it.
-             * @param optional block identifier (by block number or hash). To query the latest block, remove the identifier.
+             * @param identifier optional block identifier (by block number or hash). To query the latest block, remove the identifier.
              * @returns a block object
              */
             getBlock: (identifier?: BlockIdentifier) => Promise<Block>;

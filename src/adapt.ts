@@ -231,15 +231,15 @@ export function adaptOutputUtil(
             adapted[outputSpec.name] = currentValue;
             resultIndex++;
         } else if (outputSpec.type.endsWith("*")) {
-            const lenName = `${outputSpec.name}${LEN_SUFFIX}`;
-            if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `Array size argument ${lenName} (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
+            // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
+            if (lastSpec.type !== "felt") {
+                const msg = `Array size argument (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
 
             // Remove * from the spec type
             const outputSpecArrayElementType = outputSpec.type.slice(0, -1);
-            const arrLength = Number(adapted[lenName]);
+            const arrLength = parseInt(adapted[lastSpec.name]);
 
             const structArray = [];
 

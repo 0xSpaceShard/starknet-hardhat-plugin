@@ -377,6 +377,18 @@ Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deplo
 await starknet.devnet.restart();
 ```
 
+#### Advancing time
+
+The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
+The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`. The time for the next block can be set by calling `starknet.devnet.setTime()`, with subsequent blocks keeping the set offset.
+
+Warning: *block time can be set in the past and lead to unexpected behaviour!*
+
+```typescript
+await starknet.devnet.setTime(1000); // time in seconds
+await starknet.devnet.increaseTime(1000); // time in seconds
+```
+
 ## Configure the plugin
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
@@ -490,12 +502,12 @@ module.exports = {
 
 ### Wallet
 
-To configure a wallet for your project, specify it by using `wallets["walletName"]`.
+To configure a wallet for your project, specify it by adding an entry to `wallets` in your hardhat config file.
 You can specify multiple wallets/accounts.
 
 The parameters for the wallet are:
 
--   `accountName`: The name to give the account. If omitted, the default value `__default__ ` will be used;
+-   `accountName`: The name to give the account. If omitted, the default value `__default__` will be used;
 -   `modulePath`: The python module and wallet class of your chosen wallet provider;
 -   `accountPath`: The path where your wallet information will be saved.
 
@@ -545,8 +557,8 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"`
-    -   `"Argent"`
+    -   `"OpenZeppelin"`- [v0.1.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.1.0)
+    -   `"Argent"` - [v0.2.1](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.1)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
     -   `privateKey` - if you don't provide one, it will be randomly generated
@@ -610,8 +622,8 @@ const txHash = await account.multiInvoke(interactionArray);
 const results = await account.multiCall(interactionArray);
 ```
 
-OpenZeppelin and Argent account implementations work pretty much the same way, however Argent's has the additional signature verifications of a Guardian.
-A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`
+OpenZeppelin and Argent account implementation work almost the same: Argent implementation has the additional Guardian signature verification.
+A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`.
 
 ```typescript
 import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";

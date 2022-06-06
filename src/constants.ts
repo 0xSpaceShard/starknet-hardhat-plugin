@@ -13,9 +13,7 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
-export const ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH = "account-contract-artifacts";
-export const ACCOUNT_ARTIFACTS_VERSION = "0.2.0";
-export const GITHUB_ACCOUNT_ARTIFACTS_URL = `https://raw.githubusercontent.com/Shard-Labs/starknet-hardhat-example/plugin/${ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH}/${ACCOUNT_ARTIFACTS_VERSION}/`;
+export const ACCOUNT_ARTIFACTS_DIR = "account-contract-artifacts";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_INTERNALLY = "alpha";
@@ -26,8 +24,11 @@ export const ALPHA_URL = "https://alpha4.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
 export const INTEGRATED_DEVNET = "integrated-devnet";
 export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
-export const TESTNET_CHAIN_ID = "SN_GOERLI";
-export const ALPHA_MAINNET_CHAIN_ID = "SN_MAIN";
+
+export enum ChainID {
+    TESTNET = "SN_GOERLI",
+    MAINNET = "SN_MAIN"
+}
 
 export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
 export const VOYAGER_GOERLI_VERIFIED_URL = "https://goerli.voyager.online/contract/";
@@ -41,4 +42,8 @@ export const LEN_SUFFIX = "_len";
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 
+export enum TransactionHashPrefix {
+    DEPLOY = "110386840629113", // BigInt("0x" + Buffer.from("deploy").toString("hex")).toString()
+    INVOKE = "115923154332517" // BigInt("0x" + Buffer.from("invoke").toString("hex")).toString()
+}
 export const PREFIX_TRANSACTION = "StarkNet Transaction";

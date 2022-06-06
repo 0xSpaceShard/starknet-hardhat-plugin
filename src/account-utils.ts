@@ -1,31 +1,17 @@
-import { Numeric, StarknetContract, StringMap } from "./types";
-import { Call, hash, RawCalldata } from "starknet";
-import { BigNumberish, toBN } from "starknet/utils/number";
+import { StarknetContract, StringMap } from "./types";
+import { toBN } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { ec } from "elliptic";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as fs from "fs";
 import path from "path";
-import {
-    ABI_SUFFIX,
-    ACCOUNT_ARTIFACTS_VERSION,
-    ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH,
-    GITHUB_ACCOUNT_ARTIFACTS_URL
-} from "./constants";
-import axios from "axios";
+import { ABI_SUFFIX, ACCOUNT_ARTIFACTS_DIR } from "./constants";
 import { flattenStringMap } from "./utils";
 
 export type CallParameters = {
     toContract: StarknetContract;
     functionName: string;
     calldata?: StringMap;
-};
-
-type executeCallParameters = {
-    to: bigint;
-    selector: BigNumberish;
-    data_offset: number;
-    data_len: number;
 };
 
 type KeysType = {
@@ -58,142 +44,61 @@ export function signMultiCall(
     return ellipticCurve.sign(keyPair, BigInt(messageHash).toString(16)).map(BigInt);
 }
 
-/**
- * Prepares the calldata and hashes the message for the multicall execution
- *
- * @param accountAddress address of the account contract
- * @param callParameters array witht the call parameters
- * @param nonce current nonce
- * @returns the message hash for the multicall and the arguments to execute it with
- */
-export function handleMultiCall(
-    accountAddress: string,
-    callParameters: CallParameters[],
-    nonce: Numeric,
-    maxFee: Numeric,
-    version: Numeric
-) {
-    // Transform a CallParameters array into Call array, so it can be used by the hash functions
-    const callArray: Call[] = callParameters.map((callParameters) => {
-        return {
-            contractAddress: callParameters.toContract.address,
-            entrypoint: callParameters.functionName,
-            calldata: callParameters.toContract.adaptInput(
-                callParameters.functionName,
-                callParameters.calldata
-            )
-        };
-    });
-
-    const executeCallArray: executeCallParameters[] = [];
-    let rawCalldata: RawCalldata = [];
-
-    // Parse the Call array to create the objects which will be accepted by the contract
-    callArray.forEach((call) => {
-        executeCallArray.push({
-            to: BigInt(call.contractAddress),
-            selector: hash.starknetKeccak(call.entrypoint),
-            data_offset: rawCalldata.length,
-            data_len: call.calldata.length
-        });
-        rawCalldata = rawCalldata.concat(call.calldata);
-    });
-
-    const adaptedNonce = nonce.toString();
-    const adaptedMaxFee = "0x" + maxFee.toString(16);
-    const adaptedVersion = "0x" + version.toString(16);
-    const messageHash = hash.hashMulticall(
-        accountAddress,
-        callArray,
-        adaptedNonce,
-        adaptedMaxFee,
-        adaptedVersion
-    );
-
-    const args = {
-        call_array: executeCallArray,
-        calldata: rawCalldata,
-        nonce: adaptedNonce
-    };
-
-    return { messageHash, args };
-}
-
 export async function handleAccountContractArtifacts(
     accountType: string,
     artifactsName: string,
+    artifactsVersion: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<string> {
     // Name of the artifacts' parent folder
     const artifactsBase = artifactsName + ".cairo";
 
-    const baseArtifactsPath = path.join(
-        hre.config.paths.starknetArtifacts,
-        ACCOUNT_CONTRACT_ARTIFACTS_ROOT_PATH
-    );
-
-    // Remove old versions from the path
-    if (fs.existsSync(baseArtifactsPath)) {
-        const contents = fs.readdirSync(baseArtifactsPath);
-        contents
-            .filter((content) => content !== ACCOUNT_ARTIFACTS_VERSION)
-            .forEach((content) => {
-                fs.rmSync(path.join(baseArtifactsPath, content), {
-                    recursive: true,
-                    force: true
-                });
-            });
-    }
+    const baseArtifactsPath = path.join(hre.config.paths.starknetArtifacts, ACCOUNT_ARTIFACTS_DIR);
 
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
         baseArtifactsPath,
-        ACCOUNT_ARTIFACTS_VERSION,
+        accountType,
+        artifactsVersion,
         artifactsBase
     );
 
     const jsonArtifact = artifactsName + ".json";
     const abiArtifact = artifactsName + ABI_SUFFIX;
 
-    const artifactLocationUrl = GITHUB_ACCOUNT_ARTIFACTS_URL.concat(
+    const artifactsSourcePath = path.join(
+        __dirname,
+        "..", // necessary since artifact dir is in the root, not in src
+        ACCOUNT_ARTIFACTS_DIR,
         accountType,
-        "/",
-        artifactsBase,
-        "/"
+        artifactsVersion,
+        artifactsBase
     );
 
-    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactLocationUrl);
-    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactLocationUrl);
+    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactsSourcePath);
+    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactsSourcePath);
 
     return artifactsTargetPath;
 }
 
 /**
  * Checks if the provided artifact exists in the project's artifacts folder.
- * If it doesen't, downloads it from the GitHub repository "https://github.com/Shard-Labs/starknet-hardhat-example"
- * @param artifact artifact file to download. E.g. "Account.json" or "Account_abi.json"
+ * If it doesn't exist, it is downloaded from the GitHub repository.
+ * @param fileName artifact file to download. E.g. "Account.json" or "Account_abi.json"
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
- * @param artifactLocationUrl url to the github folder where the artifacts are stored
+ * @param artifactSourcePath path to the folder where the artifacts are stored
  */
 async function ensureArtifact(
-    artifact: string,
+    fileName: string,
     artifactsTargetPath: string,
-    artifactLocationUrl: string
+    artifactSourcePath: string
 ) {
-    // Download artifact if it doesen't exist
-    if (!fs.existsSync(path.join(artifactsTargetPath, artifact))) {
+    const finalTargetPath = path.join(artifactsTargetPath, fileName);
+    if (!fs.existsSync(finalTargetPath)) {
         fs.mkdirSync(artifactsTargetPath, { recursive: true });
 
-        const rawFileURL = artifactLocationUrl.concat(artifact);
-
-        const response = await axios.get(rawFileURL, {
-            transformResponse: (res) => {
-                return res;
-            },
-            responseType: "json"
-        });
-
-        fs.writeFileSync(path.join(artifactsTargetPath, artifact), response.data);
+        const finalSourcePath = path.join(artifactSourcePath, fileName);
+        fs.copyFileSync(finalSourcePath, finalTargetPath);
     }
 }
 
