@@ -13,6 +13,7 @@ import { FlushResponse, LoadL1MessagingContractResponse } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
+import { StarknetCompiler } from "./compiler";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -124,6 +125,8 @@ declare module "hardhat/types/runtime" {
     }
 
     interface HardhatRuntimeEnvironment {
+        starknetCompiler: StarknetCompiler;
+
         starknetWrapper: StarknetWrapper;
 
         starknet: {

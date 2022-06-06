@@ -166,7 +166,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
             initializeFile(outputPath);
             initializeFile(abiPath);
 
-            const executed = await hre.starknetWrapper.compile({
+            const executed = await hre.starknetCompiler.compile({
                 file,
                 output: outputPath,
                 abi: abiPath,

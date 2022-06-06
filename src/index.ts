@@ -47,6 +47,7 @@ import {
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { IntegratedDevnet } from "./devnet";
+import { DockerCompiler, VenvCompiler } from "./compiler";
 
 exitHook(() => {
     IntegratedDevnet.cleanAll();
@@ -150,10 +151,12 @@ extendEnvironment((hre) => {
                 "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
+        hre.starknetCompiler = new VenvCompiler(venvPath);
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
         const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
+        hre.starknetCompiler = new DockerCompiler({ repository, tag });
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
