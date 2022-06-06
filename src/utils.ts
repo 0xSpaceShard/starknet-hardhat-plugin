@@ -169,9 +169,14 @@ export function isStarknetDevnet(networkName: string): boolean {
     return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 
-export async function findPath(traversable: string, name: string) {
+export async function findPath(traversable: string, pathSegment: string) {
+    const resolvedPath = path.resolve(path.join(traversable, pathSegment));
+    if (fs.existsSync(resolvedPath) && fs.lstatSync(resolvedPath).isFile()) {
+        return resolvedPath;
+    }
+
     let files = await traverseFiles(traversable);
-    files = files.filter((f) => f.endsWith(name));
+    files = files.filter((f) => f.endsWith(pathSegment));
     if (files.length == 0) {
         return null;
     } else if (files.length == 1) {
