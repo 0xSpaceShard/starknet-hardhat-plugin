@@ -1,10 +1,11 @@
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
+import { readFile } from "fs/promises";
 
 import { ABI_SUFFIX, PLUGIN_NAME } from "../constants";
-import { StarknetContractFactory } from "../types";
 import { checkArtifactExists, findPath } from "../utils";
+import { ContractFactory, defaultProvider, json } from "starknet";
 
 export async function getContractFactory(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -37,13 +38,8 @@ export async function getContractFactory(hre: HardhatRuntimeEnvironment, contrac
         );
     }
 
-    return new StarknetContractFactory({
-        starknetWrapper: hre.starknetWrapper,
-        metadataPath,
-        abiPath,
-        networkID: hre.config.starknet.network,
-        chainID: hre.config.starknet.networkConfig.starknetChainId,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        feederGatewayUrl: hre.config.starknet.networkUrl
-    });
+    const compiledContract = json.parse(await readFile(metadataPath, "utf8"));
+    const abi = json.parse(await readFile(abiPath, "utf8"));
+
+    return new ContractFactory(compiledContract, defaultProvider, abi);
 }

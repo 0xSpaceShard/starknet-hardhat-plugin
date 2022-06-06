@@ -1,9 +1,7 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
+
 import { StarknetWrapper } from "./starknet-wrappers";
-import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { NetworkConfig } from "hardhat/types/config";
 import { StarknetCompiler } from "./compiler";
 import { StarknetUtils } from "./starknet-utils";
@@ -79,16 +77,6 @@ declare module "hardhat/types/config" {
     }
 }
 
-type StarknetContractType = StarknetContract;
-type StarknetContractFactoryType = StarknetContractFactory;
-type StringMapType = StringMap;
-type AccountType = Account;
-type OpenZeppelinAccountType = OpenZeppelinAccount;
-type ArgentAccountType = ArgentAccount;
-type TransactionReceiptType = TransactionReceipt;
-type TransactionType = Transaction;
-type BlockType = Block;
-
 declare module "hardhat/types/runtime" {
     interface Devnet {
         /**
@@ -125,15 +113,4 @@ declare module "hardhat/types/runtime" {
 
         starknet: StarknetUtils;
     }
-
-    type StarknetContract = StarknetContractType;
-    type StarknetContractFactory = StarknetContractFactoryType;
-    type StringMap = StringMapType;
-    type Wallet = WalletConfig;
-    type Account = AccountType;
-    type OpenZeppelinAccount = OpenZeppelinAccountType;
-    type ArgentAccount = ArgentAccountType;
-    type Transaction = TransactionType;
-    type TransactionReceipt = TransactionReceiptType;
-    type Block = BlockType;
 }

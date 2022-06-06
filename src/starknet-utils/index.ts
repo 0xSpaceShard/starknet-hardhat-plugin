@@ -22,8 +22,7 @@ export class StarknetUtils {
      * @returns a factory for generating instances of the desired contract
      */
     async getContractFactory(contractPath: string) {
-        const contractFactory = await getContractFactory(this.hre, contractPath);
-        return contractFactory;
+        return await getContractFactory(this.hre, contractPath);
     }
 
     /**
@@ -56,8 +55,7 @@ export class StarknetUtils {
      * @returns an Account object
      */
     async deployAccount(accountType: AccountImplementationType, options: DeployAccountOptions) {
-        const account = await deployAccount(accountType, this.hre, options);
-        return account;
+        return await deployAccount(accountType, this.hre, options);
     }
 
     /**
@@ -72,7 +70,6 @@ export class StarknetUtils {
         privateKey: string,
         accountType: AccountImplementationType
     ) {
-        const account = await getAccountFromAddress(address, privateKey, accountType, this.hre);
-        return account;
+        return await getAccountFromAddress(address, privateKey, accountType, this.hre);
     }
 }

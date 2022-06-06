@@ -1,28 +1,24 @@
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { Account } from "starknet";
 
 import { PLUGIN_NAME } from "../constants";
 import { AccountImplementationType, DeployAccountOptions } from "../types";
-import { Account, ArgentAccount, OpenZeppelinAccount } from "../account";
+import { ArgentAccount, OpenZeppelinAccount } from "../account";
 
 export async function deployAccount(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment,
     options?: DeployAccountOptions
 ): Promise<Account> {
-    let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
-            account = await OpenZeppelinAccount.deployFromABI(hre, options);
-            break;
+            return await OpenZeppelinAccount.deployFromABI(hre, options);
         case "Argent":
-            account = await ArgentAccount.deployFromABI(hre, options);
-            break;
+            return await ArgentAccount.deployFromABI(hre, options);
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
-
-    return account;
 }
 
 export async function getAccountFromAddress(
@@ -31,17 +27,12 @@ export async function getAccountFromAddress(
     accountType: AccountImplementationType,
     hre: HardhatRuntimeEnvironment
 ): Promise<Account> {
-    let account: Account;
     switch (accountType) {
         case "OpenZeppelin":
-            account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
+            return await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
         case "Argent":
-            account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
+            return await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
         default:
             throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
-
-    return account;
 }
