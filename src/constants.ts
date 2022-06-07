@@ -35,15 +35,4 @@ export const VOYAGER_GOERLI_VERIFIED_URL = "https://goerli.voyager.online/contra
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
 
-export const CHECK_STATUS_TIMEOUT = 5000; // ms
-export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
-
-export const LEN_SUFFIX = "_len";
-
 export const SHORT_STRING_MAX_CHARACTERS = 31;
-
-export enum TransactionHashPrefix {
-    DEPLOY = "110386840629113", // BigInt("0x" + Buffer.from("deploy").toString("hex")).toString()
-    INVOKE = "115923154332517" // BigInt("0x" + Buffer.from("invoke").toString("hex")).toString()
-}
-export const PREFIX_TRANSACTION = "StarkNet Transaction";

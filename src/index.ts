@@ -22,20 +22,20 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
 import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
-import {
-    starknetCompileAction,
-    starknetDeployAction,
-    starknetVoyagerAction,
-    starknetInvokeAction,
-    starknetCallAction,
-    starknetDeployAccountAction,
-    starknetTestAction,
-    starknetRunAction,
-    starknetEstimateFeeAction
-} from "./task-actions";
+
 import { IntegratedDevnet } from "./devnet";
 import { DockerCompiler, VenvCompiler } from "./compiler";
 import { StarknetUtils } from "./starknet-utils";
+import {
+    starknetCallAction,
+    starknetCompileAction,
+    starknetDeployAction,
+    starknetEstimateFeeAction,
+    starknetInvokeAction,
+    starknetRunAction,
+    starknetTestAction,
+    starknetVoyagerAction
+} from "./tasks";
 
 exitHook(() => {
     IntegratedDevnet.cleanAll();
@@ -275,10 +275,10 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     .addOptionalParam("nonce", "The nonce to provide to your account")
     .setAction(starknetEstimateFeeAction);
 
-task("starknet-deploy-account", "Deploys a new account according to the parameters.")
-    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
-    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .setAction(starknetDeployAccountAction);
+// task("starknet-deploy-account", "Deploys a new account according to the parameters.")
+//     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+//     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+//     .setAction(starknetDeployAccountAction);
 
 const STARKNET_NETWORK_DESCRIPTION =
     "Specify the starknet-network to be used; overrides the value from hardhat.config";
