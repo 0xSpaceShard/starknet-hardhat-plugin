@@ -28,7 +28,6 @@ import {
     RunSuperFunction,
     TaskArguments
 } from "hardhat/types";
-import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
 
 function checkSourceExists(sourcePath: string): void {

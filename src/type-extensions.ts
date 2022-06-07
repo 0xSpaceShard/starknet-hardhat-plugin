@@ -1,7 +1,6 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
 
-import { StarknetWrapper } from "./starknet-wrappers";
 import { NetworkConfig } from "hardhat/types/config";
 import { StarknetCompiler } from "./compiler";
 import { StarknetUtils } from "./starknet-utils";
@@ -108,8 +107,6 @@ declare module "hardhat/types/runtime" {
 
     interface HardhatRuntimeEnvironment {
         starknetCompiler: StarknetCompiler;
-
-        starknetWrapper: StarknetWrapper;
 
         starknet: StarknetUtils;
     }

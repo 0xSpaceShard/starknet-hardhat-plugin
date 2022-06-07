@@ -22,7 +22,6 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
 import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
-import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
     starknetDeployAction,
@@ -141,12 +140,10 @@ extendEnvironment((hre) => {
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
         hre.starknetCompiler = new VenvCompiler(venvPath);
-        hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
         const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
         hre.starknetCompiler = new DockerCompiler({ repository, tag });
-        hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
 
