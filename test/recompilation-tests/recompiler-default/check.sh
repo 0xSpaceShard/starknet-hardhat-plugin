@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-EXPECTED='HardhatPluginError: Could not find metadata for contract "contract.cairo"'
+EXPECTED='HardhatPluginError: Artifact expected to be at'
 
 echo "Testing with deleted artifact on recompiler option set to default (off)"
 rm -rf starknet-artifacts/contracts/contract.cairo/
