@@ -29,7 +29,7 @@ const upsertFile = async (cacheDirName: string): Promise<Cache> => {
 
     // Creates cache directory if it doesn't exist
     if (!fs.existsSync(cacheDirpath)) {
-        fs.mkdirSync(cacheDirpath);
+        fs.mkdirSync(cacheDirpath, { recursive: true });
     }
 
     if (!fs.existsSync(cacheFile)) {
@@ -121,12 +121,8 @@ const checkArtifacts = async (
     const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
     // Traverse on artifacts directory
     // Create if it doesn't exist
-    if (!fs.existsSync(starknetArtifacts)) {
-        fs.mkdirSync(starknetArtifacts);
-    }
-
     if (!fs.existsSync(artifactsDir)) {
-        fs.mkdirSync(artifactsDir);
+        fs.mkdirSync(artifactsDir, { recursive: true });
     }
 
     const artifactsList = await traverseFiles(artifactsDir, "*.json");
