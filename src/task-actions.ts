@@ -410,7 +410,7 @@ async function starknetInteractAction(
     hre: HardhatRuntimeEnvironment
 ) {
     const gatewayUrl = getGatewayUrl(args, hre);
-    const contractFactory = await hre.starknet.getContractFactory(args.contract, gatewayUrl);
+    const contractFactory = await hre.starknet.getContractFactory(args.contract);
     const abiPath = contractFactory.getAbiPath();
 
     let wallet, accountDir;
