@@ -4,10 +4,14 @@ set -e
 CONTRACT_NAME=contract_test_cache.cairo
 CONTRACT_PATH="contracts/${CONTRACT_NAME}"
 
-rm -rf contracts/dependency.cairo contracts/contract_test_cache.cairo
+DEPENDENCY_NAME=dependency.cairo
+DEPENDENCY_PATH="contracts/${DEPENDENCY_NAME}"
+
+rm -rf DEPENDENCY_PATH CONTRACT_PATH
 # Hardhat test command
 echo "Testing Recompilation with new contract added"
 cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
+cp "$(dirname "$0")/$DEPENDENCY_NAME" "$DEPENDENCY_PATH"
 npx hardhat test test/recompilation/recompilation-main-test.ts
 
 echo "Testing Recompilation with artifacts deleted"
@@ -16,7 +20,7 @@ npx hardhat test test/recompilation/recompilation-main-test.ts
 
 echo "Testing Recompilation with updated contract"
 # Appending a new function to the contract
-cat get_balance.cairo >> contracts/contract_test_cache.cairo
+cat "$(dirname "$0")/get_balance.cairo" >> contracts/contract_test_cache.cairo
 npx hardhat test test/recompilation/recompilation-update-test.ts
 
 echo "Testing Recompilation with cache file deleted"
@@ -24,12 +28,12 @@ rm -rf cache/cairo-files-cache.json
 npx hardhat test test/recompilation/recompilation-main-test.ts
 
 echo "Testing Recompilation with dependency changed"
-echo "#" >> contracts/dependency.cairo
+echo "#" >> "$DEPENDENCY_PATH"
 npx hardhat test test/recompilation/recompilation-dependency-test.ts
 
-echo "Testing Recompilation one contract added another deleted"
-rm -f contracts/contract_test_cache.cairo
-# contract_test contract with original content
-cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
-rm -f contracts/dependency.cairo
-npx hardhat test test/recompilation/recompilation-main-test.ts
+# echo "Testing Recompilation one contract added another deleted"
+# rm -f contracts/contract_test_cache.cairo
+# # contract_test contract with original content
+# cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
+# rm -f contracts/dependency.cairo
+# npx hardhat test test/recompilation/recompilation-main-test.ts
