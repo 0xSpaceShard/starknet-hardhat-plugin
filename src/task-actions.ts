@@ -339,22 +339,29 @@ async function handleContractVerification(
     const paths = [mainPath];
 
     const bodyFormData = new FormData();
-    bodyFormData.append("contract-name", path.parse(mainPath).base);
     bodyFormData.append("compiler-version", args.compilerVersion);
     bodyFormData.append("license", args.license || "No License (None)");
+    bodyFormData.append("account-contract", args.accountContract || "false");
 
     // Dependencies (non-main contracts) are in args.paths
     if (args.paths) {
         paths.push(...args.paths);
     }
 
-    handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root);
+    const sourceRegex = new RegExp("^" + hre.config.paths?.starknetSources + "/");
+    const contractNameDefault = mainPath.replace(sourceRegex, "");
+    // If contract name is not provided, use the default
+    bodyFormData.append("contract-name", args.contractName ? args.contractName : contractNameDefault);
+    // Appends all contracts to the form data with the name "file" + index
+    handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root, sourceRegex);
 
     await axios({
         method: "POST",
         url: voyagerUrl,
         data: bodyFormData,
-        headers: { ...bodyFormData.getHeaders() }
+        headers: {
+            "Content-Type": `multipart/form-data; boundary=${bodyFormData.getBoundary()}`
+        }
     })
         .catch((err) => {
             throw new HardhatPluginError(
@@ -379,7 +386,8 @@ ${err.response.data.message ? err.response.data.message :
 function handleMultiPartContractVerification(
     bodyFormData: FormData,
     paths: string[],
-    root: string
+    root: string,
+    sourceRegex: RegExp
 ) {
     paths.forEach(function (item: string, index: number) {
         if (!path.isAbsolute(item)) {
@@ -389,7 +397,7 @@ function handleMultiPartContractVerification(
             }
         }
         bodyFormData.append("file" + index, fs.readFileSync(paths[index]), {
-            filename: paths[index],
+            filepath: paths[index].replace(sourceRegex, ""),
             contentType: "application/octet-stream"
         });
     });
