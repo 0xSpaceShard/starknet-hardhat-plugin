@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-# set -e
+set -e
 
 MAIN_CONTRACT=contracts/contract.cairo
 UTIL_CONTRACT=contracts/util.cairo
