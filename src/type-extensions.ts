@@ -145,13 +145,9 @@ declare module "hardhat/types/runtime" {
              * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
              * the provided string should be `MyContract`.
              * @param name the case-sensitive contract name
-             * @param networkURL the network name
              * @returns a factory for generating instances of the desired contract
              */
-            getContractFactory: (
-                name: string,
-                networkURL?: string
-            ) => Promise<StarknetContractFactory>;
+            getContractFactory: (name: string) => Promise<StarknetContractFactory>;
 
             /**
              * Cairo and Starknet source files may contain short string literals,
