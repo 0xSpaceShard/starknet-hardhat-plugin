@@ -347,7 +347,7 @@ async function handleContractVerification(
         paths.push(...args.paths);
     }
 
-    const sourceRegex = new RegExp("^" + hre.config.paths?.starknetSources + "/");
+    const sourceRegex = new RegExp("^" + hre.config.paths.starknetSources + "/");
     const contractNameDefault = mainPath.replace(sourceRegex, "");
     // If contract name is not provided, use the default
     bodyFormData.append("contract-name", args.contractName || contractNameDefault);
