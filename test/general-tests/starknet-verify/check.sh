@@ -9,7 +9,7 @@ UTIL_CONTRACT=contracts/util.cairo
 npx hardhat starknet-compile $MAIN_CONTRACT $UTIL_CONTRACT
 
 echo "Waiting for deployment to be accepted"
-output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-artifacts/$MAIN_CONTRACT --inputs 10 --wait)
+output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" contract --inputs 10 --wait)
 address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
 
 echo "Sleeping to allow Voyager to index the deployment"
