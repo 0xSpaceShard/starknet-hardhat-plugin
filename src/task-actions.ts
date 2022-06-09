@@ -351,7 +351,7 @@ async function handleContractVerification(
     const sourceRegex = new RegExp("^" + hre.config.paths?.starknetSources + "/");
     const contractNameDefault = mainPath.replace(sourceRegex, "");
     // If contract name is not provided, use the default
-    bodyFormData.append("contract-name", args.contractName ? args.contractName : contractNameDefault);
+    bodyFormData.append("contract-name", args.contractName || contractNameDefault);
     // Appends all contracts to the form data with the name "file" + index
     handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root, sourceRegex);
 
