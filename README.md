@@ -307,7 +307,8 @@ More detailed documentation can be found [here](#account).
 
     const { res: currBalance } = await account.call(contract, "get_balance");
     const amount = BigInt(10);
-    await account.invoke(contract, "increase_balance", { amount });
+    // Passing max_fee is currently optional
+    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
 
     const { res: newBalance } = await account.call(contract, "get_balance");
     expect(newBalance).to.deep.equal(currBalance + amount);
@@ -382,7 +383,7 @@ await starknet.devnet.restart();
 The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
 The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`. The time for the next block can be set by calling `starknet.devnet.setTime()`, with subsequent blocks keeping the set offset.
 
-Warning: *block time can be set in the past and lead to unexpected behaviour!*
+Warning: _block time can be set in the past and lead to unexpected behaviour!_
 
 ```typescript
 await starknet.devnet.setTime(1000); // time in seconds
@@ -599,7 +600,7 @@ You can then use the Account object to call and invoke your contracts using the 
 
 ```typescript
 const { res: amount } = await account.call(contract, "get_balance");
-await account.invoke(contract, "increase_balance", { amount });
+await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
 ```
 
 You can also use the Account object to perform multi{calls, invokes, fee estimations}.
