@@ -114,7 +114,7 @@ Like in the previous command, this plugin relies on `--starknet-network`, but wi
 
 The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
-For `<LICENSE_SCHEME>` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
+For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
 ### `starknet-deploy-account`
 
@@ -582,15 +582,13 @@ To retrieve an already deployed Account, use the `starknet` object's `getAccount
 
 ```typescript
 function getAccountFromAddress(
-    address: string,
-    privateKey: string,
-    accountType: AccountImplementationType
+    address: string, // the address where the account you want to use is deployed
+    privateKey: string, // the account's private key
+    accountType: AccountImplementationType // the implementation of the Account that you want to use.
 );
 ```
 
--   `address` is the address where the account you want to use is deployed.
--   `privateKey` is the account's private key.
--   `accountType` is the implementation of the Account that you want to use.
+E.g.:
 
 ```typescript
 const account = await starknet.getAccountFromAddress(
@@ -604,8 +602,28 @@ You can then use the Account object to call and invoke your contracts using the 
 
 ```typescript
 const { res: amount } = await account.call(contract, "get_balance");
-await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
+await account.invoke(contract, "increase_balance", { amount });
 ```
+
+### Funds and Fees
+
+-   **On alpha-goerli**
+    -   Deploy an account using `starknet.deployAccount`.
+    -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
+    -   Later load the account using `starknet.getAccountFromAddress`.
+-   **On starknet-devnet**
+    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation v0.1.0
+    -   Use the data logged by Devnet on startup (address, key)
+    -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
+    -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
+
+Once your account has funds, you can specify a maximum fee greater than zero:
+
+```typescript
+await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
+```
+
+### Multicalls
 
 You can also use the Account object to perform multi{calls, invokes, fee estimations}.
 
