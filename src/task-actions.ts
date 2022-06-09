@@ -355,15 +355,10 @@ async function handleContractVerification(
     // Appends all contracts to the form data with the name "file" + index
     handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root, sourceRegex);
 
-    await axios({
-        method: "POST",
-        url: voyagerUrl,
-        data: bodyFormData,
-        headers: {
-            "Content-Type": `multipart/form-data; boundary=${bodyFormData.getBoundary()}`
-        }
-    })
-        .catch((err) => {
+    await axios
+        .post(voyagerUrl, bodyFormData.getBuffer(), {
+            headers: bodyFormData.getHeaders()
+        }).catch((err) => {
             throw new HardhatPluginError(
                 PLUGIN_NAME,
                 `\
