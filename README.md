@@ -112,7 +112,7 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
-The verifier expects `--compiler-version` to be passed on request. The following are supported compiler versions. `0.6.0`, `0.6.1`, `0.6.2`, `0.7.0`, `0.7.1`, `0.8.0`, and `0.8.1`.
+The verifier expects `--compiler-version` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
 For `--license` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
