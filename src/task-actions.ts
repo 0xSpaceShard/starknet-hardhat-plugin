@@ -339,31 +339,38 @@ async function handleContractVerification(
     const paths = [mainPath];
 
     const bodyFormData = new FormData();
-    bodyFormData.append("contract-name", path.parse(mainPath).base);
+    bodyFormData.append("compiler-version", args.compilerVersion);
+    bodyFormData.append("license", args.license || "No License (None)");
 
     // Dependencies (non-main contracts) are in args.paths
     if (args.paths) {
         paths.push(...args.paths);
     }
 
-    handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root);
+    const sourceRegex = new RegExp("^" + hre.config.paths.starknetSources + "/");
+    const contractNameDefault = mainPath.replace(sourceRegex, "");
+    // If contract name is not provided, use the default
+    bodyFormData.append("contract-name", contractNameDefault);
+    // Appends all contracts to the form data with the name "file" + index
+    handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root, sourceRegex);
 
     await axios
         .post(voyagerUrl, bodyFormData.getBuffer(), {
             headers: bodyFormData.getHeaders()
-        })
-        .catch(() => {
+        }).catch((err) => {
             throw new HardhatPluginError(
                 PLUGIN_NAME,
                 `\
 Could not verify the contract at address ${args.address}.
-It is hard to tell exactly what happened, but possible reasons include:
+${err.response.data.message ||
+                    `It is hard to tell exactly what happened, but possible reasons include:
 - Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
 - Wrong contract address
 - Wrong files provided
 - Wrong main contract chosen (first after --path)
 - Voyager is down`
-            );
+                }
+            `);
         });
 
     console.log(`Contract has been successfuly verified at address ${args.address}`);
@@ -373,7 +380,8 @@ It is hard to tell exactly what happened, but possible reasons include:
 function handleMultiPartContractVerification(
     bodyFormData: FormData,
     paths: string[],
-    root: string
+    root: string,
+    sourceRegex: RegExp
 ) {
     paths.forEach(function (item: string, index: number) {
         if (!path.isAbsolute(item)) {
@@ -383,7 +391,7 @@ function handleMultiPartContractVerification(
             }
         }
         bodyFormData.append("file" + index, fs.readFileSync(paths[index]), {
-            filename: paths[index],
+            filepath: paths[index].replace(sourceRegex, ""),
             contentType: "application/octet-stream"
         });
     });
