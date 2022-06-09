@@ -260,7 +260,6 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addParam("address", "The address where the contract is deployed")
     .addParam("compilerVersion", "The compiler version used to compile the cairo contract")
     .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
-    .addOptionalParam("contractName", "The name of the main contract (e.g. contract.cairo)")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths of the dependencies of the contract specified in --path" +

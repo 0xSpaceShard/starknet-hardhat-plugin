@@ -350,7 +350,7 @@ async function handleContractVerification(
     const sourceRegex = new RegExp("^" + hre.config.paths.starknetSources + "/");
     const contractNameDefault = mainPath.replace(sourceRegex, "");
     // If contract name is not provided, use the default
-    bodyFormData.append("contract-name", args.contractName || contractNameDefault);
+    bodyFormData.append("contract-name", contractNameDefault);
     // Appends all contracts to the form data with the name "file" + index
     handleMultiPartContractVerification(bodyFormData, paths, hre.config.paths.root, sourceRegex);
 
@@ -362,7 +362,7 @@ async function handleContractVerification(
                 PLUGIN_NAME,
                 `\
 Could not verify the contract at address ${args.address}.
-${err.response.data.message ? err.response.data.message :
+${err.response.data.message ||
                     `It is hard to tell exactly what happened, but possible reasons include:
 - Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
 - Wrong contract address

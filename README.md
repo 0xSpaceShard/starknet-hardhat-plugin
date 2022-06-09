@@ -116,8 +116,6 @@ The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported com
 
 For `<LICENSE_SCHEME>` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
-Use `<CONTRACT_NAME>` if the account is different than what is passed in `<PATH>`.
-
 ### `starknet-deploy-account`
 
 ```
