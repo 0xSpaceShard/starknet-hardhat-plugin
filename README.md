@@ -112,11 +112,11 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
-The verifier expects `--compiler-version` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
+The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
-For `--license` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
+For `<LICENSE_SCHEME>` the command takes [*No License (None)*](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
-Use `--contract-name` if the account is different than what is passed in `--path`. Both `--contract-name` and `--account-contract` are optional arguments.
+Use `<CONTRACT_NAME>` if the account is different than what is passed in `<PATH>`.
 
 ### `starknet-deploy-account`
 
