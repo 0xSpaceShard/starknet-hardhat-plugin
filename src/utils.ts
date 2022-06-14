@@ -170,6 +170,7 @@ export function isStarknetDevnet(networkName: string): boolean {
 }
 
 export async function findPath(traversable: string, pathSegment: string) {
+    // Relative path to artifacts can be resolved now
     const resolvedPath = path.resolve(path.join(traversable, pathSegment));
     if (fs.existsSync(resolvedPath) && fs.lstatSync(resolvedPath).isFile()) {
         return resolvedPath;
