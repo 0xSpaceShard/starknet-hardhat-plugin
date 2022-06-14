@@ -21,6 +21,7 @@ import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
 import { StringMap } from "./types";
+import isWsl from "is-wsl";
 
 const globPromise = promisify(glob);
 /**
@@ -43,7 +44,7 @@ const DOCKER_HOST = "host.docker.internal";
  * @returns adapted url
  */
 export function adaptUrl(url: string): string {
-    if (process.platform === "darwin") {
+    if (process.platform === "darwin" || isWsl) {
         for (const protocol of ["http://", "https://", ""]) {
             for (const host of ["localhost", "127.0.0.1"]) {
                 if (url === `${protocol}${host}`) {
