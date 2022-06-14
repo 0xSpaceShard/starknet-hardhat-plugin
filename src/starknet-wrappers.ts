@@ -430,6 +430,7 @@ export class DockerWrapper extends StarknetWrapper {
         };
 
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
 
         const docker = await this.getDocker();
@@ -471,6 +472,8 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
 
         const docker = await this.getDocker();
@@ -490,6 +493,8 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
 
         const docker = await this.getDocker();
