@@ -88,9 +88,6 @@ iterate_dir integrated-devnet
 # run devnet
 starknet-devnet --host 127.0.0.1 --port 5050 &
 
-echo "DEBUG is_alive"
-curl 127.0.0.1:5050/is_alive
-
 echo "Sleeping"
 sleep 15s
 
