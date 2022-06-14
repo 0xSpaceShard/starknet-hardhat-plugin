@@ -9,7 +9,7 @@ executors:
             image: ubuntu-2004:202107-02
     macos-node14:
         macos:
-            xcode: 11.7
+            xcode: 12.5.1
         environment:
             TERM: xterm-256color
 
