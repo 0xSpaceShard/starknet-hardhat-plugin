@@ -429,7 +429,7 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
 
         const docker = await this.getDocker();
