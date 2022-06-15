@@ -46,6 +46,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
             tag: devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG
         },
         hostname,
-        port
+        port,
+        devnetNetwork?.args
     );
 }

@@ -6,9 +6,9 @@ module.exports = {
     },
     networks: {
         integratedDevnet: {
-            venv: "active",
+            dockerizedVersion: process.env.STARKNET_DEVNET,
             url: "http://127.0.0.1:5050",
-            args: ["--lite-mode", "--lite-mode-block-hash", "--lite-mode-deploy-hash", "--start-time", "10000000"]
+            args: ["--lite-mode", "--gas-price", "2000000000"]
         }
     }
 };
