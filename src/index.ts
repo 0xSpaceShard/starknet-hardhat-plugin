@@ -157,7 +157,7 @@ extendEnvironment((hre) => {
 
         // Check CPU architecture
         const arch = process.arch;
-        if (arch === "arm64") {
+        if (arch.includes("arm")) {
             tag = tag.includes("-arm") ? tag : `${tag}-arm`;
         }
 

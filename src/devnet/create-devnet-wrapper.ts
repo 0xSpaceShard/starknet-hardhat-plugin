@@ -43,7 +43,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     // Check CPU architecture
     const arch = process.arch;
     let tag = devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG;
-    if (arch === "arm64") {
+    if (arch.includes("arm")) {
         tag = tag.includes("-arm") ? tag : `${tag}-arm`;
     }
 
