@@ -153,7 +153,14 @@ extendEnvironment((hre) => {
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
+        let tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
+
+        // Check CPU architecture
+        const arch = process.arch;
+        if (arch === "arm64") {
+            tag = tag.includes("-arm") ? tag : `${tag}-arm`;
+        }
+
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });

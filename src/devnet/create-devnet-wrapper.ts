@@ -40,10 +40,17 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
         );
     }
 
+    // Check CPU architecture
+    const arch = process.arch;
+    let tag = devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG;
+    if (arch === "arm64") {
+        tag = tag.includes("-arm") ? tag : `${tag}-arm`;
+    }
+
     return new DockerDevnet(
         {
             repository: DEVNET_DOCKER_REPOSITORY,
-            tag: devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG
+            tag
         },
         hostname,
         port
