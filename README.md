@@ -496,6 +496,8 @@ module.exports = {
       // venv: "active" <- for the active virtual environment
       // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
       venv: "<VENV-PATH>",
+      args: ["--lite-mode", "--gas-price", "2000000000"] // <- optional devnet arguments. For example --lite-mode to optimize by disabling some features.
+
 
       // or specify Docker image tag
       dockerizedVersion: "0.1.18"
