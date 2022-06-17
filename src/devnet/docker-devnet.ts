@@ -40,7 +40,7 @@ export class DockerDevnet extends IntegratedDevnet {
             `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
             `${this.image.repository}:${this.image.tag}`
         ].concat(this.args || []);
-        return  spawn("docker", args);
+        return spawn("docker", args);
     }
 
     protected cleanup(): void {
