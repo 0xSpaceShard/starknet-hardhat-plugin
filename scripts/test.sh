@@ -74,6 +74,7 @@ function iterate_dir(){
 
 # perform tests on Alpha-goerli testnet only on master branch and in a linux environment
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    source ../scripts/set-alpha-vars.sh
     iterate_dir alpha
 fi
 
@@ -86,12 +87,13 @@ echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
 iterate_dir integrated-devnet
 
 # run devnet
-starknet-devnet --host 127.0.0.1 --port 5050 &
+starknet-devnet --host 127.0.0.1 --port 5050 --seed 42 &
 
 echo "Sleeping and checking if devnet alive"
 sleep 10s
 curl 127.0.0.1:5050/is_alive
 
+source ../scripts/set-devnet-vars.sh
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"
