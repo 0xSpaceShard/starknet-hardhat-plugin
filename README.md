@@ -222,7 +222,7 @@ const expect = require("chai").expect;
 const starknet = require("hardhat").starknet;
 
 describe("My Test", function () {
-  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet
+  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet (alpha-goerli)
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
 ```
 
@@ -457,7 +457,7 @@ module.exports = {
 
 ### Runtime network
 
-To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Hardhat scripts/tests, use `starknet["network"]` or the `--starknet-network` CLI option. Not specifying one will default to using alpha-goerli.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
