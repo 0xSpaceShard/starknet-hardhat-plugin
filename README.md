@@ -402,7 +402,7 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
 
-By default, the images are amd64 compliant. Append the `-arm` suffix to the version name to use an image adapted for arm64 architecture (e.g. `dockerizedVersion: "0.8.1-arm"`).
+A Docker image tailored to the machine will be pulled. The `-arm` suffix will be applied to the version name, if it's not applied on `hardhat.config.ts`, if the device's architecture is `arm` or `arm64`. (e.g. `dockerizedVersion: "0.8.1-arm"` and `dockerizedVersion: "0.8.1"` both will work).
 
 If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
