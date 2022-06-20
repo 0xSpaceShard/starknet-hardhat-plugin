@@ -162,13 +162,13 @@ task("starknet-compile", "Compiles Starknet contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths to be used for deployment.\n" +
-        "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
-        "If no paths are provided, the default contracts directory is traversed."
+            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
         "cairoPath",
         "Allows specifying the locations of imported files, if necessary.\n" +
-        "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
+            "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
     )
     .addFlag("accountContract", "Allows compiling an account contract.")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
@@ -181,15 +181,15 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming constructor input.\n" +
-        "Pass them as a single string; e.g. --inputs '1 2 3'\n" +
-        "You would typically use this feature when deploying a single contract.\n" +
-        "If you're deploying multiple contracts, they'll all use the same input."
+            "Pass them as a single string; e.g. --inputs '1 2 3'\n" +
+            "You would typically use this feature when deploying a single contract.\n" +
+            "If you're deploying multiple contracts, they'll all use the same input."
     )
     .addOptionalParam(
         "salt",
         "An optional salt controlling where the contract will be deployed.\n" +
-        "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
-        "If the salt is not supplied, the contract will be deployed with a random salt."
+            "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
+            "If the salt is not supplied, the contract will be deployed with a random salt."
     )
     .addOptionalParam(
         "token",
@@ -198,8 +198,8 @@ task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths to be used for deployment.\n" +
-        "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
-        "If no paths are provided, the default artifacts directory is traversed."
+            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "If no paths are provided, the default artifacts directory is traversed."
     )
     .setAction(starknetDeployAction);
 
@@ -261,8 +261,8 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths of the dependencies of the contract specified in --path" +
-        "All dependencies should be in the same folder as the contract." +
-        "e.g. path/to/dependency1 path/to/dependency2"
+            "All dependencies should be in the same folder as the contract." +
+            "e.g. path/to/dependency1 path/to/dependency2"
     )
     .setAction(starknetVoyagerAction);
 
@@ -276,7 +276,7 @@ task("starknet-invoke", "Invokes a function on a contract in the provided addres
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-        "Pass them as a single string; e.g. --inputs '1 2 3'"
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -295,7 +295,7 @@ task("starknet-call", "Invokes a function on a contract in the provided address.
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-        "Pass them as a single string; e.g. --inputs '1 2 3'"
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
@@ -319,7 +319,7 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     .addOptionalParam(
         "inputs",
         "Space separated values forming function input.\n" +
-        "Pass them as a single string; e.g. --inputs '1 2 3'"
+            "Pass them as a single string; e.g. --inputs '1 2 3'"
     )
     .addOptionalParam("signature", "The call signature")
     .addOptionalParam(
