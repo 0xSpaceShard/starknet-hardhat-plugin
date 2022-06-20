@@ -9,7 +9,12 @@ import {
     StringMap
 } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { FlushResponse, IncreaseTimeResponse, LoadL1MessagingContractResponse, SetTimeResponse } from "./devnet-utils";
+import {
+    FlushResponse,
+    IncreaseTimeResponse,
+    LoadL1MessagingContractResponse,
+    SetTimeResponse
+} from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
