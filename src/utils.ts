@@ -225,3 +225,12 @@ export function copyWithBigint<T>(object: unknown): T {
         )
     );
 }
+
+export function getImageTagByArch(tag: string): string {
+    // Check CPU architecture
+    const arch = process.arch;
+    if (arch === "arm64" && !tag.endsWith("-arm")) {
+        tag = `${tag}-arm`;
+    }
+    return tag;
+}
