@@ -8,7 +8,7 @@ import {
     INTEGRATED_DEVNET_URL,
     PLUGIN_NAME
 } from "../constants";
-import { getNetwork } from "../utils";
+import { getImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
 import { IntegratedDevnet } from "./integrated-devnet";
@@ -40,13 +40,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
         );
     }
 
-    // Check CPU architecture
-    const arch = process.arch;
-    let tag = devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG;
-    if (arch.includes("arm")) {
-        tag = tag.includes("-arm") ? tag : `${tag}-arm`;
-    }
-
+    const tag = getImageTagByArch(devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG);
     return new DockerDevnet(
         {
             repository: DEVNET_DOCKER_REPOSITORY,
