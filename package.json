@@ -37,7 +37,7 @@
         "form-data": "^4.0.0",
         "glob": "^7.2.0",
         "is-wsl": "^2.2.0",
-        "starknet": "^3.5.1"
+        "starknet": "^3.15.0"
     },
     "peerDependencies": {
         "hardhat": "^2.9.5"
