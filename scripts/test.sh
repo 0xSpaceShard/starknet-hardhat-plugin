@@ -78,10 +78,7 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
 
-# install and build devnet
-../scripts/install-devnet.sh
-STARKNET_DEVNET_PATH=$(which starknet-devnet)
-echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
+../scripts/check-devnet.sh
 
 # test integrated devnet
 iterate_dir integrated-devnet
