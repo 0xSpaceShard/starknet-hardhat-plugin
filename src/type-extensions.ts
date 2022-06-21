@@ -144,7 +144,7 @@ declare module "hardhat/types/runtime" {
 
         /**
          * Fetch the predeployed accounts
-         * @returns an object containg array of account's metadata 
+         * @returns an object containg array of account's metadata
          */
         getPredeployedAccounts: () => Promise<GetPredeployedAccountsResponse[]>;
     }
