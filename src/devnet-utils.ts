@@ -43,6 +43,13 @@ export interface IncreaseTimeResponse {
     timestamp_increased_by: number;
 }
 
+export interface GetPredeployedAccountsResponse {
+    initial_balance: number,
+    private_key: string,
+    public_key: string,
+    address: string
+}
+
 export class DevnetUtils implements Devnet {
     constructor(private hre: HardhatRuntimeEnvironment) { }
 
@@ -108,5 +115,14 @@ export class DevnetUtils implements Devnet {
                 });
             return response.data;
         }, "Request failed. Make sure your network has the /set_time endpoint");
+    }
+
+    public async getPredeployedAccounts() {
+        return this.withErrorHandler<GetPredeployedAccountsResponse[]>(async () => {
+            const response = await axios.get<GetPredeployedAccountsResponse[]>(
+                `${this.endpoint}/predeployed_accounts`
+            );
+            return response.data;
+        }, "Request failed. Make sure your network has the /predeployed_accounts endpoint");
     }
 }
