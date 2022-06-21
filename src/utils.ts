@@ -22,6 +22,7 @@ import { glob } from "glob";
 import { promisify } from "util";
 import { StringMap } from "./types";
 import isWsl from "is-wsl";
+import { StarknetChainId } from "starknet/constants";
 
 const globPromise = promisify(glob);
 /**
@@ -67,7 +68,7 @@ export function getDefaultHttpNetworkConfig(
     url: string,
     verificationUrl: string,
     verifiedUrl: string,
-    starknetChainId: string
+    starknetChainId: StarknetChainId
 ): HttpNetworkConfig {
     return {
         url,

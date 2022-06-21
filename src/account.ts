@@ -295,7 +295,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.1.0";
+    static readonly VERSION = "b27101eb826fae73f49751fa384c2a0ff3377af2";
 
     constructor(
         starknetContract: StarknetContract,
@@ -312,7 +312,31 @@ export class OpenZeppelinAccount extends Account {
         maxFee: string,
         version: string
     ): string {
-        return hash.hashMulticall(accountAddress, callArray, nonce, maxFee, version);
+        const hashable: Array<BigNumberish> = [callArray.length];
+        const rawCalldata: RawCalldata = [];
+        callArray.forEach((call) => {
+            hashable.push(
+                call.contractAddress,
+                hash.starknetKeccak(call.entrypoint),
+                rawCalldata.length,
+                call.calldata.length
+            );
+            rawCalldata.push(...call.calldata);
+        });
+
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+
+        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        const calldataHash = hash.computeHashOnElements(hashable);
+        return hash.computeHashOnElements([
+            TransactionHashPrefix.INVOKE,
+            version,
+            accountAddress,
+            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            calldataHash,
+            maxFee,
+            chainId
+        ]);
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -425,7 +449,6 @@ export class ArgentAccount extends Account {
         });
 
         const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
-        const adaptedChainId = BigInt("0x" + Buffer.from(chainId).toString("hex")).toString();
 
         hashable.push(rawCalldata.length, ...rawCalldata, nonce);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -436,7 +459,7 @@ export class ArgentAccount extends Account {
             hash.getSelectorFromName(this.getExecutionFunctionName()),
             calldataHash,
             maxFee,
-            adaptedChainId
+            chainId
         ]);
     }
 
