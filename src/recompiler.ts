@@ -148,10 +148,11 @@ const compileChangedContracts = async (
         // Add new contracts that are not in cache before
         if (!cache[contractName]) {
             changed.add(contractName);
+            continue;
         }
 
         // Add contracts that contiain a change in content
-        if (newCacheEntry[contractName].contentHash !== cache[contractName]?.contentHash) {
+        if (newCacheEntry[contractName].contentHash !== cache[contractName].contentHash) {
             changed.add(contractName);
         }
     }
