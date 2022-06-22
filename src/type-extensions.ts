@@ -14,7 +14,7 @@ import {
     IncreaseTimeResponse,
     LoadL1MessagingContractResponse,
     SetTimeResponse,
-    GetPredeployedAccountsResponse
+    PredeployedAccount
 } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
@@ -146,7 +146,7 @@ declare module "hardhat/types/runtime" {
          * Fetch the predeployed accounts
          * @returns an object containg array of account's metadata
          */
-        getPredeployedAccounts: () => Promise<GetPredeployedAccountsResponse[]>;
+        getPredeployedAccounts: () => Promise<PredeployedAccount[]>;
     }
 
     interface HardhatRuntimeEnvironment {

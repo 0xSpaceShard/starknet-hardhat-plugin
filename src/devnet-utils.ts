@@ -43,7 +43,7 @@ export interface IncreaseTimeResponse {
     timestamp_increased_by: number;
 }
 
-export interface GetPredeployedAccountsResponse {
+export interface PredeployedAccount {
     initial_balance: number,
     private_key: string,
     public_key: string,
@@ -118,8 +118,8 @@ export class DevnetUtils implements Devnet {
     }
 
     public async getPredeployedAccounts() {
-        return this.withErrorHandler<GetPredeployedAccountsResponse[]>(async () => {
-            const response = await axios.get<GetPredeployedAccountsResponse[]>(
+        return this.withErrorHandler<PredeployedAccount[]>(async () => {
+            const response = await axios.get<PredeployedAccount[]>(
                 `${this.endpoint}/predeployed_accounts`
             );
             return response.data;
