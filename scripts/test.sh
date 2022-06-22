@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap 'kill $(jobs -p)' EXIT
+trap 'for killable in $(jobs -p); do kill $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
@@ -62,8 +62,6 @@ function iterate_dir(){
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
         [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
-        # TODO delete this line
-        echo "DEBUG DEVNET_PID: $DEVNET_PID"
 
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
