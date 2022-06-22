@@ -61,11 +61,15 @@ function iterate_dir(){
         # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
+        [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
+
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
+        [ "$network" == "devnet" ] && kill "$DEVNET_PID"
+
         echo "----------------------------------------------"
         echo
     done
@@ -82,13 +86,6 @@ fi
 
 # test integrated devnet
 iterate_dir integrated-devnet
-
-# run devnet
-starknet-devnet --host 127.0.0.1 --port 5050 --seed 42 &
-
-echo "Sleeping and checking if devnet alive"
-sleep 10s
-curl 127.0.0.1:5050/is_alive
 
 source ../scripts/set-devnet-vars.sh
 iterate_dir devnet
