@@ -4,7 +4,7 @@
 ## Development related changes
 - 
 
-# Checklist:
+## Checklist:
 
 - [ ] I have formatted the code
 - [ ] I have performed a self-review of the code

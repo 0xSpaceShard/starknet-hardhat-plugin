@@ -176,9 +176,15 @@ export function isStarknetDevnet(networkName: string): boolean {
     return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 
-export async function findPath(traversable: string, name: string) {
+export async function findPath(traversable: string, pathSegment: string) {
+    // Relative path to artifacts can be resolved now
+    const resolvedPath = path.resolve(path.join(traversable, pathSegment));
+    if (fs.existsSync(resolvedPath) && fs.lstatSync(resolvedPath).isFile()) {
+        return resolvedPath;
+    }
+
     let files = await traverseFiles(traversable);
-    files = files.filter((f) => f.endsWith(name));
+    files = files.filter((f) => f.endsWith(pathSegment));
     if (files.length == 0) {
         return null;
     } else if (files.length == 1) {
@@ -231,4 +237,13 @@ export function copyWithBigint<T>(object: unknown): T {
             typeof value === "bigint" ? value.toString() : value
         )
     );
+}
+
+export function getImageTagByArch(tag: string): string {
+    // Check CPU architecture
+    const arch = process.arch;
+    if (arch === "arm64" && !tag.endsWith("-arm")) {
+        tag = `${tag}-arm`;
+    }
+    return tag;
 }

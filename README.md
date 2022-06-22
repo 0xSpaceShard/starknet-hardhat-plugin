@@ -105,12 +105,16 @@ You would typically use the input feature when deploying a single contract requi
 ### `starknet-verify`
 
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract <BOOLEAN>]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
 
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
+
+The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
+
+For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
 ### `starknet-deploy-account`
 
@@ -218,7 +222,7 @@ const expect = require("chai").expect;
 const starknet = require("hardhat").starknet;
 
 describe("My Test", function () {
-  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet
+  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet (alpha-goerli)
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
 ```
 
@@ -307,7 +311,8 @@ More detailed documentation can be found [here](#account).
 
     const { res: currBalance } = await account.call(contract, "get_balance");
     const amount = BigInt(10);
-    await account.invoke(contract, "increase_balance", { amount });
+    // Passing max_fee is currently optional
+    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
 
     const { res: newBalance } = await account.call(contract, "get_balance");
     expect(newBalance).to.deep.equal(currBalance + amount);
@@ -382,7 +387,7 @@ await starknet.devnet.restart();
 The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
 The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`. The time for the next block can be set by calling `starknet.devnet.setTime()`, with subsequent blocks keeping the set offset.
 
-Warning: *block time can be set in the past and lead to unexpected behaviour!*
+Warning: _block time can be set in the past and lead to unexpected behaviour!_
 
 ```typescript
 await starknet.devnet.setTime(1000); // time in seconds
@@ -397,7 +402,7 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
 
-By default, the images are amd64 compliant. Append the `-arm` suffix to the version name to use an image adapted for arm64 architecture (e.g. `dockerizedVersion: "0.8.1-arm"`).
+A Docker image tailored to the machine will be pulled. The `-arm` suffix will be applied to the version name, if it's not applied on `hardhat.config.ts`, if the device's architecture is `arm64`. (e.g. `dockerizedVersion: "0.8.1-arm"` and `dockerizedVersion: "0.8.1"` both will work).
 
 If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
@@ -452,7 +457,7 @@ module.exports = {
 
 ### Runtime network
 
-To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Hardhat scripts/tests, use `starknet["network"]` or the `--starknet-network` CLI option. Not specifying one will default to using alpha-goerli.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
@@ -577,15 +582,13 @@ To retrieve an already deployed Account, use the `starknet` object's `getAccount
 
 ```typescript
 function getAccountFromAddress(
-    address: string,
-    privateKey: string,
-    accountType: AccountImplementationType
+    address: string, // the address where the account you want to use is deployed
+    privateKey: string, // the account's private key
+    accountType: AccountImplementationType // the implementation of the Account that you want to use.
 );
 ```
 
--   `address` is the address where the account you want to use is deployed.
--   `privateKey` is the account's private key.
--   `accountType` is the implementation of the Account that you want to use.
+E.g.:
 
 ```typescript
 const account = await starknet.getAccountFromAddress(
@@ -601,6 +604,26 @@ You can then use the Account object to call and invoke your contracts using the 
 const { res: amount } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
 ```
+
+### Funds and Fees
+
+-   **On alpha-goerli**
+    -   Deploy an account using `starknet.deployAccount`.
+    -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
+    -   Later load the account using `starknet.getAccountFromAddress`.
+-   **On starknet-devnet**
+    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation v0.1.0
+    -   Use the data logged by Devnet on startup (address, key)
+    -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
+    -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
+
+Once your account has funds, you can specify a maximum fee greater than zero:
+
+```typescript
+await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
+```
+
+### Multicalls
 
 You can also use the Account object to perform multi{calls, invokes, fee estimations}.
 

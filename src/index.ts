@@ -21,7 +21,7 @@ import {
     VOYAGER_GOERLI_VERIFIED_URL,
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
-import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
+import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getImageTagByArch, getNetwork } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -153,7 +153,8 @@ extendEnvironment((hre) => {
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
+        const tag = getImageTagByArch(hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG);
+
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });
@@ -258,6 +259,8 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .addParam("path", "The path of the main cairo contract (e.g. contracts/contract.cairo)")
     .addParam("address", "The address where the contract is deployed")
+    .addParam("compilerVersion", "The compiler version used to compile the cairo contract")
+    .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths of the dependencies of the contract specified in --path" +
