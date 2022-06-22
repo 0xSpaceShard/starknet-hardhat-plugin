@@ -12,6 +12,9 @@ interface ContractData {
     contentHash: string;
     outputPath: string;
     abiPath: string;
+    cairoPath?: string;
+    accountContract?: boolean;
+    disableHintValidation?: boolean;
 }
 
 // FileName - HashPair

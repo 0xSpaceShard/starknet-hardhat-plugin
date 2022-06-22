@@ -177,7 +177,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
             });
 
             // Update cache after compilation
-            await updateCache(file, outputPath, abiPath, hre);
+            await updateCache(file, outputPath, abiPath, hre, args, cairoPath);
             statusCode += processExecuted(executed, true);
         }
     }
