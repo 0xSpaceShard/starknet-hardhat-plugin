@@ -381,6 +381,8 @@ export class DockerWrapper extends StarknetWrapper {
 
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
 
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,
