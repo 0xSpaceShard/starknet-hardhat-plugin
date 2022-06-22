@@ -67,8 +67,8 @@ const getContractHash = async (hre: HardhatRuntimeEnvironment): Promise<Cache> =
 
         newCacheEntry[cairoContract] = {
             contentHash: hash.digest("hex").toString(),
-            outputPath: newCacheEntry[cairoContract] ? newCacheEntry[cairoContract].outputPath : outputPath,
-            abiPath: newCacheEntry[cairoContract] ? newCacheEntry[cairoContract].abiPath : abiPath
+            outputPath,
+            abiPath
         };
     }
 
