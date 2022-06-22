@@ -82,7 +82,7 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
     iterate_dir alpha
 fi
 
-../scripts/check-devnet.sh
+../scripts/install-devnet.sh
 
 # test integrated devnet
 iterate_dir integrated-devnet
