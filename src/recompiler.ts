@@ -193,7 +193,7 @@ const updateSet = (
     }
 
     return changed;
-}
+};
 
 // Handles cache on Starknet cli calls
 export const handleCache = async (hre: HardhatRuntimeEnvironment) => {
