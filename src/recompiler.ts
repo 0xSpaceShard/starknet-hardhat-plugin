@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
-import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
+import { HardhatRuntimeEnvironment, ProjectPathsConfig, TaskArguments } from "hardhat/types";
 import { starknetCompileAction } from "./task-actions";
 import { getArtifactPath, traverseFiles } from "./utils";
 import { ABI_SUFFIX } from "./constants";
@@ -45,11 +45,11 @@ const upsertFile = async (cacheDirName: string): Promise<Cache> => {
 };
 
 // Gets hash of each .cairo file inside contracts
-const getContractHash = async (hre: HardhatRuntimeEnvironment): Promise<Cache> => {
-    const { starknetSources: defaultSourcesPath } = hre.config.paths;
+const getContractHash = async (paths: ProjectPathsConfig): Promise<Cache> => {
+    const { starknetSources: defaultSourcesPath } = paths;
 
     const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
-    const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
+    const artifactsDir = getArtifactPath(defaultSourcesPath, paths);
 
     const newCacheEntry: Cache = {};
     // Get soucrces from source path. Check only cairo file extensions
@@ -79,7 +79,9 @@ const getContractHash = async (hre: HardhatRuntimeEnvironment): Promise<Cache> =
 const getCacheEntry = async (
     file: string,
     output: string,
-    abi: string
+    abi: string,
+    args?: TaskArguments,
+    cairoPath?: string
 ): Promise<Cache> => {
     const data = await fsPromises.readFile(file);
     const hash = createHash("sha256");
@@ -91,6 +93,18 @@ const getCacheEntry = async (
         outputPath: output,
         abiPath: abi
     };
+
+    if (args?.disableHintValidation) {
+        newCacheEntry[file].disableHintValidation = true;
+    }
+
+    if (args?.accountContract) {
+        newCacheEntry[file].accountContract = true;
+    }
+
+    if (cairoPath) {
+        newCacheEntry[file].cairoPath = args.cairoPath;
+    }
 
     return newCacheEntry;
 };
@@ -112,13 +126,13 @@ const getUpdatedCache = (
 
 // Checks artifacts availability
 const checkArtifacts = async (
-    hre: HardhatRuntimeEnvironment,
+    paths: ProjectPathsConfig,
     newCacheEntry: Cache
 ): Promise<Set<string>> => {
     // Set to save contracts with changed content & unavailable artifacts
     const changed: Set<string> = new Set();
-    const { starknetSources: defaultSourcesPath } = hre.config.paths;
-    const artifactsDir = getArtifactPath(defaultSourcesPath, hre);
+    const { starknetSources: defaultSourcesPath } = paths;
+    const artifactsDir = getArtifactPath(defaultSourcesPath, paths);
     // Traverse on artifacts directory
     // Create if it doesn't exist
     if (!fs.existsSync(artifactsDir)) {
@@ -178,9 +192,9 @@ export const handleCache = async (hre: HardhatRuntimeEnvironment) => {
 
     try {
         const oldCache = await upsertFile(cacheDirName);
-        const newCacheEntry = await getContractHash(hre);
-        const changedContracts = await checkArtifacts(hre, newCacheEntry);
-        await compileChangedContracts(hre, newCacheEntry, oldCache, changedContracts);
+        const newCacheEntry = await getContractHash(hre.config.paths);
+        const changedContracts = await checkArtifacts(hre.config.paths, newCacheEntry);
+        await compileChangedContracts(hre, newCacheEntry, updatedSet);
     } catch (error) {
         // If there is an error, do not recompile
         console.error(error);
@@ -193,11 +207,13 @@ export const updateCache = async (
     file: string,
     output: string,
     abi: string,
-    hre: HardhatRuntimeEnvironment
+    hre: HardhatRuntimeEnvironment,
+    args: TaskArguments,
+    cairoPath?: string
 ): Promise<void> => {
     const { cache: cacheDirName } = hre.config.paths;
     const oldCache = await upsertFile(cacheDirName);
-    const newCacheEntry = await getCacheEntry(file, output, abi);
+    const newCacheEntry = await getCacheEntry(file, output, abi, args, cairoPath);
     const updatedCache = getUpdatedCache(oldCache, newCacheEntry);
     const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
     await fsPromises.writeFile(cacheFile, JSON.stringify(updatedCache, null, " "));

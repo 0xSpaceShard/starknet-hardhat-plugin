@@ -3,7 +3,8 @@ import {
     HardhatRuntimeEnvironment,
     HttpNetworkConfig,
     NetworkConfig,
-    NetworksConfig
+    NetworksConfig,
+    ProjectPathsConfig
 } from "hardhat/types";
 import { HardhatPluginError } from "hardhat/plugins";
 import {
@@ -113,10 +114,10 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     return files;
 }
 
-export function getArtifactPath(sourcePath: string, hre: HardhatRuntimeEnvironment): string {
-    const rootRegex = new RegExp("^" + hre.config.paths.root);
+export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): string {
+    const rootRegex = new RegExp("^" + paths.root);
     const suffix = sourcePath.replace(rootRegex, "");
-    return path.join(hre.config.paths.starknetArtifacts, suffix);
+    return path.join(paths.starknetArtifacts, suffix);
 }
 
 export function checkArtifactExists(artifactsPath: string): void {
