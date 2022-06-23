@@ -3,6 +3,8 @@ import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
+const TUPLE_DELIMITER = " : ";
+
 function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
         return false;
@@ -18,6 +20,64 @@ function toNumericString(value: { toString: () => string }) {
     return BigInt(value.toString()).toString();
 }
 
+function isNamedTuple(type: string) {
+    return type.includes(TUPLE_DELIMITER);
+}
+
+function isTuple(type: string) {
+    return type[0] === "(" && type[type.length - 1] === ")";
+}
+
+function parseNamedTuple(type: string) {}
+
+function extractMemberTypes(s: string): string[] {
+    // Replace all inner tuples with '#'
+    const specialSymbol = "#";
+
+    let i = 0;
+    let cleanedS = "";
+    const replacedSubStrings: string[] = [];
+    while (i < s.length) {
+        if (s[i] === "(") {
+            let counter = 1;
+            let openningBracket = i;
+
+            // Move to next element after '('
+            i++;
+            while (counter) {
+                if (s[i] === ")") {
+                    counter--;
+                }
+                if (s[i] === "(") {
+                    counter++;
+                }
+
+                i++;
+            }
+
+            replacedSubStrings.push(s.substring(openningBracket, i));
+            cleanedS += specialSymbol;
+
+            // Move index back on last ')'
+            i--;
+        } else {
+            cleanedS += s[i];
+        }
+
+        i++;
+    }
+
+    let specialSignCounter = 0;
+    return cleanedS.split(", ").map((type) => {
+        // TODO: check if includes '#' and then replace with replacesubstring
+        // If encounter '#' then return replaced substring
+        if (type.includes(specialSymbol)) {
+            return type.replace(specialSymbol, replacedSubStrings[specialSignCounter++]);
+        } else {
+            return type;
+        }
+    });
+}
 /**
  * Adapts an object of named input arguments to an array of stringified arguments in the correct order.
  *
@@ -52,7 +112,6 @@ export function adaptInputUtil(
     abi: starknet.Abi
 ): string[] {
     const adapted: string[] = [];
-    let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
     const countArrays = inputSpecs.filter((i) => i.type.endsWith("*")).length;
@@ -60,13 +119,15 @@ export function adaptInputUtil(
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
-
+    // TODO: maybe also add the check that all input keys shall correspond to some arg.name
     if (expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${
             expectedInputCount === 1 ? "" : "s"
         }, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
+
+    let lastSpec: starknet.Argument = { type: null, name: null };
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
@@ -74,7 +135,7 @@ export function adaptInputUtil(
             const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
-            } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
+            } else if (!currentValue && inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const nextSpec = inputSpecs[i + 1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
                 if (
@@ -97,6 +158,7 @@ export function adaptInputUtil(
             }
 
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
+            // TODO: can remove? supposed to be checked on line 81
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -151,54 +213,92 @@ function adaptComplexInput(
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (type[0] === "(" && type[type.length - 1] === ")") {
-        if (!Array.isArray(input)) {
-            const msg = `Expected ${inputSpec.name} to be a tuple`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+    if (isTuple(type)) {
+        const memberTypes = extractMemberTypes(type.slice(1, -1));
+        console.log("memberTypes", memberTypes);
+        if (isNamedTuple(type)) {
+            // TODO: clarify if need to process felt/other_type* here
+            // Initialize an array with the user input
+            const inputLen = Object.keys(input || {}).length;
+            if (inputLen !== memberTypes.length) {
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                    memberTypes.length === 1 ? "" : "s"
+                }, got ${inputLen}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        const memberTypes = type.slice(1, -1).split(", ");
+            for (let i = 0; i < inputLen; i++) {
+                // can't use split since ':' also can be inside type
+                // ex: x : (y : felt, z: SomeStruct)
+                // TODO: make some const for ', ' and ' : '
+                const asd = memberTypes[i].indexOf(TUPLE_DELIMITER);
+                const name = memberTypes[i].substring(0, asd);
+                const type = memberTypes[i].substring(name.length + TUPLE_DELIMITER.length);
+                console.log("type", type);
 
-        if (input.length != memberTypes.length) {
-            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                memberTypes.length === 1 ? "" : "s"
-            }, got ${input.length}.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+                const memberSpec = { name, type };
+                const nestedInput = input[memberSpec.name];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
+        } else {
+            if (!Array.isArray(input)) {
+                const msg = `Expected ${inputSpec.name} to be a tuple`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        for (let i = 0; i < input.length; ++i) {
-            const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
-            const nestedInput = input[i];
-            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            if (input.length != memberTypes.length) {
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                    memberTypes.length === 1 ? "" : "s"
+                }, got ${input.length}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+
+            for (let i = 0; i < input.length; ++i) {
+                const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
+                const nestedInput = input[i];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
         }
 
         return;
     }
 
-    // otherwise a struct
-    if (!(type in abi)) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
-    }
+    if (isNamedTuple(type)) {
+        const nameAndType = type.split(" : ");
+        console.log(nameAndType);
+        if (nameAndType.length !== 2) {
+            throw Error("Weird shit");
+        }
 
-    const struct = <starknet.Struct>abi[type];
-
-    const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
-    const expectedInputCount = struct.members.length - countArrays;
-
-    // Initialize an array with the user input
-    const inputLen = Object.keys(input || {}).length;
-
-    if (expectedInputCount != inputLen) {
-        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
-            expectedInputCount === 1 ? "" : "s"
-        }, got ${inputLen}.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
-    }
-
-    for (let i = 0; i < struct.members.length; ++i) {
-        const memberSpec = struct.members[i];
+        const memberSpec = { name: nameAndType[0], type: nameAndType[1] };
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+    } else {
+        // otherwise a struct
+        if (!(type in abi)) {
+            throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
+        }
+
+        const struct = <starknet.Struct>abi[type];
+
+        const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
+        const expectedInputCount = struct.members.length - countArrays;
+
+        // Initialize an array with the user input
+        const inputLen = Object.keys(input || {}).length;
+
+        if (expectedInputCount != inputLen) {
+            const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
+                expectedInputCount === 1 ? "" : "s"
+            }, got ${inputLen}.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
+        for (let i = 0; i < struct.members.length; ++i) {
+            const memberSpec = struct.members[i];
+            const nestedInput = input[memberSpec.name];
+            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+        }
     }
 }
 
