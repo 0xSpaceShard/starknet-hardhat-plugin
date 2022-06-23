@@ -3,7 +3,8 @@ import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
-const TUPLE_DELIMITER = " : ";
+const NAMED_TUPLE_DELIMITER = " : ";
+const ARGUMENTS_DELIMITER = ", ";
 
 function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
@@ -21,21 +22,30 @@ function toNumericString(value: { toString: () => string }) {
 }
 
 function isNamedTuple(type: string) {
-    return type.includes(TUPLE_DELIMITER);
+    return type.includes(NAMED_TUPLE_DELIMITER);
 }
 
 function isTuple(type: string) {
     return type[0] === "(" && type[type.length - 1] === ")";
 }
 
-function parseNamedTuple(type: string) {}
+// Can't use String.split since ':' also can be inside type
+// Ex: x : (y : felt, z: SomeStruct)
+function parseNamedTuple(namedTuple: string): starknet.Argument {
+    const index = namedTuple.indexOf(NAMED_TUPLE_DELIMITER);
+    const name = namedTuple.substring(0, index);
+    const type = namedTuple.substring(name.length + NAMED_TUPLE_DELIMITER.length);
 
+    return { name, type };
+}
+
+// Returns types of tuple
 function extractMemberTypes(s: string): string[] {
-    // Replace all inner tuples with '#'
+    // Replace all nested tuples with '#'
     const specialSymbol = "#";
 
     let i = 0;
-    let cleanedS = "";
+    let tmp = "";
     const replacedSubStrings: string[] = [];
     while (i < s.length) {
         if (s[i] === "(") {
@@ -44,6 +54,9 @@ function extractMemberTypes(s: string): string[] {
 
             // Move to next element after '('
             i++;
+            // As invariant we assume that cairo compiler checks
+            // that num of '(' === num of ')' so we will terminate
+            // before i > s.length
             while (counter) {
                 if (s[i] === ")") {
                     counter--;
@@ -56,23 +69,24 @@ function extractMemberTypes(s: string): string[] {
             }
 
             replacedSubStrings.push(s.substring(openningBracket, i));
-            cleanedS += specialSymbol;
+            // replace tuple with special symbol
+            tmp += specialSymbol;
 
             // Move index back on last ')'
             i--;
         } else {
-            cleanedS += s[i];
+            tmp += s[i];
         }
 
         i++;
     }
 
-    let specialSignCounter = 0;
-    return cleanedS.split(", ").map((type) => {
-        // TODO: check if includes '#' and then replace with replacesubstring
-        // If encounter '#' then return replaced substring
+    let specialSymbolCounter = 0;
+    // Now can split as all tuples replaced with '#'
+    return tmp.split(ARGUMENTS_DELIMITER).map((type) => {
+        // if type contains '#' then replace it with replaced substring
         if (type.includes(specialSymbol)) {
-            return type.replace(specialSymbol, replacedSubStrings[specialSignCounter++]);
+            return type.replace(specialSymbol, replacedSubStrings[specialSymbolCounter++]);
         } else {
             return type;
         }
@@ -215,9 +229,7 @@ function adaptComplexInput(
 
     if (isTuple(type)) {
         const memberTypes = extractMemberTypes(type.slice(1, -1));
-        console.log("memberTypes", memberTypes);
         if (isNamedTuple(type)) {
-            // TODO: clarify if need to process felt/other_type* here
             // Initialize an array with the user input
             const inputLen = Object.keys(input || {}).length;
             if (inputLen !== memberTypes.length) {
@@ -228,15 +240,7 @@ function adaptComplexInput(
             }
 
             for (let i = 0; i < inputLen; i++) {
-                // can't use split since ':' also can be inside type
-                // ex: x : (y : felt, z: SomeStruct)
-                // TODO: make some const for ', ' and ' : '
-                const asd = memberTypes[i].indexOf(TUPLE_DELIMITER);
-                const name = memberTypes[i].substring(0, asd);
-                const type = memberTypes[i].substring(name.length + TUPLE_DELIMITER.length);
-                console.log("type", type);
-
-                const memberSpec = { name, type };
+                const memberSpec = parseNamedTuple(memberTypes[i]);
                 const nestedInput = input[memberSpec.name];
                 adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
             }
@@ -264,13 +268,7 @@ function adaptComplexInput(
     }
 
     if (isNamedTuple(type)) {
-        const nameAndType = type.split(" : ");
-        console.log(nameAndType);
-        if (nameAndType.length !== 2) {
-            throw Error("Weird shit");
-        }
-
-        const memberSpec = { name: nameAndType[0], type: nameAndType[1] };
+        const memberSpec = parseNamedTuple(type);
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
     } else {
@@ -387,8 +385,8 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     }
 
     let generatedComplex: any = null;
-    if (type[0] === "(" && type[type.length - 1] === ")") {
-        const members = type.slice(1, -1).split(", ");
+    if (isTuple(type)) {
+        const members = type.slice(1, -1).split(ARGUMENTS_DELIMITER);
 
         generatedComplex = [];
         for (const member of members) {
