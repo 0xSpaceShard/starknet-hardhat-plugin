@@ -3,6 +3,8 @@ set -eu
 
 npx hardhat starknet-compile contracts/contract.cairo contracts/util.cairo
 
+npx hardhat test --no-compile test/oz-account-test.ts
+
 if [ "$NETWORK" == "devnet" ]; then
     npx hardhat test --no-compile scripts/deploy-argent.ts
 
@@ -15,4 +17,4 @@ if [ "$NETWORK" == "devnet" ]; then
     npx hardhat test --no-compile scripts/transfer-funds.ts
 fi
 
-npx hardhat test --no-compile test/oz-account-test.ts test/argent-account-test.ts
+npx hardhat test --no-compile test/argent-account-test.ts
