@@ -386,13 +386,22 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
 
     let generatedComplex: any = null;
     if (isTuple(type)) {
-        const members = type.slice(1, -1).split(ARGUMENTS_DELIMITER);
-
-        generatedComplex = [];
-        for (const member of members) {
-            const ret = generateComplexOutput(raw, rawIndex, member, abi);
-            generatedComplex.push(ret.generatedComplex);
-            rawIndex = ret.newRawIndex;
+        const members = extractMemberTypes(type.slice(1, -1));
+        if (isNamedTuple(type)) {
+            generatedComplex = {};
+            for (const member of members) {
+                const memberSpec = parseNamedTuple(member);
+                const ret = generateComplexOutput(raw, rawIndex, memberSpec.type, abi);
+                generatedComplex[memberSpec.name] = ret.generatedComplex;
+                rawIndex = ret.newRawIndex;
+            }
+        } else {
+            generatedComplex = [];
+            for (const member of members) {
+                const ret = generateComplexOutput(raw, rawIndex, member, abi);
+                generatedComplex.push(ret.generatedComplex);
+                rawIndex = ret.newRawIndex;
+            }
         }
     } else {
         // struct
