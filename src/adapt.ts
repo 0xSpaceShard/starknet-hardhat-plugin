@@ -133,7 +133,6 @@ export function adaptInputUtil(
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
-    // TODO: maybe also add the check that all input keys shall correspond to some arg.name
     if (expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${
             expectedInputCount === 1 ? "" : "s"
@@ -149,7 +148,7 @@ export function adaptInputUtil(
             const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
-            } else if (!currentValue && inputSpec.name.endsWith(LEN_SUFFIX)) {
+            } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const nextSpec = inputSpecs[i + 1];
                 const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
                 if (
@@ -172,7 +171,6 @@ export function adaptInputUtil(
             }
 
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
-            // TODO: can remove? supposed to be checked on line 81
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
