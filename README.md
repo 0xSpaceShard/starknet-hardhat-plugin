@@ -656,15 +656,10 @@ import { ArgentAccount } from "hardhat/types/runtime";
 const argentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
 
 const fundedAccount = ...;
-await fundedAccount.invoke(
-  argentAccount.starknetContract,
-  "initialize",
-  {
-    signer: argentAccount.publicKey,
-    guardian: argentAccount.guardianPublicKey || "0",
-  },
-  { maxFee: 1e18 }
-);
+await argentAccount.initialize({
+  fundedAccount: fundedAccount,
+  maxFee: 1e18
+});
 
 argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ```

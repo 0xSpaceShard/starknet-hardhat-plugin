@@ -555,6 +555,21 @@ export class ArgentAccount extends Account {
         return account;
     }
 
+    public async initialize(initializeOptions: {
+        fundedAccount: Account;
+        maxFee?: Numeric;
+    }): Promise<void> {
+        await initializeOptions.fundedAccount.invoke(
+            this.starknetContract,
+            "initialize",
+            {
+                signer: this.publicKey,
+                guardian: this.guardianPublicKey || "0"
+            },
+            { maxFee: initializeOptions.maxFee || 0 }
+        );
+    }
+
     protected getExecutionFunctionName(): string {
         return "__execute__";
     }
