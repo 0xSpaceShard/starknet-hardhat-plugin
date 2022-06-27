@@ -94,7 +94,7 @@ The Alpha networks and integrated Devnet are available by default, you don't nee
 
 -   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 -   `--starknet-network alpha-mainnet` for Alpha Mainnet
--   `--starknet-network integrated-devnet` for integrated Devnet (experimental)
+-   `--starknet-network integrated-devnet` for integrated Devnet
 
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
@@ -222,7 +222,7 @@ const expect = require("chai").expect;
 const starknet = require("hardhat").starknet;
 
 describe("My Test", function () {
-  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet
+  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet (alpha-goerli)
   // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
 ```
 
@@ -402,7 +402,7 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
 
-By default, the images are amd64 compliant. Append the `-arm` suffix to the version name to use an image adapted for arm64 architecture (e.g. `dockerizedVersion: "0.8.1-arm"`).
+A Docker image tailored to the machine will be pulled. The `-arm` suffix will be applied to the version name, if it's not applied on `hardhat.config.ts`, if the device's architecture is `arm64`. (e.g. `dockerizedVersion: "0.8.1-arm"` and `dockerizedVersion: "0.8.1"` both will work).
 
 If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
 
@@ -457,7 +457,7 @@ module.exports = {
 
 ### Runtime network
 
-To set the network used in your Hardhat scripts/tests, use `starknet["network"]`. Not specifying one will default to using Alpha testnet.
+To set the network used in your Hardhat scripts/tests, use `starknet["network"]` or the `--starknet-network` CLI option. Not specifying one will default to using alpha-goerli.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
@@ -475,9 +475,9 @@ module.exports = {
 };
 ```
 
-### Runtime network - Integrated Devnet - Experimental
+### Runtime network - Integrated Devnet
 
-As an experimental feature, you can use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without the need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5050`.
+[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`.
 
 Additionaly, by defining `networks["integratedDevnet"]`, you can specify:
 
@@ -564,8 +564,8 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"`- [v0.1.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.1.0)
-    -   `"Argent"` - [v0.2.1](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.1)
+    -   `"OpenZeppelin"` - [GitHub commit b27101eb826fae73f49751fa384c2a0ff3377af2](https://github.com/OpenZeppelin/cairo-contracts/tree/b27101eb826fae73f49751fa384c2a0ff3377af2)
+    -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
     -   `privateKey` - if you don't provide one, it will be randomly generated
@@ -614,7 +614,7 @@ await account.invoke(contract, "increase_balance", { amount });
     -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
     -   Later load the account using `starknet.getAccountFromAddress`.
 -   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation v0.1.0
+    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation.
     -   Use the data logged by Devnet on startup (address, key)
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
@@ -647,21 +647,23 @@ const txHash = await account.multiInvoke(interactionArray);
 const results = await account.multiCall(interactionArray);
 ```
 
-OpenZeppelin and Argent account implementation work almost the same: Argent implementation has the additional Guardian signature verification.
-A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`.
+OpenZeppelin and Argent accounts have some differences:
+
+-   Argent account needs to be initialized after deployment. This has to be done with another funded account.
+-   Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
 
 ```typescript
-import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";
+import { ArgentAccount } from "hardhat/types/runtime";
 
-const account: ArgentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
+const argentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
 
-// or
+const fundedAccount = ...;
+await argentAccount.initialize({
+  fundedAccount: fundedAccount,
+  maxFee: 1e18
+});
 
-const loadedAccount = (await starknet.getAccountFromAddress(
-    accountAddress,
-    privateKey,
-    "Argent"
-)) as ArgentAccount;
+argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ```
 
 ## More examples

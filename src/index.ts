@@ -17,11 +17,15 @@ import {
     VOYAGER_MAINNET_CONTRACT_API_URL,
     DEFAULT_STARKNET_NETWORK,
     INTEGRATED_DEVNET_URL,
-    ChainID,
     VOYAGER_GOERLI_VERIFIED_URL,
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
-import { getDefaultHardhatNetworkConfig, getDefaultHttpNetworkConfig, getNetwork } from "./utils";
+import {
+    getDefaultHardhatNetworkConfig,
+    getDefaultHttpNetworkConfig,
+    getImageTagByArch,
+    getNetwork
+} from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
@@ -47,6 +51,7 @@ import {
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { IntegratedDevnet } from "./devnet";
+import { StarknetChainId } from "starknet/constants";
 
 exitHook(() => {
     IntegratedDevnet.cleanAll();
@@ -107,7 +112,7 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_URL,
             VOYAGER_GOERLI_CONTRACT_API_URL,
             VOYAGER_GOERLI_VERIFIED_URL,
-            ChainID.TESTNET
+            StarknetChainId.TESTNET
         );
     }
 
@@ -116,7 +121,7 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_MAINNET_URL,
             VOYAGER_MAINNET_CONTRACT_API_URL,
             VOYAGER_MAINNET_VERIFIED_URL,
-            ChainID.MAINNET
+            StarknetChainId.MAINNET
         );
     }
 
@@ -153,7 +158,10 @@ extendEnvironment((hre) => {
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG;
+        const tag = getImageTagByArch(
+            hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
+        );
+
         hre.starknetWrapper = new DockerWrapper({ repository, tag });
     }
 });

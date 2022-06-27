@@ -21,6 +21,8 @@ import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
 import { StringMap } from "./types";
+import isWsl from "is-wsl";
+import { StarknetChainId } from "starknet/constants";
 
 const globPromise = promisify(glob);
 /**
@@ -37,13 +39,14 @@ export function adaptLog(msg: string): string {
 }
 
 const DOCKER_HOST = "host.docker.internal";
+const MACOS_PLATFORM = "darwin";
 /**
  * Adapts `url` by replacing localhost and 127.0.0.1 with `host.internal.docker`
  * @param url string representing the url to be adapted
  * @returns adapted url
  */
 export function adaptUrl(url: string): string {
-    if (process.platform === "darwin") {
+    if (process.platform === MACOS_PLATFORM || isWsl) {
         for (const protocol of ["http://", "https://", ""]) {
             for (const host of ["localhost", "127.0.0.1"]) {
                 if (url === `${protocol}${host}`) {
@@ -65,7 +68,7 @@ export function getDefaultHttpNetworkConfig(
     url: string,
     verificationUrl: string,
     verifiedUrl: string,
-    starknetChainId: string
+    starknetChainId: StarknetChainId
 ): HttpNetworkConfig {
     return {
         url,
@@ -169,9 +172,15 @@ export function isStarknetDevnet(networkName: string): boolean {
     return networkName === INTEGRATED_DEVNET || networkName === INTEGRATED_DEVNET_INTERNALLY;
 }
 
-export async function findPath(traversable: string, name: string) {
+export async function findPath(traversable: string, pathSegment: string) {
+    // Relative path to artifacts can be resolved now
+    const resolvedPath = path.resolve(path.join(traversable, pathSegment));
+    if (fs.existsSync(resolvedPath) && fs.lstatSync(resolvedPath).isFile()) {
+        return resolvedPath;
+    }
+
     let files = await traverseFiles(traversable);
-    files = files.filter((f) => f.endsWith(name));
+    files = files.filter((f) => f.endsWith(pathSegment));
     if (files.length == 0) {
         return null;
     } else if (files.length == 1) {
@@ -224,4 +233,13 @@ export function copyWithBigint<T>(object: unknown): T {
             typeof value === "bigint" ? value.toString() : value
         )
     );
+}
+
+export function getImageTagByArch(tag: string): string {
+    // Check CPU architecture
+    const arch = process.arch;
+    if (arch === "arm64" && !tag.endsWith("-arm")) {
+        tag = `${tag}-arm`;
+    }
+    return tag;
 }

@@ -16,6 +16,13 @@ interface CompileWrapperOptions {
     disableHintValidation: boolean;
 }
 
+interface DeclareWrapperOptions {
+    contract: string;
+    gatewayUrl: string;
+    signature?: string[];
+    token?: string;
+}
+
 interface DeployWrapperOptions {
     contract: string;
     gatewayUrl: string;
@@ -89,6 +96,28 @@ export abstract class StarknetWrapper {
     }
 
     public abstract compile(options: CompileWrapperOptions): Promise<ProcessResult>;
+
+    public prepareDeclareOptions(options: DeclareWrapperOptions): string[] {
+        const prepared = [
+            "declare",
+            "--contract",
+            options.contract,
+            "--gateway_url",
+            options.gatewayUrl
+        ];
+
+        if (options.signature && options.signature.length) {
+            prepared.push("--signature", ...options.signature);
+        }
+
+        if (options.token) {
+            prepared.push("--token", options.token);
+        }
+
+        return prepared;
+    }
+
+    public abstract declare(options: DeclareWrapperOptions): Promise<ProcessResult>;
 
     protected prepareDeployOptions(options: DeployWrapperOptions): string[] {
         const prepared = [
@@ -324,6 +353,27 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
+    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
+        const binds: String2String = {
+            [options.contract]: options.contract
+        };
+
+        const dockerOptions = {
+            binds,
+            networkMode: "host"
+        };
+
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        const preparedOptions = this.prepareDeclareOptions(options);
+        const docker = await this.getDocker();
+        const executed = await docker.runContainer(
+            this.image,
+            ["starknet", ...preparedOptions],
+            dockerOptions
+        );
+        return executed;
+    }
+
     public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.contract]: options.contract
@@ -422,6 +472,8 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
 
         const docker = await this.getDocker();
@@ -441,6 +493,8 @@ export class DockerWrapper extends StarknetWrapper {
             networkMode: "host"
         };
 
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
 
         const docker = await this.getDocker();
@@ -511,6 +565,12 @@ export class VenvWrapper extends StarknetWrapper {
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
         const executed = await this.execute(this.starknetCompilePath, preparedOptions);
+        return executed;
+    }
+
+    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareDeclareOptions(options);
+        const executed = await this.execute(this.starknetPath, preparedOptions);
         return executed;
     }
 

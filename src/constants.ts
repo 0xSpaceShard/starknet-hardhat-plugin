@@ -25,11 +25,6 @@ export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
 export const INTEGRATED_DEVNET = "integrated-devnet";
 export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
 
-export enum ChainID {
-    TESTNET = "SN_GOERLI",
-    MAINNET = "SN_MAIN"
-}
-
 export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
 export const VOYAGER_GOERLI_VERIFIED_URL = "https://goerli.voyager.online/contract/";
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
