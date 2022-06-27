@@ -3,6 +3,9 @@ import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
+const NAMED_TUPLE_DELIMITER = " : ";
+const ARGUMENTS_DELIMITER = ", ";
+
 function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
         return false;
@@ -18,6 +21,77 @@ function toNumericString(value: { toString: () => string }) {
     return BigInt(value.toString()).toString();
 }
 
+function isNamedTuple(type: string) {
+    return type.includes(NAMED_TUPLE_DELIMITER);
+}
+
+function isTuple(type: string) {
+    return type[0] === "(" && type[type.length - 1] === ")";
+}
+
+// Can't use String.split since ':' also can be inside type
+// Ex: x : (y : felt, z: SomeStruct)
+function parseNamedTuple(namedTuple: string): starknet.Argument {
+    const index = namedTuple.indexOf(NAMED_TUPLE_DELIMITER);
+    const name = namedTuple.substring(0, index);
+    const type = namedTuple.substring(name.length + NAMED_TUPLE_DELIMITER.length);
+
+    return { name, type };
+}
+
+// Returns types of tuple
+function extractMemberTypes(s: string): string[] {
+    // Replace all top-level tuples with '#'
+    const specialSymbol = "#";
+
+    let i = 0;
+    let tmp = "";
+    const replacedSubStrings: string[] = [];
+    while (i < s.length) {
+        if (s[i] === "(") {
+            let counter = 1;
+            const openningBracket = i;
+
+            // Move to next element after '('
+            i++;
+            // As invariant we assume that cairo compiler checks
+            // that num of '(' === num of ')' so we will terminate
+            // before i > s.length
+            while (counter) {
+                if (s[i] === ")") {
+                    counter--;
+                }
+                if (s[i] === "(") {
+                    counter++;
+                }
+
+                i++;
+            }
+
+            replacedSubStrings.push(s.substring(openningBracket, i));
+            // replace tuple with special symbol
+            tmp += specialSymbol;
+
+            // Move index back on last ')'
+            i--;
+        } else {
+            tmp += s[i];
+        }
+
+        i++;
+    }
+
+    let specialSymbolCounter = 0;
+    // Now can split as all tuples replaced with '#'
+    return tmp.split(ARGUMENTS_DELIMITER).map((type) => {
+        // if type contains '#' then replace it with replaced substring
+        if (type.includes(specialSymbol)) {
+            return type.replace(specialSymbol, replacedSubStrings[specialSymbolCounter++]);
+        } else {
+            return type;
+        }
+    });
+}
 /**
  * Adapts an object of named input arguments to an array of stringified arguments in the correct order.
  *
@@ -52,7 +126,6 @@ export function adaptInputUtil(
     abi: starknet.Abi
 ): string[] {
     const adapted: string[] = [];
-    let lastSpec: starknet.Argument = { type: null, name: null };
 
     // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
     const countArrays = inputSpecs.filter((i) => i.type.endsWith("*")).length;
@@ -60,13 +133,14 @@ export function adaptInputUtil(
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
-
     if (expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${
             expectedInputCount === 1 ? "" : "s"
         }, got ${inputLen}.`;
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
+
+    let lastSpec: starknet.Argument = { type: null, name: null };
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
@@ -151,37 +225,70 @@ function adaptComplexInput(
         throw new HardhatPluginError(PLUGIN_NAME, msg);
     }
 
-    if (type[0] === "(" && type[type.length - 1] === ")") {
-        if (!Array.isArray(input)) {
-            const msg = `Expected ${inputSpec.name} to be a tuple`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+    if (isTuple(type)) {
+        const memberTypes = extractMemberTypes(type.slice(1, -1));
+        if (isNamedTuple(type)) {
+            // Initialize an array with the user input
+            const inputLen = Object.keys(input || {}).length;
+            if (inputLen !== memberTypes.length) {
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                    memberTypes.length === 1 ? "" : "s"
+                }, got ${inputLen}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        const memberTypes = type.slice(1, -1).split(", ");
+            for (let i = 0; i < inputLen; i++) {
+                const memberSpec = parseNamedTuple(memberTypes[i]);
+                const nestedInput = input[memberSpec.name];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
+        } else {
+            if (!Array.isArray(input)) {
+                const msg = `Expected ${inputSpec.name} to be a tuple`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        if (input.length != memberTypes.length) {
-            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                memberTypes.length === 1 ? "" : "s"
-            }, got ${input.length}.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+            if (input.length != memberTypes.length) {
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                    memberTypes.length === 1 ? "" : "s"
+                }, got ${input.length}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
 
-        for (let i = 0; i < input.length; ++i) {
-            const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
-            const nestedInput = input[i];
-            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            for (let i = 0; i < input.length; ++i) {
+                const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
+                const nestedInput = input[i];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
         }
 
         return;
     }
 
+    if (isNamedTuple(type)) {
+        const memberSpec = parseNamedTuple(type);
+        const nestedInput = input[memberSpec.name];
+        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+
+        return;
+    }
+
     // otherwise a struct
+    adaptStructInput(input, inputSpec, abi, adaptedArray);
+}
+
+function adaptStructInput(
+    input: any,
+    inputSpec: starknet.Argument,
+    abi: starknet.Abi,
+    adaptedArray: string[]
+) {
+    const type = inputSpec.type;
     if (!(type in abi)) {
         throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
     }
 
     const struct = <starknet.Struct>abi[type];
-
     const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
     const expectedInputCount = struct.members.length - countArrays;
 
@@ -287,14 +394,23 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     }
 
     let generatedComplex: any = null;
-    if (type[0] === "(" && type[type.length - 1] === ")") {
-        const members = type.slice(1, -1).split(", ");
-
-        generatedComplex = [];
-        for (const member of members) {
-            const ret = generateComplexOutput(raw, rawIndex, member, abi);
-            generatedComplex.push(ret.generatedComplex);
-            rawIndex = ret.newRawIndex;
+    if (isTuple(type)) {
+        const members = extractMemberTypes(type.slice(1, -1));
+        if (isNamedTuple(type)) {
+            generatedComplex = {};
+            for (const member of members) {
+                const memberSpec = parseNamedTuple(member);
+                const ret = generateComplexOutput(raw, rawIndex, memberSpec.type, abi);
+                generatedComplex[memberSpec.name] = ret.generatedComplex;
+                rawIndex = ret.newRawIndex;
+            }
+        } else {
+            generatedComplex = [];
+            for (const member of members) {
+                const ret = generateComplexOutput(raw, rawIndex, member, abi);
+                generatedComplex.push(ret.generatedComplex);
+                rawIndex = ret.newRawIndex;
+            }
         }
     } else {
         // struct
