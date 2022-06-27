@@ -238,8 +238,8 @@ describe("My Test", function () {
    */
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = await contractFactory.deploy({ initial_balance: 10 });
-    console.log("Deployed at", contract.address);
+    const classHash = await contractFactory.declare();
+    console.log("Deployed at", contract.address, "Class hash at", classHash);
 
     await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
     await contract.invoke("increase_balance", { amount: BigInt("20") });
@@ -277,7 +277,10 @@ it("should work with arrays", async function () {
 /**
  * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
  * The contract is assumed to have:
- * - view function sum_pair(pair: (felt, felt)) -> (res: felt)
+ * - view function sum_pair(pair: (felt, felt)) -> (res : felt)
+ * - view func sum_named_pair(pair : (x : felt, y : felt) -> (res : felt)
+ * - using PairAlias = (x : felt, y : felt)
+ * - view func sum_type_alias(pair : PairAlias) -> (res : felt)
  */
 it("should work with tuples", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
@@ -285,6 +288,8 @@ it("should work with tuples", async function () {
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
+    ... = await contract.call("sum_named_pair", { pair: { x: 10, y: 20 } });
+    ... = await contract.call("sum_type_alias", { pair: { x: 10, y: 20 } });
 });
 ```
 
