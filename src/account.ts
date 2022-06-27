@@ -477,7 +477,7 @@ export class ArgentAccount extends Account {
     }
 
     /**
-     * Updates the guardian key in the contract. Cannot remove the guardian.
+     * Updates the guardian key in the contract. Set it to `undefined` to remove the guardian.
      * @param newGuardianPrivateKey private key of the guardian to update
      * @returns hash of the transaction which changes the guardian
      */
@@ -485,14 +485,17 @@ export class ArgentAccount extends Account {
         newGuardianPrivateKey: string,
         invokeOptions?: InvokeOptions
     ): Promise<string> {
-        const guardianKeyPair = ellipticCurve.getKeyPair(
-            toBN(newGuardianPrivateKey.substring(2), "hex")
-        );
-        const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
-
-        this.guardianPrivateKey = newGuardianPrivateKey;
-        this.guardianPublicKey = guardianPublicKey;
-        this.guardianKeyPair = guardianKeyPair;
+        let guardianKeyPair: ec.KeyPair;
+        let guardianPublicKey: string;
+        if (!newGuardianPrivateKey) {
+            newGuardianPrivateKey = undefined;
+            guardianPublicKey = undefined;
+        } else {
+            guardianKeyPair = ellipticCurve.getKeyPair(
+                toBN(newGuardianPrivateKey.substring(2), "hex")
+            );
+            guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
+        }
 
         const call: CallParameters = {
             functionName: "change_guardian",
@@ -500,7 +503,14 @@ export class ArgentAccount extends Account {
             calldata: { new_guardian: BigInt(guardianPublicKey) }
         };
 
-        return await this.multiInvoke([call], invokeOptions);
+        const txHash = await this.multiInvoke([call], invokeOptions);
+
+        // set after signing
+        this.guardianPrivateKey = newGuardianPrivateKey;
+        this.guardianPublicKey = guardianPublicKey;
+        this.guardianKeyPair = guardianKeyPair;
+
+        return txHash;
     }
 
     static async deployFromABI(
