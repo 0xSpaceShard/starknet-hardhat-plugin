@@ -41,7 +41,7 @@ function parseNamedTuple(namedTuple: string): starknet.Argument {
 
 // Returns types of tuple
 function extractMemberTypes(s: string): string[] {
-    // Replace all nested tuples with '#'
+    // Replace all top-level tuples with '#'
     const specialSymbol = "#";
 
     let i = 0;
@@ -269,32 +269,43 @@ function adaptComplexInput(
         const memberSpec = parseNamedTuple(type);
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-    } else {
-        // otherwise a struct
-        if (!(type in abi)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
-        }
 
-        const struct = <starknet.Struct>abi[type];
+        return;
+    }
 
-        const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
-        const expectedInputCount = struct.members.length - countArrays;
+    // otherwise a struct
+    adaptStruct(input, inputSpec, abi, adaptedArray);
+}
 
-        // Initialize an array with the user input
-        const inputLen = Object.keys(input || {}).length;
+function adaptStruct(
+    input: any,
+    inputSpec: starknet.Argument,
+    abi: starknet.Abi,
+    adaptedArray: string[]
+) {
+    const type = inputSpec.type;
+    if (!(type in abi)) {
+        throw new HardhatPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
+    }
 
-        if (expectedInputCount != inputLen) {
-            const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
-                expectedInputCount === 1 ? "" : "s"
-            }, got ${inputLen}.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
-        }
+    const struct = <starknet.Struct>abi[type];
+    const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
+    const expectedInputCount = struct.members.length - countArrays;
 
-        for (let i = 0; i < struct.members.length; ++i) {
-            const memberSpec = struct.members[i];
-            const nestedInput = input[memberSpec.name];
-            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-        }
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length;
+
+    if (expectedInputCount != inputLen) {
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
+            expectedInputCount === 1 ? "" : "s"
+        }, got ${inputLen}.`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
+    for (let i = 0; i < struct.members.length; ++i) {
+        const memberSpec = struct.members[i];
+        const nestedInput = input[memberSpec.name];
+        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
     }
 }
 
