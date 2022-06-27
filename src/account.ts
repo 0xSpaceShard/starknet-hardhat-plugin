@@ -487,7 +487,7 @@ export class ArgentAccount extends Account {
     ): Promise<string> {
         let guardianKeyPair: ec.KeyPair;
         let guardianPublicKey: string;
-        if (!newGuardianPrivateKey) {
+        if (!BigInt(newGuardianPrivateKey || 0)) {
             newGuardianPrivateKey = undefined;
             guardianPublicKey = undefined;
         } else {
@@ -500,7 +500,7 @@ export class ArgentAccount extends Account {
         const call: CallParameters = {
             functionName: "change_guardian",
             toContract: this.starknetContract,
-            calldata: { new_guardian: BigInt(guardianPublicKey) }
+            calldata: { new_guardian: BigInt(guardianPublicKey || 0) }
         };
 
         const txHash = await this.multiInvoke([call], invokeOptions);
