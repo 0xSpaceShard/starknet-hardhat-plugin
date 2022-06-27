@@ -50,7 +50,7 @@ function extractMemberTypes(s: string): string[] {
     while (i < s.length) {
         if (s[i] === "(") {
             let counter = 1;
-            let openningBracket = i;
+            const openningBracket = i;
 
             // Move to next element after '('
             i++;
@@ -274,10 +274,10 @@ function adaptComplexInput(
     }
 
     // otherwise a struct
-    adaptStruct(input, inputSpec, abi, adaptedArray);
+    adaptStructInput(input, inputSpec, abi, adaptedArray);
 }
 
-function adaptStruct(
+function adaptStructInput(
     input: any,
     inputSpec: starknet.Argument,
     abi: starknet.Abi,
