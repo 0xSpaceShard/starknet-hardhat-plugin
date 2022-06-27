@@ -18,6 +18,7 @@ import {
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
+import { StarknetChainId } from "starknet/constants";
 
 type StarknetConfig = {
     dockerizedVersion?: string;
@@ -72,14 +73,14 @@ declare module "hardhat/types/config" {
     export interface HttpNetworkConfig {
         verificationUrl?: string;
         verifiedUrl?: string;
-        starknetChainId?: string;
+        starknetChainId?: StarknetChainId;
     }
 
     export interface HardhatNetworkConfig {
         url?: string;
         venv?: string;
         dockerizedVersion?: string;
-        starknetChainId?: string;
+        starknetChainId?: StarknetChainId;
     }
 
     export interface HardhatNetworkUserConfig {

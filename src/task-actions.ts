@@ -7,8 +7,7 @@ import {
     PLUGIN_NAME,
     ABI_SUFFIX,
     ALPHA_TESTNET,
-    DEFAULT_STARKNET_NETWORK,
-    ChainID
+    DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
@@ -30,6 +29,7 @@ import {
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
+import { StarknetChainId } from "starknet/constants";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -530,7 +530,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
         networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
 
-    networkConfig.starknetChainId ||= ChainID.TESTNET;
+    networkConfig.starknetChainId ||= StarknetChainId.TESTNET;
 
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;

@@ -562,8 +562,8 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"`- [v0.1.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.1.0)
-    -   `"Argent"` - [v0.2.1](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.1)
+    -   `"OpenZeppelin"` - [GitHub commit b27101eb826fae73f49751fa384c2a0ff3377af2](https://github.com/OpenZeppelin/cairo-contracts/tree/b27101eb826fae73f49751fa384c2a0ff3377af2)
+    -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
     -   `privateKey` - if you don't provide one, it will be randomly generated
@@ -612,7 +612,7 @@ await account.invoke(contract, "increase_balance", { amount });
     -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
     -   Later load the account using `starknet.getAccountFromAddress`.
 -   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation v0.1.0
+    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation.
     -   Use the data logged by Devnet on startup (address, key)
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
@@ -645,21 +645,23 @@ const txHash = await account.multiInvoke(interactionArray);
 const results = await account.multiCall(interactionArray);
 ```
 
-OpenZeppelin and Argent account implementation work almost the same: Argent implementation has the additional Guardian signature verification.
-A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`.
+OpenZeppelin and Argent accounts have some differences:
+
+-   Argent account needs to be initialized after deployment. This has to be done with another funded account.
+-   Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
 
 ```typescript
-import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";
+import { ArgentAccount } from "hardhat/types/runtime";
 
-const account: ArgentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
+const argentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
 
-// or
+const fundedAccount = ...;
+await argentAccount.initialize({
+  fundedAccount: fundedAccount,
+  maxFee: 1e18
+});
 
-const loadedAccount = (await starknet.getAccountFromAddress(
-    accountAddress,
-    privateKey,
-    "Argent"
-)) as ArgentAccount;
+argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ```
 
 ## More examples

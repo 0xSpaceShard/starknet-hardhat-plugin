@@ -17,8 +17,12 @@ function isNumeric(value: { toString: () => string }) {
     return decimalRegex.test(strValue) || hexadecimalRegex.test(strValue);
 }
 
+const PRIME = BigInt(2) ** BigInt(251) + BigInt(17) * BigInt(2) ** BigInt(192) + BigInt(1);
+
 function toNumericString(value: { toString: () => string }) {
-    return BigInt(value.toString()).toString();
+    const num = BigInt(value.toString());
+    const nonNegativeNum = ((num % PRIME) + PRIME) % PRIME;
+    return nonNegativeNum.toString();
 }
 
 function isNamedTuple(type: string) {

@@ -1,5 +1,4 @@
 {
     "$schema": "../../network.schema",
-    "alpha": true,
-    "devnet": false
+    "alpha": true
 }
