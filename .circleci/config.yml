@@ -292,6 +292,7 @@ workflows:
                             test-name: test-configuration-tests
                           - platform: macos-node14
                             test-name: test-integrated-devnet-tests
+                  context: shardlabs
             - npm_publish:
                   context: shardlabs
                   filters:
