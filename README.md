@@ -479,10 +479,11 @@ module.exports = {
 
 [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`.
 
-Additionaly, by defining `networks["integratedDevnet"]`, you can specify:
+By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   a Python environment with starknet-devnet preinstalled
--   a different Docker image.
+-   the version of Devnet to be used for the underlying Devnet Docker image
+-   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
+-   CLI arguments to be used on Devnet startup: [options](https://github.com/Shard-Labs/starknet-devnet/#run)
 
 ```javascript
 module.exports = {
@@ -493,12 +494,15 @@ module.exports = {
     integratedDevnet: {
       url: "http://127.0.0.1:5050",
 
-      // venv: "active" <- for the active virtual environment
-      // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
-      venv: "<VENV-PATH>",
+      // venv: "active" <- for the active virtual environment with installed starknet-devnet
+      // venv: "path/to/venv" <- for env with installed starknet-devnet (created with e.g. `python -m venv path/to/venv`)
+      venv: "<VENV_PATH>",
 
       // or specify Docker image tag
-      dockerizedVersion: "0.1.18"
+      dockerizedVersion: "<DEVNET_VERSION>"
+
+      // optional devnet CLI arguments
+      args: ["--lite-mode", "--gas-price", "2000000000"]
     }
   }
   ...
