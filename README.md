@@ -329,7 +329,7 @@ More detailed documentation can be found [here](#account).
 
 ```typescript
 it("should estimate fee", async function () {
-    const fee = contract.estimateFee("increase_balance", { amount: 10n });
+    const fee = await contract.estimateFee("increase_balance", { amount: 10n });
     console.log("Estimated fee:", fee.amount, fee.unit);
 });
 ```
