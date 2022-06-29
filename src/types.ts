@@ -3,10 +3,10 @@ import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
-import { adaptInputUtil, adaptOutputUtil } from "./adapt";
+import { adaptInputUtil, adaptOutputUtil, adaptEventUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
-
+import { hash } from "starknet";
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
  * Not using an enum to avoid code duplication and reverse mapping.
@@ -699,5 +699,51 @@ export class StarknetContract {
     adaptOutput(functionName: string, rawResult: string) {
         const func = <starknet.CairoFunction>this.abi[functionName];
         return adaptOutputUtil(rawResult, func.outputs, this.abi);
+    }
+
+    /**
+     * Adapt `Event` to something more readable .
+     * @param eventNames  an array of the event's name that was emitted
+     * @param rawResult array of  the function output as as unparsed space separated string
+     * @returns structured output
+     */
+    adaptEvent(eventNames: string[], rawResult: string[]) {
+        const events: StringMap[] = [];
+        for (let i = 0; i < eventNames.length; i++) {
+            const func = <starknet.CairoEvent>this.abi[eventNames[i]];
+            const adapted = adaptEventUtil(rawResult[i], func.data, this.abi);
+            events.push(adapted);
+        }
+        return events;
+    }
+
+    /**
+     * decode Events to an array with all the arguments emmitted by the events.
+     * @param events array of unstructured events
+     * @returns array of the arguments emmitted by the events
+     */
+    async decodeEvents(events: starknet.Event[]): Promise<StringMap[]> {
+        const rawResult: string[] = [];
+        let rawResultIndex = 0;
+        for (const event of events) {
+            const result = event.data.map(BigInt).join(" ");
+            rawResult[rawResultIndex] = result;
+            rawResultIndex++;
+        }
+        const eventNames: string[] = [];
+        rawResultIndex = 0;
+        for (const functionName in this.abi) {
+            const func = this.abi[functionName];
+            if (func.type == "event") {
+                for (const event of events) {
+                    const result = hash.getSelectorFromName(func.name);
+                    if (event.keys[0] == result) {
+                        eventNames[rawResultIndex] = func.name;
+                        rawResultIndex++;
+                    }
+                }
+            }
+        }
+        return this.adaptEvent(eventNames, rawResult);
     }
 }

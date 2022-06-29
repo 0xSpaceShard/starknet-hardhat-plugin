@@ -28,7 +28,14 @@ export interface CairoFunction {
     outputs: Argument[];
 }
 
-export type AbiEntry = CairoFunction | Struct;
+export interface CairoEvent {
+    data: Argument[];
+    keys: Argument[];
+    name: string;
+    type: "event";
+}
+
+export type AbiEntry = CairoFunction | Struct | CairoEvent;
 
 export interface Abi {
     [name: string]: AbiEntry;
