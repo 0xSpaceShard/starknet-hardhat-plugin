@@ -1,5 +1,7 @@
 import axios from "axios";
 import { ChildProcess } from "child_process";
+import { HardhatPluginError } from "hardhat/plugins";
+import { PLUGIN_NAME } from "../constants";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -11,6 +13,7 @@ const DEVNET_ALIVE_URL = "is_alive";
 
 export abstract class IntegratedDevnet {
     protected childProcess: ChildProcess;
+    private stderr = "";
 
     constructor(protected host: string, protected port: string) {
         IntegratedDevnet.cleanupFns.push(this.cleanup.bind(this));
@@ -28,6 +31,15 @@ export abstract class IntegratedDevnet {
 
     public async start(): Promise<void> {
         this.childProcess = await this.spawnChildProcess();
+
+        this.childProcess.stderr.on("data", (chunk) => (this.stderr += chunk.toString()));
+
+        this.childProcess.on("close", (code) => {
+            if (code !== 0) {
+                const msg = `Integrated devnet exited with code ${code}.\n${this.stderr}`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+        });
 
         return new Promise((resolve, reject) => {
             this.childProcess.on("spawn", async () => {
