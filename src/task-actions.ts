@@ -3,13 +3,7 @@ import * as fs from "fs";
 import axios from "axios";
 import FormData = require("form-data");
 import { HardhatPluginError } from "hardhat/plugins";
-import {
-    PLUGIN_NAME,
-    ABI_SUFFIX,
-    ALPHA_TESTNET,
-    DEFAULT_STARKNET_NETWORK,
-    ChainID
-} from "./constants";
+import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -31,6 +25,7 @@ import {
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
 import { handleCache, updateCache } from "./recompiler";
+import { StarknetChainId } from "starknet/constants";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -205,17 +200,20 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
                     "Make sure that all inputs are passed within a single string (e.g --inputs '10 20 30')"
             );
         }
+
         // Check if input is the name of the contract and not a path
         if (artifactsPath === path.basename(artifactsPath)) {
             const metadataSearchTarget = path.join(
                 `${artifactsPath}.cairo`,
                 `${path.basename(artifactsPath)}.json`
             );
-            artifactsPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
+            const foundPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
+            artifactsPath = foundPath || metadataSearchTarget;
         } else if (!path.isAbsolute(artifactsPath)) {
             artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
         }
         checkArtifactExists(artifactsPath);
+
         const paths = await traverseFiles(artifactsPath, "*.json");
         const files = paths.filter(isStarknetCompilationArtifact);
         for (const file of files) {
@@ -361,20 +359,23 @@ async function handleContractVerification(
     await axios
         .post(voyagerUrl, bodyFormData.getBuffer(), {
             headers: bodyFormData.getHeaders()
-        }).catch((err) => {
+        })
+        .catch((err) => {
             throw new HardhatPluginError(
                 PLUGIN_NAME,
                 `\
 Could not verify the contract at address ${args.address}.
-${err.response.data.message ||
-                    `It is hard to tell exactly what happened, but possible reasons include:
+${
+    err.response.data.message ||
+    `It is hard to tell exactly what happened, but possible reasons include:
 - Deployment transaction hasn't been accepted or indexed yet (check its tx_status or try in a minute)
 - Wrong contract address
 - Wrong files provided
 - Wrong main contract chosen (first after --path)
 - Voyager is down`
-                }
-            `);
+}
+            `
+            );
         });
 
     console.log(`Contract has been successfuly verified at address ${args.address}`);
@@ -536,7 +537,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
         networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
 
-    networkConfig.starknetChainId ||= ChainID.TESTNET;
+    networkConfig.starknetChainId ||= StarknetChainId.TESTNET;
 
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
