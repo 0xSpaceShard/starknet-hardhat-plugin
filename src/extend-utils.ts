@@ -86,7 +86,7 @@ export function shortStringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToShortStringUtil(convertableBigInt: bigint) {
+export function bigIntToShortStringUtil(convertableBigInt: BigInt) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 

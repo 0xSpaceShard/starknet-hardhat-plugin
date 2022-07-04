@@ -30,7 +30,7 @@ export interface CairoFunction {
 
 export interface CairoEvent {
     data: Argument[];
-    keys: Argument[];
+    keys: string[];
     name: string;
     type: "event";
 }

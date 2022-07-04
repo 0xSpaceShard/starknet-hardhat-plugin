@@ -314,7 +314,7 @@ function adaptStructInput(
 }
 
 /**
- * Adapts the string resulting from a Starknet CLI function call.
+ * Adapts the string resulting from a Starknet CLI function call or server purpose of adapting event
  * This is done according to the actual output type specifed by the called function.
  *
  * @param rawResult the actual result in the form of an unparsed string
@@ -376,67 +376,6 @@ export function adaptOutputUtil(
         }
 
         lastSpec = outputSpec;
-    }
-    return adapted;
-}
-/**
- * Adapts the string resulting from a Starknet CLI function call.
- * This is done according to the actual output type specifed by the called function.
- *
- * @param rawResult the actual result in the form of an unparsed string
- * @param datas array of starknet types in the expected event data
- * @param abi the ABI of the contract whose function was called
- */
-export function adaptEventUtil(
-    rawResult: string,
-    datas: starknet.Argument[],
-    abi: starknet.Abi
-): StringMap {
-    const splitStr = rawResult.split(" ");
-    const result: bigint[] = [];
-    for (const num of splitStr) {
-        const parsed = num[0] === "-" ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
-        result.push(parsed);
-    }
-    let resultIndex = 0;
-    let lastSpec: starknet.Argument = { type: null, name: null };
-    const adapted: StringMap = {};
-
-    for (const data of datas) {
-        const currentValue = result[resultIndex];
-        if (data.type === "felt") {
-            adapted[data.name] = currentValue;
-            resultIndex++;
-        } else if (data.type.endsWith("*")) {
-            // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
-            if (lastSpec.type !== "felt") {
-                const msg = `Array size argument (felt) must appear right before ${data.name} (${data.type}).`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-
-            // Remove * from the spec type
-            const dataArrayElementType = data.type.slice(0, -1);
-            const arrLength = parseInt(adapted[lastSpec.name]);
-
-            const structArray = [];
-
-            // Iterate over the struct array, starting at index, starting at `resultIndex`
-            for (let i = 0; i < arrLength; i++) {
-                // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(result, resultIndex, dataArrayElementType, abi);
-                structArray.push(ret.generatedComplex);
-                // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
-                resultIndex = ret.newRawIndex;
-            }
-            // New resultIndex is the raw index generated from the last struct
-            adapted[data.name] = structArray;
-        } else {
-            const ret = generateComplexOutput(result, resultIndex, data.type, abi);
-            adapted[data.name] = ret.generatedComplex;
-            resultIndex = ret.newRawIndex;
-        }
-
-        lastSpec = data;
     }
     return adapted;
 }

@@ -3,10 +3,11 @@ import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
-import { adaptInputUtil, adaptOutputUtil, adaptEventUtil } from "./adapt";
+import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
 import { hash } from "starknet";
+
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
  * Not using an enum to avoid code duplication and reverse mapping.
@@ -66,6 +67,14 @@ export type Numeric = number | bigint;
  */
 export interface StringMap {
     [key: string]: any;
+}
+
+/**
+ * Object holding the event name and have a proprety data of type StingMap.
+ */
+export interface DecodedEvent {
+    name: string;
+    data: StringMap;
 }
 
 const TRANSACTION_VERSION = 0;
@@ -242,6 +251,23 @@ function handleSignature(signature: Array<Numeric>): string[] {
         return signature.map((s) => s.toString());
     }
     return [];
+}
+
+/**
+ * Extract events from the ABI.
+ * @param abi the path where ABI is stored on disk.
+ * @returns an object mapping ABI entry names with their values.
+ */
+function extractEventSpecifications(abi: starknet.Abi) {
+    const events: { [encodedName: string]: starknet.CairoEvent } = {};
+    for (const abiEntryName in abi) {
+        if (abi[abiEntryName].type === "event") {
+            const event = <starknet.CairoEvent>abi[abiEntryName];
+            const encodedEventName = hash.getSelectorFromName(event.name);
+            events[encodedEventName] = event;
+        }
+    }
+    return events;
 }
 
 export function parseFeeEstimation(raw: string): FeeEstimation {
@@ -493,6 +519,7 @@ export class StarknetContractFactory {
 export class StarknetContract {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
+    private eventsSpecifications: starknet.Abi;
     private abiPath: string;
     private networkID: string;
     private chainID: string;
@@ -505,6 +532,7 @@ export class StarknetContract {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.eventsSpecifications = extractEventSpecifications(this.abi);
         this.networkID = config.networkID;
         this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
@@ -704,46 +732,38 @@ export class StarknetContract {
     /**
      * Adapt `Event` to something more readable .
      * @param eventNames  an array of the event's name that was emitted
-     * @param rawResult array of  the function output as as unparsed space separated string
+     * @param rawEvents array of  the events output as as unparsed space separated string
      * @returns structured output
      */
-    adaptEvent(eventNames: string[], rawResult: string[]) {
-        const events: StringMap[] = [];
+    private adaptEvent(eventNames: string[], rawEvents: string[]) {
+        const events: DecodedEvent[] = [];
         for (let i = 0; i < eventNames.length; i++) {
-            const func = <starknet.CairoEvent>this.abi[eventNames[i]];
-            const adapted = adaptEventUtil(rawResult[i], func.data, this.abi);
-            events.push(adapted);
+            const event = <starknet.CairoEvent>this.abi[eventNames[i]];
+            if (!event) {
+                const msg = `Event name '${eventNames[i]}' doesn't exist on ${this.abiPath}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            const adapted = adaptOutputUtil(rawEvents[i], event.data, this.abi);
+            events.push({ name: event.name, data: adapted });
         }
         return events;
     }
 
     /**
-     * decode Events to an array with all the arguments emmitted by the events.
-     * @param events array of unstructured events
-     * @returns array of the arguments emmitted by the events
+     * Decode the events to a structured object with parameter names.
+     * @param events as received from the server.
+     * @returns structured object with parameter names.
      */
-    async decodeEvents(events: starknet.Event[]): Promise<StringMap[]> {
-        const rawResult: string[] = [];
-        let rawResultIndex = 0;
+    async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
+        const rawEvents: string[] = [];
+        const eventNames: string[] = [];
         for (const event of events) {
             const result = event.data.map(BigInt).join(" ");
-            rawResult[rawResultIndex] = result;
-            rawResultIndex++;
+            rawEvents.push(result);
+            // encoded event name guaranteed to be at index 0
+            const key = this.eventsSpecifications[event.keys[0]];
+            eventNames.push(key.name);
         }
-        const eventNames: string[] = [];
-        rawResultIndex = 0;
-        for (const functionName in this.abi) {
-            const func = this.abi[functionName];
-            if (func.type == "event") {
-                for (const event of events) {
-                    const result = hash.getSelectorFromName(func.name);
-                    if (event.keys[0] == result) {
-                        eventNames[rawResultIndex] = func.name;
-                        rawResultIndex++;
-                    }
-                }
-            }
-        }
-        return this.adaptEvent(eventNames, rawResult);
+        return this.adaptEvent(eventNames, rawEvents);
     }
 }
