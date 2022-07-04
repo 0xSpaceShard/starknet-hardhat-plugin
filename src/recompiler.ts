@@ -47,7 +47,7 @@ const upsertFile = async (cacheDirName: string): Promise<Cache> => {
     }
 };
 
-// Gets hash of each .cairo file inside contracts
+// Gets hash of each .cairo file inside source
 const getContractHash = async (paths: ProjectPathsConfig): Promise<Cache> => {
     const { starknetSources: defaultSourcesPath } = paths;
 
@@ -174,11 +174,12 @@ const compileChangedContracts = async (
 };
 
 // Updated set with changed and new contracts
-const updateSet = (
+const updateSet = async (
+    paths: ProjectPathsConfig,
     cache: Cache,
     newCacheEntry: Cache,
     changed: Set<string>
-): Set<string> => {
+): Promise<Set<string>> => {
     for (const contractName in newCacheEntry) {
         // Add new contracts that are not in cache before
         if (!cache[contractName]) {
@@ -191,6 +192,12 @@ const updateSet = (
             changed.add(contractName);
         }
     }
+
+    // Remove deleted sources from old cache by overwriting it
+    const { cache: cacheDirName } = paths;
+    const cacheFile = path.join(cacheDirName, CACHE_FILE_NAME);
+    // Save updated cache
+    await fsPromises.writeFile(cacheFile, JSON.stringify(newCacheEntry, null, " "));
 
     return changed;
 };
@@ -207,7 +214,7 @@ export const handleCache = async (hre: HardhatRuntimeEnvironment) => {
         const oldCache = await upsertFile(cacheDirName);
         const newCacheEntry = await getContractHash(hre.config.paths);
         const changedContracts = await checkArtifacts(hre.config.paths, newCacheEntry);
-        const updatedSet = updateSet(oldCache, newCacheEntry, changedContracts);
+        const updatedSet = await updateSet(hre.config.paths, oldCache, newCacheEntry, changedContracts);
         await compileChangedContracts(hre, newCacheEntry, updatedSet);
     } catch (error) {
         // If there is an error, do not recompile
