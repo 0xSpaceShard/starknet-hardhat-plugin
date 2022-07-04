@@ -112,9 +112,10 @@ export class DevnetUtils implements Devnet {
 
     public async dump(path: string) {
         return this.withErrorHandler<void>(async () => {
-            await axios.post(`${this.endpoint}/dump`, {
-                path
-            });
+            await axios.post(`${this.endpoint}/dump`,
+                {
+                    path
+                });
         }, "Request failed. Make sure your network has the /dump endpoint");
     }
 
