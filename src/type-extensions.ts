@@ -143,6 +143,20 @@ declare module "hardhat/types/runtime" {
          * @returns an object containg next block timestamp
          */
         setTime: (seconds: number) => Promise<SetTimeResponse>;
+
+        /**
+         * Preserves devnet instance to a file
+         * @param path  path for the dumping
+         * @return void
+         */
+        dump: (path: string) => Promise<void>;
+
+        /**
+         * Loads stored Starknet chain state
+         * @param path  path for the dump file
+         * @returns void
+         */
+        load: (path: string) => Promise<void>;
     }
 
     interface HardhatRuntimeEnvironment {
