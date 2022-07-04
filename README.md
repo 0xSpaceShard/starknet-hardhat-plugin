@@ -387,6 +387,22 @@ Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deplo
 await starknet.devnet.restart();
 ```
 
+#### Dumping
+
+Use `starknet.devnet.dump()` to maintain the Devnet instance from the plugin.
+
+```typescript
+await starknet.devnet.dump(path); // path to dump file (eg. dump.pkl)
+```
+
+#### Loading
+
+Dumped Devnet instance can be loaded using `starknet.devnet.load()`.
+
+```typescript
+await starknet.devnet.load(path); // path for dump file (eg. dump.pkl)
+```
+
 #### Advancing time
 
 The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
