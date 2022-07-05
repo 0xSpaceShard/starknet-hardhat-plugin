@@ -11,6 +11,8 @@ const DEVNET_ALIVE_URL = "is_alive";
 
 export abstract class IntegratedDevnet {
     protected childProcess: ChildProcess;
+    private lastError: string = null;
+    private connected: boolean = false;
 
     constructor(protected host: string, protected port: string) {
         IntegratedDevnet.cleanupFns.push(this.cleanup.bind(this));
@@ -27,27 +29,60 @@ export abstract class IntegratedDevnet {
     protected abstract cleanup(): void;
 
     public async start(): Promise<void> {
+        // Do not accept stale existing devnets, because they might
+        // be running an older incompatible version of the server
+        if (await this.isServerAlive()) {
+            throw new Error(`integrated-devnet cannot start because existing devnet already running on ${this.host}:${this.port}`)
+        }
+
         this.childProcess = await this.spawnChildProcess();
 
         return new Promise((resolve, reject) => {
+            // called on successful start of the child process
             this.childProcess.on("spawn", async () => {
+                const startTime = new Date().getTime();
                 const maxWaitMillis = 60_000;
-                const oneSleepMillis = 500;
-                const maxIterations = maxWaitMillis / oneSleepMillis;
-                for (let i = 0; i < maxIterations; ++i) {
-                    await sleep(oneSleepMillis);
-                    try {
-                        await axios.get(`http://${this.host}:${this.port}/${DEVNET_ALIVE_URL}`);
+                const oneSleepMillis = 100;
+
+                // keep checking until process has failed/exited
+                while (this.childProcess) {
+                    const elapsedMillis = new Date().getTime() - startTime;
+                    if (elapsedMillis >= maxWaitMillis) {
+                        reject(new Error(`integrated-devnet connection timed out!`));
+                        break;
+                    }
+                    if (await this.isServerAlive()) {
+                        this.connected = true;
                         resolve();
-                    } catch (err: unknown) {
-                        // cannot connect yet, devnet is not up
+                        break;
+                    } else {
+                        await sleep(oneSleepMillis);
                     }
                 }
-                reject(`Could not connect to integrated-devnet in ${maxWaitMillis} ms!`);
+            });
+            
+            // this only happens if childProcess completely fails to start
+            this.childProcess.on("error", (error) => {
+                this.childProcess = null;
+                reject(error);
             });
 
-            this.childProcess.on("error", (error) => {
-                reject(error);
+            // capture the most recent message from stderr
+            this.childProcess.stderr.on("data", (data: any) => {
+                this.lastError = data.toString();
+            });
+
+            // handle unexpected close of process
+            this.childProcess.on("close", (code) => {
+                const isAbnormalExit = this.childProcess != null;
+                this.childProcess = null;
+                if (code !== 0 && isAbnormalExit) {
+                    if (this.connected) {
+                        throw new Error(`integrated-devnet exited with code=${code} while processing transactions`);
+                    } else {
+                        reject(new Error(`integrated-devnet connect exited with code=${code}:\n${this.lastError}`));
+                    }
+                }
             });
         });
     }
@@ -58,5 +93,16 @@ export abstract class IntegratedDevnet {
         }
 
         this.cleanup();
+        this.childProcess = null;
+    }
+
+    private async isServerAlive(): Promise<boolean> {
+        try {
+            await axios.get(`http://${this.host}:${this.port}/${DEVNET_ALIVE_URL}`);
+            return true;
+        } catch (err: unknown) {
+            // cannot connect yet, devnet is not up
+            return false;
+        }
     }
 }
