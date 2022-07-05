@@ -259,10 +259,10 @@ function handleSignature(signature: Array<Numeric>): string[] {
  * @returns an object mapping ABI entry names with their values.
  */
 function extractEventSpecifications(abi: starknet.Abi) {
-    const events: { [encodedName: string]: starknet.CairoEvent } = {};
+    const events: { [encodedName: string]: starknet.EventSpecification } = {};
     for (const abiEntryName in abi) {
         if (abi[abiEntryName].type === "event") {
-            const event = <starknet.CairoEvent>abi[abiEntryName];
+            const event = <starknet.EventSpecification>abi[abiEntryName];
             const encodedEventName = hash.getSelectorFromName(event.name);
             events[encodedEventName] = event;
         }
@@ -738,7 +738,7 @@ export class StarknetContract {
     private adaptEvent(eventNames: string[], rawEvents: string[]) {
         const events: DecodedEvent[] = [];
         for (let i = 0; i < eventNames.length; i++) {
-            const event = <starknet.CairoEvent>this.abi[eventNames[i]];
+            const event = <starknet.EventSpecification>this.abi[eventNames[i]];
             if (!event) {
                 const msg = `Event name '${eventNames[i]}' doesn't exist on ${this.abiPath}.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
@@ -761,8 +761,12 @@ export class StarknetContract {
             const result = event.data.map(BigInt).join(" ");
             rawEvents.push(result);
             // encoded event name guaranteed to be at index 0
-            const key = this.eventsSpecifications[event.keys[0]];
-            eventNames.push(key.name);
+            const eventSpecifications = this.eventsSpecifications[event.keys[0]];
+            if (!eventSpecifications) {
+                const msg = `Event specifications '${event.keys[0]}' doesn't exist on ${this.abiPath}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+            eventNames.push(eventSpecifications.name);
         }
         return this.adaptEvent(eventNames, rawEvents);
     }
