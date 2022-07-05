@@ -3,8 +3,7 @@ set -e
 
 # TODO decide how it will fail - address already in use or invalid cli arg
 
-# TODO change to use ../
-source ~/shardlabs/starknet-hardhat-plugin/scripts/check-devnet-is-not-running.sh
+source ../scripts/check-devnet-is-not-running.sh
 
 check_devnet_is_not_running
 
@@ -14,4 +13,4 @@ starknet-devnet --host 127.0.0.1 --port 5050 &
 npx hardhat starknet-compile contracts/contract.cairo
 
 npx hardhat test --no-compile test/integrated-devnet.test.ts | 
-    ~/shardlabs/starknet-hardhat-plugin/scripts/assert_contains.py "Address already in use"
+    ../scripts/assert_contains.py "Address already in use"
