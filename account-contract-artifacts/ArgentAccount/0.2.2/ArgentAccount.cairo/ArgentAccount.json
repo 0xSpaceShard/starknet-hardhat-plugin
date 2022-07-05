@@ -780,8 +780,8 @@
             }
         ],
         "builtins": [
-            "pedersen", 
-            "range_check", 
+            "pedersen",
+            "range_check",
             "ecdsa"
         ],
         "data": [
