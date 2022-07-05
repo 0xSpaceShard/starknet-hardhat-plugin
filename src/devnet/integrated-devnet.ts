@@ -9,8 +9,6 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-const DEVNET_ALIVE_URL = "is_alive";
-
 export abstract class IntegratedDevnet {
     protected childProcess: ChildProcess;
     private stderr = "";
@@ -30,6 +28,11 @@ export abstract class IntegratedDevnet {
     protected abstract cleanup(): void;
 
     public async start(): Promise<void> {
+        if (await this.isAddressOccupied()) {
+            const msg = `Cannot spawn integrated-devnet: ${this.host}:${this.port} already occupied.`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
         this.childProcess = await this.spawnChildProcess();
 
         this.childProcess.stderr.on("data", (chunk) => (this.stderr += chunk.toString()));
@@ -48,11 +51,8 @@ export abstract class IntegratedDevnet {
                 const maxIterations = maxWaitMillis / oneSleepMillis;
                 for (let i = 0; i < maxIterations; ++i) {
                     await sleep(oneSleepMillis);
-                    try {
-                        await axios.get(`http://${this.host}:${this.port}/${DEVNET_ALIVE_URL}`);
+                    if (await this.isAddressOccupied()) {
                         resolve();
-                    } catch (err: unknown) {
-                        // cannot connect yet, devnet is not up
                     }
                 }
                 reject(`Could not connect to integrated-devnet in ${maxWaitMillis} ms!`);
@@ -70,5 +70,15 @@ export abstract class IntegratedDevnet {
         }
 
         this.cleanup();
+    }
+
+    private async isAddressOccupied() {
+        try {
+            await axios.get(`http://${this.host}:${this.port}/is_alive`);
+            return true;
+        } catch (err: unknown) {
+            // cannot connect yet, devnet is not up
+            return false;
+        }
     }
 }
