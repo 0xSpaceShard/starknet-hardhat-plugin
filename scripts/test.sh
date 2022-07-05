@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap 'kill $(jobs -p)' EXIT
+trap 'for killable in $(jobs -p); do kill $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
@@ -61,11 +61,15 @@ function iterate_dir(){
         # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
+        [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
+
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
+        [ "$network" == "devnet" ] && kill "$DEVNET_PID"
+
         echo "----------------------------------------------"
         echo
     done
@@ -74,20 +78,16 @@ function iterate_dir(){
 
 # perform tests on Alpha-goerli testnet only on master branch and in a linux environment
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    source ../scripts/set-alpha-vars.sh
     iterate_dir alpha
 fi
 
-# install and build devnet
-which starknet-devnet || ../scripts/install-devnet.sh
-STARKNET_DEVNET_PATH=$(which starknet-devnet)
-echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
+../scripts/install-devnet.sh
 
 # test integrated devnet
 iterate_dir integrated-devnet
 
-# run devnet
-starknet-devnet --host 127.0.0.1 --port 5050 &
-
+source ../scripts/set-devnet-vars.sh
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"

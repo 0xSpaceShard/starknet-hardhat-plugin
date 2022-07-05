@@ -5,11 +5,13 @@ import { IntegratedDevnet } from "./integrated-devnet";
 
 export class VenvDevnet extends IntegratedDevnet {
     private command: string;
+    private args?: string[];
 
-    constructor(venvPath: string, host: string, port: string) {
+    constructor(venvPath: string, host: string, port: string, args?: string[]) {
         super(host, port);
 
         this.command = "starknet-devnet";
+        this.args = args;
 
         if (venvPath !== "active") {
             this.command = getPrefixedCommand(normalizeVenvPath(venvPath), this.command);
@@ -17,7 +19,8 @@ export class VenvDevnet extends IntegratedDevnet {
     }
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
-        return spawn(this.command, ["--host", this.host, "--port", this.port]);
+        const args = ["--host", this.host, "--port", this.port].concat(this.args || []);
+        return spawn(this.command, args);
     }
 
     protected cleanup(): void {

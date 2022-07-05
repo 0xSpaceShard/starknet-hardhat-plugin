@@ -8,9 +8,11 @@ const DEVNET_DOCKER_INTERNAL_PORT = 5050;
 
 export class DockerDevnet extends IntegratedDevnet {
     private docker: HardhatDocker;
+    private args?: string[];
 
-    constructor(private image: Image, host: string, port: string) {
+    constructor(private image: Image, host: string, port: string, args?: string[]) {
         super(host, port);
+        this.args = args;
     }
 
     private async pullImage() {
@@ -28,8 +30,7 @@ export class DockerDevnet extends IntegratedDevnet {
         await this.pullImage();
 
         console.log(`Starting the "${CONTAINER_NAME}" Docker container`);
-
-        return spawn("docker", [
+        const args = [
             "run",
             "--detach",
             "--rm",
@@ -38,7 +39,8 @@ export class DockerDevnet extends IntegratedDevnet {
             "-p",
             `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
             `${this.image.repository}:${this.image.tag}`
-        ]);
+        ].concat(this.args || []);
+        return spawn("docker", args);
     }
 
     protected cleanup(): void {

@@ -14,7 +14,6 @@ import { VenvDevnet } from "./venv-devnet";
 import { IntegratedDevnet } from "./integrated-devnet";
 
 export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): IntegratedDevnet {
-    console.warn("\x1b[33m%s\x1b[0m", "Warning! Using experimental feature: integrated-devnet");
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre.config.networks,
@@ -30,7 +29,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
     }
 
     if (devnetNetwork.venv) {
-        return new VenvDevnet(devnetNetwork.venv, hostname, port);
+        return new VenvDevnet(devnetNetwork.venv, hostname, port, devnetNetwork?.args);
     }
 
     if (hostname === "localhost") {
@@ -40,13 +39,16 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Integrat
         );
     }
 
-    const tag = getImageTagByArch(devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG);
+    const tag = getImageTagByArch(
+        devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG
+    );
     return new DockerDevnet(
         {
             repository: DEVNET_DOCKER_REPOSITORY,
             tag
         },
         hostname,
-        port
+        port,
+        devnetNetwork?.args
     );
 }

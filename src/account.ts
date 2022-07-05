@@ -40,13 +40,18 @@ type ExecuteCallParameters = {
  * Multiple implementations can exist, each will be defined by an extension of this Abstract class
  */
 export abstract class Account {
+    public publicKey: string;
+    public keyPair: ec.KeyPair;
+
     protected constructor(
         public starknetContract: StarknetContract,
         public privateKey: string,
-        public publicKey: string,
-        public keyPair: ec.KeyPair,
         protected hre: HardhatRuntimeEnvironment
-    ) {}
+    ) {
+        const signer = generateKeys(privateKey);
+        this.publicKey = signer.publicKey;
+        this.keyPair = signer.keyPair;
+    }
 
     /**
      * Uses the account contract as a proxy to invoke a function on the target contract with a signature
@@ -210,8 +215,6 @@ export abstract class Account {
      * @param nonce current nonce
      * @param maxFee the maximum fee amoutn set for the contract interaction
      * @param version the transaction version
-     * @param chainId the chain identifier
-     * @param executionFunctionName the name of the cairo function that performs the execution
      * @returns the message hash for the multicall and the arguments to execute it with
      */
     private handleMultiInteract(
@@ -292,16 +295,14 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.1.0";
+    static readonly VERSION = "b27101eb826fae73f49751fa384c2a0ff3377af2";
 
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
-        publicKey: string,
-        keyPair: ec.KeyPair,
         hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair, hre);
+        super(starknetContract, privateKey, hre);
     }
 
     protected getMessageHash(
@@ -311,7 +312,31 @@ export class OpenZeppelinAccount extends Account {
         maxFee: string,
         version: string
     ): string {
-        return hash.hashMulticall(accountAddress, callArray, nonce, maxFee, version);
+        const hashable: Array<BigNumberish> = [callArray.length];
+        const rawCalldata: RawCalldata = [];
+        callArray.forEach((call) => {
+            hashable.push(
+                call.contractAddress,
+                hash.starknetKeccak(call.entrypoint),
+                rawCalldata.length,
+                call.calldata.length
+            );
+            rawCalldata.push(...call.calldata);
+        });
+
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+
+        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        const calldataHash = hash.computeHashOnElements(hashable);
+        return hash.computeHashOnElements([
+            TransactionHashPrefix.INVOKE,
+            version,
+            accountAddress,
+            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            calldataHash,
+            maxFee,
+            chainId
+        ]);
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -337,13 +362,7 @@ export class OpenZeppelinAccount extends Account {
             options
         );
 
-        return new OpenZeppelinAccount(
-            contract,
-            signer.privateKey,
-            signer.publicKey,
-            signer.keyPair,
-            hre
-        );
+        return new OpenZeppelinAccount(contract, signer.privateKey, hre);
     }
 
     static async getAccountFromAddress(
@@ -373,7 +392,7 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, publicKey, keyPair, hre);
+        return new OpenZeppelinAccount(contract, privateKey, hre);
     }
 
     protected getExecutionFunctionName(): string {
@@ -396,7 +415,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
-    static readonly VERSION = "0.2.1";
+    static readonly VERSION = "0.2.2";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -405,17 +424,9 @@ export class ArgentAccount extends Account {
     constructor(
         starknetContract: StarknetContract,
         privateKey: string,
-        publicKey: string,
-        keyPair: ec.KeyPair,
-        guardianPrivateKey: string,
-        guardianPublicKey: string,
-        guardianKeyPair: ec.KeyPair,
         hre: HardhatRuntimeEnvironment
     ) {
-        super(starknetContract, privateKey, publicKey, keyPair, hre);
-        this.guardianPublicKey = guardianPublicKey;
-        this.guardianPrivateKey = guardianPrivateKey;
-        this.guardianKeyPair = guardianKeyPair;
+        super(starknetContract, privateKey, hre);
     }
 
     protected getMessageHash(
@@ -438,7 +449,6 @@ export class ArgentAccount extends Account {
         });
 
         const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
-        const adaptedChainId = BigInt("0x" + Buffer.from(chainId).toString("hex")).toString();
 
         hashable.push(rawCalldata.length, ...rawCalldata, nonce);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -449,42 +459,58 @@ export class ArgentAccount extends Account {
             hash.getSelectorFromName(this.getExecutionFunctionName()),
             calldataHash,
             maxFee,
-            adaptedChainId
+            chainId
         ]);
     }
 
     protected getSignatures(messageHash: string): bigint[] {
-        const signerSignatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
-        const guardianSignatures = signMultiCall(
-            this.guardianPublicKey,
-            this.guardianKeyPair,
-            messageHash
-        );
-        return signerSignatures.concat(guardianSignatures);
+        const signatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
+        if (this.guardianPrivateKey) {
+            const guardianSignatures = signMultiCall(
+                this.guardianPublicKey,
+                this.guardianKeyPair,
+                messageHash
+            );
+            signatures.push(...guardianSignatures);
+        }
+        return signatures;
     }
 
     /**
-     * Updates the guardian key in the contract
+     * Updates the guardian key in the contract. Set it to `undefined` to remove the guardian.
      * @param newGuardianPrivateKey private key of the guardian to update
-     * @returns
+     * @returns hash of the transaction which changes the guardian
      */
-    async setGuardian(newGuardianPrivateKey: string): Promise<string> {
-        const guardianKeyPair = ellipticCurve.getKeyPair(
-            toBN(newGuardianPrivateKey.substring(2), "hex")
-        );
-        const guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
-
-        this.guardianPrivateKey = newGuardianPrivateKey;
-        this.guardianPublicKey = guardianPublicKey;
-        this.guardianKeyPair = guardianKeyPair;
+    async setGuardian(
+        newGuardianPrivateKey: string,
+        invokeOptions?: InvokeOptions
+    ): Promise<string> {
+        let guardianKeyPair: ec.KeyPair;
+        let guardianPublicKey: string;
+        if (!BigInt(newGuardianPrivateKey || 0)) {
+            newGuardianPrivateKey = undefined;
+            guardianPublicKey = undefined;
+        } else {
+            guardianKeyPair = ellipticCurve.getKeyPair(
+                toBN(newGuardianPrivateKey.substring(2), "hex")
+            );
+            guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
+        }
 
         const call: CallParameters = {
             functionName: "change_guardian",
             toContract: this.starknetContract,
-            calldata: { new_guardian: BigInt(guardianPublicKey) }
+            calldata: { new_guardian: BigInt(guardianPublicKey || 0) }
         };
 
-        return await this.multiInvoke([call]);
+        const txHash = await this.multiInvoke([call], invokeOptions);
+
+        // set after signing
+        this.guardianPrivateKey = newGuardianPrivateKey;
+        this.guardianPublicKey = guardianPublicKey;
+        this.guardianKeyPair = guardianKeyPair;
+
+        return txHash;
     }
 
     static async deployFromABI(
@@ -499,26 +525,11 @@ export class ArgentAccount extends Account {
         );
 
         const signer = generateKeys(options.privateKey);
-        const guardian = generateKeys();
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy({}, options);
 
-        await contract.invoke("initialize", {
-            signer: BigInt(signer.publicKey),
-            guardian: BigInt(guardian.publicKey)
-        });
-
-        return new ArgentAccount(
-            contract,
-            signer.privateKey,
-            signer.publicKey,
-            signer.keyPair,
-            guardian.privateKey,
-            guardian.publicKey,
-            guardian.keyPair,
-            hre
-        );
+        return new ArgentAccount(contract, signer.privateKey, hre);
     }
 
     static async getAccountFromAddress(
@@ -540,14 +551,33 @@ export class ArgentAccount extends Account {
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
-        if (BigInt(publicKey) !== expectedPubKey) {
+        const account = new ArgentAccount(contract, privateKey, hre);
+
+        if (expectedPubKey === BigInt(0)) {
+            // not yet initialized
+        } else if (BigInt(publicKey) !== expectedPubKey) {
             throw new HardhatPluginError(
                 PLUGIN_NAME,
                 "The provided private key is not compatible with the public key stored in the contract."
             );
         }
 
-        return new ArgentAccount(contract, privateKey, publicKey, keyPair, "0", "0", null, hre);
+        return account;
+    }
+
+    public async initialize(initializeOptions: {
+        fundedAccount: Account;
+        maxFee?: Numeric;
+    }): Promise<void> {
+        await initializeOptions.fundedAccount.invoke(
+            this.starknetContract,
+            "initialize",
+            {
+                signer: this.publicKey,
+                guardian: this.guardianPublicKey || "0"
+            },
+            { maxFee: initializeOptions.maxFee || 0 }
+        );
     }
 
     protected getExecutionFunctionName(): string {

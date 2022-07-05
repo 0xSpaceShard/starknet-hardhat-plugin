@@ -1,11 +1,7 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { HardhatPluginError } from "hardhat/plugins";
-import {
-    PLUGIN_NAME,
-    CHECK_STATUS_TIMEOUT,
-    CHECK_STATUS_RECOVER_TIMEOUT
-} from "./constants";
+import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -110,6 +106,10 @@ export class InteractChoice {
          */
         public transactionVersion: Numeric
     ) {}
+}
+
+export function extractClassHash(response: string) {
+    return extractFromResponse(response, /^Contract class hash: (.*)$/m);
 }
 
 export function extractTxHash(response: string) {
@@ -268,6 +268,11 @@ function defaultToPendingBlock<T extends { blockNumber?: BlockNumber }>(options:
     return adaptedOptions;
 }
 
+export interface DeclareOptions {
+    token?: string;
+    signature?: Array<Numeric>;
+}
+
 export interface DeployOptions {
     salt?: string;
     token?: string;
@@ -339,6 +344,39 @@ export class StarknetContractFactory {
                 this.constructorAbi = <starknet.CairoFunction>abiEntry;
             }
         }
+    }
+
+    /**
+     * Declare a contract class.
+     * @param options optional arguments to class declaration
+     * @returns the class hash as a hex string
+     */
+    async declare(options: DeclareOptions = {}): Promise<string> {
+        const executed = await this.starknetWrapper.declare({
+            contract: this.metadataPath,
+            gatewayUrl: this.gatewayUrl,
+            token: options.token,
+            signature: handleSignature(options.signature)
+        });
+        if (executed.statusCode) {
+            const msg = `Could not declare class: ${executed.stderr.toString()}`;
+            throw new HardhatPluginError(PLUGIN_NAME, msg);
+        }
+
+        const executedOutput = executed.stdout.toString();
+        const classHash = extractClassHash(executedOutput);
+        const txHash = extractTxHash(executedOutput);
+
+        return new Promise((resolve, reject) => {
+            iterativelyCheckStatus(
+                txHash,
+                this.starknetWrapper,
+                this.gatewayUrl,
+                this.feederGatewayUrl,
+                () => resolve(classHash),
+                reject
+            );
+        });
     }
 
     /**
@@ -587,7 +625,12 @@ export class StarknetContract {
         options: CallOptions = {}
     ): Promise<StringMap> {
         const adaptedOptions = defaultToPendingBlock(options);
-        const executed = await this.interact(InteractChoice.CALL, functionName, args, adaptedOptions);
+        const executed = await this.interact(
+            InteractChoice.CALL,
+            functionName,
+            args,
+            adaptedOptions
+        );
         if (options.rawOutput) {
             return { response: executed.stdout.toString().split(" ") };
         }

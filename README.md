@@ -94,7 +94,7 @@ The Alpha networks and integrated Devnet are available by default, you don't nee
 
 -   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
 -   `--starknet-network alpha-mainnet` for Alpha Mainnet
--   `--starknet-network integrated-devnet` for integrated Devnet (experimental)
+-   `--starknet-network integrated-devnet` for integrated Devnet
 
 ```
 npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
@@ -238,8 +238,8 @@ describe("My Test", function () {
    */
   it("should work for a fresh deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = await contractFactory.deploy({ initial_balance: 10 });
-    console.log("Deployed at", contract.address);
+    const classHash = await contractFactory.declare();
+    console.log("Deployed at", contract.address, "Class hash at", classHash);
 
     await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
     await contract.invoke("increase_balance", { amount: BigInt("20") });
@@ -277,7 +277,10 @@ it("should work with arrays", async function () {
 /**
  * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
  * The contract is assumed to have:
- * - view function sum_pair(pair: (felt, felt)) -> (res: felt)
+ * - view function sum_pair(pair: (felt, felt)) -> (res : felt)
+ * - view func sum_named_pair(pair : (x : felt, y : felt) -> (res : felt)
+ * - using PairAlias = (x : felt, y : felt)
+ * - view func sum_type_alias(pair : PairAlias) -> (res : felt)
  */
 it("should work with tuples", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
@@ -285,6 +288,8 @@ it("should work with tuples", async function () {
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
+    ... = await contract.call("sum_named_pair", { pair: { x: 10, y: 20 } });
+    ... = await contract.call("sum_type_alias", { pair: { x: 10, y: 20 } });
 });
 ```
 
@@ -324,7 +329,7 @@ More detailed documentation can be found [here](#account).
 
 ```typescript
 it("should estimate fee", async function () {
-    const fee = contract.estimateFee("increase_balance", { amount: 10n });
+    const fee = await contract.estimateFee("increase_balance", { amount: 10n });
     console.log("Estimated fee:", fee.amount, fee.unit);
 });
 ```
@@ -475,14 +480,15 @@ module.exports = {
 };
 ```
 
-### Runtime network - Integrated Devnet - Experimental
+### Runtime network - Integrated Devnet
 
-As an experimental feature, you can use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) as a network without the need to run it as a separate process. By default, it will use the latest Docker image of Devnet listening on `http://127.0.0.1:5050`.
+[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`.
 
-Additionaly, by defining `networks["integratedDevnet"]`, you can specify:
+By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   a Python environment with starknet-devnet preinstalled
--   a different Docker image.
+-   the version of Devnet to be used for the underlying Devnet Docker image
+-   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
+-   CLI arguments to be used on Devnet startup: [options](https://github.com/Shard-Labs/starknet-devnet/#run)
 
 ```javascript
 module.exports = {
@@ -493,12 +499,15 @@ module.exports = {
     integratedDevnet: {
       url: "http://127.0.0.1:5050",
 
-      // venv: "active" <- for the active virtual environment
-      // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
-      venv: "<VENV-PATH>",
+      // venv: "active" <- for the active virtual environment with installed starknet-devnet
+      // venv: "path/to/venv" <- for env with installed starknet-devnet (created with e.g. `python -m venv path/to/venv`)
+      venv: "<VENV_PATH>",
 
       // or specify Docker image tag
-      dockerizedVersion: "0.1.18"
+      dockerizedVersion: "<DEVNET_VERSION>"
+
+      // optional devnet CLI arguments
+      args: ["--lite-mode", "--gas-price", "2000000000"]
     }
   }
   ...
@@ -562,8 +571,8 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"`- [v0.1.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.1.0)
-    -   `"Argent"` - [v0.2.1](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.1)
+    -   `"OpenZeppelin"` - [GitHub commit b27101eb826fae73f49751fa384c2a0ff3377af2](https://github.com/OpenZeppelin/cairo-contracts/tree/b27101eb826fae73f49751fa384c2a0ff3377af2)
+    -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
     -   `privateKey` - if you don't provide one, it will be randomly generated
@@ -612,7 +621,7 @@ await account.invoke(contract, "increase_balance", { amount });
     -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
     -   Later load the account using `starknet.getAccountFromAddress`.
 -   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation v0.1.0
+    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation.
     -   Use the data logged by Devnet on startup (address, key)
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
@@ -645,21 +654,23 @@ const txHash = await account.multiInvoke(interactionArray);
 const results = await account.multiCall(interactionArray);
 ```
 
-OpenZeppelin and Argent account implementation work almost the same: Argent implementation has the additional Guardian signature verification.
-A key pair is generated for the Guardian the same way it is for the Signer, however if you want to change it, you must cast the `account` object to `ArgentAccount`.
+OpenZeppelin and Argent accounts have some differences:
+
+-   Argent account needs to be initialized after deployment. This has to be done with another funded account.
+-   Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
 
 ```typescript
-import { ArgentAccount } from "@shardlabs/starknet-hardhat-plugin/dist/account";
+import { ArgentAccount } from "hardhat/types/runtime";
 
-const account: ArgentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
+const argentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
 
-// or
+const fundedAccount = ...;
+await argentAccount.initialize({
+  fundedAccount: fundedAccount,
+  maxFee: 1e18
+});
 
-const loadedAccount = (await starknet.getAccountFromAddress(
-    accountAddress,
-    privateKey,
-    "Argent"
-)) as ArgentAccount;
+argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ```
 
 ## More examples
