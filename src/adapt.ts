@@ -314,7 +314,7 @@ function adaptStructInput(
 }
 
 /**
- * Adapts the string resulting from a Starknet CLI function call.
+ * Adapts the string resulting from a Starknet CLI function call or server purpose of adapting event
  * This is done according to the actual output type specifed by the called function.
  *
  * @param rawResult the actual result in the form of an unparsed string

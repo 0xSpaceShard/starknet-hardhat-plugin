@@ -124,4 +124,20 @@ export class DevnetUtils implements Devnet {
             return response.data;
         }, "Request failed. Make sure your network has the /predeployed_accounts endpoint");
     }
+
+    public async dump(path: string) {
+        return this.withErrorHandler<void>(async () => {
+            await axios.post(`${this.endpoint}/dump`, {
+                path
+            });
+        }, "Request failed. Make sure your network has the /dump endpoint");
+    }
+
+    public async load(path: string) {
+        return this.withErrorHandler<void>(async () => {
+            await axios.post(`${this.endpoint}/load`, {
+                path
+            });
+        }, "Request failed. Make sure your network has the /load endpoint");
+    }
 }
