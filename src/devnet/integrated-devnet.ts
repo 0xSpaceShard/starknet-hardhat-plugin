@@ -29,7 +29,7 @@ export abstract class IntegratedDevnet {
     protected abstract cleanup(): void;
 
     public async start(): Promise<void> {
-        if (await this.isAddressOccupied()) {
+        if (await this.isServerAlive()) {
             const msg = `Cannot spawn integrated-devnet: ${this.host}:${this.port} already occupied.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
@@ -44,7 +44,7 @@ export abstract class IntegratedDevnet {
             this.childProcess.on("spawn", async () => {
                 const startTime = new Date().getTime();
                 const maxWaitMillis = 60_000;
-                const oneSleepMillis = 100;
+                const oneSleepMillis = 500;
 
                 // keep checking until process has failed/exited
                 while (this.childProcess) {
@@ -57,7 +57,7 @@ export abstract class IntegratedDevnet {
                             )
                         );
                         break;
-                    } else if (await this.isAddressOccupied()) {
+                    } else if (await this.isServerAlive()) {
                         this.connected = true;
                         resolve();
                         break;
@@ -104,7 +104,7 @@ export abstract class IntegratedDevnet {
         this.childProcess = null;
     }
 
-    private async isAddressOccupied() {
+    private async isServerAlive() {
         try {
             await axios.get(`http://${this.host}:${this.port}/is_alive`);
             return true;
