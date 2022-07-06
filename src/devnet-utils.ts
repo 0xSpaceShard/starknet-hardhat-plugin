@@ -44,14 +44,14 @@ export interface IncreaseTimeResponse {
 }
 
 export interface PredeployedAccount {
-    initial_balance: number,
-    private_key: string,
-    public_key: string,
-    address: string
+    initial_balance: number;
+    private_key: string;
+    public_key: string;
+    address: string;
 }
 
 export class DevnetUtils implements Devnet {
-    constructor(private hre: HardhatRuntimeEnvironment) { }
+    constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
         return `${this.hre.config.starknet.networkUrl}`;
@@ -101,18 +101,17 @@ export class DevnetUtils implements Devnet {
                 `${this.endpoint}/increase_time`,
                 {
                     time: seconds
-                });
+                }
+            );
             return response.data;
         }, "Request failed. Make sure your network has the /increase_time endpoint");
     }
 
     public async setTime(seconds: number) {
         return this.withErrorHandler<SetTimeResponse>(async () => {
-            const response = await axios.post<SetTimeResponse>(
-                `${this.endpoint}/set_time`,
-                {
-                    time: seconds
-                });
+            const response = await axios.post<SetTimeResponse>(`${this.endpoint}/set_time`, {
+                time: seconds
+            });
             return response.data;
         }, "Request failed. Make sure your network has the /set_time endpoint");
     }
