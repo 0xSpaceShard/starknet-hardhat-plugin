@@ -37,7 +37,9 @@ export abstract class IntegratedDevnet {
         this.childProcess = await this.spawnChildProcess();
 
         // capture the most recent message from stderr
-        this.childProcess.stderr.on("data", (chunk) => (this.lastError = chunk.toString()));
+        this.childProcess.stderr.on("data", (chunk) => {
+            this.lastError = chunk.toString();
+        });
 
         return new Promise((resolve, reject) => {
             // called on successful start of the child process
