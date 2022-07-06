@@ -52,12 +52,8 @@ export abstract class IntegratedDevnet {
                 while (this.childProcess) {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
-                        reject(
-                            new HardhatPluginError(
-                                PLUGIN_NAME,
-                                "integrated-devnet connection timed out!"
-                            )
-                        );
+                        const msg = "integrated-devnet connection timed out!";
+                        reject(new HardhatPluginError(PLUGIN_NAME, msg));
                         break;
                     } else if (await this.isServerAlive()) {
                         this.connected = true;
@@ -81,17 +77,12 @@ export abstract class IntegratedDevnet {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        throw new HardhatPluginError(
-                            PLUGIN_NAME,
-                            `integrated-devnet exited with code=${code} while processing transactions`
-                        );
+                        const msg = `integrated-devnet exited with code=${code} while processing transactions`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    } else {
+                        const msg = `integrated-devnet connect exited with code=${code}:\n${this.lastError}`;
+                        reject(new HardhatPluginError(PLUGIN_NAME, msg));
                     }
-                    reject(
-                        new HardhatPluginError(
-                            PLUGIN_NAME,
-                            `integrated-devnet connect exited with code=${code}:\n${this.lastError}`
-                        )
-                    );
                 }
             });
         });
