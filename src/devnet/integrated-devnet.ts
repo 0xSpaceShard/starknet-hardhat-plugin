@@ -11,7 +11,8 @@ function sleep(amountMillis: number): Promise<void> {
 
 export abstract class IntegratedDevnet {
     protected childProcess: ChildProcess;
-    private stderr = "";
+    private lastError: string = null;
+    private connected = false;
 
     constructor(protected host: string, protected port: string) {
         IntegratedDevnet.cleanupFns.push(this.cleanup.bind(this));
@@ -35,31 +36,61 @@ export abstract class IntegratedDevnet {
 
         this.childProcess = await this.spawnChildProcess();
 
-        this.childProcess.stderr.on("data", (chunk) => (this.stderr += chunk.toString()));
-
-        this.childProcess.on("close", (code) => {
-            if (code !== 0) {
-                const msg = `Integrated devnet exited with code ${code}.\n${this.stderr}`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-        });
+        // capture the most recent message from stderr
+        this.childProcess.stderr.on("data", (chunk) => (this.lastError = chunk.toString()));
 
         return new Promise((resolve, reject) => {
+            // called on successful start of the child process
             this.childProcess.on("spawn", async () => {
+                const startTime = new Date().getTime();
                 const maxWaitMillis = 60_000;
-                const oneSleepMillis = 500;
-                const maxIterations = maxWaitMillis / oneSleepMillis;
-                for (let i = 0; i < maxIterations; ++i) {
-                    await sleep(oneSleepMillis);
-                    if (await this.isAddressOccupied()) {
+                const oneSleepMillis = 100;
+
+                // keep checking until process has failed/exited
+                while (this.childProcess) {
+                    const elapsedMillis = new Date().getTime() - startTime;
+                    if (elapsedMillis >= maxWaitMillis) {
+                        reject(
+                            new HardhatPluginError(
+                                PLUGIN_NAME,
+                                "integrated-devnet connection timed out!"
+                            )
+                        );
+                        break;
+                    } else if (await this.isAddressOccupied()) {
+                        this.connected = true;
                         resolve();
+                        break;
+                    } else {
+                        await sleep(oneSleepMillis);
                     }
                 }
-                reject(`Could not connect to integrated-devnet in ${maxWaitMillis} ms!`);
             });
 
+            // this only happens if childProcess completely fails to start
             this.childProcess.on("error", (error) => {
+                this.childProcess = null;
                 reject(error);
+            });
+
+            // handle unexpected close of process
+            this.childProcess.on("close", (code) => {
+                const isAbnormalExit = this.childProcess != null;
+                this.childProcess = null;
+                if (code !== 0 && isAbnormalExit) {
+                    if (this.connected) {
+                        throw new HardhatPluginError(
+                            PLUGIN_NAME,
+                            `integrated-devnet exited with code=${code} while processing transactions`
+                        );
+                    }
+                    reject(
+                        new HardhatPluginError(
+                            PLUGIN_NAME,
+                            `integrated-devnet connect exited with code=${code}:\n${this.lastError}`
+                        )
+                    );
+                }
             });
         });
     }
@@ -70,6 +101,7 @@ export abstract class IntegratedDevnet {
         }
 
         this.cleanup();
+        this.childProcess = null;
     }
 
     private async isAddressOccupied() {
@@ -77,7 +109,7 @@ export abstract class IntegratedDevnet {
             await axios.get(`http://${this.host}:${this.port}/is_alive`);
             return true;
         } catch (err: unknown) {
-            // cannot connect yet, devnet is not up
+            // cannot connect, so address is not occupied
             return false;
         }
     }
