@@ -13,7 +13,8 @@ import {
     FlushResponse,
     IncreaseTimeResponse,
     LoadL1MessagingContractResponse,
-    SetTimeResponse
+    SetTimeResponse,
+    PredeployedAccount
 } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block } from "./starknet-types";
@@ -143,6 +144,12 @@ declare module "hardhat/types/runtime" {
          * @returns an object containg next block timestamp
          */
         setTime: (seconds: number) => Promise<SetTimeResponse>;
+
+        /**
+         * Fetch the predeployed accounts
+         * @returns an object containg array of account's metadata
+         */
+        getPredeployedAccounts: () => Promise<PredeployedAccount[]>;
 
         /**
          * Preserves devnet instance to a file
