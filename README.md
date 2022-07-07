@@ -564,7 +564,7 @@ Recompilation is performed when contracts are updated or when artifacts are miss
 - `npx hardhat starknet-deploy`
 - `npx hardhat starknet-invoke`
 - `npx hardhat starknet-call`
-- `npx hardhat run` and
+- `npx hardhat run`
 - `npx hardhat test`
 
 This feature is turned off by default and is specified in the `hardhat.config.ts` file.
