@@ -35,6 +35,10 @@ export interface EventSpecification {
     type: "event";
 }
 
+export interface EventAbi {
+    [encodedName: string]: EventSpecification;
+}
+
 export type AbiEntry = CairoFunction | Struct | EventSpecification;
 
 export interface Abi {
