@@ -572,8 +572,6 @@ This feature is turned off by default and is specified in the `hardhat.config.ts
 ```typescript
 module.exports = {
     starknet: {
-        // venv: "active" <- for the active virtual environment
-        // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
         recompile: true // <- to switch recompilation on
     }
 };
