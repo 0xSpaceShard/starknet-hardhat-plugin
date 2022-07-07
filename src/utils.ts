@@ -35,7 +35,9 @@ export function adaptLog(msg: string): string {
     return msg
         .replace("--network", "--starknet-network")
         .replace("gateway_url", "gateway-url")
-        .replace("--account_contract", "--account-contract");
+        .replace("--account_contract", "--account-contract")
+        .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
+        .replace(/\\n/g, "\n"); // use newlines from json response for formatting
 }
 
 const DOCKER_HOST = "host.docker.internal";

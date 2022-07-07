@@ -211,7 +211,7 @@ export async function iterativelyCheckStatus(
         reject(
             new Error(
                 "Transaction rejected. Error message:\n\n" +
-                    statusObject.tx_failure_reason.error_message
+                    adaptLog(statusObject.tx_failure_reason.error_message)
             )
         );
     } else {
@@ -613,7 +613,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
+                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
                     reject(error);
                 }
             );
@@ -740,7 +740,7 @@ export class StarknetContract {
         for (let i = 0; i < eventNames.length; i++) {
             const event = <starknet.EventSpecification>this.abi[eventNames[i]];
             if (!event) {
-                const msg = `Event name '${eventNames[i]}' doesn't exist on ${this.abiPath}.`;
+                const msg = `Event "${eventNames[i]}" doesn't exist in ${this.abiPath}.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
             const adapted = adaptOutputUtil(rawEvents[i], event.data, this.abi);
@@ -763,7 +763,7 @@ export class StarknetContract {
             // encoded event name guaranteed to be at index 0
             const eventSpecifications = this.eventsSpecifications[event.keys[0]];
             if (!eventSpecifications) {
-                const msg = `Event specifications '${event.keys[0]}' doesn't exist on ${this.abiPath}.`;
+                const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
             eventNames.push(eventSpecifications.name);
