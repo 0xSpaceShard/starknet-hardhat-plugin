@@ -36,9 +36,10 @@ CACHE_CONTENT_BEFORE=$(cat cache/cairo-files-cache.json)
 rm -rf contracts/contract_test_cache.cairo
 npx hardhat test --no-compile test/recompilation/recompilation-main-test.ts
 # Check that the cache file was updated
-CACHE_CONTENT_AFTER=$(cat cache/cairo-files-cache.json)
-if [ "$CACHE_CONTENT_BEFORE" == "$CACHE_CONTENT_AFTER" ]; then
-    echo "Cache file not updated"
+if ! diff -q <(echo "$CACHE_CONTENT_BEFORE") <(cat cache/cairo-files-cache.json); then
+    echo "Success"
+else
+    echo "Cache file was not updated"
     exit 1
 fi
 
