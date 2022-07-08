@@ -14,6 +14,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
+-   [Contribute](#contribute)
 
 ## Install
 
@@ -694,3 +695,7 @@ argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ## More examples
 
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
+
+## Contribute
+
+If you're a developer willing to contribute, go through the [development readme](/README-dev.md).
