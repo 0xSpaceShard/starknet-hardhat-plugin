@@ -637,12 +637,14 @@ await account.invoke(contract, "increase_balance", { amount });
     -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
     -   Later load the account using `starknet.getAccountFromAddress`.
 -   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation.
-    -   Use the data logged by Devnet on startup (address, key)
+    -   Since v0.2.3, Devnet comes with prefunded OpenZeppelin accounts.
+    -   To get the addresses and keys of these accounts, the options are:
+        -   use `starknet.devnet.getPredeployedAccounts()`
+        -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
 
-Once your account has funds, you can specify a maximum fee greater than zero:
+Once your account has funds, you can specify a max fee greater than zero:
 
 ```typescript
 await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });

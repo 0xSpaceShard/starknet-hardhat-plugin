@@ -211,7 +211,7 @@ export async function iterativelyCheckStatus(
         reject(
             new Error(
                 "Transaction rejected. Error message:\n\n" +
-                    statusObject.tx_failure_reason.error_message
+                    adaptLog(statusObject.tx_failure_reason.error_message)
             )
         );
     } else {
@@ -259,7 +259,7 @@ function handleSignature(signature: Array<Numeric>): string[] {
  * @returns an object mapping ABI entry names with their values.
  */
 function extractEventSpecifications(abi: starknet.Abi) {
-    const events: { [encodedName: string]: starknet.EventSpecification } = {};
+    const events: starknet.EventAbi = {};
     for (const abiEntryName in abi) {
         if (abi[abiEntryName].type === "event") {
             const event = <starknet.EventSpecification>abi[abiEntryName];
@@ -519,7 +519,7 @@ export class StarknetContractFactory {
 export class StarknetContract {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
-    private eventsSpecifications: starknet.Abi;
+    private eventsSpecifications: starknet.EventAbi;
     private abiPath: string;
     private networkID: string;
     private chainID: string;
@@ -613,7 +613,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
+                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
                     reject(error);
                 }
             );
@@ -730,44 +730,25 @@ export class StarknetContract {
     }
 
     /**
-     * Adapt `Event` to something more readable .
-     * @param eventNames  an array of the event's name that was emitted
-     * @param rawEvents array of  the events output as as unparsed space separated string
-     * @returns structured output
-     */
-    private adaptEvent(eventNames: string[], rawEvents: string[]) {
-        const events: DecodedEvent[] = [];
-        for (let i = 0; i < eventNames.length; i++) {
-            const event = <starknet.EventSpecification>this.abi[eventNames[i]];
-            if (!event) {
-                const msg = `Event name '${eventNames[i]}' doesn't exist on ${this.abiPath}.`;
-                throw new HardhatPluginError(PLUGIN_NAME, msg);
-            }
-            const adapted = adaptOutputUtil(rawEvents[i], event.data, this.abi);
-            events.push({ name: event.name, data: adapted });
-        }
-        return events;
-    }
-
-    /**
      * Decode the events to a structured object with parameter names.
      * @param events as received from the server.
      * @returns structured object with parameter names.
      */
     async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
-        const rawEvents: string[] = [];
-        const eventNames: string[] = [];
+        const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
-            const result = event.data.map(BigInt).join(" ");
-            rawEvents.push(result);
+            const rawEventData = event.data.map(BigInt).join(" ");
             // encoded event name guaranteed to be at index 0
-            const eventSpecifications = this.eventsSpecifications[event.keys[0]];
-            if (!eventSpecifications) {
-                const msg = `Event specifications '${event.keys[0]}' doesn't exist on ${this.abiPath}.`;
+            const eventSpecification = this.eventsSpecifications[event.keys[0]];
+            if (!eventSpecification) {
+                const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
                 throw new HardhatPluginError(PLUGIN_NAME, msg);
             }
-            eventNames.push(eventSpecifications.name);
+
+            const adapted = adaptOutputUtil(rawEventData, eventSpecification.data, this.abi);
+            decodedEvents.push({ name: eventSpecification.name, data: adapted });
         }
-        return this.adaptEvent(eventNames, rawEvents);
+
+        return decodedEvents;
     }
 }

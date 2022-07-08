@@ -149,7 +149,9 @@ export function adaptInputUtil(
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
         if (inputSpec.type === "felt") {
-            const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a felt`;
+            const errorMsg =
+                `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
+                `got: ${typeof currentValue}`;
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
