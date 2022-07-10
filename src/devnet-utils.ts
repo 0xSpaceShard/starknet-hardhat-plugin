@@ -43,8 +43,15 @@ export interface IncreaseTimeResponse {
     timestamp_increased_by: number;
 }
 
+export interface PredeployedAccount {
+    initial_balance: number;
+    private_key: string;
+    public_key: string;
+    address: string;
+}
+
 export class DevnetUtils implements Devnet {
-    constructor(private hre: HardhatRuntimeEnvironment) { }
+    constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
         return `${this.hre.config.starknet.networkUrl}`;
@@ -94,19 +101,43 @@ export class DevnetUtils implements Devnet {
                 `${this.endpoint}/increase_time`,
                 {
                     time: seconds
-                });
+                }
+            );
             return response.data;
         }, "Request failed. Make sure your network has the /increase_time endpoint");
     }
 
     public async setTime(seconds: number) {
         return this.withErrorHandler<SetTimeResponse>(async () => {
-            const response = await axios.post<SetTimeResponse>(
-                `${this.endpoint}/set_time`,
-                {
-                    time: seconds
-                });
+            const response = await axios.post<SetTimeResponse>(`${this.endpoint}/set_time`, {
+                time: seconds
+            });
             return response.data;
         }, "Request failed. Make sure your network has the /set_time endpoint");
+    }
+
+    public async getPredeployedAccounts() {
+        return this.withErrorHandler<PredeployedAccount[]>(async () => {
+            const response = await axios.get<PredeployedAccount[]>(
+                `${this.endpoint}/predeployed_accounts`
+            );
+            return response.data;
+        }, "Request failed. Make sure your network has the /predeployed_accounts endpoint");
+    }
+
+    public async dump(path: string) {
+        return this.withErrorHandler<void>(async () => {
+            await axios.post(`${this.endpoint}/dump`, {
+                path
+            });
+        }, "Request failed. Make sure your network has the /dump endpoint");
+    }
+
+    public async load(path: string) {
+        return this.withErrorHandler<void>(async () => {
+            await axios.post(`${this.endpoint}/load`, {
+                path
+            });
+        }, "Request failed. Make sure your network has the /load endpoint");
     }
 }

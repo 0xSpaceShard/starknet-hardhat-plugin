@@ -14,6 +14,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
+-   [Contribute](#contribute)
 
 ## Install
 
@@ -387,6 +388,22 @@ Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deplo
 await starknet.devnet.restart();
 ```
 
+#### Dumping
+
+Use `starknet.devnet.dump()` to maintain the Devnet instance from the plugin.
+
+```typescript
+await starknet.devnet.dump(path); // path to dump file (eg. dump.pkl)
+```
+
+#### Loading
+
+Dumped Devnet instance can be loaded using `starknet.devnet.load()`.
+
+```typescript
+await starknet.devnet.load(path); // path for dump file (eg. dump.pkl)
+```
+
 #### Advancing time
 
 The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
@@ -591,7 +608,7 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"` - [GitHub commit b27101eb826fae73f49751fa384c2a0ff3377af2](https://github.com/OpenZeppelin/cairo-contracts/tree/b27101eb826fae73f49751fa384c2a0ff3377af2)
+    -   `"OpenZeppelin"` - [v0.2.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.2.0)
     -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
@@ -641,12 +658,14 @@ await account.invoke(contract, "increase_balance", { amount });
     -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
     -   Later load the account using `starknet.getAccountFromAddress`.
 -   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded accounts which use the OpenZeppelin account implementation.
-    -   Use the data logged by Devnet on startup (address, key)
+    -   Since v0.2.3, Devnet comes with prefunded OpenZeppelin accounts.
+    -   To get the addresses and keys of these accounts, the options are:
+        -   use `starknet.devnet.getPredeployedAccounts()`
+        -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
 
-Once your account has funds, you can specify a maximum fee greater than zero:
+Once your account has funds, you can specify a max fee greater than zero:
 
 ```typescript
 await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
@@ -696,3 +715,7 @@ argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
 ## More examples
 
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
+
+## Contribute
+
+If you're a developer willing to contribute, go through the [development readme](/README-dev.md).

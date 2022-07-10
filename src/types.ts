@@ -6,6 +6,7 @@ import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
+import { hash } from "starknet";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -66,6 +67,14 @@ export type Numeric = number | bigint;
  */
 export interface StringMap {
     [key: string]: any;
+}
+
+/**
+ * Object holding the event name and have a proprety data of type StingMap.
+ */
+export interface DecodedEvent {
+    name: string;
+    data: StringMap;
 }
 
 const TRANSACTION_VERSION = 0;
@@ -202,7 +211,7 @@ export async function iterativelyCheckStatus(
         reject(
             new Error(
                 "Transaction rejected. Error message:\n\n" +
-                    statusObject.tx_failure_reason.error_message
+                    adaptLog(statusObject.tx_failure_reason.error_message)
             )
         );
     } else {
@@ -242,6 +251,23 @@ function handleSignature(signature: Array<Numeric>): string[] {
         return signature.map((s) => s.toString());
     }
     return [];
+}
+
+/**
+ * Extract events from the ABI.
+ * @param abi the path where ABI is stored on disk.
+ * @returns an object mapping ABI entry names with their values.
+ */
+function extractEventSpecifications(abi: starknet.Abi) {
+    const events: starknet.EventAbi = {};
+    for (const abiEntryName in abi) {
+        if (abi[abiEntryName].type === "event") {
+            const event = <starknet.EventSpecification>abi[abiEntryName];
+            const encodedEventName = hash.getSelectorFromName(event.name);
+            events[encodedEventName] = event;
+        }
+    }
+    return events;
 }
 
 export function parseFeeEstimation(raw: string): FeeEstimation {
@@ -493,6 +519,7 @@ export class StarknetContractFactory {
 export class StarknetContract {
     private starknetWrapper: StarknetWrapper;
     private abi: starknet.Abi;
+    private eventsSpecifications: starknet.EventAbi;
     private abiPath: string;
     private networkID: string;
     private chainID: string;
@@ -505,6 +532,7 @@ export class StarknetContract {
         this.starknetWrapper = config.starknetWrapper;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
+        this.eventsSpecifications = extractEventSpecifications(this.abi);
         this.networkID = config.networkID;
         this.chainID = config.chainID;
         this.gatewayUrl = config.gatewayUrl;
@@ -585,7 +613,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.\n` + error.message);
+                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
                     reject(error);
                 }
             );
@@ -699,5 +727,28 @@ export class StarknetContract {
     adaptOutput(functionName: string, rawResult: string) {
         const func = <starknet.CairoFunction>this.abi[functionName];
         return adaptOutputUtil(rawResult, func.outputs, this.abi);
+    }
+
+    /**
+     * Decode the events to a structured object with parameter names.
+     * @param events as received from the server.
+     * @returns structured object with parameter names.
+     */
+    async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
+        const decodedEvents: DecodedEvent[] = [];
+        for (const event of events) {
+            const rawEventData = event.data.map(BigInt).join(" ");
+            // encoded event name guaranteed to be at index 0
+            const eventSpecification = this.eventsSpecifications[event.keys[0]];
+            if (!eventSpecification) {
+                const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
+                throw new HardhatPluginError(PLUGIN_NAME, msg);
+            }
+
+            const adapted = adaptOutputUtil(rawEventData, eventSpecification.data, this.abi);
+            decodedEvents.push({ name: eventSpecification.name, data: adapted });
+        }
+
+        return decodedEvents;
     }
 }

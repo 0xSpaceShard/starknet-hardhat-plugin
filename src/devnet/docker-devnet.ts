@@ -29,16 +29,16 @@ export class DockerDevnet extends IntegratedDevnet {
     protected async spawnChildProcess(): Promise<ChildProcess> {
         await this.pullImage();
 
-        console.log(`Starting the "${CONTAINER_NAME}" Docker container`);
+        const formattedImage = `${this.image.repository}:${this.image.tag}`;
+        console.log(`Starting the "${CONTAINER_NAME}" Docker container (${formattedImage})`);
         const args = [
             "run",
-            "--detach",
             "--rm",
             "--name",
             CONTAINER_NAME,
             "-p",
             `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
-            `${this.image.repository}:${this.image.tag}`
+            formattedImage
         ].concat(this.args || []);
         return spawn("docker", args);
     }
