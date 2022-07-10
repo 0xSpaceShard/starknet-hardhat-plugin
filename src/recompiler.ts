@@ -70,7 +70,6 @@ export abstract class Cache {
     }
 }
 
-// FileName - HashPair
 export class Recompiler extends Cache {
     constructor(hre: HardhatRuntimeEnvironment) {
         super(hre);
