@@ -56,7 +56,7 @@ export abstract class Cache {
         const cacheFilePath = this.getCacheFilePath();
         if (fs.existsSync(cacheFilePath)) {
             const cacheBuffer = await this.fsPromises.readFile(cacheFilePath);
-            this.setCache(JSON.parse(cacheBuffer.toString()));
+            this.setCache(JSON.parse(cacheBuffer.toString() || "{}"));
         } else {
             await fs.promises.writeFile(cacheFilePath, JSON.stringify({}) + "\n");
             this.setCache({});
