@@ -32,13 +32,11 @@ echo "#" >> "$DEPENDENCY_PATH"
 npx hardhat test --no-compile test/recompilation/recompilation-dependency-test.ts
 
 echo "Testing Recompilation with source deleted"
-CACHE_CONTENT_BEFORE=$(cat cache/cairo-files-cache.json)
+cp cache/cairo-files-cache.json cache-content-before.json
 rm -rf contracts/contract_test_cache.cairo
 npx hardhat test --no-compile test/recompilation/recompilation-main-test.ts
-# Check that the cache file was updated
-if ! diff -q <(echo "$CACHE_CONTENT_BEFORE") <(cat cache/cairo-files-cache.json); then
-    echo "Success"
-else
+# Check that the cache file was updated using diff
+if diff -q cache-content-before.json cache/cairo-files-cache.json; then
     echo "Cache file was not updated"
     exit 1
 fi
