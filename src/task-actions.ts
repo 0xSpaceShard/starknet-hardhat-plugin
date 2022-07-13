@@ -436,6 +436,7 @@ async function starknetInteractAction(
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
         signature: args.signature?.split(/\s+/),
         wallet: wallet ? wallet.modulePath : undefined,
+        chainID: hre.config.starknet.networkConfig.starknetChainId,
         account: wallet ? wallet.accountName : undefined,
         accountDir: wallet ? accountDir : undefined,
         gatewayUrl: gatewayUrl,
