@@ -237,10 +237,8 @@ describe("My Test", function () {
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
    */
-  it("should work for a fresh deployment", async function () {
+  it("should work with old-style deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await contractFactory.declare();
-    console.log("Deployed at", contract.address, "Class hash at", classHash);
 
     await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
     await contract.invoke("increase_balance", { amount: BigInt("20") });
@@ -261,8 +259,10 @@ describe("My Test", function () {
     // You are expected to have a Deployer contract with a deploy method
     const deployer = await starknet.getContractFactory("Deployer");
     const account = await starknet.getAccountFromAddress(...);
-    await account.invoke(deployer, "my_deploy", { class_hash: classHash, sample_ctor_arg: 10 });
-    // if "my_deploy" emitted an event, extract the address from there
+    const opts = { maxFee: BigInt(...) };
+    const txHash = await account.invoke(deployer, "my_deploy", { class_hash: classHash }, opts);
+    const deploymentAddress = ...; // get the address, e.g. from an event emitted by deploy
+    const contract = contractFactory.getContractAt(deploymentAddress);
   });
 ```
 
