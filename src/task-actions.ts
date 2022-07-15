@@ -24,7 +24,7 @@ import {
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
-import { StarknetChainId } from "starknet/constants";
+
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -436,6 +436,7 @@ async function starknetInteractAction(
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
         signature: args.signature?.split(/\s+/),
         wallet: wallet ? wallet.modulePath : undefined,
+        chainID: hre.config.starknet.networkConfig.starknetChainId,
         account: wallet ? wallet.accountName : undefined,
         accountDir: wallet ? accountDir : undefined,
         gatewayUrl: gatewayUrl,
@@ -531,8 +532,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
         networkConfig = getNetwork(networkName, hre.config.networks, "default settings");
     }
 
-    networkConfig.starknetChainId ||= StarknetChainId.TESTNET;
-
+    // The hre.starknet.PROPERTY (in the second column) is to allow users access starknet runtime properties
     hre.config.starknet.network = hre.starknet.network = networkName;
     hre.config.starknet.networkUrl = hre.starknet.networkUrl = networkConfig.url;
     hre.config.starknet.networkConfig = hre.starknet.networkConfig = networkConfig;
