@@ -295,7 +295,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.2.0";
+    static readonly VERSION = "0.2.1";
 
     constructor(
         starknetContract: StarknetContract,
