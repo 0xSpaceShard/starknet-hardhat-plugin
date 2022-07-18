@@ -150,6 +150,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
         }
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
+        const recompiler = new Recompiler(hre);
         for (const file of files) {
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
@@ -172,10 +173,10 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
             });
 
             // Update cache after compilation
-            const recompiler = new Recompiler(hre);
             await recompiler.updateCache(args, file, outputPath, abiPath, cairoPath);
             statusCode += processExecuted(executed, true);
         }
+        await recompiler.saveCache();
     }
 
     if (statusCode) {
