@@ -52,7 +52,7 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 -   configuring the `hardhat.config.ts`
 -   executing the `check.sh` script (potentially modifying it to address path differences)
 
-To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables.
+To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 
 ### Executing tests on CircleCI
 
