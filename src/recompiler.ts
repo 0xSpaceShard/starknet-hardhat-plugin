@@ -18,7 +18,7 @@ interface ContractData {
 // Cache file name
 const CACHE_FILE_NAME = "cairo-files-cache.json";
 
-export abstract class Cache {
+export class Cache {
     protected cache: Record<string, ContractData> = {};
     public fsPromises = fs.promises;
 
@@ -70,10 +70,13 @@ export abstract class Cache {
     }
 }
 
-export class Recompiler extends Cache {
+export class Recompiler {
+    private cache: Cache;
+    private hre: HardhatRuntimeEnvironment;
+
     constructor(hre: HardhatRuntimeEnvironment) {
-        super(hre);
-        this.loadCache();
+        this.cache = new Cache(hre);
+        this.hre = hre;
     }
 
     // Gets hash of each .cairo file inside source
@@ -88,7 +91,7 @@ export class Recompiler extends Cache {
         const filesList = await traverseFiles(defaultSourcesPath, "*.cairo");
         // Select file name
         for (const cairoContract of filesList) {
-            const data = await this.fsPromises.readFile(cairoContract);
+            const data = await this.cache.fsPromises.readFile(cairoContract);
             const hash = createHash("sha256");
             hash.update(data);
             const suffix = cairoContract.replace(sourceRegex, "");
@@ -115,7 +118,7 @@ export class Recompiler extends Cache {
         cairoPath?: string,
         args?: TaskArguments
     ): Promise<Record<string, ContractData>> {
-        const data = await this.fsPromises.readFile(file);
+        const data = await this.cache.fsPromises.readFile(file);
         const hash = createHash("sha256");
         hash.update(data);
 
@@ -221,8 +224,8 @@ export class Recompiler extends Cache {
         }
 
         // Remove deleted sources from old cache by overwriting it
-        this.setCache(newCacheEntry);
-        await this.saveCache();
+        this.cache.setCache(newCacheEntry);
+        await this.cache.saveCache();
 
         return changed;
     }
@@ -234,7 +237,7 @@ export class Recompiler extends Cache {
 
         const paths = this.hre.config.paths;
         try {
-            const oldCache = await this.getCache();
+            const oldCache = await this.cache.getCache();
             const newCacheEntry = await this.getContractHash(paths);
             const changedContracts = await this.checkArtifacts(paths, newCacheEntry);
             const updatedSet = await this.updateSet(oldCache, newCacheEntry, changedContracts);
@@ -254,9 +257,14 @@ export class Recompiler extends Cache {
         abi: string,
         cairoPath?: string
     ): Promise<void> {
-        const oldCache = await this.getCache();
+        const oldCache = await this.cache.getCache();
         const newCacheEntry = await this.getCacheEntry(file, output, abi, cairoPath, args);
-        this.cache = this.getUpdatedCache(oldCache, newCacheEntry);
-        this.saveCache();
+        const updatedCache = this.getUpdatedCache(oldCache, newCacheEntry);
+        this.cache.setCache(updatedCache);
+    }
+
+    // Calls save cache after compilation
+    public async saveCache(): Promise<void> {
+        await this.cache.saveCache();
     }
 }
