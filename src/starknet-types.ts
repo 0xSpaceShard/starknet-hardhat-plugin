@@ -113,6 +113,7 @@ export interface Block {
     timestamp: number;
     transaction_receipts: TransactionReceipt[];
     transactions: TransactionData[];
+    starknet_version: string;
 }
 
 export type TxFailureReason = {
