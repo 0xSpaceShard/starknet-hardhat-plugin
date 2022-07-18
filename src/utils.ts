@@ -166,6 +166,7 @@ export function getNetwork<N extends NetworkConfig>(
             `Cannot use network ${networkName}. No "url" specified.`
         );
     }
+    network.starknetChainId ||= StarknetChainId.TESTNET;
     return network;
 }
 

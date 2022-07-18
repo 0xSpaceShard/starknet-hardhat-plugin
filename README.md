@@ -19,7 +19,7 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 ## Install
 
 ```
-npm install @shardlabs/starknet-hardhat-plugin --save-dev
+npm i @shardlabs/starknet-hardhat-plugin --save-dev
 ```
 
 Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
@@ -237,10 +237,8 @@ describe("My Test", function () {
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
    */
-  it("should work for a fresh deployment", async function () {
+  it("should work with old-style deployment", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await contractFactory.declare();
-    console.log("Deployed at", contract.address, "Class hash at", classHash);
 
     await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
     await contract.invoke("increase_balance", { amount: BigInt("20") });
@@ -249,10 +247,22 @@ describe("My Test", function () {
     expect(res).to.deep.equal(BigInt(40)); // you can also use 40n instead of BigInt(40)
   });
 
-  it("should work for a previously deployed contract", async function () {
+  it("should load a previously deployed contract", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = contractFactory.getContractAt("0x123..."); // you might wanna put an actual address here
-    await contract.invoke(...);
+    const contract = contractFactory.getContractAt("0x123..."); // address of a previously deployed contract
+  });
+
+  it("should declare and deploy", async function() {
+    const contractFactory = await starknet.getContractFactory("MyContract");
+    const classHash = await contractFactory.declare();
+
+    // You are expected to have a Deployer contract with a deploy method
+    const deployer = await starknet.getContractFactory("Deployer");
+    const account = await starknet.getAccountFromAddress(...);
+    const opts = { maxFee: BigInt(...) };
+    const txHash = await account.invoke(deployer, "my_deploy", { class_hash: classHash }, opts);
+    const deploymentAddress = ...; // get the address, e.g. from an event emitted by deploy
+    const contract = contractFactory.getContractAt(deploymentAddress);
   });
 ```
 
@@ -348,7 +358,9 @@ it("should return transaction data and transaction receipt", async function () {
     const txHash = await contract.invoke("increase_balance", { amount: 10 });
 
     const receipt = await starknet.getTransactionReceipt(txHash);
-    console.log(receipt.events);
+    const decodedEvents = await contract.decodeEvents(receipt.events);
+    // decodedEvents contains hex data array converted to a structured object
+    // { name: "increase_balance_called", data: { current_balance: 0n, amount: 10n } }
 });
 ```
 
@@ -718,4 +730,4 @@ An example Hardhat project using this plugin can be found [here](https://github.
 
 ## Contribute
 
-If you're a developer willing to contribute, go through the [development readme](/README-dev.md).
+If you're a developer willing to contribute, go through [the development readme](/README-dev.md).
