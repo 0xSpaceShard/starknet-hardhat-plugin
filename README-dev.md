@@ -52,6 +52,8 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 -   configuring the `hardhat.config.ts`
 -   executing the `check.sh` script (potentially modifying it to address path differences)
 
+To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables.
+
 ### Executing tests on CircleCI
 
 When you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/Shard-Labs/workflows/starknet-hardhat-plugin).
@@ -77,4 +79,4 @@ There are two wrappers around the Starknet CLI, defined in [starknet-wrapper.ts]
 
 ## Version management
 
-When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered. Releases are also tracked on GitHub (with git tags).
+When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered. Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags).
