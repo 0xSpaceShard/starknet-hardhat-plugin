@@ -40,17 +40,6 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
 };
 
-export type TxFailureReason = {
-    code: string;
-    error_message: string;
-    tx_id: string;
-};
-
-export type FeeEstimation = {
-    amount: bigint;
-    unit: string;
-};
-
 export interface StarknetContractConfig {
     starknetWrapper: StarknetWrapper;
     abiPath: string;
@@ -146,7 +135,7 @@ function extractFromResponse(response: string, regex: RegExp) {
 type StatusObject = {
     block_hash: string;
     tx_status: TxStatus;
-    tx_failure_reason?: TxFailureReason;
+    tx_failure_reason?: starknet.TxFailureReason;
 };
 
 async function checkStatus(
@@ -270,15 +259,19 @@ function extractEventSpecifications(abi: starknet.Abi) {
     return events;
 }
 
-export function parseFeeEstimation(raw: string): FeeEstimation {
-    const matched = raw.match(/^The estimated fee is: (?<amount>.*) WEI \(.* ETH\)\./);
-    if (matched) {
+export function parseFeeEstimation(raw: string): starknet.FeeEstimation {
+    const matchedAmount = raw.match(/^The estimated fee is: (\d*) WEI \(.* ETH\)\./m);
+    const matchedGasUsage = raw.match(/^Gas usage: (\d*)/m);
+    const matchedGasPrice = raw.match(/^Gas price: (\d*) WEI/m);
+    if (matchedAmount && matchedGasUsage && matchedGasPrice) {
         return {
-            amount: BigInt(matched.groups.amount),
-            unit: "wei"
+            amount: BigInt(matchedAmount[1]),
+            unit: "wei",
+            gas_price: BigInt(matchedGasPrice[1]),
+            gas_usage: BigInt(matchedGasUsage[1])
         };
     }
-    throw new HardhatPluginError(PLUGIN_NAME, "Cannot parse fee estimation response.");
+    throw new HardhatPluginError(PLUGIN_NAME, `Cannot parse fee estimation response:\n${raw}`);
 }
 
 /**
@@ -676,7 +669,7 @@ export class StarknetContract {
         functionName: string,
         args?: StringMap,
         options: EstimateFeeOptions = {}
-    ): Promise<FeeEstimation> {
+    ): Promise<starknet.FeeEstimation> {
         const adaptedOptions = defaultToPendingBlock(options);
         const executed = await this.interact(
             InteractChoice.ESTIMATE_FEE,

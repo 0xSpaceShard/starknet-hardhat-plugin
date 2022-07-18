@@ -114,3 +114,16 @@ export interface Block {
     transaction_receipts: TransactionReceipt[];
     transactions: TransactionData[];
 }
+
+export type TxFailureReason = {
+    code: string;
+    error_message: string;
+    tx_id: string;
+};
+
+export type FeeEstimation = {
+    amount: bigint;
+    unit: string;
+    gas_price: bigint;
+    gas_usage: bigint;
+};
