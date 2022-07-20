@@ -543,6 +543,55 @@ module.exports = {
 };
 ```
 
+### Installing third-party libraries
+
+If you want to install a third-party Cairo library and be able to import it in your Cairo files, use the following pattern:
+
+#### With npm packages:
+
+1. Install (example package: `influenceth__cairo_math_64x61@npm:@influenceth/cairo-math-64x61`)
+
+```
+npm install --save-dev influenceth__cairo_math_64x61@npm:@influenceth/cairo-math-64x61
+```
+
+2. Edit the `paths.cairoPaths` section of your `hardhat.config` file ([docs](#paths)):
+
+```typescript
+paths: {
+    cairoPaths: ["./node_modules"]
+}
+```
+
+3. Import
+
+```
+from influenceth__cairo_math_64x61.contracts.Math64x61 import Math64x61_ONE, Math64x61_mul
+```
+
+#### With pip packages:
+
+1. Install (example package: `openzeppelin-cairo-contracts`)
+
+```
+pip install openzeppelin-cairo-contracts
+```
+
+2. If you are installing in a virtual environment, edit the `paths.cairoPaths` section of your `hardhat.config` file ([docs](#paths)) as:
+
+```typescript
+paths: {
+    // this directory contains the openzeppelin directory
+    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"];
+}
+```
+
+3. Import
+
+```
+from openzeppelin.token.erc20.library import ERC20
+```
+
 ### Wallet
 
 To configure a wallet for your project, specify it by adding an entry to `wallets` in your hardhat config file.
@@ -656,6 +705,7 @@ await account.invoke(contract, "increase_balance", { amount });
         -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
+    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to give funds to the accounts that you deployed
 
 Once your account has funds, you can specify a max fee greater than zero:
 
