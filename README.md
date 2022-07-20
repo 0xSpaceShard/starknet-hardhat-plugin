@@ -705,7 +705,7 @@ await account.invoke(contract, "increase_balance", { amount });
         -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
-    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to give funds to the accounts that you deployed
+    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to fund the accounts that you deployed
 
 Once your account has funds, you can specify a max fee greater than zero:
 
