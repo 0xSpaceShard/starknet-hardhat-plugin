@@ -16,7 +16,7 @@ echo "Verifying contract at $address"
 echo "Sleeping to allow Voyager to index the deployment"
 sleep 1m
 
-npx hardhat starknet-verify --starknet-network "$NETWORK" --path $MAIN_CONTRACT $UTIL_CONTRACT --address $address --compiler-version 0.8.1 --license "No License (None)"
+npx hardhat starknet-verify --starknet-network "$NETWORK" --path $MAIN_CONTRACT $UTIL_CONTRACT --address $address --compiler-version 0.9.0 --license "No License (None)"
 echo "Sleeping to allow Voyager to register the verification"
 sleep 15s
 

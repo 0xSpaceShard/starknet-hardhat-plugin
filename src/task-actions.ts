@@ -338,6 +338,7 @@ async function handleContractVerification(
 
     const bodyFormData = new FormData();
     bodyFormData.append("compiler-version", args.compilerVersion);
+    bodyFormData.append("account-contract", args.accountContract ? "true" : "false");
     bodyFormData.append("license", args.license || "No License (None)");
 
     // Dependencies (non-main contracts) are in args.paths
