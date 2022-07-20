@@ -270,7 +270,7 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
     .addOptionalVariadicPositionalParam(
         "paths",
-        "The paths of the dependencies of the contract specified in --path" +
+        "The paths of the dependencies of the contract specified in --path\n" +
             "All dependencies should be in the same folder as the contract." +
             "e.g. path/to/dependency1 path/to/dependency2"
     )
