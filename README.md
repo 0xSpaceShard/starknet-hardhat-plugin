@@ -341,7 +341,7 @@ More detailed documentation can be found [here](#account).
 ```typescript
 it("should estimate fee", async function () {
     const fee = await contract.estimateFee("increase_balance", { amount: 10n });
-    console.log("Estimated fee:", fee.amount, fee.unit);
+    console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
 });
 ```
 
@@ -705,7 +705,7 @@ await account.invoke(contract, "increase_balance", { amount });
         -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
-    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to give funds to the accounts that you deployed
+    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to fund the accounts that you deployed
 
 Once your account has funds, you can specify a max fee greater than zero:
 

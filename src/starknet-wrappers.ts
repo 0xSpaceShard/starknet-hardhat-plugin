@@ -103,7 +103,8 @@ export abstract class StarknetWrapper {
             "--contract",
             options.contract,
             "--gateway_url",
-            options.gatewayUrl
+            options.gatewayUrl,
+            "--no_wallet"
         ];
 
         if (options.signature && options.signature.length) {
@@ -125,7 +126,8 @@ export abstract class StarknetWrapper {
             "--contract",
             options.contract,
             "--gateway_url",
-            options.gatewayUrl
+            options.gatewayUrl,
+            "--no_wallet"
         ];
 
         if (options.inputs && options.inputs.length) {
