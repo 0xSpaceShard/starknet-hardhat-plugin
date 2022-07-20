@@ -115,6 +115,8 @@ Like in the previous command, this plugin relies on `--starknet-network`, but wi
 
 The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
+We pass `--acount-contract` to tell the verifier that the contract is of type account.
+
 For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
 ### `starknet-deploy-account`

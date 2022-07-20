@@ -2,7 +2,7 @@ import "../dist/src/index.js";
 
 module.exports = {
     starknet: {
-        dockerizedVersion: "0.8.1",
+        dockerizedVersion: "0.9.0",
         network: process.env.NETWORK
     },
     networks: {
