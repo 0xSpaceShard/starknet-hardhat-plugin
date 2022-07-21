@@ -86,7 +86,7 @@ export abstract class ExternalServer {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = `${this.processName} exited with code=${code} while processing transactions`;
+                        const msg = `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     } else {
                         const msg = `${this.processName} connect exited with code=${code}:\n${this.lastError}`;
