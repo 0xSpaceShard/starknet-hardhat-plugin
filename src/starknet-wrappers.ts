@@ -1,8 +1,10 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
+import axios from "axios";
 import { spawnSync } from "child_process";
 import { HardhatPluginError } from "hardhat/plugins";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
+import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
@@ -532,25 +534,39 @@ export class DockerWrapper extends StarknetWrapper {
 
 export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
-    private starknetPath: string;
 
-    constructor(venvPath: string) {
+    constructor(venvPath: string, private starknetVenvproxy = new StarknetVenvProxy()) {
         super();
 
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
             this.starknetCompilePath = "starknet-compile";
-            this.starknetPath = "starknet";
         } else {
             venvPath = normalizeVenvPath(venvPath);
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
 
             this.starknetCompilePath = getPrefixedCommand(venvPath, "starknet-compile");
-            this.starknetPath = getPrefixedCommand(venvPath, "starknet");
         }
     }
 
-    private async execute(commandPath: string, preparedOptions: string[]): Promise<ProcessResult> {
+    /**
+     * Unlike `executeDirectly`, interacts with Starknet CLI through a server
+     * @param preparedOptions
+     * @returns
+     */
+    private async execute(preparedOptions: string[]): Promise<ProcessResult> {
+        await this.starknetVenvproxy.ensureStarted();
+        const response = await axios.post<ProcessResult>(this.starknetVenvproxy.url, {
+            args: preparedOptions
+        });
+
+        return response.data;
+    }
+
+    private async executeDirectly(
+        commandPath: string,
+        preparedOptions: string[]
+    ): Promise<ProcessResult> {
         const process = spawnSync(commandPath, preparedOptions);
 
         if (!process.stdout) {
@@ -566,55 +582,55 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
-        const executed = await this.execute(this.starknetCompilePath, preparedOptions);
+        const executed = await this.executeDirectly(this.starknetCompilePath, preparedOptions);
         return executed;
     }
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeclareOptions(options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeployOptions(options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInteractOptions(options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
         const deployAccountScript = this.getPythonDeployAccountScript(options);
-        const executed = await this.execute("python", ["-c", deployAccountScript]);
+        const executed = await this.executeDirectly("python", ["-c", deployAccountScript]);
         return executed;
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
-        const executed = await this.execute(this.starknetPath, preparedOptions);
+        const executed = await this.execute(preparedOptions);
         return executed;
     }
 }

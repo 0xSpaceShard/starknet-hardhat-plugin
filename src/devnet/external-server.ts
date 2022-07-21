@@ -9,13 +9,22 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export abstract class IntegratedDevnet {
+export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private lastError: string = null;
     private connected = false;
 
-    constructor(protected host: string, protected port: string) {
-        IntegratedDevnet.cleanupFns.push(this.cleanup.bind(this));
+    constructor(
+        protected host: string,
+        protected port: string,
+        private isAliveURL: string,
+        private processName: string
+    ) {
+        ExternalServer.cleanupFns.push(this.cleanup.bind(this));
+    }
+
+    public get url() {
+        return `http://${this.host}:${this.port}`;
     }
 
     protected static cleanupFns: Array<() => void> = [];
@@ -30,7 +39,7 @@ export abstract class IntegratedDevnet {
 
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
-            const msg = `Cannot spawn integrated-devnet: ${this.host}:${this.port} already occupied.`;
+            const msg = `Cannot spawn ${this.processName}: ${this.host}:${this.port} already occupied.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -52,7 +61,7 @@ export abstract class IntegratedDevnet {
                 while (this.childProcess) {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
-                        const msg = "integrated-devnet connection timed out!";
+                        const msg = `${this.processName} connection timed out!`;
                         reject(new HardhatPluginError(PLUGIN_NAME, msg));
                         break;
                     } else if (await this.isServerAlive()) {
@@ -77,10 +86,10 @@ export abstract class IntegratedDevnet {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = `integrated-devnet exited with code=${code} while processing transactions`;
+                        const msg = `${this.processName} exited with code=${code} while processing transactions`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     } else {
-                        const msg = `integrated-devnet connect exited with code=${code}:\n${this.lastError}`;
+                        const msg = `${this.processName} connect exited with code=${code}:\n${this.lastError}`;
                         reject(new HardhatPluginError(PLUGIN_NAME, msg));
                     }
                 }
@@ -99,7 +108,7 @@ export abstract class IntegratedDevnet {
 
     private async isServerAlive() {
         try {
-            await axios.get(`http://${this.host}:${this.port}/is_alive`);
+            await axios.get(`${this.url}/${this.isAliveURL}`);
             return true;
         } catch (err: unknown) {
             // cannot connect, so address is not occupied
