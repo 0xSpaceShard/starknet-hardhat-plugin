@@ -56,11 +56,30 @@ To run all tests, you can use the `test-` scripts defined in `package.json`. For
 
 ### Executing tests on CircleCI
 
-When you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/Shard-Labs/workflows/starknet-hardhat-plugin).
+If you're a member of the organization and you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/Shard-Labs/workflows/starknet-hardhat-plugin).
+
+Sometimes the tests fail because of internal CircleCI or Starknet issues; in that case, you can try restarting the workflow.
+
+Bear in mind that each workflow consumes credits. Track the spending [here](https://app.circleci.com/settings/plan/github/Shard-Labs/overview).
 
 ### Creating a PR
 
-When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`.
+When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`. You can then modify the `test.sh` script to use your branch instead of the `plugin` branch.
+
+If your reviewer makes an observation that requires a fix, after you push the commit with the fix, find the commit link on the PR conversation page, and reply to the reviewer by providing that link. In [this example](https://github.com/Shard-Labs/starknet-hardhat-plugin/pull/130#discussion_r913581807) the contributor even linked to the specific change of the commit - you don't have to do that if you made multiple smaller commits.
+
+When the PR is ready to be merged, do `Squash and merge` and delete the branch.
+
+## Adapting to a new Starknet / cairo-lang version
+
+When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation):
+- This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker).
+- A commit updating the README.md of the repository should be sufficient.
+- See older commits for reference.
+
+Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet needs to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
+
+Likely places where the old version has to be replaced with the new version are `README.md` and `constants.ts`.
 
 ## Architecture
 
@@ -68,7 +87,7 @@ When adding new functionality to the plugin, you will probably also have to crea
 
 This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-deploy` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around the Starknet CLI, defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts):
+There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts):
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container

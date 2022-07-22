@@ -15,8 +15,7 @@
 ## Checklist:
 
 -   [ ] Formatted the code
--   [ ] No linter errors
--   [ ] Tried to avoid introducing linter warnings
+-   [ ] No linter errors + tried to avoid introducing linter warnings
 -   [ ] Performed a self-review of the code
 -   [ ] Rebased to the last commit of the target branch (or merged it into my branch)
 -   [ ] Documented the changes
