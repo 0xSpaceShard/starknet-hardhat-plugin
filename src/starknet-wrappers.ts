@@ -534,35 +534,42 @@ export class DockerWrapper extends StarknetWrapper {
 
 export class VenvWrapper extends StarknetWrapper {
     private starknetCompilePath: string;
+    private pythonPath: string;
+    private starknetVenvProxy: StarknetVenvProxy;
 
-    constructor(venvPath: string, private starknetVenvproxy = new StarknetVenvProxy()) {
+    constructor(venvPath: string) {
         super();
 
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
             this.starknetCompilePath = "starknet-compile";
+            this.pythonPath = "python";
         } else {
             venvPath = normalizeVenvPath(venvPath);
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
 
             this.starknetCompilePath = getPrefixedCommand(venvPath, "starknet-compile");
+            this.pythonPath = getPrefixedCommand(venvPath, "python");
         }
+
+        this.starknetVenvProxy = new StarknetVenvProxy(this.pythonPath);
     }
 
     /**
      * Unlike `executeDirectly`, interacts with Starknet CLI through a server
-     * @param preparedOptions
-     * @returns
      */
     private async execute(preparedOptions: string[]): Promise<ProcessResult> {
-        await this.starknetVenvproxy.ensureStarted();
-        const response = await axios.post<ProcessResult>(this.starknetVenvproxy.url, {
+        await this.starknetVenvProxy.ensureStarted();
+        const response = await axios.post<ProcessResult>(this.starknetVenvProxy.url, {
             args: preparedOptions
         });
 
         return response.data;
     }
 
+    /**
+     * Spawns a subprocess which interacts with the CLI tool specified with `commandPath`.
+     */
     private async executeDirectly(
         commandPath: string,
         preparedOptions: string[]
@@ -612,7 +619,7 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
         const deployAccountScript = this.getPythonDeployAccountScript(options);
-        const executed = await this.executeDirectly("python", ["-c", deployAccountScript]);
+        const executed = await this.executeDirectly(this.pythonPath, ["-c", deployAccountScript]);
         return executed;
     }
 
