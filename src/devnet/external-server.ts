@@ -10,20 +10,38 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export async function getFreePort(): Promise<string> {
-    return new Promise((resolve, reject) => {
-        const srv = net.createServer();
-        srv.listen(0, () => {
-            const port = (srv.address() as net.AddressInfo).port;
-            srv.close((err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(port.toString());
-                }
-            });
+export function isFreePort(port: number): Promise<boolean> {
+    return new Promise((accept, reject) => {
+        const sock = net.createConnection(port);
+        sock.once("connect", () => {
+            sock.end();
+            accept(false);
+        });
+        sock.once("error", (e: NodeJS.ErrnoException) => {
+            sock.destroy();
+            if (e.code === "ECONNREFUSED") {
+                accept(true);
+            } else {
+                reject(e);
+            }
         });
     });
+}
+
+export async function getFreePort(): Promise<string> {
+    const defaultDevnetPort = 5050; // starting here to avoid conflicts
+    const step = 1000;
+    const maxPort = 65535;
+    for (let port = defaultDevnetPort + step; port <= maxPort; port += step) {
+        if (await isFreePort(port)) {
+            return port.toString();
+        }
+    }
+
+    throw new HardhatPluginError(
+        PLUGIN_NAME,
+        "Could not find a free port, try rerunning your command!"
+    );
 }
 
 export abstract class ExternalServer {
