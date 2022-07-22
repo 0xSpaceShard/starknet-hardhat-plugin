@@ -52,11 +52,9 @@ import {
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./devnet";
 import { StarknetChainId } from "starknet/constants";
-import { StarknetVenvProxy } from "./starknet-venv-proxy";
 
 exitHook(() => {
     ExternalServer.cleanAll();
-    StarknetVenvProxy.cleanAll();
 });
 
 // copy all user-defined cairo settings; other extendConfig calls will overwrite if needed
