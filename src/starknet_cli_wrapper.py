@@ -31,6 +31,7 @@ class MyRequestHandler(BaseHTTPRequestHandler):
             return 1 # error exit code
 
     def do_GET(self):
+        """Useful for checking if server is alive."""
         self._set_headers()
 
     def do_POST(self):
