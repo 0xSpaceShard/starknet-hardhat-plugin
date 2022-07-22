@@ -62,6 +62,8 @@ Sometimes the tests fail because of internal CircleCI or Starknet issues; in tha
 
 Bear in mind that each workflow consumes credits. Track the spending [here](https://app.circleci.com/settings/plan/github/Shard-Labs/overview).
 
+The whole workflow is defined in `.circleci/config.yml` - you may find it somewhat chaotic as it uses dependency caching (we kind of sacrificed config clarity for performance).
+
 ### Creating a PR
 
 When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`. You can then modify the `test.sh` script to use your branch instead of the `plugin` branch.
@@ -99,3 +101,8 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 ## Version management
 
 When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered. Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags).
+
+After releasing a new plugin version, the `plugin` branch of the example repo should be updated:
+- `package.json` should be updated by running `npm install --save-exact @shardlabs/starknet-hardhat-plugin@<NEW_VERSION>`
+- The `master` branch, which serves as reference to the users, should be synchronized with the `plugin` branch. This can probably be done by doing `git reset plugin` while on `master`.
+- Since you did `npm install`, you may need to link again, as described [initially](#set-up-the-example-repository).
