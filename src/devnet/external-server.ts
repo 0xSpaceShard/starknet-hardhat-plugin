@@ -10,7 +10,7 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export async function getFreePort() {
+export async function getFreePort(): Promise<string> {
     return new Promise((resolve, reject) => {
         const srv = net.createServer();
         srv.listen(0, () => {
@@ -19,7 +19,7 @@ export async function getFreePort() {
                 if (err) {
                     reject(err);
                 } else {
-                    resolve(port);
+                    resolve(port.toString());
                 }
             });
         });
@@ -33,7 +33,7 @@ export abstract class ExternalServer {
 
     constructor(
         protected host: string,
-        protected port: string,
+        protected port: string | null,
         private isAliveURL: string,
         private processName: string
     ) {

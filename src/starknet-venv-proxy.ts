@@ -1,15 +1,16 @@
 import { ChildProcess, spawn } from "child_process";
-import { ExternalServer } from "./devnet/external-server";
+import { ExternalServer, getFreePort } from "./devnet/external-server";
 import path from "path";
 
 export class StarknetVenvProxy extends ExternalServer {
     private started = false;
 
     constructor(private pythonPath: string) {
-        super("127.0.0.1", "8080", "", "starknet-venv-proxy");
+        super("127.0.0.1", null, "", "starknet-venv-proxy");
     }
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
+        this.port = await getFreePort();
         const proxyServerPath = path.join(__dirname, "starknet_cli_wrapper.py");
         return spawn(this.pythonPath, [proxyServerPath, this.port]);
     }
