@@ -1,4 +1,5 @@
 import axios from "axios";
+import net from "net";
 import { ChildProcess } from "child_process";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME } from "../constants";
@@ -6,6 +7,22 @@ import { PLUGIN_NAME } from "../constants";
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, amountMillis);
+    });
+}
+
+export async function getFreePort() {
+    return new Promise((resolve, reject) => {
+        const srv = net.createServer();
+        srv.listen(0, () => {
+            const port = (srv.address() as net.AddressInfo).port;
+            srv.close((err) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(port);
+                }
+            });
+        });
     });
 }
 
