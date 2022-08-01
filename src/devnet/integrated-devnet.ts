@@ -1,6 +1,6 @@
 import axios from "axios";
 import { ChildProcess } from "child_process";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "../starknet-plugin-error";
 import { PLUGIN_NAME } from "../constants";
 
 function sleep(amountMillis: number): Promise<void> {
@@ -31,7 +31,7 @@ export abstract class IntegratedDevnet {
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
             const msg = `Cannot spawn integrated-devnet: ${this.host}:${this.port} already occupied.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(PLUGIN_NAME, msg);
         }
 
         this.childProcess = await this.spawnChildProcess();
@@ -53,7 +53,7 @@ export abstract class IntegratedDevnet {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
                         const msg = "integrated-devnet connection timed out!";
-                        reject(new HardhatPluginError(PLUGIN_NAME, msg));
+                        reject(new StarknetPluginError(PLUGIN_NAME, msg));
                         break;
                     } else if (await this.isServerAlive()) {
                         this.connected = true;
@@ -78,10 +78,10 @@ export abstract class IntegratedDevnet {
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
                         const msg = `integrated-devnet exited with code=${code} while processing transactions`;
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                        throw new StarknetPluginError(PLUGIN_NAME, msg);
                     } else {
                         const msg = `integrated-devnet connect exited with code=${code}:\n${this.lastError}`;
-                        reject(new HardhatPluginError(PLUGIN_NAME, msg));
+                        reject(new StarknetPluginError(PLUGIN_NAME, msg));
                     }
                 }
             });

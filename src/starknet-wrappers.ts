@@ -1,6 +1,6 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
 import { BlockNumber, InteractChoice } from "./types";
@@ -294,7 +294,7 @@ type String2String = { [path: string]: string };
 function addPaths(paths: String2String, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+            throw new StarknetPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
         }
 
         // strip trailing slash(es)
@@ -555,7 +555,7 @@ export class VenvWrapper extends StarknetWrapper {
 
         if (!process.stdout) {
             const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(PLUGIN_NAME, msg);
         }
         return {
             statusCode: process.status,

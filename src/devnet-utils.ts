@@ -1,5 +1,5 @@
 import axios from "axios";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { PLUGIN_NAME } from "./constants";
@@ -63,7 +63,7 @@ export class DevnetUtils implements Devnet {
         } catch (error) {
             const parent = error instanceof Error && error;
 
-            throw new HardhatPluginError(PLUGIN_NAME, errorMessage, parent);
+            throw new StarknetPluginError(PLUGIN_NAME, errorMessage, parent);
         }
     }
 

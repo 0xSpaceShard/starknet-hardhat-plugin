@@ -13,7 +13,7 @@ import {
 } from "./types";
 import * as starknet from "./starknet-types";
 import { PLUGIN_NAME, TransactionHashPrefix } from "./constants";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
@@ -195,7 +195,7 @@ export abstract class Account {
         if (options.signature) {
             const msg =
                 "Custom signature cannot be specified when using Account (it is calculated automatically)";
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(PLUGIN_NAME, msg);
         }
         const signatures = this.getSignatures(messageHash);
         const contractInteractOptions = { signature: signatures, ...options };
@@ -386,7 +386,7 @@ export class OpenZeppelinAccount extends Account {
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
         if (BigInt(publicKey) !== expectedPubKey) {
-            throw new HardhatPluginError(
+            throw new StarknetPluginError(
                 PLUGIN_NAME,
                 "The provided private key is not compatible with the public key stored in the contract."
             );
@@ -556,7 +556,7 @@ export class ArgentAccount extends Account {
         if (expectedPubKey === BigInt(0)) {
             // not yet initialized
         } else if (BigInt(publicKey) !== expectedPubKey) {
-            throw new HardhatPluginError(
+            throw new StarknetPluginError(
                 PLUGIN_NAME,
                 "The provided private key is not compatible with the public key stored in the contract."
             );

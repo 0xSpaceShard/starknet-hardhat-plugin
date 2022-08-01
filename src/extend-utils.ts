@@ -1,4 +1,4 @@
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
@@ -26,7 +26,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
-        throw new HardhatPluginError(
+        throw new StarknetPluginError(
             PLUGIN_NAME,
             `Could not find metadata for contract "${contractPath}.cairo"`
         );
@@ -38,7 +38,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
-        throw new HardhatPluginError(
+        throw new StarknetPluginError(
             PLUGIN_NAME,
             `Could not find ABI for contract "${contractPath}.cairo"`
         );
@@ -57,12 +57,12 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
 export function shortStringToBigIntUtil(convertableString: string) {
     if (!convertableString) {
-        throw new HardhatPluginError(PLUGIN_NAME, "A non-empty string must be provided");
+        throw new StarknetPluginError(PLUGIN_NAME, "A non-empty string must be provided");
     }
 
     if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
         const msg = `Short strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
 
     const invalidChars: { [key: string]: boolean } = {};
@@ -80,7 +80,7 @@ export function shortStringToBigIntUtil(convertableString: string) {
         const msg = `Non-standard-ASCII character${
             invalidCharArray.length === 1 ? "" : "s"
         }: ${invalidCharArray.join(", ")}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
 
     return BigInt("0x" + charArray.join(""));
@@ -95,7 +95,7 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     if (!wallet) {
         const available = Object.keys(hre.config.starknet.wallets).join(", ");
         const msg = `Invalid wallet name provided: ${name}.\nValid wallets: ${available}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
     wallet.accountPath = getAccountPath(wallet.accountPath, hre);
     return wallet;
@@ -115,7 +115,7 @@ export async function deployAccountUtil(
             account = await ArgentAccount.deployFromABI(hre, options);
             break;
         default:
-            throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+            throw new StarknetPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
 
     return account;
@@ -136,7 +136,7 @@ export async function getAccountFromAddressUtil(
             account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
             break;
         default:
-            throw new HardhatPluginError(PLUGIN_NAME, "Invalid account type requested.");
+            throw new StarknetPluginError(PLUGIN_NAME, "Invalid account type requested.");
     }
 
     return account;
@@ -153,7 +153,7 @@ export async function getTransactionUtil(
     });
     if (executed.statusCode) {
         const msg = `Could not get the transaction. ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as Transaction;
     return txReceipt;
@@ -170,7 +170,7 @@ export async function getTransactionReceiptUtil(
     });
     if (executed.statusCode) {
         const msg = `Could not get the transaction receipt. Error: ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
     return txReceipt;
@@ -195,7 +195,7 @@ export async function getBlockUtil(
 
     if (executed.statusCode) {
         const msg = `Could not get block. Error: ${executed.stderr.toString()}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(PLUGIN_NAME, msg);
     }
     const block = JSON.parse(executed.stdout.toString()) as Block;
     return block;

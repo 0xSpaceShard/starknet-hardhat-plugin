@@ -1,6 +1,6 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError, lazyObject } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatConfig, HardhatUserConfig } from "hardhat/types";
 import exitHook from "exit-hook";
 
@@ -52,6 +52,7 @@ import {
 import { DevnetUtils } from "./devnet-utils";
 import { IntegratedDevnet } from "./devnet";
 import { StarknetChainId } from "starknet/constants";
+import { lazyObject } from "hardhat/plugins";
 
 exitHook(() => {
     IntegratedDevnet.cleanAll();
@@ -153,7 +154,7 @@ extendEnvironment((hre) => {
         if (hre.config.starknet.dockerizedVersion) {
             const msg =
                 "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(PLUGIN_NAME, msg);
         }
         hre.starknetWrapper = new VenvWrapper(venvPath);
     } else {

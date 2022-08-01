@@ -108,7 +108,7 @@ declare module "hardhat/types/runtime" {
         /**
          * Restarts the devnet.
          * @returns void
-         * @throws {@link HardhatPluginError}
+         * @throws {@link StarknetPluginError}
          */
         restart(): Promise<void>;
 
