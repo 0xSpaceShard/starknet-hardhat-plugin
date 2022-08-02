@@ -113,4 +113,18 @@ export interface Block {
     timestamp: number;
     transaction_receipts: TransactionReceipt[];
     transactions: TransactionData[];
+    starknet_version: string;
 }
+
+export type TxFailureReason = {
+    code: string;
+    error_message: string;
+    tx_id: string;
+};
+
+export type FeeEstimation = {
+    amount: bigint;
+    unit: string;
+    gas_price: bigint;
+    gas_usage: bigint;
+};

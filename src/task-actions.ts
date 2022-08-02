@@ -344,6 +344,15 @@ async function handleContractVerification(
 
     const bodyFormData = new FormData();
     bodyFormData.append("compiler-version", args.compilerVersion);
+    let accountContract;
+    if (args.accountContract === "true") {
+        accountContract = "true";
+    } else if (!args.accountContract || args.accountContract === "false") {
+        accountContract = "false";
+    } else {
+        throw new HardhatPluginError(PLUGIN_NAME, "--account-contract must be true or false");
+    }
+    bodyFormData.append("account-contract", accountContract);
     bodyFormData.append("license", args.license || "No License (None)");
 
     // Dependencies (non-main contracts) are in args.paths

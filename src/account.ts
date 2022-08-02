@@ -3,7 +3,6 @@ import {
     ContractInteractionFunction,
     DeployAccountOptions,
     EstimateFeeOptions,
-    FeeEstimation,
     InteractChoice,
     InteractOptions,
     InvokeOptions,
@@ -12,6 +11,7 @@ import {
     StarknetContract,
     StringMap
 } from "./types";
+import * as starknet from "./starknet-types";
 import { PLUGIN_NAME, TransactionHashPrefix } from "./constants";
 import { HardhatPluginError } from "hardhat/plugins";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -105,7 +105,7 @@ export abstract class Account {
         functionName: string,
         calldata?: StringMap,
         options?: EstimateFeeOptions
-    ): Promise<FeeEstimation> {
+    ): Promise<starknet.FeeEstimation> {
         return await this.interact(
             InteractChoice.ESTIMATE_FEE,
             toContract,
@@ -170,7 +170,7 @@ export abstract class Account {
     async multiEstimateFee(
         callParameters: CallParameters[],
         options?: EstimateFeeOptions
-    ): Promise<FeeEstimation> {
+    ): Promise<starknet.FeeEstimation> {
         return await this.multiInteract(InteractChoice.ESTIMATE_FEE, callParameters, options);
     }
 
@@ -295,7 +295,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.2.0";
+    static readonly VERSION = "0.2.1";
 
     constructor(
         starknetContract: StarknetContract,

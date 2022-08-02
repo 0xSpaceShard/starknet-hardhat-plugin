@@ -1,3 +1,9 @@
+<!-- logo / title -->
+<p align="center" style="margin-bottom: 0px !important">
+  <img width="100" src="https://user-images.githubusercontent.com/2848732/181497954-297848fb-4e9d-4bf0-91bd-c1c5da8ae10d.svg" alt="Hardhat Plugin" align="center">
+</p>
+<h1 align="center" style="margin-top: 0px !important">Starknet Hardhat Plugin</h1>
+
 [![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=blue)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
 
 If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
@@ -114,6 +120,8 @@ Queries [Voyager](https://voyager.online/) to [verify the contract](https://voya
 Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
 
 The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
+
+We pass `--acount-contract` to tell the verifier that the contract is of type account.
 
 For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
@@ -341,7 +349,7 @@ More detailed documentation can be found [here](#account).
 ```typescript
 it("should estimate fee", async function () {
     const fee = await contract.estimateFee("increase_balance", { amount: 10n });
-    console.log("Estimated fee:", fee.amount, fee.unit);
+    console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
 });
 ```
 
@@ -543,6 +551,55 @@ module.exports = {
 };
 ```
 
+### Installing third-party libraries
+
+If you want to install a third-party Cairo library and be able to import it in your Cairo files, use the following pattern:
+
+#### With npm packages:
+
+1. Install (example package: `influenceth__cairo_math_64x61@npm:@influenceth/cairo-math-64x61`)
+
+```
+npm install --save-dev influenceth__cairo_math_64x61@npm:@influenceth/cairo-math-64x61
+```
+
+2. Edit the `paths.cairoPaths` section of your `hardhat.config` file ([docs](#paths)):
+
+```typescript
+paths: {
+    cairoPaths: ["./node_modules"]
+}
+```
+
+3. Import
+
+```
+from influenceth__cairo_math_64x61.contracts.Math64x61 import Math64x61_ONE, Math64x61_mul
+```
+
+#### With pip packages:
+
+1. Install (example package: `openzeppelin-cairo-contracts`)
+
+```
+pip install openzeppelin-cairo-contracts
+```
+
+2. If you are installing in a virtual environment, edit the `paths.cairoPaths` section of your `hardhat.config` file ([docs](#paths)) as:
+
+```typescript
+paths: {
+    // this directory contains the openzeppelin directory
+    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"];
+}
+```
+
+3. Import
+
+```
+from openzeppelin.token.erc20.library import ERC20
+```
+
 ### Wallet
 
 To configure a wallet for your project, specify it by adding an entry to `wallets` in your hardhat config file.
@@ -620,7 +677,7 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"` - [v0.2.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.2.0)
+    -   `"OpenZeppelin"` - [v0.2.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.2.1)
     -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
@@ -676,6 +733,7 @@ await account.invoke(contract, "increase_balance", { amount });
         -   observe data logged on Devnet startup
     -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
     -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
+    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to fund the accounts that you deployed
 
 Once your account has funds, you can specify a max fee greater than zero:
 
