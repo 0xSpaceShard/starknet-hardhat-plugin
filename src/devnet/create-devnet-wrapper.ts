@@ -5,8 +5,7 @@ import {
     DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
     DEVNET_DOCKER_REPOSITORY,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_URL,
-    PLUGIN_NAME
+    INTEGRATED_DEVNET_URL
 } from "../constants";
 import { getImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
@@ -23,7 +22,6 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
 
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
         throw new StarknetPluginError(
-            PLUGIN_NAME,
             "Integrated devnet works only with localhost and 127.0.0.1"
         );
     }
@@ -34,7 +32,6 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
 
     if (hostname === "localhost") {
         throw new StarknetPluginError(
-            PLUGIN_NAME,
             "Dockerized integrated devnet works only with host 127.0.0.1"
         );
     }

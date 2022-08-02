@@ -13,8 +13,7 @@ import {
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_INTERNALLY,
-    PLUGIN_NAME
+    INTEGRATED_DEVNET_INTERNALLY
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -121,7 +120,7 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
 export function checkArtifactExists(artifactsPath: string): void {
     if (!fs.existsSync(artifactsPath)) {
         const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 
@@ -150,12 +149,11 @@ export function getNetwork<N extends NetworkConfig>(
     if (!network) {
         const available = Object.keys(networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (!network.url) {
         throw new StarknetPluginError(
-            PLUGIN_NAME,
             `Cannot use network ${networkName}. No "url" specified.`
         );
     }
@@ -191,7 +189,7 @@ export async function findPath(traversable: string, pathSegment: string) {
     } else {
         const msg =
             "More than one file was found because the path provided is ambiguous, please specify a relative path";
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 

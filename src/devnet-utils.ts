@@ -2,7 +2,6 @@ import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { PLUGIN_NAME } from "./constants";
 import { L2ToL1Message } from "./starknet-types";
 
 interface L1ToL2Message {
@@ -63,7 +62,7 @@ export class DevnetUtils implements Devnet {
         } catch (error) {
             const parent = error instanceof Error && error;
 
-            throw new StarknetPluginError(PLUGIN_NAME, errorMessage, parent);
+            throw new StarknetPluginError(errorMessage, parent);
         }
     }
 

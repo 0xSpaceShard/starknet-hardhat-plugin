@@ -296,7 +296,7 @@ type String2String = { [path: string]: string };
 function addPaths(paths: String2String, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
-            throw new StarknetPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+            throw new StarknetPluginError(`Path is not absolute: ${p}`);
         }
 
         // strip trailing slash(es)
@@ -578,7 +578,7 @@ export class VenvWrapper extends StarknetWrapper {
 
         if (!process.stdout) {
             const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
         return {
             statusCode: process.status,

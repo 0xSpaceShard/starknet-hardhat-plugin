@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { PLUGIN_NAME, CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
+import { CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -122,7 +122,6 @@ function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
         throw new StarknetPluginError(
-            PLUGIN_NAME,
             "Could not parse response. Check that you're using the correct network."
         );
     }
@@ -150,7 +149,7 @@ async function checkStatus(
         feederGatewayUrl
     });
     if (executed.statusCode) {
-        throw new StarknetPluginError(PLUGIN_NAME, executed.stderr.toString());
+        throw new StarknetPluginError(executed.stderr.toString());
     }
 
     const response = executed.stdout.toString();
@@ -158,7 +157,7 @@ async function checkStatus(
         const responseParsed = JSON.parse(response);
         return responseParsed;
     } catch (err) {
-        throw new StarknetPluginError(PLUGIN_NAME, `Cannot interpret the following: ${response}`);
+        throw new StarknetPluginError(`Cannot interpret the following: ${response}`);
     }
 }
 
@@ -224,7 +223,7 @@ function readAbi(abiPath: string): starknet.Abi {
     for (const abiEntry of abiArray) {
         if (!abiEntry.name) {
             const msg = `Abi entry has no name: ${abiEntry}`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
         abi[abiEntry.name] = abiEntry;
     }
@@ -271,7 +270,7 @@ export function parseFeeEstimation(raw: string): starknet.FeeEstimation {
             gas_usage: BigInt(matchedGasUsage[1])
         };
     }
-    throw new StarknetPluginError(PLUGIN_NAME, `Cannot parse fee estimation response:\n${raw}`);
+    throw new StarknetPluginError(`Cannot parse fee estimation response:\n${raw}`);
 }
 
 /**
@@ -379,7 +378,7 @@ export class StarknetContractFactory {
         });
         if (executed.statusCode) {
             const msg = `Could not declare class: ${executed.stderr.toString()}`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
 
         const executedOutput = executed.stdout.toString();
@@ -436,7 +435,7 @@ export class StarknetContractFactory {
         });
         if (executed.statusCode) {
             const msg = `Could not deploy contract: ${executed.stderr.toString()}`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
 
         const executedOutput = executed.stdout.toString();
@@ -470,7 +469,7 @@ export class StarknetContractFactory {
             const argsProvided = Object.keys(constructorArguments || {}).length;
             if (argsProvided) {
                 const msg = `No constructor arguments required but ${argsProvided} provided`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
             return [];
         }
@@ -490,7 +489,7 @@ export class StarknetContractFactory {
      */
     getContractAt(address: string) {
         if (!address) {
-            throw new StarknetPluginError(PLUGIN_NAME, "No address provided");
+            throw new StarknetPluginError("No address provided");
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
@@ -548,7 +547,7 @@ export class StarknetContract {
         options: InteractOptions = {}
     ) {
         if (!this.address) {
-            throw new StarknetPluginError(PLUGIN_NAME, "Contract not deployed");
+            throw new StarknetPluginError("Contract not deployed");
         }
 
         const adaptedInput = this.adaptInput(functionName, args);
@@ -576,7 +575,7 @@ export class StarknetContract {
                 `Could not perform ${choice.cliCommand} on ${functionName}:\n` +
                 executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
-            throw new StarknetPluginError(PLUGIN_NAME, replacedMsg);
+            throw new StarknetPluginError(replacedMsg);
         }
 
         return executed;
@@ -698,12 +697,11 @@ export class StarknetContract {
         const func = <starknet.CairoFunction>this.abi[functionName];
         if (!func) {
             const msg = `Function '${functionName}' doesn't exist on ${this.abiPath}.`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
 
         if (Array.isArray(args)) {
             throw new StarknetPluginError(
-                PLUGIN_NAME,
                 "Arguments should be passed in the form of an object."
             );
         }
@@ -735,7 +733,7 @@ export class StarknetContract {
             const eventSpecification = this.eventsSpecifications[event.keys[0]];
             if (!eventSpecification) {
                 const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             const adapted = adaptOutputUtil(rawEventData, eventSpecification.data, this.abi);

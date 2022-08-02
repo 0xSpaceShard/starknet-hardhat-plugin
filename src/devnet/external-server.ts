@@ -2,7 +2,6 @@ import axios from "axios";
 import net from "net";
 import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
-import { PLUGIN_NAME } from "../constants";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -39,7 +38,6 @@ export async function getFreePort(): Promise<string> {
     }
 
     throw new StarknetPluginError(
-        PLUGIN_NAME,
         "Could not find a free port, try rerunning your command!"
     );
 }
@@ -75,7 +73,7 @@ export abstract class ExternalServer {
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
             const msg = `Cannot spawn ${this.processName}: ${this.host}:${this.port} already occupied.`;
-            throw new StarknetPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
 
         this.childProcess = await this.spawnChildProcess();
@@ -97,7 +95,7 @@ export abstract class ExternalServer {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
                         const msg = `${this.processName} connection timed out!`;
-                        reject(new StarknetPluginError(PLUGIN_NAME, msg));
+                        reject(new StarknetPluginError(msg));
                         break;
                     } else if (await this.isServerAlive()) {
                         this.connected = true;
@@ -122,10 +120,10 @@ export abstract class ExternalServer {
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
                         const msg = `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
-                        throw new StarknetPluginError(PLUGIN_NAME, msg);
+                        throw new StarknetPluginError(msg);
                     } else {
                         const msg = `${this.processName} connect exited with code=${code}:\n${this.lastError}`;
-                        reject(new StarknetPluginError(PLUGIN_NAME, msg));
+                        reject(new StarknetPluginError(msg));
                     }
                 }
             });

@@ -1,5 +1,5 @@
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { PLUGIN_NAME, LEN_SUFFIX } from "./constants";
+import { LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
@@ -141,7 +141,7 @@ export function adaptInputUtil(
         const msg = `${functionName}: Expected ${expectedInputCount} argument${
             expectedInputCount === 1 ? "" : "s"
         }, got ${inputLen}.`;
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     let lastSpec: starknet.Argument = { type: null, name: null };
@@ -165,21 +165,21 @@ export function adaptInputUtil(
                 ) {
                     // will add array length in next iteration
                 } else {
-                    throw new StarknetPluginError(PLUGIN_NAME, errorMsg);
+                    throw new StarknetPluginError(errorMsg);
                 }
             } else {
-                throw new StarknetPluginError(PLUGIN_NAME, errorMsg);
+                throw new StarknetPluginError(errorMsg);
             }
         } else if (inputSpec.type.endsWith("*")) {
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
             // Remove the * from the spec type
             const inputSpecArrayElement = {
@@ -219,7 +219,7 @@ function adaptComplexInput(
     const type = inputSpec.type;
 
     if (input === undefined || input === null) {
-        throw new StarknetPluginError(PLUGIN_NAME, `${inputSpec.name} is ${input}`);
+        throw new StarknetPluginError(`${inputSpec.name} is ${input}`);
     }
 
     if (type === "felt") {
@@ -228,7 +228,7 @@ function adaptComplexInput(
             return;
         }
         const msg = `Expected ${inputSpec.name} to be a felt`;
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (isTuple(type)) {
@@ -240,7 +240,7 @@ function adaptComplexInput(
                 const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
                     memberTypes.length === 1 ? "" : "s"
                 }, got ${inputLen}.`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             for (let i = 0; i < inputLen; i++) {
@@ -251,14 +251,14 @@ function adaptComplexInput(
         } else {
             if (!Array.isArray(input)) {
                 const msg = `Expected ${inputSpec.name} to be a tuple`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             if (input.length != memberTypes.length) {
                 const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
                     memberTypes.length === 1 ? "" : "s"
                 }, got ${input.length}.`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             for (let i = 0; i < input.length; ++i) {
@@ -291,7 +291,7 @@ function adaptStructInput(
 ) {
     const type = inputSpec.type;
     if (!(type in abi)) {
-        throw new StarknetPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
+        throw new StarknetPluginError(`Type ${type} not present in ABI.`);
     }
 
     const struct = <starknet.Struct>abi[type];
@@ -305,7 +305,7 @@ function adaptStructInput(
         const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
             expectedInputCount === 1 ? "" : "s"
         }, got ${inputLen}.`;
-        throw new StarknetPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     for (let i = 0; i < struct.members.length; ++i) {
@@ -347,7 +347,7 @@ export function adaptOutputUtil(
             // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
             if (lastSpec.type !== "felt") {
                 const msg = `Array size argument (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
-                throw new StarknetPluginError(PLUGIN_NAME, msg);
+                throw new StarknetPluginError(msg);
             }
 
             // Remove * from the spec type
@@ -421,7 +421,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     } else {
         // struct
         if (!(type in abi)) {
-            throw new StarknetPluginError(PLUGIN_NAME, `Type ${type} not present in ABI.`);
+            throw new StarknetPluginError(`Type ${type} not present in ABI.`);
         }
 
         generatedComplex = {};
