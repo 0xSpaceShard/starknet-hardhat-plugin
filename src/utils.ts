@@ -153,9 +153,7 @@ export function getNetwork<N extends NetworkConfig>(
     }
 
     if (!network.url) {
-        throw new StarknetPluginError(
-            `Cannot use network ${networkName}. No "url" specified.`
-        );
+        throw new StarknetPluginError(`Cannot use network ${networkName}. No "url" specified.`);
     }
     network.starknetChainId ||= StarknetChainId.TESTNET;
     return network;

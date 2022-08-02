@@ -37,9 +37,7 @@ export async function getFreePort(): Promise<string> {
         }
     }
 
-    throw new StarknetPluginError(
-        "Could not find a free port, try rerunning your command!"
-    );
+    throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
 export abstract class ExternalServer {

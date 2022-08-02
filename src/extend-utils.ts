@@ -37,9 +37,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
-        throw new StarknetPluginError(
-            `Could not find ABI for contract "${contractPath}.cairo"`
-        );
+        throw new StarknetPluginError(`Could not find ABI for contract "${contractPath}.cairo"`);
     }
 
     return new StarknetContractFactory({

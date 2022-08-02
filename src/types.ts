@@ -701,9 +701,7 @@ export class StarknetContract {
         }
 
         if (Array.isArray(args)) {
-            throw new StarknetPluginError(
-                "Arguments should be passed in the form of an object."
-            );
+            throw new StarknetPluginError("Arguments should be passed in the form of an object.");
         }
 
         return adaptInputUtil(functionName, args, func.inputs, this.abi);

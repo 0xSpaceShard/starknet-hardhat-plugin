@@ -25,7 +25,6 @@ import {
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
 
-
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
         const msg = `Source expected to be at ${sourcePath}, but not found.`;
