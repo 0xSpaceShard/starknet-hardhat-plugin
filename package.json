@@ -25,7 +25,8 @@
         "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
         "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
         "test-integrated-devnet-tests": "TEST_SUBDIR=integrated-devnet-tests ./scripts/test.sh",
-        "build": "rm -rf dist && tsc",
+        "build": "rm -rf dist && tsc && npm run copy-files",
+        "copy-files": "cp src/starknet_cli_wrapper.py dist/src/",
         "lint": "eslint src test"
     },
     "author": "Shard-Labs",
