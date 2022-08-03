@@ -1,4 +1,5 @@
 import axios from "axios";
+import net from "net";
 import { ChildProcess } from "child_process";
 import { HardhatPluginError } from "hardhat/plugins";
 import { PLUGIN_NAME } from "../constants";
@@ -10,13 +11,58 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export abstract class IntegratedDevnet extends IntegratedDevnetLogger {
+export function isFreePort(port: number): Promise<boolean> {
+    return new Promise((accept, reject) => {
+        const sock = net.createConnection(port);
+        sock.once("connect", () => {
+            sock.end();
+            accept(false);
+        });
+        sock.once("error", (e: NodeJS.ErrnoException) => {
+            sock.destroy();
+            if (e.code === "ECONNREFUSED") {
+                accept(true);
+            } else {
+                reject(e);
+            }
+        });
+    });
+}
+
+export async function getFreePort(): Promise<string> {
+    const defaultDevnetPort = 5050; // starting here to avoid conflicts
+    const step = 1000;
+    const maxPort = 65535;
+    for (let port = defaultDevnetPort + step; port <= maxPort; port += step) {
+        if (await isFreePort(port)) {
+            return port.toString();
+        }
+    }
+
+    throw new HardhatPluginError(
+        PLUGIN_NAME,
+        "Could not find a free port, try rerunning your command!"
+    );
+}
+
+export abstract class ExternalServer extends IntegratedDevnetLogger {
     protected childProcess: ChildProcess;
     private connected = false;
 
-    constructor(protected host: string, protected port: string, protected stdout?: string, protected stderr?: string) {
-        super(stdout, stderr);
-        IntegratedDevnet.cleanupFns.push(this.cleanup.bind(this));
+    constructor(
+        protected host: string,
+        protected port: string | null,
+        private isAliveURL: string,
+        private processName: string,
+        protected stdout?: string,
+        protected stderr?: string
+    ) {
+            super(stdout, stderr);
+            ExternalServer.cleanupFns.push(this.cleanup.bind(this));
+    }
+
+    public get url() {
+        return `http://${this.host}:${this.port}`;
     }
 
     protected static cleanupFns: Array<() => void> = [];
@@ -31,7 +77,7 @@ export abstract class IntegratedDevnet extends IntegratedDevnetLogger {
 
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
-            const msg = `Cannot spawn integrated-devnet: ${this.host}:${this.port} already occupied.`;
+            const msg = `Cannot spawn ${this.processName}: ${this.host}:${this.port} already occupied.`;
             throw new HardhatPluginError(PLUGIN_NAME, msg);
         }
 
@@ -59,7 +105,7 @@ export abstract class IntegratedDevnet extends IntegratedDevnetLogger {
                 while (this.childProcess) {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
-                        const msg = "integrated-devnet connection timed out!";
+                        const msg = `${this.processName} connection timed out!`;
                         reject(new HardhatPluginError(PLUGIN_NAME, msg));
                         break;
                     } else if (await this.isServerAlive()) {
@@ -84,7 +130,7 @@ export abstract class IntegratedDevnet extends IntegratedDevnetLogger {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = `integrated-devnet exited with code=${code} while processing transactions`;
+                        const msg = `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     }
                 }
@@ -103,7 +149,7 @@ export abstract class IntegratedDevnet extends IntegratedDevnetLogger {
 
     private async isServerAlive() {
         try {
-            await axios.get(`http://${this.host}:${this.port}/is_alive`);
+            await axios.get(`${this.url}/${this.isAliveURL}`);
             return true;
         } catch (err: unknown) {
             // cannot connect, so address is not occupied

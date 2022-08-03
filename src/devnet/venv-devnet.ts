@@ -1,14 +1,14 @@
 import { ChildProcess, spawn } from "child_process";
 
 import { getPrefixedCommand, normalizeVenvPath } from "../utils/venv";
-import { IntegratedDevnet } from "./integrated-devnet";
+import { ExternalServer } from "./external-server";
 
-export class VenvDevnet extends IntegratedDevnet {
+export class VenvDevnet extends ExternalServer {
     private command: string;
     private args?: string[];
 
     constructor(venvPath: string, host: string, port: string, args?: string[], stdout?: string, stderr?: string) {
-        super(host, port, stdout, stderr);
+        super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
 
         this.command = "starknet-devnet";
         this.args = args;
