@@ -41,9 +41,9 @@ if diff -q cache-content-before.json cache/cairo-files-cache.json; then
     exit 1
 fi
 
-# echo "Testing Recompilation one contract added another deleted"
-# rm -f contracts/contract_test_cache.cairo
-# # contract_test contract with original content
-# cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
-# rm -f contracts/dependency.cairo
-# npx hardhat test test/recompilation/recompilation-main-test.ts
+echo "Testing Recompilation one contract added another deleted"
+rm -f contracts/contract_test_cache.cairo
+# contract_test contract with original content
+cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
+rm -f contracts/dependency.cairo
+npx hardhat test test/recompilation/recompilation-main-test.ts
