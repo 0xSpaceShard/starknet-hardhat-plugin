@@ -45,7 +45,7 @@ export async function getFreePort(): Promise<string> {
     );
 }
 
-export abstract class ExternalServer extends IntegratedDevnetLogger {
+export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
 
@@ -57,8 +57,7 @@ export abstract class ExternalServer extends IntegratedDevnetLogger {
         protected stdout?: string,
         protected stderr?: string
     ) {
-            super(stdout, stderr);
-            ExternalServer.cleanupFns.push(this.cleanup.bind(this));
+        ExternalServer.cleanupFns.push(this.cleanup.bind(this));
     }
 
     public get url() {
@@ -82,16 +81,16 @@ export abstract class ExternalServer extends IntegratedDevnetLogger {
         }
 
         this.childProcess = await this.spawnChildProcess();
-
+        const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
         this.childProcess.stdout.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await this.logStdout(chunk);
+            await logger.logStdout(chunk);
         });
 
         // capture the most recent message from stderr
         this.childProcess.stderr.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await this.logStderr(chunk);
+            await logger.logStderr(chunk);
         });
 
         return new Promise((resolve, reject) => {
@@ -130,7 +129,14 @@ export abstract class ExternalServer extends IntegratedDevnetLogger {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
+                        const msg = logger.logToFile(this.stderr)
+                            ? `${this.processName} spawned and connected successfully, but later exited with code=${code}\nError logged to file ${this.stderr}`
+                            : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
+                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                    } else {
+                        const msg = logger.logToFile(this.stderr)
+                            ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
+                            : `integrated-devnet connect exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     }
                 }
