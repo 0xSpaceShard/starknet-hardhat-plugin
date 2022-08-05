@@ -36,7 +36,8 @@ import {
     starknetDeployAccountAction,
     starknetTestAction,
     starknetRunAction,
-    starknetEstimateFeeAction
+    starknetEstimateFeeAction,
+    starknetPluginVersionAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -364,3 +365,6 @@ task("test")
     .setAction(starknetTestAction);
 
 task("run").setAction(starknetRunAction);
+
+task("starknet-plugin-version", "Prints the version of the starknet plugin.")
+    .setAction(starknetPluginVersionAction);

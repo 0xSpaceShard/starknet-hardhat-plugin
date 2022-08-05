@@ -584,3 +584,11 @@ export async function starknetRunAction(
         await runSuper(args);
     });
 }
+
+export async function starknetPluginVersionAction(
+) {
+    const version = JSON.parse(
+        fs.readFileSync(path.join(__dirname, "../../", "package.json"), "utf8")
+    ).version;
+    console.log(`Version: ${version}`);
+}
