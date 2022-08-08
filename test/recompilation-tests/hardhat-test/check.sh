@@ -43,7 +43,9 @@ fi
 
 echo "Testing Recompilation one contract added another deleted"
 rm -f contracts/contract_test_cache.cairo
-# contract_test contract with original content
-cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
 rm -f contracts/dependency.cairo
-npx hardhat test test/recompilation/recompilation-main-test.ts
+
+CONTRACT_WITH_NO_DEPENDENCY=contract_test_cache_no_dependency.cairo
+cp "$(dirname "$0")/$CONTRACT_WITH_NO_DEPENDENCY" "$CONTRACT_PATH"
+
+npx hardhat test --no-compile test/recompilation/recompilation-main-test.ts
