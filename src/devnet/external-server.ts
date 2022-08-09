@@ -84,13 +84,13 @@ export abstract class ExternalServer {
         const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
         this.childProcess.stdout.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await logger.logStdout(chunk);
+            await logger.logHanlder(this.stdout, chunk);
         });
 
         // capture the most recent message from stderr
         this.childProcess.stderr.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await logger.logStderr(chunk);
+            await logger.logHanlder(this.stderr, chunk);
         });
 
         return new Promise((resolve, reject) => {
@@ -129,12 +129,12 @@ export abstract class ExternalServer {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = logger.logToFile(this.stderr)
+                        const msg = logger.isFile(this.stderr)
                             ? `${this.processName} spawned and connected successfully, but later exited with code=${code}\nError logged to file ${this.stderr}`
                             : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     } else {
-                        const msg = logger.logToFile(this.stderr)
+                        const msg = logger.isFile(this.stderr)
                             ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
                             : `integrated-devnet connect exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);

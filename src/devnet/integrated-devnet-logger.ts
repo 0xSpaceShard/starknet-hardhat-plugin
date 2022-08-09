@@ -3,74 +3,46 @@ import * as fs from "fs";
 
 export class IntegratedDevnetLogger {
 
-    // Promisify fs
-    protected fsPromises = fs.promises;
-
     constructor(protected stdout?: string, protected stderr?: string) {
-        if (this.logToFile(this.stdout)) {
-            this.checkFileExists(this.stdout);
-        }
-
-        if (this.logToFile(this.stderr)) {
-            this.checkFileExists(this.stderr);
-        }
+        this.checkFileExists(this.stdout);
+        this.checkFileExists(this.stderr);
     }
 
     // Checks if the file exists
     private async checkFileExists(filePath: string): Promise<void> {
+        if (!filePath || filePath === "STDOUT" || filePath === "STDERR") return;
         const file = path.resolve(filePath);
         // Create the file if it doesn't exist
         const dir = path.dirname(file);
         if (!fs.existsSync(dir)) {
-            await this.fsPromises.mkdir(dir, { recursive: true });
+            await fs.promises.mkdir(dir, { recursive: true });
         }
 
         if (!fs.existsSync(file)) {
-            await this.fsPromises.writeFile(file, "");
+            await fs.promises.writeFile(file, "");
         }
     }
 
-    public async logStdout(message: string): Promise<void> {
-        // STDOUT
-        if (this.stdout === "STDOUT") {
+    public async logHanlder(logTarget: string, message: string): Promise<void> {
+        if (logTarget === "STDOUT" || logTarget === "STDERR") {
             console.log(message);
             return;
         }
 
-        // Check if stdout is a path to a file and is basename is not empty
-        if (this.logToFile(this.stdout)) {
+        // Check if log target is a path to a file
+        if (this.isFile(logTarget)) {
             // Create the file if it doesn't exist
-            const file = path.resolve(this.stdout);
+            const file = path.resolve(logTarget);
             this.appendLogToFile(file, message);
         }
     }
 
-    public async logStderr(message: string): Promise<void> {
-        // STDERR
-        if (this.stderr === "STDERR") {
-            console.error(message);
-            return;
-        }
-
-        // Check if stderr is a path to a file and basename is not empty
-        if (this.logToFile(this.stderr)) {
-            // Create the file if it doesn't exist
-            const file = path.resolve(this.stderr);
-            await this.appendLogToFile(file, message);
-        }
-    }
-
-    public logToFile(file?: string): boolean {
-        if (file && path.basename(file) !== "" && path.extname(file) !== "") {
-            return true;
-        } else {
-            return false;
-        }
+    public isFile(file: string): boolean {
+        return fs.existsSync(file);
     }
 
     // Appends the message to the file
     private async appendLogToFile(file: string, message: string): Promise<void> {
-        // Append the message to the file
-        await this.fsPromises.appendFile(file, message);
+        await fs.promises.appendFile(file, message);
     }
 }
