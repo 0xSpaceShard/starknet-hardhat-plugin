@@ -24,8 +24,13 @@ export class IntegratedDevnetLogger {
     }
 
     public async logHanlder(logTarget: string, message: string): Promise<void> {
-        if (logTarget === "STDOUT" || logTarget === "STDERR") {
+        if (logTarget === "STDOUT") {
             console.log(message);
+            return;
+        }
+
+        if (logTarget === "STDERR") {
+            console.error(message);
             return;
         }
 
