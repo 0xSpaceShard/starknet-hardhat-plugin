@@ -34,12 +34,8 @@ export class IntegratedDevnetLogger {
             return;
         }
 
-        // Check if log target is a path to a file
-        if (this.isFile(logTarget)) {
-            // Create the file if it doesn't exist
-            const file = path.resolve(logTarget);
-            this.appendLogToFile(file, message);
-        }
+        // Append the message to the target log file
+        this.appendLogToFile(logTarget, message);
     }
 
     public isFile(file: string): boolean {
