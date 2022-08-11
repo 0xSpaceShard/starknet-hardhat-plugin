@@ -48,6 +48,7 @@ export async function getFreePort(): Promise<string> {
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
+    private lastError: string = null;
 
     constructor(
         protected host: string,
@@ -91,6 +92,7 @@ export abstract class ExternalServer {
         this.childProcess.stderr.on("data", async (chunk) => {
             chunk = chunk.toString();
             await logger.logHandler(this.stderr, chunk);
+            this.lastError = chunk;
         });
 
         return new Promise((resolve, reject) => {
@@ -134,9 +136,12 @@ export abstract class ExternalServer {
                             : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     } else {
-                        const msg = logger.isFile(this.stderr)
+                        let msg = logger.isFile(this.stderr)
                             ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
                             : `integrated-devnet connect exited with code=${code}`;
+                        if (!this.stderr) {
+                            msg = `${msg}:\n${this.lastError}`;
+                        }
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     }
                 }
