@@ -25,6 +25,7 @@ import {
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
 import { Recompiler } from "./recompiler";
+import { version } from "../package.json";
 
 
 function checkSourceExists(sourcePath: string): void {
@@ -597,8 +598,5 @@ export async function starknetRunAction(
 
 export async function starknetPluginVersionAction(
 ) {
-    const version = JSON.parse(
-        fs.readFileSync(path.join(__dirname, "../../", "package.json"), "utf8")
-    ).version;
     console.log(`Version: ${version}`);
 }
