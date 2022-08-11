@@ -23,7 +23,7 @@ export class IntegratedDevnetLogger {
         }
     }
 
-    public async logHanlder(logTarget: string, message: string): Promise<void> {
+    public async logHandler(logTarget: string, message: string): Promise<void> {
         if (logTarget === "STDOUT") {
             console.log(message);
             return;

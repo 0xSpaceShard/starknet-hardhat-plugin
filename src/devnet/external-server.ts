@@ -84,13 +84,13 @@ export abstract class ExternalServer {
         const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
         this.childProcess.stdout.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await logger.logHanlder(this.stdout, chunk);
+            await logger.logHandler(this.stdout, chunk);
         });
 
         // capture the most recent message from stderr
         this.childProcess.stderr.on("data", async (chunk) => {
             chunk = chunk.toString();
-            await logger.logHanlder(this.stderr, chunk);
+            await logger.logHandler(this.stderr, chunk);
         });
 
         return new Promise((resolve, reject) => {
