@@ -3,6 +3,7 @@ import net from "net";
 import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
+import { ProcessResult } from "@nomiclabs/hardhat-docker";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -160,5 +161,14 @@ export abstract class ExternalServer {
             // cannot connect, so address is not occupied
             return false;
         }
+    }
+
+    public async post(args: string[]): Promise<ProcessResult> {
+        if (!this.connected) {
+            await this.start();
+        }
+        const payload = { args };
+        const response = await axios.post<ProcessResult>(this.url, payload);
+        return response.data;
     }
 }

@@ -6,19 +6,21 @@ import { ExternalServer } from "./external-server";
 const CONTAINER_NAME = "integrated-devnet";
 const DEVNET_DOCKER_INTERNAL_PORT = 5050;
 
-export class DockerDevnet extends ExternalServer {
+export class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
-    private args?: string[];
 
     constructor(
         private image: Image,
         host: string,
-        port: string,
-        args?: string[],
+        externalPort: string,
+        private internalPort: string,
+        isAliveURL: string,
+        containerName: string,
+        protected args?: string[],
         stdout?: string,
         stderr?: string
     ) {
-        super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
+        super(host, externalPort, isAliveURL, containerName, stdout, stderr);
         this.args = args;
     }
 
@@ -44,7 +46,7 @@ export class DockerDevnet extends ExternalServer {
             "--name",
             CONTAINER_NAME,
             "-p",
-            `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
+            `${this.host}:${this.port}:${this.internalPort}`,
             formattedImage
         ].concat(this.args || []);
         return spawn("docker", args);
@@ -54,5 +56,20 @@ export class DockerDevnet extends ExternalServer {
         console.log(`Killing ${CONTAINER_NAME} Docker container`);
         spawnSync("docker", ["kill", CONTAINER_NAME]);
         this.childProcess?.kill();
+    }
+}
+
+export class DockerDevnet extends DockerServer {
+    constructor(image: Image, host: string, port: string, args?: string[]) {
+        super(
+            image,
+            host,
+            port,
+            DEVNET_DOCKER_INTERNAL_PORT.toString(),
+            "is_alive",
+            "integrated-devnet",
+            args
+        );
+        this.args = args;
     }
 }

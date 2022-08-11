@@ -1,8 +1,9 @@
-import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
+import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
+import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
@@ -306,25 +307,18 @@ function addPaths(paths: String2String, colonSeparatedStr: string): void {
 }
 
 export class DockerWrapper extends StarknetWrapper {
-    private docker: HardhatDocker;
-    private image: Image;
+    private starknetDockerProxy: StarknetDockerProxy;
+
     constructor(image: Image) {
         super();
-        this.image = image;
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
+        this.starknetDockerProxy = new StarknetDockerProxy(image);
     }
 
-    private async getDocker() {
-        if (!this.docker) {
-            this.docker = await HardhatDocker.create();
-            if (!(await this.docker.hasPulledImage(this.image))) {
-                console.log(`Pulling image ${getFullImageName(this.image)}`);
-                await this.docker.pullImage(this.image);
-            }
-        }
-        return this.docker;
+    private async execute(args: string[]) {
+        await this.starknetDockerProxy.post(args);
     }
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {

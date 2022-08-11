@@ -1,5 +1,7 @@
 import { ChildProcess, spawn } from "child_process";
 import { ExternalServer, getFreePort } from "./devnet/external-server";
+import { ProcessResult } from "@nomiclabs/hardhat-docker";
+import axios from "axios";
 import path from "path";
 
 export class StarknetVenvProxy extends ExternalServer {
@@ -15,7 +17,14 @@ export class StarknetVenvProxy extends ExternalServer {
         return spawn(this.pythonPath, [proxyServerPath, this.port]);
     }
 
-    public async ensureStarted(): Promise<void> {
+    public async post(args: string[]): Promise<ProcessResult> {
+        await this.ensureStarted();
+        const payload = { args };
+        const response = await axios.post<ProcessResult>(this.url, payload);
+        return response.data;
+    }
+
+    private async ensureStarted(): Promise<void> {
         if (this.started) {
             return;
         }
