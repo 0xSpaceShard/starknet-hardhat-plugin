@@ -7,7 +7,17 @@ import io
 import json
 import sys
 
-from starkware.starknet.cli.starknet_cli import main
+# imports resolvable in the venv specified by 
+from starkware.starknet.cli.starknet_cli import main as starknet_main
+from starkware.starknet.compiler.compile import main as starknet_compile_main
+
+async def starknet_compile_main_wrapper():
+    starknet_compile_main()
+
+MAIN_MAP = {
+    "starknet": starknet_main,
+    "starknet-compile": starknet_compile_main_wrapper
+}
 
 class MyRequestHandler(BaseHTTPRequestHandler):
     def _set_headers(self):
@@ -15,16 +25,22 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-    def _get_args(self):
+    def _get_json_body(self):
         content_length = int(self.headers["Content-Length"])
         raw_request_body = self.rfile.read(content_length).decode("utf-8")
-        return json.loads(raw_request_body)["args"]
+        return json.loads(raw_request_body)
 
     exit_code = None
 
     async def _execute(self):
-        args = self._get_args()
+        json_body = self._get_json_body()
+
+        command = json_body["command"]
+        main = MAIN_MAP[command]
+
+        args = json_body["args"]
         sys.argv = [sys.argv[0], *args]
+
         try:
             return await main()
         except:
