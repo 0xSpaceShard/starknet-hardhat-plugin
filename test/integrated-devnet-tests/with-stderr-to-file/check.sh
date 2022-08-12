@@ -6,13 +6,13 @@ source ../scripts/check-devnet-is-not-running.sh
 check_devnet_is_not_running
 npx hardhat starknet-compile contracts/contract.cairo
 
-EXPECTED_STDOT="Account #0"
+EXPECTED_STDOUT="Account #0"
 EXPECTED_WARNING="WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS."
 
 output=$(npx hardhat test --no-compile test/integrated-devnet.test.ts)
 # Checks if output contains the expected string from stdout
-if ! echo "$output" | grep -q "$EXPECTED_STDOT"; then
-    echo "Expected output to contain '$EXPECTED_STDOT'"
+if ! echo "$output" | grep -q "$EXPECTED_STDOUT"; then
+    echo "Expected output to contain '$EXPECTED_STDOUT'"
     exit 1
 fi
 
