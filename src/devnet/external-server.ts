@@ -131,9 +131,12 @@ export abstract class ExternalServer {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = logger.isFile(this.stderr)
+                        let msg = logger.isFile(this.stderr)
                             ? `${this.processName} spawned and connected successfully, but later exited with code=${code}\nError logged to file ${this.stderr}`
                             : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
+                        if (!this.stderr) {
+                            msg = `${msg}:\n${this.lastError}`;
+                        }
                         throw new HardhatPluginError(PLUGIN_NAME, msg);
                     } else {
                         let msg = logger.isFile(this.stderr)
