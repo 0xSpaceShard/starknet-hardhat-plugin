@@ -143,8 +143,7 @@ export class DevnetUtils implements Devnet {
 
     public async createBlock() {
         return this.withErrorHandler<void>(async () => {
-            await axios.post(`${this.endpoint}/create_block`, {
-            });
+            await axios.post(`${this.endpoint}/create_block`, {});
         }, "Request failed. Make sure your network has the /create_block endpoint");
     }
 }
