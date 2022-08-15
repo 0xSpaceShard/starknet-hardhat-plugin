@@ -27,7 +27,6 @@ import { createIntegratedDevnet } from "./devnet";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
 
-
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
         const msg = `Source expected to be at ${sourcePath}, but not found.`;

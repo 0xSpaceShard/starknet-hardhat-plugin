@@ -22,7 +22,7 @@ export class Cache {
     protected cache: Record<string, ContractData> = {};
     public fsPromises = fs.promises;
 
-    constructor(protected hre: HardhatRuntimeEnvironment) { }
+    constructor(protected hre: HardhatRuntimeEnvironment) {}
 
     // Returns the contract data from the cache
     public async getCache(): Promise<Record<string, ContractData>> {
@@ -66,7 +66,10 @@ export class Cache {
     // Saves the cache to the file
     public async saveCache(): Promise<void> {
         const cacheFilePath = this.getCacheFilePath();
-        await this.fsPromises.writeFile(cacheFilePath, JSON.stringify(this.cache, null, " ") + "\n");
+        await this.fsPromises.writeFile(
+            cacheFilePath,
+            JSON.stringify(this.cache, null, " ") + "\n"
+        );
     }
 }
 
@@ -80,7 +83,9 @@ export class Recompiler {
     }
 
     // Gets hash of each .cairo file inside source
-    private async getContractHash(paths: ProjectPathsConfig): Promise<Record<string, ContractData>> {
+    private async getContractHash(
+        paths: ProjectPathsConfig
+    ): Promise<Record<string, ContractData>> {
         const { starknetSources: defaultSourcesPath } = paths;
 
         const sourceRegex = new RegExp("^" + defaultSourcesPath + "/");
