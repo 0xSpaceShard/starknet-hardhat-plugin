@@ -366,5 +366,6 @@ task("test")
 
 task("run").setAction(starknetRunAction);
 
-task("starknet-plugin-version", "Prints the version of the starknet plugin.")
-    .setAction(starknetPluginVersionAction);
+task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
+    starknetPluginVersionAction
+);

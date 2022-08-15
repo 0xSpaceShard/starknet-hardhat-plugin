@@ -595,7 +595,6 @@ export async function starknetRunAction(
     });
 }
 
-export async function starknetPluginVersionAction(
-) {
+export async function starknetPluginVersionAction() {
     console.log(`Version: ${version}`);
 }
