@@ -10,7 +10,14 @@ export class DockerDevnet extends ExternalServer {
     private docker: HardhatDocker;
     private args?: string[];
 
-    constructor(private image: Image, host: string, port: string, args?: string[], stdout?: string, stderr?: string) {
+    constructor(
+        private image: Image,
+        host: string,
+        port: string,
+        args?: string[],
+        stdout?: string,
+        stderr?: string
+    ) {
         super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
         this.args = args;
     }

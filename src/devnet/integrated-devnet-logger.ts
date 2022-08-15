@@ -2,7 +2,6 @@ import * as path from "path";
 import * as fs from "fs";
 
 export class IntegratedDevnetLogger {
-
     constructor(protected stdout?: string, protected stderr?: string) {
         this.checkFileExists(this.stdout);
         this.checkFileExists(this.stderr);

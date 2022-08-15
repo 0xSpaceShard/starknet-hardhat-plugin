@@ -31,10 +31,12 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
     if (devnetNetwork.venv) {
         return new VenvDevnet(
             devnetNetwork.venv,
-            hostname, port,
+            hostname,
+            port,
             devnetNetwork?.args,
             devnetNetwork?.stdout,
-            devnetNetwork?.stderr);
+            devnetNetwork?.stderr
+        );
     }
 
     if (hostname === "localhost") {
