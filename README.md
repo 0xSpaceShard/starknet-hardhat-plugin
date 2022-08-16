@@ -174,9 +174,17 @@ npx hardhat starknet-estimate-fee [--starknet-network <NAME>] [--gateway-url <UR
 
 Estimates the gas fee of a function execution.
 
+### `starknet-plugin-version`
+
+Prints the version of the plugin.
+
+```
+npx hardhat starknet-plugin-version
+```
+
 ### `run`
 
-No CLI options introduced to the original `hardhat run`, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
+Introduces the `--starknet-network` option to the existing `hardhat run` task.
 
 ### `test`
 
@@ -641,6 +649,26 @@ import { starknet } from "hardhat";
 const wallet = starknet.getWallet("MyWallet");
 const contract = ...;
 await contract.invoke("increase_balance", { amount: 1 }, { wallet });
+```
+
+## Recompilation
+
+Recompilation is performed when contracts are updated or when artifacts are missing. A file will be created with the name `cairo-files-cache.json` to handle caching. Recompilation is handled before the following [CLI commands](#cli-commands) are executed.
+
+- `npx hardhat starknet-deploy`
+- `npx hardhat starknet-invoke`
+- `npx hardhat starknet-call`
+- `npx hardhat run`
+- `npx hardhat test`
+
+This feature is turned off by default and is specified in the `hardhat.config.ts` file.
+
+```typescript
+module.exports = {
+    starknet: {
+        recompile: true // <- to switch recompilation on
+    }
+};
 ```
 
 ## Account

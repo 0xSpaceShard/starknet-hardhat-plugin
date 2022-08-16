@@ -183,6 +183,11 @@ export async function getBlockUtil(
         hash: identifier?.blockHash
     };
 
+    if (identifier && typeof identifier !== "object") {
+        const msg = `Invalid identifier provided to getBlock: ${identifier}`;
+        throw new HardhatPluginError(PLUGIN_NAME, msg);
+    }
+
     if (blockOptions.number == null && !blockOptions.hash) {
         blockOptions.number = "latest";
     }

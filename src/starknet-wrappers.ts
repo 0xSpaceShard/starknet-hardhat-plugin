@@ -1,6 +1,5 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import axios from "axios";
-import { spawnSync } from "child_process";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
@@ -217,32 +216,28 @@ export abstract class StarknetWrapper {
 
     public abstract getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
-    protected getPythonDeployAccountScript(options: DeployAccountWrapperOptions): string {
-        const wallet = options.wallet ? "'" + options.wallet + "'" : "None";
-        const accountName = options.accountName ? "'" + options.accountName + "'" : "'__default__'";
-        const accountDir = options.accountDir ? "'" + options.accountDir + "'" : "None";
-        const gateway_url = "'" + options.gatewayUrl + "/gateway'";
-        const feeder_gateway_url = "'" + options.feederGatewayUrl + "/feeder_gateway'";
-        const network = "'" + options.network + "'";
-
-        const args = [
-            `network=${network}`,
-            `network_id=${network}`,
-            `wallet=${wallet}`,
-            `account=${accountName}`,
-            `account_dir=${accountDir}`,
-            "flavor=None",
-            `gateway_url=${gateway_url}`,
-            `feeder_gateway_url=${feeder_gateway_url}`,
-            "command='deploy_account'"
+    protected prepareDeployAccountOptions(options: DeployAccountWrapperOptions): string[] {
+        const prepared = [
+            "deploy_account",
+            "--network_id",
+            options.network,
+            "--account",
+            options.accountName || "__default__",
+            "--gateway_url",
+            options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl
         ];
 
-        let script = `import asyncio
-        from argparse import Namespace
-        from starkware.starknet.cli.starknet_cli import deploy_account
-        asyncio.run(deploy_account(Namespace(${args.join(",")}),[]))`;
-        script = script.replace(/(?:\r\n|\r|\n)/g, ";");
-        return script;
+        if (options.wallet) {
+            prepared.push("--wallet", options.wallet);
+        }
+
+        if (options.accountDir) {
+            prepared.push("--account_dir", options.accountDir);
+        }
+
+        return prepared;
     }
 
     public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
@@ -458,11 +453,11 @@ export class DockerWrapper extends StarknetWrapper {
 
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const deployAccountScript = this.getPythonDeployAccountScript(options);
+        const preparedOptions = this.prepareDeployAccountOptions(options);
         const docker = await this.getDocker();
         const executed = await docker.runContainer(
             this.image,
-            ["python", "-c", deployAccountScript],
+            ["starknet", ...preparedOptions],
             dockerOptions
         );
         return executed;
@@ -556,88 +551,77 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     /**
-     * Unlike `executeDirectly`, interacts with Starknet CLI through a server
+     * Interacts with Starknet CLI through a server
      */
-    private async execute(preparedOptions: string[]): Promise<ProcessResult> {
-        await this.starknetVenvProxy.ensureStarted();
-        const response = await axios.post<ProcessResult>(this.starknetVenvProxy.url, {
-            args: preparedOptions
-        });
-
-        return response.data;
-    }
-
-    /**
-     * Spawns a subprocess which interacts with the CLI tool specified with `commandPath`.
-     */
-    private async executeDirectly(
-        commandPath: string,
+    private async execute(
+        command: "starknet" | "starknet-compile",
         preparedOptions: string[]
     ): Promise<ProcessResult> {
-        const process = spawnSync(commandPath, preparedOptions);
-
-        if (!process.stdout) {
-            const msg = `${commandPath} not found. Check that your Python virtual environment has 'cairo-lang' installed.`;
-            throw new StarknetPluginError(msg);
+        await this.starknetVenvProxy.ensureStarted();
+        try {
+            const response = await axios.post<ProcessResult>(this.starknetVenvProxy.url, {
+                command: command,
+                args: preparedOptions
+            });
+            return response.data;
+        } catch (error) {
+            const parent = error instanceof Error && error;
+            const msg = "Error in interaction with Starknet CLI proxy server";
+            throw new StarknetPluginError(msg, parent);
         }
-        return {
-            statusCode: process.status,
-            stdout: process.stdout,
-            stderr: process.stderr
-        };
     }
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
-        const executed = await this.executeDirectly(this.starknetCompilePath, preparedOptions);
+        const executed = await this.execute("starknet-compile", preparedOptions);
         return executed;
     }
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeclareOptions(options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeployOptions(options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInteractOptions(options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
-        const deployAccountScript = this.getPythonDeployAccountScript(options);
-        const executed = await this.executeDirectly(this.pythonPath, ["-c", deployAccountScript]);
+        const preparedOptions = this.prepareDeployAccountOptions(options);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
-        const executed = await this.execute(preparedOptions);
+        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 }

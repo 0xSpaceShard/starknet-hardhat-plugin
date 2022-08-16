@@ -3,7 +3,8 @@ import {
     HardhatRuntimeEnvironment,
     HttpNetworkConfig,
     NetworkConfig,
-    NetworksConfig
+    NetworksConfig,
+    ProjectPathsConfig
 } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import {
@@ -115,6 +116,12 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     }
     const files = paths.filter((file) => fs.lstatSync(file).isFile());
     return files;
+}
+
+export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): string {
+    const rootRegex = new RegExp("^" + paths.root);
+    const suffix = sourcePath.replace(rootRegex, "");
+    return path.join(paths.starknetArtifacts, suffix);
 }
 
 export function checkArtifactExists(artifactsPath: string): void {
