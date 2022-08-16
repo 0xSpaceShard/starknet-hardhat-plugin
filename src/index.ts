@@ -363,4 +363,6 @@ task("test")
     .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
     .setAction(starknetTestAction);
 
-task("run").setAction(starknetRunAction);
+task("run")
+    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
+    .setAction(starknetRunAction);

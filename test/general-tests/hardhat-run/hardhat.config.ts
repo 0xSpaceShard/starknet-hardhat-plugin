@@ -2,7 +2,7 @@ import "../dist/src/index.js";
 
 module.exports = {
     starknet: {
-        network: "devnet"
+        network: process.env.NETWORK
     },
     networks: {
         devnet: {
