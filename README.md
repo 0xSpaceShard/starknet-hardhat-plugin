@@ -176,7 +176,7 @@ Estimates the gas fee of a function execution.
 
 ### `run`
 
-No CLI options introduced to the original `hardhat run`, but a starknet network can be specified using the config file. See [Runtime network](#runtime-network).
+Introduces the `--starknet-network` option to the existing `hardhat run` task.
 
 ### `test`
 
