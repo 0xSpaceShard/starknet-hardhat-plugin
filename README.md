@@ -174,6 +174,14 @@ npx hardhat starknet-estimate-fee [--starknet-network <NAME>] [--gateway-url <UR
 
 Estimates the gas fee of a function execution.
 
+### `starknet-plugin-version`
+
+Prints the version of the plugin.
+
+```
+npx hardhat starknet-plugin-version
+```
+
 ### `run`
 
 Introduces the `--starknet-network` option to the existing `hardhat run` task.

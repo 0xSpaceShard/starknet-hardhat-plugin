@@ -25,6 +25,7 @@ import {
 import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./devnet";
 import { Recompiler } from "./recompiler";
+import { version } from "../package.json";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -592,4 +593,8 @@ export async function starknetRunAction(
     await runWithDevnet(hre, async () => {
         await runSuper(args);
     });
+}
+
+export async function starknetPluginVersionAction() {
+    console.log(`Version: ${version}`);
 }
