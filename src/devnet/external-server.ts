@@ -41,6 +41,8 @@ export async function getFreePort(): Promise<string> {
     throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
+
+
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
@@ -126,23 +128,16 @@ export abstract class ExternalServer {
                 const isAbnormalExit = this.childProcess != null;
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
-                    if (this.connected) {
-                        let msg = logger.isFile(this.stderr)
-                            ? `${this.processName} spawned and connected successfully, but later exited with code=${code}\nError logged to file ${this.stderr}`
-                            : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
-                        if (!this.stderr) {
-                            msg = `${msg}:\n${this.lastError}`;
-                        }
-                        throw new StarknetPluginError(msg);
-                    } else {
-                        let msg = logger.isFile(this.stderr)
-                            ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
-                            : `integrated-devnet connect exited with code=${code}`;
-                        if (!this.stderr) {
-                            msg = `${msg}:\n${this.lastError}`;
-                        }
-                        throw new StarknetPluginError(msg);
+                    if (this.stderr !== "STDERR") {
+                        console.error(this.lastError);
                     }
+
+                    const circumstance = this.connected ? "running" : "connecting";
+                    const moreInfo = logger.isFile(this.stderr)
+                        ? "More error info in " + this.stderr
+                        : "";
+                    const msg = `${this.processName} exited with code=${code} while ${circumstance}. ${moreInfo}`;
+                    throw new StarknetPluginError(msg);
                 }
             });
         });
