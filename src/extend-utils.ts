@@ -185,7 +185,7 @@ export async function getBlockUtil(
 
     if (identifier && typeof identifier !== "object") {
         const msg = `Invalid identifier provided to getBlock: ${identifier}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (blockOptions.number == null && !blockOptions.hash) {
