@@ -1,8 +1,7 @@
 import axios from "axios";
 import net from "net";
 import { ChildProcess } from "child_process";
-import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME } from "../constants";
+import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 
 function sleep(amountMillis: number): Promise<void> {
@@ -39,10 +38,7 @@ export async function getFreePort(): Promise<string> {
         }
     }
 
-    throw new HardhatPluginError(
-        PLUGIN_NAME,
-        "Could not find a free port, try rerunning your command!"
-    );
+    throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
 export abstract class ExternalServer {
@@ -78,7 +74,7 @@ export abstract class ExternalServer {
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
             const msg = `Cannot spawn ${this.processName}: ${this.host}:${this.port} already occupied.`;
-            throw new HardhatPluginError(PLUGIN_NAME, msg);
+            throw new StarknetPluginError(msg);
         }
 
         this.childProcess = await this.spawnChildProcess();
@@ -107,7 +103,7 @@ export abstract class ExternalServer {
                     const elapsedMillis = new Date().getTime() - startTime;
                     if (elapsedMillis >= maxWaitMillis) {
                         const msg = `${this.processName} connection timed out!`;
-                        reject(new HardhatPluginError(PLUGIN_NAME, msg));
+                        reject(new StarknetPluginError(msg));
                         break;
                     } else if (await this.isServerAlive()) {
                         this.connected = true;
@@ -137,7 +133,7 @@ export abstract class ExternalServer {
                         if (!this.stderr) {
                             msg = `${msg}:\n${this.lastError}`;
                         }
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                        throw new StarknetPluginError(msg);
                     } else {
                         let msg = logger.isFile(this.stderr)
                             ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
@@ -145,7 +141,7 @@ export abstract class ExternalServer {
                         if (!this.stderr) {
                             msg = `${msg}:\n${this.lastError}`;
                         }
-                        throw new HardhatPluginError(PLUGIN_NAME, msg);
+                        throw new StarknetPluginError(msg);
                     }
                 }
             });

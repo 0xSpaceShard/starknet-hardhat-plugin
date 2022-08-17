@@ -1,6 +1,6 @@
 import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import axios from "axios";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import * as path from "path";
 import { PLUGIN_NAME } from "./constants";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
@@ -291,7 +291,7 @@ type String2String = { [path: string]: string };
 function addPaths(paths: String2String, colonSeparatedStr: string): void {
     for (let p of colonSeparatedStr.split(":")) {
         if (!path.isAbsolute(p)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `Path is not absolute: ${p}`);
+            throw new StarknetPluginError(`Path is not absolute: ${p}`);
         }
 
         // strip trailing slash(es)
@@ -567,7 +567,7 @@ export class VenvWrapper extends StarknetWrapper {
         } catch (error) {
             const parent = error instanceof Error && error;
             const msg = "Error in interaction with Starknet CLI proxy server";
-            throw new HardhatPluginError(PLUGIN_NAME, msg, parent);
+            throw new StarknetPluginError(msg, parent);
         }
     }
 

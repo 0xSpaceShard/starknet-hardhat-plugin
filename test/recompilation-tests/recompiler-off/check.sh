@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-EXPECTED='HardhatPluginError: Artifact expected to be at'
+EXPECTED='StarknetPluginError: Artifact expected to be at'
 
 echo "Testing with deleted artifact on recompiler option set to false"
 rm -rf starknet-artifacts/contracts/contract.cairo/

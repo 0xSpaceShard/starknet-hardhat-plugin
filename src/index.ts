@@ -1,12 +1,12 @@
 import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { HardhatPluginError, lazyObject } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { lazyObject } from "hardhat/plugins";
 import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig } from "hardhat/types";
 import exitHook from "exit-hook";
 
 import "./type-extensions";
 import {
-    PLUGIN_NAME,
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
@@ -151,7 +151,7 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
     if (hre.config.starknet.dockerizedVersion) {
         const msg =
             "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
     hre.starknetWrapper = new VenvWrapper(venvPath);
 }

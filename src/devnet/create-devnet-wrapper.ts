@@ -1,12 +1,11 @@
 import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "../starknet-plugin-error";
 
 import {
     DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
     DEVNET_DOCKER_REPOSITORY,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_URL,
-    PLUGIN_NAME
+    INTEGRATED_DEVNET_URL
 } from "../constants";
 import { getImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
@@ -22,10 +21,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
     const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
 
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-        throw new HardhatPluginError(
-            PLUGIN_NAME,
-            "Integrated devnet works only with localhost and 127.0.0.1"
-        );
+        throw new StarknetPluginError("Integrated devnet works only with localhost and 127.0.0.1");
     }
 
     if (devnetNetwork.venv) {
@@ -40,8 +36,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
     }
 
     if (hostname === "localhost") {
-        throw new HardhatPluginError(
-            PLUGIN_NAME,
+        throw new StarknetPluginError(
             "Dockerized integrated devnet works only with host 127.0.0.1"
         );
     }

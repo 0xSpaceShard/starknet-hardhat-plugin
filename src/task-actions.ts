@@ -2,8 +2,8 @@ import * as path from "path";
 import * as fs from "fs";
 import axios from "axios";
 import FormData = require("form-data");
-import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME, ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
 import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -30,7 +30,7 @@ import { version } from "../package.json";
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
         const msg = `Source expected to be at ${sourcePath}, but not found.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 
@@ -104,13 +104,13 @@ function getGatewayUrl(args: TaskArguments, hre: HardhatRuntimeEnvironment): str
 
     if (gatewayUrl && networkName) {
         const msg = "Only one of starknet-network and gateway-url should be provided.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (!networkName) {
         // we already know no gatewayUrl is provided
         const msg = "No starknet-network or gateway-url provided.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     const network = getNetwork(networkName, hre.config.networks, "starknet-network");
@@ -181,7 +181,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
 
     if (statusCode) {
         const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 
@@ -265,7 +265,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     }
 
     if (statusCode) {
-        throw new HardhatPluginError(PLUGIN_NAME, `Failed deployment of ${statusCode} contracts`);
+        throw new StarknetPluginError(`Failed deployment of ${statusCode} contracts`);
     }
 }
 
@@ -285,8 +285,7 @@ function getVerificationNetwork(
     networkName ||= ALPHA_TESTNET;
     const network = getNetwork<HttpNetworkConfig>(networkName, hre.config.networks, origin);
     if (!network.verificationUrl) {
-        throw new HardhatPluginError(
-            PLUGIN_NAME,
+        throw new StarknetPluginError(
             `Network ${networkName} does not support Voyager verification.`
         );
     }
@@ -311,7 +310,7 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
     } catch (error) {
         const msg =
             "Something went wrong while checking if the contract has already been verified.";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (isVerified) {
@@ -326,7 +325,7 @@ function getMainVerificationPath(contractPath: string, root: string) {
     if (!path.isAbsolute(contractPath)) {
         contractPath = path.normalize(path.join(root, contractPath));
         if (!fs.existsSync(contractPath)) {
-            throw new HardhatPluginError(PLUGIN_NAME, `File ${contractPath} does not exist`);
+            throw new StarknetPluginError(`File ${contractPath} does not exist`);
         }
     }
     return contractPath;
@@ -350,7 +349,7 @@ async function handleContractVerification(
     } else if (!args.accountContract || args.accountContract === "false") {
         accountContract = "false";
     } else {
-        throw new HardhatPluginError(PLUGIN_NAME, "--account-contract must be true or false");
+        throw new StarknetPluginError("--account-contract must be true or false");
     }
     bodyFormData.append("account-contract", accountContract);
     bodyFormData.append("license", args.license || "No License (None)");
@@ -372,8 +371,7 @@ async function handleContractVerification(
             headers: bodyFormData.getHeaders()
         })
         .catch((err) => {
-            throw new HardhatPluginError(
-                PLUGIN_NAME,
+            throw new StarknetPluginError(
                 `\
 Could not verify the contract at address ${args.address}.
 ${
@@ -403,7 +401,7 @@ function handleMultiPartContractVerification(
         if (!path.isAbsolute(item)) {
             paths[index] = path.normalize(path.join(root, item));
             if (!fs.existsSync(paths[index])) {
-                throw new HardhatPluginError(PLUGIN_NAME, `File ${paths[index]} does not exist`);
+                throw new StarknetPluginError(`File ${paths[index]} does not exist`);
             }
         }
         bodyFormData.append("file" + index, fs.readFileSync(paths[index]), {
@@ -471,7 +469,7 @@ async function starknetInteractAction(
             `Could not perform ${choice.cliCommand} of ${args.function}:\n` +
             executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
-        throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+        throw new StarknetPluginError(replacedMsg);
     }
 
     if (choice === InteractChoice.INVOKE && args.wait) {
@@ -522,7 +520,7 @@ export async function starknetDeployAccountAction(
     if (statusCode) {
         const msg = "Could not deploy account contract:\n" + executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
-        throw new HardhatPluginError(PLUGIN_NAME, replacedMsg);
+        throw new StarknetPluginError(replacedMsg);
     }
 }
 

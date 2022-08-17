@@ -6,7 +6,7 @@ import {
     NetworksConfig,
     ProjectPathsConfig
 } from "hardhat/types";
-import { HardhatPluginError } from "hardhat/plugins";
+import { StarknetPluginError } from "./starknet-plugin-error";
 import {
     ALPHA_MAINNET,
     ALPHA_MAINNET_INTERNALLY,
@@ -14,8 +14,7 @@ import {
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_INTERNALLY,
-    PLUGIN_NAME
+    INTEGRATED_DEVNET_INTERNALLY
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -128,7 +127,7 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
 export function checkArtifactExists(artifactsPath: string): void {
     if (!fs.existsSync(artifactsPath)) {
         const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 
@@ -157,14 +156,11 @@ export function getNetwork<N extends NetworkConfig>(
     if (!network) {
         const available = Object.keys(networks).join(", ");
         const msg = `Invalid network provided in ${origin}: ${networkName}.\nValid hardhat networks: ${available}`;
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 
     if (!network.url) {
-        throw new HardhatPluginError(
-            PLUGIN_NAME,
-            `Cannot use network ${networkName}. No "url" specified.`
-        );
+        throw new StarknetPluginError(`Cannot use network ${networkName}. No "url" specified.`);
     }
     network.starknetChainId ||= StarknetChainId.TESTNET;
     return network;
@@ -198,7 +194,7 @@ export async function findPath(traversable: string, pathSegment: string) {
     } else {
         const msg =
             "More than one file was found because the path provided is ambiguous, please specify a relative path";
-        throw new HardhatPluginError(PLUGIN_NAME, msg);
+        throw new StarknetPluginError(msg);
     }
 }
 
