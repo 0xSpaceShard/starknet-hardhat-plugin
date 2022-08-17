@@ -7,8 +7,15 @@ export class VenvDevnet extends ExternalServer {
     private command: string;
     private args?: string[];
 
-    constructor(venvPath: string, host: string, port: string, args?: string[]) {
-        super(host, port, "is_alive", "integrated-devnet");
+    constructor(
+        venvPath: string,
+        host: string,
+        port: string,
+        args?: string[],
+        stdout?: string,
+        stderr?: string
+    ) {
+        super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
 
         this.command = "starknet-devnet";
         this.args = args;

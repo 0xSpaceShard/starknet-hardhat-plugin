@@ -2,6 +2,7 @@ import axios from "axios";
 import net from "net";
 import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
+import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -42,14 +43,16 @@ export async function getFreePort(): Promise<string> {
 
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
-    private lastError: string = null;
     private connected = false;
+    private lastError: string = null;
 
     constructor(
         protected host: string,
         protected port: string | null,
         private isAliveURL: string,
-        private processName: string
+        private processName: string,
+        protected stdout?: string,
+        protected stderr?: string
     ) {
         ExternalServer.cleanupFns.push(this.cleanup.bind(this));
     }
@@ -75,10 +78,17 @@ export abstract class ExternalServer {
         }
 
         this.childProcess = await this.spawnChildProcess();
+        const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
+        this.childProcess.stdout.on("data", async (chunk) => {
+            chunk = chunk.toString();
+            await logger.logHandler(this.stdout, chunk);
+        });
 
         // capture the most recent message from stderr
-        this.childProcess.stderr.on("data", (chunk) => {
-            this.lastError = chunk.toString();
+        this.childProcess.stderr.on("data", async (chunk) => {
+            chunk = chunk.toString();
+            await logger.logHandler(this.stderr, chunk);
+            this.lastError = chunk;
         });
 
         return new Promise((resolve, reject) => {
@@ -117,11 +127,21 @@ export abstract class ExternalServer {
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
                     if (this.connected) {
-                        const msg = `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
+                        let msg = logger.isFile(this.stderr)
+                            ? `${this.processName} spawned and connected successfully, but later exited with code=${code}\nError logged to file ${this.stderr}`
+                            : `${this.processName} spawned and connected successfully, but later exited with code=${code}`;
+                        if (!this.stderr) {
+                            msg = `${msg}:\n${this.lastError}`;
+                        }
                         throw new StarknetPluginError(msg);
                     } else {
-                        const msg = `${this.processName} connect exited with code=${code}:\n${this.lastError}`;
-                        reject(new StarknetPluginError(msg));
+                        let msg = logger.isFile(this.stderr)
+                            ? `integrated-devnet connect exited with code=${code}:\nError logged to file ${this.stderr}`
+                            : `integrated-devnet connect exited with code=${code}`;
+                        if (!this.stderr) {
+                            msg = `${msg}:\n${this.lastError}`;
+                        }
+                        throw new StarknetPluginError(msg);
                     }
                 }
             });

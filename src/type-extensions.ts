@@ -84,6 +84,8 @@ declare module "hardhat/types/config" {
         dockerizedVersion?: string;
         starknetChainId?: StarknetChainId;
         args?: string[];
+        stdout?: string;
+        stderr?: string;
     }
 
     export interface HardhatNetworkUserConfig {
@@ -91,6 +93,8 @@ declare module "hardhat/types/config" {
         venv?: string;
         dockerizedVersion?: string;
         args?: string[];
+        stdout?: string;
+        stderr?: string;
     }
 }
 
