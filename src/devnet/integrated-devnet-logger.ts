@@ -17,9 +17,7 @@ export class IntegratedDevnetLogger {
             await fs.promises.mkdir(dir, { recursive: true });
         }
 
-        if (!fs.existsSync(file)) {
-            await fs.promises.writeFile(file, "");
-        }
+        await fs.promises.writeFile(file, "");
     }
 
     public async logHandler(logTarget: string, message: string): Promise<void> {
