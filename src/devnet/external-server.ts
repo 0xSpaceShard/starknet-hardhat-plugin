@@ -41,6 +41,8 @@ export async function getFreePort(): Promise<string> {
     throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
+
+
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
@@ -126,7 +128,9 @@ export abstract class ExternalServer {
                 const isAbnormalExit = this.childProcess != null;
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
-                    console.error(this.lastError);
+                    if (this.stderr !== "STDERR") {
+                        console.error(this.lastError);
+                    }
 
                     const circumstance = this.connected ? "running" : "connecting";
                     const moreInfo = logger.isFile(this.stderr)
