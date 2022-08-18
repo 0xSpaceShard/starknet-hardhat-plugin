@@ -1,21 +1,19 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { ChildProcess, spawn, spawnSync } from "child_process";
-
 import { ExternalServer } from "./external-server";
 
-const CONTAINER_NAME = "integrated-devnet";
-const DEVNET_DOCKER_INTERNAL_PORT = 5050;
+// eslint-disable-next-line no-warning-comments
+// TODO rename this file or move something
 
-export class DockerServer extends ExternalServer {
+export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
 
     constructor(
         private image: Image,
         host: string,
         externalPort: string,
-        private internalPort: string,
         isAliveURL: string,
-        containerName: string,
+        private containerName: string,
         protected args?: string[],
         stdout?: string,
         stderr?: string
@@ -39,37 +37,40 @@ export class DockerServer extends ExternalServer {
         await this.pullImage();
 
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
-        console.log(`Starting the "${CONTAINER_NAME}" Docker container (${formattedImage})`);
+        console.log(`Starting the "${this.containerName}" Docker container (${formattedImage})`);
         const args = [
             "run",
             "--rm",
             "--name",
-            CONTAINER_NAME,
-            "-p",
-            `${this.host}:${this.port}:${this.internalPort}`,
-            formattedImage
-        ].concat(this.args || []);
+            this.containerName,
+            ...(await this.getDockerArgs()),
+            formattedImage,
+            ...(await this.getImageArgs())
+        ];
         return spawn("docker", args);
     }
 
+    protected abstract getDockerArgs(): Promise<Array<string>>;
+
+    protected abstract getImageArgs(): Promise<Array<string>>;
+
     protected cleanup(): void {
-        console.log(`Killing ${CONTAINER_NAME} Docker container`);
-        spawnSync("docker", ["kill", CONTAINER_NAME]);
+        console.log(`Killing ${this.containerName} Docker container`);
+        spawnSync("docker", ["kill", this.containerName]);
         this.childProcess?.kill();
     }
 }
 
 export class DockerDevnet extends DockerServer {
-    constructor(image: Image, host: string, port: string, args?: string[]) {
-        super(
-            image,
-            host,
-            port,
-            DEVNET_DOCKER_INTERNAL_PORT.toString(),
-            "is_alive",
-            "integrated-devnet",
-            args
-        );
-        this.args = args;
+    constructor(image: Image, host: string, port: string, private devnetArgs?: string[], stdout?: string, stderr?: string) {
+        super(image, host, port, "is_alive", "integrated-devnet", devnetArgs, stdout, stderr);
+    }
+
+    protected async getDockerArgs(): Promise<string[]> {
+        return ["-p", `${this.host}:${this.port}:${this.port}`];
+    }
+
+    protected async getImageArgs(): Promise<string[]> {
+        return this.devnetArgs || [];
     }
 }
