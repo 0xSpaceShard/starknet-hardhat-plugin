@@ -74,6 +74,10 @@ except:
 def run(server_class=HTTPServer, handler_class=MyRequestHandler):
     server_address = ("", port)
     httpd = server_class(server_address, handler_class)
-    httpd.serve_forever()
+    print("Listening on port", port)
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("Exiting")
 
 run()
