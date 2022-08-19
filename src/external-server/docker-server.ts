@@ -2,9 +2,6 @@ import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { ChildProcess, spawn, spawnSync } from "child_process";
 import { ExternalServer } from "./external-server";
 
-// eslint-disable-next-line no-warning-comments
-// TODO rename this file or move something
-
 export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
     private containerName: string;
@@ -58,19 +55,5 @@ export abstract class DockerServer extends ExternalServer {
     protected cleanup(): void {
         spawnSync("docker", ["kill", this.containerName]);
         this.childProcess?.kill();
-    }
-}
-
-export class DockerDevnet extends DockerServer {
-    constructor(image: Image, host: string, port: string, private devnetArgs?: string[], stdout?: string, stderr?: string) {
-        super(image, host, port, "is_alive", "integrated-devnet", devnetArgs, stdout, stderr);
-    }
-
-    protected async getDockerArgs(): Promise<string[]> {
-        return ["-p", `${this.host}:${this.port}:${this.port}`];
-    }
-
-    protected async getImageArgs(): Promise<string[]> {
-        return this.devnetArgs || [];
     }
 }

@@ -1,5 +1,6 @@
 import { ChildProcess, spawn } from "child_process";
-import { ExternalServer, getFreePort } from "./devnet/external-server";
+import { ExternalServer } from "./external-server";
+import { getFreePort } from "./external-server/external-server";
 import path from "path";
 
 export class StarknetVenvProxy extends ExternalServer {

@@ -52,7 +52,7 @@ import {
     getBlockUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
-import { ExternalServer } from "./devnet";
+import { ExternalServer } from "./external-server";
 import { StarknetChainId } from "starknet/constants";
 
 exitHook(() => {

@@ -1,7 +1,7 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
-import { DockerServer } from "./devnet/docker-devnet";
-import { getFreePort } from "./devnet/external-server";
+import { DockerServer } from "./external-server/docker-server";
+import { getFreePort } from "./external-server/external-server";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);

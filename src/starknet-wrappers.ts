@@ -5,7 +5,7 @@ import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
-import { ExternalServer } from "./devnet";
+import { ExternalServer } from "./external-server";
 
 interface CompileWrapperOptions {
     file: string;

@@ -13,7 +13,7 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export function isFreePort(port: number): Promise<boolean> {
+function isFreePort(port: number): Promise<boolean> {
     return new Promise((accept, reject) => {
         const sock = net.createConnection(port);
         sock.once("connect", () => {
@@ -43,8 +43,6 @@ export async function getFreePort(): Promise<string> {
 
     throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
-
-
 
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
