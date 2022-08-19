@@ -28,6 +28,6 @@ export class StarknetDockerProxy extends DockerServer {
 
     protected async getImageArgs(): Promise<string[]> {
         this.port = await getFreePort();
-        return ["python", PROXY_SERVER_CONTAINER_PATH, this.port];
+        return ["python3", PROXY_SERVER_CONTAINER_PATH, this.port];
     }
 }
