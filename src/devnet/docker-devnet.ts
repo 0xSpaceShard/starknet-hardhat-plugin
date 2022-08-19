@@ -7,19 +7,21 @@ import { ExternalServer } from "./external-server";
 
 export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
+    private containerName: string;
 
     constructor(
         private image: Image,
         host: string,
         externalPort: string,
         isAliveURL: string,
-        private containerName: string,
+        containerName: string,
         protected args?: string[],
         stdout?: string,
         stderr?: string
     ) {
+        containerName += "-" + Date.now();
         super(host, externalPort, isAliveURL, containerName, stdout, stderr);
-        this.args = args;
+        this.containerName = containerName;
     }
 
     private async pullImage() {
@@ -55,7 +57,6 @@ export abstract class DockerServer extends ExternalServer {
     protected abstract getImageArgs(): Promise<Array<string>>;
 
     protected cleanup(): void {
-        console.log(`Killing ${this.containerName} Docker container`);
         spawnSync("docker", ["kill", this.containerName]);
         this.childProcess?.kill();
     }

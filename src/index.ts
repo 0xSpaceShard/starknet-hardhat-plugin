@@ -21,6 +21,7 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
 import {
+    getAccountPath,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
     getImageTagByArch,
@@ -162,7 +163,8 @@ function extractAccountPaths(hre: HardhatRuntimeEnvironment): string[] {
     for (const walletName in wallets) {
         const wallet = wallets[walletName];
         if (wallet.accountPath) {
-            accountPaths.add(wallet.accountPath);
+            const normalizedPath = getAccountPath(wallet.accountPath, hre);
+            accountPaths.add(normalizedPath);
         }
     }
     return [...accountPaths];
