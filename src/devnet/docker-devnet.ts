@@ -39,7 +39,6 @@ export abstract class DockerServer extends ExternalServer {
         await this.pullImage();
 
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
-        console.log(`Starting the "${this.containerName}" Docker container (${formattedImage})`);
         const args = [
             "run",
             "--rm",
