@@ -538,13 +538,13 @@ export class VenvWrapper extends StarknetWrapper {
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
             this.starknetCompilePath = "starknet-compile";
-            this.pythonPath = "python";
+            this.pythonPath = "python3";
         } else {
             venvPath = normalizeVenvPath(venvPath);
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
 
             this.starknetCompilePath = getPrefixedCommand(venvPath, "starknet-compile");
-            this.pythonPath = getPrefixedCommand(venvPath, "python");
+            this.pythonPath = getPrefixedCommand(venvPath, "python3");
         }
 
         this.starknetVenvProxy = new StarknetVenvProxy(this.pythonPath);
