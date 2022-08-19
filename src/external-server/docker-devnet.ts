@@ -17,7 +17,7 @@ export class DockerDevnet extends DockerServer {
         return ["-p", `${this.host}:${this.port}:${this.port}`];
     }
 
-    protected async getImageArgs(): Promise<string[]> {
+    protected async getContainerArgs(): Promise<string[]> {
         return this.devnetArgs || [];
     }
 }

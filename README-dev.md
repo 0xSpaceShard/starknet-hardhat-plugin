@@ -89,15 +89,14 @@ Likely places where the old version has to be replaced with the new version are 
 
 This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-deploy` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts):
+There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts) and both rely on a [proxy server](/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container
     -   the default option
 -   Venv wrapper:
     -   for users that already have `cairo-lang` installed
-    -   faster than Docker wrapper
-    -   sends Starknet CLI commands to a [proxy server](/src/starknet_cli_wrapper.py) which has the `main` method of Starknet CLI imported.
+    -   faster than Docker wrapper - not necessarily true since Docker wrapper also started using a proxy server
 
 ## Version management
 

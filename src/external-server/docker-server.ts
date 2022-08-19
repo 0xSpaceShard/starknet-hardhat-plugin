@@ -16,7 +16,7 @@ export abstract class DockerServer extends ExternalServer {
         stdout?: string,
         stderr?: string
     ) {
-        containerName += "-" + Math.random().toString().slice(2);
+        containerName += "-" + Math.random().toString().slice(2); // to allow
         super(host, externalPort, isAliveURL, containerName, stdout, stderr);
         this.containerName = containerName;
     }
@@ -43,14 +43,20 @@ export abstract class DockerServer extends ExternalServer {
             this.containerName,
             ...(await this.getDockerArgs()),
             formattedImage,
-            ...(await this.getImageArgs())
+            ...(await this.getContainerArgs())
         ];
         return spawn("docker", args);
     }
 
+    /**
+     * CLI arguments passed to the `docker` command.
+     */
     protected abstract getDockerArgs(): Promise<Array<string>>;
 
-    protected abstract getImageArgs(): Promise<Array<string>>;
+    /**
+     * CLI arguments passed to the docker container.
+     */
+    protected abstract getContainerArgs(): Promise<Array<string>>;
 
     protected cleanup(): void {
         spawnSync("docker", ["kill", this.containerName]);
