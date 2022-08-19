@@ -16,7 +16,7 @@ export abstract class DockerServer extends ExternalServer {
         stdout?: string,
         stderr?: string
     ) {
-        containerName += "-" + Date.now();
+        containerName += "-" + Math.random().toString().slice(2);
         super(host, externalPort, isAliveURL, containerName, stdout, stderr);
         this.containerName = containerName;
     }
