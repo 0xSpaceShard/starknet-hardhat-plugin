@@ -16,7 +16,8 @@ export abstract class DockerServer extends ExternalServer {
         stdout?: string,
         stderr?: string
     ) {
-        containerName += "-" + Math.random().toString().slice(2); // to allow
+        // to make name unique and allow multiple simultaneous instances
+        containerName += "-" + Math.random().toString().slice(2);
         super(host, externalPort, isAliveURL, containerName, stdout, stderr);
         this.containerName = containerName;
     }
