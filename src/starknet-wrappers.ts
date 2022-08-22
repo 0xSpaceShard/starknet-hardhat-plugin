@@ -1,12 +1,11 @@
-import { HardhatDocker, Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import axios from "axios";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import * as path from "path";
+import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { PLUGIN_NAME } from "./constants";
+import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
+import { ExternalServer } from "./external-server";
 
 interface CompileWrapperOptions {
     file: string;
@@ -74,6 +73,18 @@ interface BlockQueryWrapperOptions {
 }
 
 export abstract class StarknetWrapper {
+    constructor(private externalServer: ExternalServer) {}
+
+    public async execute(
+        command: "starknet" | "starknet-compile",
+        args: string[]
+    ): Promise<ProcessResult> {
+        return await this.externalServer.post<ProcessResult>({
+            command,
+            args
+        });
+    }
+
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
         const ret = [
             options.file,
@@ -282,115 +293,33 @@ function getFullImageName(image: Image): string {
 
 type String2String = { [path: string]: string };
 
-/**
- * Populate `paths` with paths from `colonSeparatedStr`.
- * `paths` maps a path to itself.
- * @param paths
- * @param colonSeparatedStr
- */
-function addPaths(paths: String2String, colonSeparatedStr: string): void {
-    for (let p of colonSeparatedStr.split(":")) {
-        if (!path.isAbsolute(p)) {
-            throw new StarknetPluginError(`Path is not absolute: ${p}`);
-        }
-
-        // strip trailing slash(es)
-        p = p.replace(/\/*$/, "");
-
-        // duplicate paths will cause errors
-        if (`${p}/` in paths) {
-            continue;
-        }
-        paths[p] = p;
-    }
-}
-
 export class DockerWrapper extends StarknetWrapper {
-    private docker: HardhatDocker;
-    private image: Image;
-    constructor(image: Image) {
-        super();
-        this.image = image;
+    constructor(image: Image, rootPath: string, accountPaths: string[], cairoPaths: string[]) {
+        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths));
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
     }
 
-    private async getDocker() {
-        if (!this.docker) {
-            this.docker = await HardhatDocker.create();
-            if (!(await this.docker.hasPulledImage(this.image))) {
-                console.log(`Pulling image ${getFullImageName(this.image)}`);
-                await this.docker.pullImage(this.image);
-            }
-        }
-        return this.docker;
-    }
-
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {
-            [options.file]: options.file,
-            [options.abi]: options.abi,
-            [options.output]: options.output
-        };
-
-        addPaths(binds, options.cairoPath);
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         const preparedOptions = this.prepareCompileOptions(options);
-
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet-compile", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet-compile", preparedOptions);
         return executed;
     }
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {
-            [options.contract]: options.contract
-        };
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeclareOptions(options);
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {
-            [options.contract]: options.contract
-        };
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeployOptions(options);
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
@@ -403,172 +332,72 @@ export class DockerWrapper extends StarknetWrapper {
             binds[options.accountDir] = options.accountDir;
         }
 
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareInteractOptions(options);
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
 
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {
-            [options.accountDir]: options.accountDir
-        };
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareDeployAccountOptions(options);
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
 
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
 
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
-
-        const dockerOptions = {
-            binds,
-            networkMode: "host"
-        };
-
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
 
-        const docker = await this.getDocker();
-        const executed = await docker.runContainer(
-            this.image,
-            ["starknet", ...preparedOptions],
-            dockerOptions
-        );
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 }
 
 export class VenvWrapper extends StarknetWrapper {
-    private starknetCompilePath: string;
-    private pythonPath: string;
-    private starknetVenvProxy: StarknetVenvProxy;
-
     constructor(venvPath: string) {
-        super();
-
+        let pythonPath: string;
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
-            this.starknetCompilePath = "starknet-compile";
-            this.pythonPath = "python3";
+            pythonPath = "python3";
         } else {
             venvPath = normalizeVenvPath(venvPath);
             console.log(`${PLUGIN_NAME} plugin using environment at ${venvPath}`);
-
-            this.starknetCompilePath = getPrefixedCommand(venvPath, "starknet-compile");
-            this.pythonPath = getPrefixedCommand(venvPath, "python3");
+            pythonPath = getPrefixedCommand(venvPath, "python3");
         }
 
-        this.starknetVenvProxy = new StarknetVenvProxy(this.pythonPath);
-    }
-
-    /**
-     * Interacts with Starknet CLI through a server
-     */
-    private async execute(
-        command: "starknet" | "starknet-compile",
-        preparedOptions: string[]
-    ): Promise<ProcessResult> {
-        await this.starknetVenvProxy.ensureStarted();
-        try {
-            const response = await axios.post<ProcessResult>(this.starknetVenvProxy.url, {
-                command: command,
-                args: preparedOptions
-            });
-            return response.data;
-        } catch (error) {
-            const parent = error instanceof Error && error;
-            const msg = "Error in interaction with Starknet CLI proxy server";
-            throw new StarknetPluginError(msg, parent);
-        }
+        super(new StarknetVenvProxy(pythonPath));
     }
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {

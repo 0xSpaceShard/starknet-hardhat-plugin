@@ -21,6 +21,7 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL
 } from "./constants";
 import {
+    getAccountPath,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
     getImageTagByArch,
@@ -51,7 +52,7 @@ import {
     getBlockUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
-import { ExternalServer } from "./devnet";
+import { ExternalServer } from "./external-server";
 import { StarknetChainId } from "starknet/constants";
 
 exitHook(() => {
@@ -156,6 +157,19 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
     hre.starknetWrapper = new VenvWrapper(venvPath);
 }
 
+function extractAccountPaths(hre: HardhatRuntimeEnvironment): string[] {
+    const accountPaths = new Set<string>();
+    const wallets = hre.config.starknet.wallets || {};
+    for (const walletName in wallets) {
+        const wallet = wallets[walletName];
+        if (wallet.accountPath) {
+            const normalizedPath = getAccountPath(wallet.accountPath, hre);
+            accountPaths.add(normalizedPath);
+        }
+    }
+    return [...accountPaths];
+}
+
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment((hre) => {
     const venvPath = hre.config.starknet.venv;
@@ -167,7 +181,14 @@ extendEnvironment((hre) => {
             hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
         );
 
-        hre.starknetWrapper = new DockerWrapper({ repository, tag });
+        const image = { repository, tag };
+        const accountPaths = extractAccountPaths(hre);
+        hre.starknetWrapper = new DockerWrapper(
+            image,
+            hre.config.paths.root,
+            accountPaths,
+            hre.config.paths.cairoPaths || []
+        );
     }
 });
 

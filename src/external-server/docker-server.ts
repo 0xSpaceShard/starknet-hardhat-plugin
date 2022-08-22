@@ -1,25 +1,25 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { ChildProcess, spawn, spawnSync } from "child_process";
-
 import { ExternalServer } from "./external-server";
 
-const CONTAINER_NAME = "integrated-devnet";
-const DEVNET_DOCKER_INTERNAL_PORT = 5050;
-
-export class DockerDevnet extends ExternalServer {
+export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
-    private args?: string[];
+    private containerName: string;
 
     constructor(
         private image: Image,
         host: string,
-        port: string,
-        args?: string[],
+        externalPort: string,
+        isAliveURL: string,
+        containerName: string,
+        protected args?: string[],
         stdout?: string,
         stderr?: string
     ) {
-        super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
-        this.args = args;
+        // to make name unique and allow multiple simultaneous instances
+        containerName += "-" + Math.random().toString().slice(2);
+        super(host, externalPort, isAliveURL, containerName, stdout, stderr);
+        this.containerName = containerName;
     }
 
     private async pullImage() {
@@ -37,22 +37,30 @@ export class DockerDevnet extends ExternalServer {
         await this.pullImage();
 
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
-        console.log(`Starting the "${CONTAINER_NAME}" Docker container (${formattedImage})`);
         const args = [
             "run",
             "--rm",
             "--name",
-            CONTAINER_NAME,
-            "-p",
-            `${this.host}:${this.port}:${DEVNET_DOCKER_INTERNAL_PORT}`,
-            formattedImage
-        ].concat(this.args || []);
+            this.containerName,
+            ...(await this.getDockerArgs()),
+            formattedImage,
+            ...(await this.getContainerArgs())
+        ];
         return spawn("docker", args);
     }
 
+    /**
+     * CLI arguments passed to the `docker` command.
+     */
+    protected abstract getDockerArgs(): Array<string>;
+
+    /**
+     * CLI arguments passed to the docker container.
+     */
+    protected abstract getContainerArgs(): Promise<Array<string>>;
+
     protected cleanup(): void {
-        console.log(`Killing ${CONTAINER_NAME} Docker container`);
-        spawnSync("docker", ["kill", CONTAINER_NAME]);
+        spawnSync("docker", ["kill", this.containerName]);
         this.childProcess?.kill();
     }
 }

@@ -23,7 +23,7 @@ import {
     TaskArguments
 } from "hardhat/types";
 import { getWalletUtil } from "./extend-utils";
-import { createIntegratedDevnet } from "./devnet";
+import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
 

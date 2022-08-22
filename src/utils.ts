@@ -202,7 +202,7 @@ export async function findPath(traversable: string, pathSegment: string) {
  *
  * @param accountPath Path where the account file is saved
  * @param hre The HardhatRuntimeEnvironment
- * @returns Absolute where the account file is saved
+ * @returns Absolute path where the account file is saved
  */
 export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironment) {
     let accountDir = accountPath || DEFAULT_STARKNET_ACCOUNT_PATH;

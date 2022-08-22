@@ -3,6 +3,9 @@ import net from "net";
 import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
+import { HardhatPluginError } from "hardhat/plugins";
+import { PLUGIN_NAME } from "../constants";
+import { StringMap } from "../types";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -10,7 +13,7 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-export function isFreePort(port: number): Promise<boolean> {
+function isFreePort(port: number): Promise<boolean> {
     return new Promise((accept, reject) => {
         const sock = net.createConnection(port);
         sock.once("connect", () => {
@@ -41,8 +44,6 @@ export async function getFreePort(): Promise<string> {
     throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
-
-
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
@@ -52,7 +53,7 @@ export abstract class ExternalServer {
         protected host: string,
         protected port: string | null,
         private isAliveURL: string,
-        private processName: string,
+        protected processName: string,
         protected stdout?: string,
         protected stderr?: string
     ) {
@@ -75,7 +76,7 @@ export abstract class ExternalServer {
 
     public async start(): Promise<void> {
         if (await this.isServerAlive()) {
-            const msg = `Cannot spawn ${this.processName}: ${this.host}:${this.port} already occupied.`;
+            const msg = `Cannot spawn ${this.processName}: ${this.url} already occupied.`;
             throw new StarknetPluginError(msg);
         }
 
@@ -160,5 +161,25 @@ export abstract class ExternalServer {
             // cannot connect, so address is not occupied
             return false;
         }
+    }
+
+    public async post<T>(data: StringMap): Promise<T> {
+        await this.ensureStarted();
+
+        try {
+            const response = await axios.post<T>(this.url, data);
+            return response.data;
+        } catch (error) {
+            const parent = error instanceof Error && error;
+            const msg = "Error in interaction with Starknet CLI proxy server";
+            throw new HardhatPluginError(PLUGIN_NAME, msg, parent);
+        }
+    }
+
+    private async ensureStarted(): Promise<void> {
+        if (this.connected) {
+            return;
+        }
+        await this.start();
     }
 }
