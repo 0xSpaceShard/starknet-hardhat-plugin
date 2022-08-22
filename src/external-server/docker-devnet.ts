@@ -13,7 +13,7 @@ export class DockerDevnet extends DockerServer {
         super(image, host, port, "is_alive", "integrated-devnet", devnetArgs, stdout, stderr);
     }
 
-    protected async getDockerArgs(): Promise<string[]> {
+    protected getDockerArgs(): string[] {
         return ["-p", `${this.host}:${this.port}:${this.port}`];
     }
 

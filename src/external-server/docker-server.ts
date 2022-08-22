@@ -51,7 +51,7 @@ export abstract class DockerServer extends ExternalServer {
     /**
      * CLI arguments passed to the `docker` command.
      */
-    protected abstract getDockerArgs(): Promise<Array<string>>;
+    protected abstract getDockerArgs(): Array<string>;
 
     /**
      * CLI arguments passed to the docker container.

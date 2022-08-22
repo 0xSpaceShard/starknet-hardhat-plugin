@@ -23,7 +23,7 @@ export class StarknetDockerProxy extends DockerServer {
         super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
 
-    protected async getDockerArgs(): Promise<string[]> {
+    protected getDockerArgs(): string[] {
         // To access the files on host machine from inside the container, proper mounting has to be done.
 
         const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
