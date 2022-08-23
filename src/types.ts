@@ -336,8 +336,8 @@ export interface BlockIdentifier {
 
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
-    private abi: starknet.Abi;
-    private abiPath: string;
+    public abi: starknet.Abi;
+    public abiPath: string;
     private constructorAbi: starknet.CairoFunction;
     private metadataPath: string;
     private networkID: string;
@@ -538,6 +538,16 @@ export class StarknetContract {
     set address(address: string) {
         this._address = address;
         return;
+    }
+
+    /**
+     * Set a custom abi and abi path to the contract
+     * @param abi abi of a deployed contract
+     * @param abiPath path to the abi
+     */
+    setAbi(abi: starknet.Abi, abiPath: string): void {
+        this.abi = abi;
+        this.abiPath = abiPath;
     }
 
     private async interact(
