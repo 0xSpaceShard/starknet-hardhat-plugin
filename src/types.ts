@@ -545,9 +545,9 @@ export class StarknetContract {
      * @param abi abi of a deployed contract
      * @param abiPath path to the abi
      */
-    setAbi(abi: starknet.Abi, abiPath: string): void {
-        this.abi = abi;
-        this.abiPath = abiPath;
+    setImplementation(implementation: StarknetContractFactory): void {
+        this.abi = implementation.abi;
+        this.abiPath = implementation.abiPath;
     }
 
     private async interact(

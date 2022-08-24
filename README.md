@@ -373,7 +373,7 @@ it("should forward to the implementation contract", async function () {
         implementation_hash_: implementationClassHash
     });
 
-    proxy.setAbi(implementationFactory.abi, implementationFactory.abiPath);
+    proxy.setImplementation(implementationFactory);
     const { res: initialProxyBalance } = await proxy.call("get_balance");
 });
 ```
