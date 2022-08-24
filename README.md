@@ -361,6 +361,23 @@ it("should estimate fee", async function () {
 });
 ```
 
+#### Delegate Proxy
+
+```typescript
+it("should forward to the implementation contract", async function () {
+    const implementationFactory = await starknet.getContractFactory("contract");
+    const implementationClassHash = await implementationFactory.declare();
+
+    const proxyFactory = await starknet.getContractFactory("delegate_proxy");
+    const proxy = await proxyFactory.deploy({
+        implementation_hash_: implementationClassHash
+    });
+
+    proxy.setImplementation(implementationFactory);
+    const { res: initialProxyBalance } = await proxy.call("get_balance");
+});
+```
+
 #### Transaction information and receipt with events
 
 ```typescript
