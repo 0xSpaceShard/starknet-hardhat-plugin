@@ -492,6 +492,8 @@ To use the currently activated environment (or if you have the starknet commands
 
 In any case, the specified environment is expected to contain the `python3` command.
 
+If you are on a Mac, you may experience Docker-related issues, so this may be the only way to run the plugin.
+
 If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
 
 ```typescript
