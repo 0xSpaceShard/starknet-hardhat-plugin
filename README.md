@@ -490,6 +490,8 @@ If you want to use an existing Python virtual environment (pyenv, poetry, conda,
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
 
+In any case, the specified environment is expected to contain the `python3` command.
+
 If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
 
 ```typescript

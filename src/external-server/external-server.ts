@@ -129,15 +129,11 @@ export abstract class ExternalServer {
                 const isAbnormalExit = this.childProcess != null;
                 this.childProcess = null;
                 if (code !== 0 && isAbnormalExit) {
-                    if (this.stderr !== "STDERR") {
-                        console.error(this.lastError);
-                    }
-
                     const circumstance = this.connected ? "running" : "connecting";
                     const moreInfo = logger.isFile(this.stderr)
                         ? "More error info in " + this.stderr
                         : "";
-                    const msg = `${this.processName} exited with code=${code} while ${circumstance}. ${moreInfo}`;
+                    const msg = `${this.processName} exited with code=${code} while ${circumstance}. ${this.lastError}\n${moreInfo}`;
                     throw new StarknetPluginError(msg);
                 }
             });
