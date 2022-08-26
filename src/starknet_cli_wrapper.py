@@ -12,7 +12,7 @@ try:
     from starkware.starknet.cli.starknet_cli import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
 except ImportError:
-    sys.exit("Make sure the environment you configured has starknet installed (package name: cairo-lang)")
+    sys.exit("Make sure the environment you configured has starknet (cairo-lang) installed!")
 
 async def starknet_compile_main_wrapper():
     starknet_compile_main()
