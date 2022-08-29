@@ -461,6 +461,14 @@ await starknet.devnet.setTime(1000); // time in seconds
 await starknet.devnet.increaseTime(1000); // time in seconds
 ```
 
+#### Creating an empty block
+
+Devnet offers [empty block creation](https://github.com/Shard-Labs/starknet-devnet/#create-an-empty-block). It can be useful to make available those changes that take effect with the next block.
+
+```typescript
+const emptyBlock = await starknet.devnet.createBlock();
+```
+
 ## Configure the plugin
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).

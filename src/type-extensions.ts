@@ -169,6 +169,12 @@ declare module "hardhat/types/runtime" {
          * @returns void
          */
         load: (path: string) => Promise<void>;
+
+        /**
+         * Creates an empty block
+         * @returns the empty block
+         */
+        createBlock: () => Promise<Block>;
     }
 
     interface HardhatRuntimeEnvironment {
