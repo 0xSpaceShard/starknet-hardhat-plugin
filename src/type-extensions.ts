@@ -172,9 +172,9 @@ declare module "hardhat/types/runtime" {
 
         /**
          * Creates an empty block
-         * @returns void
+         * @returns the empty block
          */
-        createBlock: () => Promise<void>;
+        createBlock: () => Promise<Block>;
     }
 
     interface HardhatRuntimeEnvironment {
