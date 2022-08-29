@@ -553,7 +553,7 @@ async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<u
         return;
     }
 
-    const devnet = createIntegratedDevnet(hre);
+    const devnet = await createIntegratedDevnet(hre);
 
     await devnet.start();
     await fn();

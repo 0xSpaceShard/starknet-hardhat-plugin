@@ -10,15 +10,16 @@ import {
 import { getImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
-import { ExternalServer } from "./external-server";
+import { ExternalServer, getFreePort } from "./external-server";
 
-export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): ExternalServer {
+export async function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): Promise<ExternalServer> {
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre.config.networks,
         `networks["${INTEGRATED_DEVNET}"]`
     );
-    const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
+    const { hostname } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
+    const port = await getFreePort();
 
     if (hostname !== "localhost" && hostname !== "127.0.0.1") {
         throw new StarknetPluginError("Integrated devnet works only with localhost and 127.0.0.1");
