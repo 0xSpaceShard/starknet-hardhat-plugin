@@ -26,6 +26,7 @@ import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
+import { getFreePort } from "./external-server/external-server";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -553,6 +554,9 @@ async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<u
         return;
     }
 
+    const port = await getFreePort();
+    const networkUrl = `http://127.0.0.1:${port}`;
+    hre.config.networks.integratedDevnet.url = networkUrl;
     const devnet = await createIntegratedDevnet(hre);
 
     await devnet.start();
