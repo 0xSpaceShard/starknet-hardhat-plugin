@@ -66,11 +66,14 @@ export abstract class Account {
         calldata?: StringMap,
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
-        const maxFee = await this.estimateFee(toContract, functionName, calldata, options);
-        options = {
-            ...options,
-            maxFee: options?.maxFee || maxFee.amount * BigInt(2)
-        };
+        let maxFee: starknet.FeeEstimation;
+        if (!options?.maxFee) {
+            maxFee = await this.estimateFee(toContract, functionName, calldata, options);
+            options = {
+                ...options,
+                maxFee: options?.maxFee || maxFee.amount * BigInt(2)
+            };
+        }
         return (
             await this.interact(InteractChoice.INVOKE, toContract, functionName, calldata, options)
         ).toString();
