@@ -67,11 +67,18 @@ export abstract class Account {
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
         let maxFee: starknet.FeeEstimation;
+        if (options?.maxFee && options?.overhead) {
+            const msg = "Both maxFee and overhead cannot be specified";
+            throw new StarknetPluginError(msg);
+        }
+
         if (!options?.maxFee) {
+            let overhead = options?.overhead || 0.5;
+            overhead = Math.round((1 + overhead) * 100);
             maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: options?.maxFee || maxFee.amount * BigInt(2)
+                maxFee: options?.maxFee || (maxFee.amount * BigInt(overhead)) / BigInt(100)
             };
         }
         return (
