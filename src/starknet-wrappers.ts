@@ -161,7 +161,7 @@ export abstract class StarknetWrapper {
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
-            options.choice.cliCommand,
+            ...options.choice.cliCommand,
             "--abi",
             options.abi,
             "--feeder_gateway_url",

@@ -73,12 +73,12 @@ const QUERY_VERSION = BigInt(2) ** BigInt(128);
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke", true, TRANSACTION_VERSION);
+    static readonly INVOKE = new InteractChoice(["invoke"], "invoke", true, TRANSACTION_VERSION);
 
-    static readonly CALL = new InteractChoice("call", "call", true, QUERY_VERSION);
+    static readonly CALL = new InteractChoice(["call"], "call", true, QUERY_VERSION);
 
     static readonly ESTIMATE_FEE = new InteractChoice(
-        "estimate_fee",
+        ["invoke", "--estimate_fee"],
         "estimateFee",
         false,
         QUERY_VERSION
@@ -88,7 +88,7 @@ export class InteractChoice {
         /**
          * The way it's supposed to be used passed to CLI commands.
          */
-        public readonly cliCommand: string,
+        public readonly cliCommand: string[],
         /**
          * The way it's supposed to be used internally in code.
          */
@@ -576,13 +576,13 @@ export class StarknetContract {
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
-            maxFee: options.maxFee?.toString() || "0",
+            maxFee: options.maxFee?.toString(),
             nonce: options.nonce?.toString()
         });
 
         if (executed.statusCode) {
             const msg =
-                `Could not perform ${choice.cliCommand} on ${functionName}:\n` +
+                `Could not perform ${choice.internalCommand} on ${functionName}:\n` +
                 executed.stderr.toString();
             const replacedMsg = adaptLog(msg);
             throw new StarknetPluginError(replacedMsg);

@@ -466,7 +466,7 @@ async function starknetInteractAction(
 
     if (statusCode) {
         const msg =
-            `Could not perform ${choice.cliCommand} of ${args.function}:\n` +
+            `Could not perform ${choice.internalCommand} of ${args.function}:\n` +
             executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new StarknetPluginError(replacedMsg);
