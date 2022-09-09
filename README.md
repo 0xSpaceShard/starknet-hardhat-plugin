@@ -343,9 +343,9 @@ More detailed documentation can be found [here](#account).
 
     const { res: currBalance } = await account.call(contract, "get_balance");
     const amount = BigInt(10);
-    // Passing max_fee is currently optional
-    // Invoke function will handle estimateFee calculation if maxFee is not provided
-    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
+
+    // Read more about max fee specification under # Funds and fees
+    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("1000000000") });
 
     const { res: newBalance } = await account.call(contract, "get_balance");
     expect(newBalance).to.deep.equal(currBalance + amount);
@@ -599,7 +599,7 @@ npm install --save-dev influenceth__cairo_math_64x61@npm:@influenceth/cairo-math
 
 ```typescript
 paths: {
-    cairoPaths: ["./node_modules"]
+    cairoPaths: ["./node_modules"];
 }
 ```
 
@@ -679,11 +679,11 @@ await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 
 Recompilation is performed when contracts are updated or when artifacts are missing. A file will be created with the name `cairo-files-cache.json` to handle caching. Recompilation is handled before the following [CLI commands](#cli-commands) are executed.
 
-- `npx hardhat starknet-deploy`
-- `npx hardhat starknet-invoke`
-- `npx hardhat starknet-call`
-- `npx hardhat run`
-- `npx hardhat test`
+-   `npx hardhat starknet-deploy`
+-   `npx hardhat starknet-invoke`
+-   `npx hardhat starknet-call`
+-   `npx hardhat run`
+-   `npx hardhat test`
 
 This feature is turned off by default and is specified in the `hardhat.config.ts` file.
 
@@ -771,6 +771,13 @@ Once your account has funds, you can specify a max fee greater than zero:
 
 ```typescript
 await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
+```
+
+If you don't specify a `maxFee`, one will be calculated for you by applying an overhead of 50% to the result of fee estimation. You can also customize the overhead by providing a value for `overhead`:
+
+```typescript
+// maxFee will be 40% of estimated fee; if overhead not provided, a default value is used.
+await account.invoke(contract, "foo", { arg1: ... }, { overhead: 0.4 );
 ```
 
 ### Multicalls
