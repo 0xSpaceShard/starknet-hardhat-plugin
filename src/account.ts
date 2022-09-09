@@ -72,13 +72,13 @@ export abstract class Account {
             throw new StarknetPluginError(msg);
         }
 
-        if (!options?.maxFee) {
-            let overhead = options?.overhead || 0.5;
+        if (options?.maxFee === undefined || options?.maxFee === null) {
+            let overhead = options?.overhead === undefined || options?.overhead === null ? 0.5 : options?.overhead;
             overhead = Math.round((1 + overhead) * 100);
             maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: options?.maxFee || (maxFee.amount * BigInt(overhead)) / BigInt(100)
+                maxFee: (maxFee.amount * BigInt(overhead)) / BigInt(100)
             };
         }
         return (
