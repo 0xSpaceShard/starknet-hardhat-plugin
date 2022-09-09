@@ -344,6 +344,7 @@ More detailed documentation can be found [here](#account).
     const { res: currBalance } = await account.call(contract, "get_balance");
     const amount = BigInt(10);
     // Passing max_fee is currently optional
+    // Invoke function will handle estimateFee calculation if maxFee is not provided
     await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
 
     const { res: newBalance } = await account.call(contract, "get_balance");
