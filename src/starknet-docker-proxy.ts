@@ -23,7 +23,7 @@ export class StarknetDockerProxy extends DockerServer {
         super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
 
-    protected getDockerArgs(): string[] {
+    protected async getDockerArgs(): Promise<string[]> {
         // To access the files on host machine from inside the container, proper mounting has to be done.
 
         const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
@@ -32,7 +32,8 @@ export class StarknetDockerProxy extends DockerServer {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
         }
 
-        return [...volumes, "--network", "host"];
+        this.port = await getFreePort();
+        return [...volumes, "-p", `${this.port}:${this.port}`];
     }
 
     protected async getContainerArgs(): Promise<string[]> {
