@@ -32,8 +32,17 @@ export class StarknetDockerProxy extends DockerServer {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
         }
 
-        this.port = await getFreePort();
-        return [...volumes, "-p", `${this.port}:${this.port}`];
+        const dockerArgs = [...volumes];
+        // Check host machine
+        const isArm64 = process.arch === "arm64";
+        if (isArm64) {
+            this.port = await getFreePort();
+            dockerArgs.push("-p", `${this.port}:${this.port}`);
+        } else {
+            dockerArgs.push("--network", "host");
+        }
+
+        return dockerArgs;
     }
 
     protected async getContainerArgs(): Promise<string[]> {
