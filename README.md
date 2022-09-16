@@ -341,12 +341,12 @@ More detailed documentation can be found [here](#account).
     const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
     console.log("Account:", account.address, account.privateKey, account.publicKey);
 
-    const { res: currBalance } = await account.call(contract, "get_balance");
+    const { res: currBalance } = await contract.call("get_balance");
     const amount = BigInt(10);
     // Passing max_fee is currently optional
     await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
 
-    const { res: newBalance } = await account.call(contract, "get_balance");
+    const { res: newBalance } = await contract.call("get_balance");
     expect(newBalance).to.deep.equal(currBalance + amount);
   });
 });
@@ -757,10 +757,11 @@ const account = await starknet.getAccountFromAddress(
 ```
 
 You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
+Use the `invoke` method of `Account` to invoke (change the state), but `call` method of `StarknetContract` to call (read the state).
 
 ```typescript
-const { res: amount } = await account.call(contract, "get_balance");
 await account.invoke(contract, "increase_balance", { amount });
+const { res: amount } = await contract.call("get_balance");
 ```
 
 ### Funds and Fees

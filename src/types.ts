@@ -1,7 +1,12 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
+import {
+    CHECK_STATUS_TIMEOUT,
+    CHECK_STATUS_RECOVER_TIMEOUT,
+    QUERY_VERSION,
+    TRANSACTION_VERSION
+} from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -66,16 +71,13 @@ export interface DecodedEvent {
     data: StringMap;
 }
 
-const TRANSACTION_VERSION = BigInt(1);
-const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
-
 /**
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
     static readonly INVOKE = new InteractChoice(["invoke"], "invoke", true, TRANSACTION_VERSION);
 
-    static readonly CALL = new InteractChoice(["call"], "call", true, QUERY_VERSION);
+    static readonly CALL = new InteractChoice(["call"], "call", false, QUERY_VERSION);
 
     static readonly ESTIMATE_FEE = new InteractChoice(
         ["invoke", "--estimate_fee"],
@@ -289,6 +291,9 @@ function defaultToPendingBlock<T extends { blockNumber?: BlockNumber }>(options:
 export interface DeclareOptions {
     token?: string;
     signature?: Array<Numeric>;
+    sender?: string; // address
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
 export interface DeployOptions {

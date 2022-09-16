@@ -1,6 +1,7 @@
 import {
     CallOptions,
     ContractInteractionFunction,
+    DeclareOptions,
     DeployAccountOptions,
     EstimateFeeOptions,
     InteractChoice,
@@ -9,10 +10,11 @@ import {
     InvokeResponse,
     Numeric,
     StarknetContract,
+    StarknetContractFactory,
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix } from "./constants";
+import { TransactionHashPrefix, TRANSACTION_VERSION } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -255,6 +257,7 @@ export abstract class Account {
         const adaptedMaxFee = "0x" + maxFee.toString(16);
         const adaptedVersion = "0x" + version.toString(16);
         const messageHash = this.getMessageHash(
+            TransactionHashPrefix.INVOKE,
             accountAddress,
             callArray,
             adaptedNonce,
@@ -271,6 +274,7 @@ export abstract class Account {
     }
 
     protected abstract getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -288,6 +292,27 @@ export abstract class Account {
      * Whether the execution method of this account returns raw output or not.
      */
     protected abstract hasRawOutput(): boolean;
+
+    public async declare(contractFactory: StarknetContractFactory, options: DeclareOptions) {
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const maxFee = (options.maxFee || 0).toString();
+        // eslint-disable-next-line no-warning-comments
+        const classHash: any = undefined; // TODO change this
+        const messageHash = this.getMessageHash(
+            TransactionHashPrefix.DECLARE,
+            this.address,
+            [classHash],
+            nonce.toString(),
+            maxFee,
+            TRANSACTION_VERSION.toString()
+        );
+        const signature = this.getSignatures(messageHash);
+        contractFactory.declare({
+            signature,
+            token: options.token,
+            sender: this.address
+        });
+    }
 }
 
 /**
@@ -307,6 +332,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     protected getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -330,7 +356,7 @@ export class OpenZeppelinAccount extends Account {
         hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
-            TransactionHashPrefix.INVOKE,
+            transactionHashPrefix,
             version,
             accountAddress,
             0, // entrypoint selector is implied
@@ -430,6 +456,7 @@ export class ArgentAccount extends Account {
     }
 
     protected getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -453,7 +480,7 @@ export class ArgentAccount extends Account {
         hashable.push(rawCalldata.length, ...rawCalldata, nonce);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
-            TransactionHashPrefix.INVOKE,
+            transactionHashPrefix,
             version,
             accountAddress,
             hash.getSelectorFromName(this.getExecutionFunctionName()),
