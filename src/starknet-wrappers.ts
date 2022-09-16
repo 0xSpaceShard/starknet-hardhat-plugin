@@ -72,6 +72,13 @@ interface BlockQueryWrapperOptions {
     feederGatewayUrl: string;
 }
 
+interface NonceQueryWrapperOptions {
+    address: string;
+    feederGatewayUrl: string;
+    blockHash?: string;
+    blockNumber?: BlockNumber;
+}
+
 export abstract class StarknetWrapper {
     constructor(private externalServer: ExternalServer) {}
 
@@ -182,9 +189,10 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
-        if (options.blockNumber !== undefined && options.blockNumber !== null) {
+        if (options.blockNumber != null) {
             prepared.push("--block_number", options.blockNumber.toString());
         }
+
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
             prepared.push("--network_id", options.networkID);
@@ -259,12 +267,9 @@ export abstract class StarknetWrapper {
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareBlockQueryOptions(
-        command: string,
-        options: BlockQueryWrapperOptions
-    ): string[] {
+    protected prepareBlockQueryOptions(options: BlockQueryWrapperOptions): string[] {
         const commandArr = [
-            command,
+            "get_block",
             "--gateway_url",
             options.gatewayUrl,
             "--feeder_gateway_url",
@@ -285,6 +290,28 @@ export abstract class StarknetWrapper {
     }
 
     public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;
+
+    protected prepareNonceQueryOptions(options: NonceQueryWrapperOptions): string[] {
+        const commandArr = [
+            "get_nonce",
+            "--feeder_gateway_url",
+            options.feederGatewayUrl,
+            "--contract_address",
+            options.address
+        ];
+
+        if (options.blockHash) {
+            commandArr.push("--block_hash", options.blockHash);
+        }
+
+        if (options.blockNumber != null) {
+            commandArr.push("--block_number", options.blockNumber.toString());
+        }
+
+        return commandArr;
+    }
+
+    public abstract getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult>;
 }
 
 function getFullImageName(image: Image): string {
@@ -378,7 +405,15 @@ export class DockerWrapper extends StarknetWrapper {
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+        const preparedOptions = this.prepareBlockQueryOptions(options);
+
+        const executed = this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        const preparedOptions = this.prepareNonceQueryOptions(options);
 
         const executed = this.execute("starknet", preparedOptions);
         return executed;
@@ -449,7 +484,13 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+        const preparedOptions = this.prepareBlockQueryOptions(options);
+        const executed = await this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareNonceQueryOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }

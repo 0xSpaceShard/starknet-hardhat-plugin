@@ -36,7 +36,7 @@ If your IDE is reporting Typescript issues after compiling the plugin, you may w
 
 ## Testing
 
-A test case is added by adding a directory in a subdirectory of a test group in the `test` directory. E.g. `declare-test` is a test case in the `general-tests` test group. The test case should contain:
+A test case is added by creating a directory in a subdirectory of a test group in the `test` directory. E.g. `declare-test` is a test case in the `general-tests` test group. A test case should contain:
 
 -   a `check.sh` script which does the testing logic
 -   a `network.json` file which specifies on which networks should the test case be run

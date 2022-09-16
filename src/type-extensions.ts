@@ -4,6 +4,7 @@ import {
     AccountImplementationType,
     BlockIdentifier,
     DeployAccountOptions,
+    NonceQueryOptions,
     StarknetContract,
     StarknetContractFactory,
     StringMap
@@ -267,6 +268,14 @@ declare module "hardhat/types/runtime" {
              * @returns a block object
              */
             getBlock: (identifier?: BlockIdentifier) => Promise<Block>;
+
+            /**
+             * Returns the nonce of the contract whose `address` is specified.
+             * @param address the contract address
+             * @param options optional arguments to specify the target
+             * @returns the nonce
+             */
+            getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
         };
     }
 

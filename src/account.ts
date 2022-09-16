@@ -181,7 +181,7 @@ export abstract class Account {
     ) {
         options = copyWithBigint(options);
         options.maxFee = BigInt(options?.maxFee || "0");
-        const nonce = options.nonce || (await this.getNonce());
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
         const { messageHash, args } = this.handleMultiInteract(
@@ -262,8 +262,7 @@ export abstract class Account {
 
         const args = {
             call_array: executeCallArray,
-            calldata: rawCalldata,
-            nonce: adaptedNonce
+            calldata: rawCalldata
         };
 
         return { messageHash, args };
@@ -281,7 +280,7 @@ export abstract class Account {
 
     protected abstract getExecutionFunctionName(): string;
 
-    protected abstract getNonce(): Promise<bigint>;
+    protected abstract getNonce(): Promise<number>;
 
     /**
      * Whether the execution method of this account returns raw output or not.
@@ -295,7 +294,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.3.1";
+    static readonly VERSION = "0.4.0b-fork";
 
     constructor(
         starknetContract: StarknetContract,
@@ -326,16 +325,17 @@ export class OpenZeppelinAccount extends Account {
 
         const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
-        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
             TransactionHashPrefix.INVOKE,
             version,
             accountAddress,
-            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            0, // entrypoint selector is implied
             calldataHash,
             maxFee,
-            chainId
+            chainId,
+            nonce
         ]);
     }
 
@@ -380,7 +380,7 @@ export class OpenZeppelinAccount extends Account {
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
-        const { res: expectedPubKey } = await contract.call("get_public_key");
+        const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
 
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
@@ -398,9 +398,8 @@ export class OpenZeppelinAccount extends Account {
         return "__execute__";
     }
 
-    protected async getNonce(): Promise<bigint> {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        return nonce;
+    protected async getNonce(): Promise<number> {
+        return await this.hre.starknet.getNonce(this.address);
     }
 
     protected hasRawOutput(): boolean {
@@ -582,7 +581,7 @@ export class ArgentAccount extends Account {
         return "__execute__";
     }
 
-    protected async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<number> {
         const { nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
     }

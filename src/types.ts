@@ -66,8 +66,8 @@ export interface DecodedEvent {
     data: StringMap;
 }
 
-const TRANSACTION_VERSION = 0;
-const QUERY_VERSION = BigInt(2) ** BigInt(128);
+const TRANSACTION_VERSION = BigInt(1);
+const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
 
 /**
  * Enumerates the ways of interacting with a contract.
@@ -333,6 +333,8 @@ export interface BlockIdentifier {
     blockNumber?: BlockNumber;
     blockHash?: string;
 }
+
+export type NonceQueryOptions = BlockIdentifier;
 
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
