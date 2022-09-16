@@ -81,6 +81,7 @@ export abstract class Account {
      * @param toContract target contract to be called
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
+     * @deprecated This doesn't work with Starknet 0.10 and will be removed in the future; use StarknetContract.call instead
      */
     async call(
         toContract: StarknetContract,
@@ -88,6 +89,7 @@ export abstract class Account {
         calldata?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
+        console.warn("Using Account.call is deprecated. Use StarknetContract.call instead");
         if (this.hasRawOutput()) {
             options = copyWithBigint(options);
             options.rawOutput = true;
