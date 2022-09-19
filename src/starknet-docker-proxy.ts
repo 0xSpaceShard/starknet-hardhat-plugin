@@ -33,10 +33,10 @@ export class StarknetDockerProxy extends DockerServer {
         }
 
         const dockerArgs = [...volumes];
-        // Check host machine
-        const isArm64 = process.arch === "arm64";
-        if (isArm64) {
-            this.port = await getFreePort();
+        // Check host os
+        const isDarwin = process.platform === "darwin";
+        if (isDarwin) {
+            this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
             dockerArgs.push("--network", "host");
@@ -46,7 +46,14 @@ export class StarknetDockerProxy extends DockerServer {
     }
 
     protected async getContainerArgs(): Promise<string[]> {
-        this.port = await getFreePort();
+        this.port = await this.getPort();
         return ["python3", PROXY_SERVER_CONTAINER_PATH, this.port];
+    }
+
+    protected async getPort(): Promise<string> {
+        if (!this.port) {
+            this.port = await getFreePort();
+        }
+        return this.port;
     }
 }
