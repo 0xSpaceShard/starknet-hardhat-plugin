@@ -6,6 +6,7 @@ import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
+import { StarknetPluginError } from "./starknet-plugin-error";
 
 interface CompileWrapperOptions {
     file: string;
@@ -19,8 +20,10 @@ interface CompileWrapperOptions {
 interface DeclareWrapperOptions {
     contract: string;
     gatewayUrl: string;
+    feederGatewayUrl: string;
     signature?: string[];
     token?: string;
+    sender?: string;
 }
 
 interface DeployWrapperOptions {
@@ -83,7 +86,7 @@ export abstract class StarknetWrapper {
     constructor(private externalServer: ExternalServer) {}
 
     public async execute(
-        command: "starknet" | "starknet-compile",
+        command: "starknet" | "starknet-compile" | "get_class_hash",
         args: string[]
     ): Promise<ProcessResult> {
         return await this.externalServer.post<ProcessResult>({
@@ -123,6 +126,8 @@ export abstract class StarknetWrapper {
             options.contract,
             "--gateway_url",
             options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl,
             "--no_wallet"
         ];
 
@@ -132,6 +137,10 @@ export abstract class StarknetWrapper {
 
         if (options.token) {
             prepared.push("--token", options.token);
+        }
+
+        if (options.sender) {
+            prepared.push("--sender", options.sender);
         }
 
         return prepared;
@@ -312,6 +321,14 @@ export abstract class StarknetWrapper {
     }
 
     public abstract getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult>;
+
+    public async getClassHash(artifactPath: string): Promise<string> {
+        const executed = await this.execute("get_class_hash", [artifactPath]);
+        if (executed.statusCode) {
+            throw new StarknetPluginError(executed.stderr.toString());
+        }
+        return executed.stdout.toString().trim();
+    }
 }
 
 function getFullImageName(image: Image): string {

@@ -124,7 +124,7 @@ function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
         throw new StarknetPluginError(
-            "Could not parse response. Check that you're using the correct network."
+            `Could not parse response. Check that you're using the correct network. Response received: ${response}`
         );
     }
     return matched[1];
@@ -346,7 +346,7 @@ export class StarknetContractFactory {
     public abi: starknet.Abi;
     public abiPath: string;
     private constructorAbi: starknet.CairoFunction;
-    private metadataPath: string;
+    public metadataPath: string;
     private networkID: string;
     private chainID: string;
     private gatewayUrl: string;
@@ -380,8 +380,10 @@ export class StarknetContractFactory {
         const executed = await this.starknetWrapper.declare({
             contract: this.metadataPath,
             gatewayUrl: this.gatewayUrl,
+            feederGatewayUrl: this.feederGatewayUrl,
             token: options.token,
-            signature: handleSignature(options.signature)
+            signature: handleSignature(options.signature),
+            sender: options.sender
         });
         if (executed.statusCode) {
             const msg = `Could not declare class: ${executed.stderr.toString()}`;
@@ -399,7 +401,7 @@ export class StarknetContractFactory {
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(classHash),
-                reject
+                (error) => reject(`Declare transaction ${txHash} is REJECTED: ${error}`)
             );
         });
     }

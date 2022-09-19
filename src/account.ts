@@ -293,21 +293,32 @@ export abstract class Account {
      */
     protected abstract hasRawOutput(): boolean;
 
-    public async declare(contractFactory: StarknetContractFactory, options: DeclareOptions) {
+    public async declare(
+        contractFactory: StarknetContractFactory,
+        options: DeclareOptions = {}
+    ): Promise<string> {
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         const maxFee = (options.maxFee || 0).toString();
-        // eslint-disable-next-line no-warning-comments
-        const classHash: any = undefined; // TODO change this
-        const messageHash = this.getMessageHash(
+
+        const classHash = await this.hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+
+        const calldata = [classHash];
+        const calldataHash = hash.computeHashOnElements(calldata);
+
+        const messageHash = hash.computeHashOnElements([
             TransactionHashPrefix.DECLARE,
+            TRANSACTION_VERSION.toString(),
             this.address,
-            [classHash],
-            nonce.toString(),
+            0, // entrypoint selector is implied
+            calldataHash,
             maxFee,
-            TRANSACTION_VERSION.toString()
-        );
+            chainId,
+            nonce.toString()
+        ]);
+
         const signature = this.getSignatures(messageHash);
-        contractFactory.declare({
+        return contractFactory.declare({
             signature,
             token: options.token,
             sender: this.address
