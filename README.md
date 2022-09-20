@@ -254,10 +254,11 @@ describe("My Test", function () {
    * - view function get_balance() -> (res: felt)
    */
   it("should work with old-style deployment", async function () {
+    const account  = ...;
     const contractFactory = await starknet.getContractFactory("MyContract");
 
-    await contract.invoke("increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
-    await contract.invoke("increase_balance", { amount: BigInt("20") });
+    await account.invoke(contract, "increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
+    await account.invoke(contract, "increase_balance", { amount: BigInt("20") });
 
     const { res } = await contract.call("get_balance"); // call method by name and receive the result by name
     expect(res).to.deep.equal(BigInt(40)); // you can also use 40n instead of BigInt(40)
@@ -388,7 +389,8 @@ it("should return transaction data and transaction receipt", async function () {
     const transaction = await starknet.getTransaction(contract.deployTxHash);
     console.log(transaction);
 
-    const txHash = await contract.invoke("increase_balance", { amount: 10 });
+    const account = ...;
+    const txHash = await account.invoke(contract, "increase_balance", { amount: 10 });
 
     const receipt = await starknet.getTransactionReceipt(txHash);
     const decodedEvents = await contract.decodeEvents(receipt.events);
@@ -420,7 +422,8 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
     await l1contract.send(...); // depending on your L1 contract interaction library
     await starknet.devnet.flush();
 
-    await l2contract.invoke(...);
+    const account = ...;
+    await account.invoke(l2contract, ...);
     await starknet.devnet.flush();
   });
 ```
@@ -787,7 +790,7 @@ await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
 
 ### Multicalls
 
-You can also use the Account object to perform multi{calls, invokes, fee estimations}.
+You can also use the Account object to perform multi{invokes, fee estimations}.
 
 ```typescript
 const interactionArray = [
@@ -804,7 +807,6 @@ const interactionArray = [
 ];
 const fee = await account.multiEstimateFee(interactionArray);
 const txHash = await account.multiInvoke(interactionArray);
-const results = await account.multiCall(interactionArray);
 ```
 
 OpenZeppelin and Argent accounts have some differences:
