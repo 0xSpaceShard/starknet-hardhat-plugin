@@ -265,10 +265,7 @@ export abstract class Account {
             adaptedVersion
         );
 
-        const args = {
-            call_array: executeCallArray,
-            calldata: rawCalldata
-        };
+        const args = this.getExecuteArgs(executeCallArray, rawCalldata, adaptedNonce);
 
         return { messageHash, args };
     }
@@ -281,6 +278,12 @@ export abstract class Account {
         maxFee: string,
         version: string
     ): string;
+
+    protected abstract getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        nonce: string
+    ): any;
 
     protected abstract getSignatures(messageHash: string): bigint[];
 
@@ -376,6 +379,18 @@ export class OpenZeppelinAccount extends Account {
             chainId,
             nonce
         ]);
+    }
+
+    protected getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _nonce: string
+    ) {
+        return {
+            call_array: executeCallArray,
+            calldata: rawCalldata
+        };
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -499,6 +514,18 @@ export class ArgentAccount extends Account {
             maxFee,
             chainId
         ]);
+    }
+
+    protected getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        nonce: string
+    ) {
+        return {
+            call_array: executeCallArray,
+            calldata: rawCalldata,
+            nonce
+        };
     }
 
     protected getSignatures(messageHash: string): bigint[] {
