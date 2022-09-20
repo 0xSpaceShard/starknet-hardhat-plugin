@@ -7,7 +7,8 @@ module.exports = {
     networks: {
         integratedDevnet: {
             venv: "active",
-            url: "http://127.0.0.1:5050"
+            url: "http://127.0.0.1:5050",
+            args: ["--seed", "42"]
         }
     }
 };

@@ -9,7 +9,8 @@ module.exports = {
             venv: process.env.STARKNET_DEVNET_PATH,
             url: "http://127.0.0.1:5050",
             stdout: "STDOUT",
-            stderr: "logs/stderr.log"
+            stderr: "logs/stderr.log",
+            args: ["--seed", "42"]
         }
     }
 };
