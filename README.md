@@ -462,6 +462,14 @@ await starknet.devnet.setTime(1000); // time in seconds
 await starknet.devnet.increaseTime(1000); // time in seconds
 ```
 
+#### Creating an empty block
+
+Devnet offers [empty block creation](https://github.com/Shard-Labs/starknet-devnet/#create-an-empty-block). It can be useful to make available those changes that take effect with the next block.
+
+```typescript
+const emptyBlock = await starknet.devnet.createBlock();
+```
+
 ## Configure the plugin
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
@@ -490,6 +498,10 @@ module.exports = {
 If you want to use an existing Python virtual environment (pyenv, poetry, conda, miniconda), specify it by using `starknet["venv"]`.
 
 To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
+
+In any case, the specified environment is expected to contain the `python3` command.
+
+If you are on a Mac, you may experience Docker-related issues, so this may be the only way to run the plugin.
 
 If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
 
@@ -709,7 +721,7 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"` - [v0.2.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.2.1)
+    -   `"OpenZeppelin"` - [v0.3.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.3.1)
     -   `"Argent"` - [v0.2.2](https://github.com/argentlabs/argent-contracts-starknet/releases/tag/v0.2.2)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address

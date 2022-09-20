@@ -2,7 +2,7 @@ import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { L2ToL1Message } from "./starknet-types";
+import { Block, L2ToL1Message } from "./starknet-types";
 
 interface L1ToL2Message {
     address: string;
@@ -138,5 +138,12 @@ export class DevnetUtils implements Devnet {
                 path
             });
         }, "Request failed. Make sure your network has the /load endpoint");
+    }
+
+    public async createBlock() {
+        return this.withErrorHandler<Block>(async () => {
+            const response = await axios.post<Block>(`${this.endpoint}/create_block`, {});
+            return response.data;
+        }, "Request failed. Make sure your network has the /create_block endpoint");
     }
 }
