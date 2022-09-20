@@ -28,7 +28,7 @@ rm -rf cache/cairo-files-cache.json
 npx hardhat test --no-compile test/recompilation/recompilation-main-test.ts
 
 echo "Testing Recompilation with dependency changed"
-echo "#" >> "$DEPENDENCY_PATH"
+echo "//" >> "$DEPENDENCY_PATH"
 npx hardhat test --no-compile test/recompilation/recompilation-dependency-test.ts
 
 echo "Testing Recompilation with source deleted"
