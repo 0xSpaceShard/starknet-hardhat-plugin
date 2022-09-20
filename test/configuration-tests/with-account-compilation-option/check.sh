@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-CONTRACT_NAME=contract_with_execute.cairo
+CONTRACT_NAME=dummy_account.cairo
 CONTRACT_PATH="contracts/$CONTRACT_NAME"
 
 cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
