@@ -17,21 +17,6 @@ address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
 
 echo "Address: $address"
 
-# test call
-call_output=$(npx hardhat starknet-call \
-    --contract "signatures" --address "$address" \
-    --function "get_signature" --starknet-network "$NETWORK" \
-    --signature "$signature")
-
-echo $call_output
-
-if [[ "$call_output" != *"$signature_len $signature"* ]]; then
-    echo "Call output does not contain correct length and signature"
-    echo "Expected: $signature_len $signature"
-    echo "Actual: $call_output"
-    exit 1
-fi
-
 # test invoke
 npx hardhat starknet-invoke --wait \
     --contract "signatures" --address "$address" \
