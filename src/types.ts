@@ -591,8 +591,10 @@ export class StarknetContract {
 
         if (executed.statusCode) {
             const msg =
-                `Could not perform ${choice.internalCommand} on ${functionName}:\n` +
-                executed.stderr.toString();
+                `Could not perform ${choice.internalCommand} on ${functionName}.\n` +
+                executed.stderr.toString() +
+                "\n" +
+                "Make sure to `invoke` and `estimateFee` through account, and `call` directly through contract.";
             const replacedMsg = adaptLog(msg);
             throw new StarknetPluginError(replacedMsg);
         }
@@ -624,7 +626,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
+                    console.error(`Invoke transaction ${txHash} is REJECTED. DEBUG TODO`);
                     reject(error);
                 }
             );

@@ -139,6 +139,7 @@ export abstract class Account {
      * Performs a multicall through this account
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
+     * @deprecated not able to sign calls since starknet 0.10
      */
     async multiCall(
         callParameters: CallParameters[],
