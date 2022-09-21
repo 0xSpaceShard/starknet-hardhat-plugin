@@ -28,6 +28,12 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 npm i @shardlabs/starknet-hardhat-plugin --save-dev
 ```
 
+For the latest unstable version, use
+
+```
+npm i @shardlabs/starknet-hardhat-plugin@alpha --save-dev
+```
+
 Add the following line to the top of your `hardhat.config.ts` (or `hardhat.config.js`):
 
 ```typescript
