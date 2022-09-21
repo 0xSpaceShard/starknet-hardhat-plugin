@@ -506,6 +506,10 @@ export async function starknetDeployAccountAction(
 
     fs.mkdirSync(accountDir, { recursive: true });
 
+    console.warn(
+        "Warning! You are deploying a modified version of OZ account which may not be compatible with the Account class."
+    );
+
     const executed = await hre.starknetWrapper.deployAccount({
         accountDir: accountDir,
         accountName: wallet.accountName,

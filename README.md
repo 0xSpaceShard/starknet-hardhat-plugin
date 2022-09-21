@@ -679,7 +679,7 @@ module.exports = {
 
 Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
 
-To use the wallet in your scripts, use the `getWallet` utility function:
+To use the wallet in your scripts, use the `getWallet` utility function (using `Account.getAccountFromAddress(..., "OpenZeppelin")` will probably not work):
 
 ```typescript
 import { starknet } from "hardhat";
