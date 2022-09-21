@@ -1,11 +1,13 @@
 import "../dist/src/index.js";
 
-// defualt in the sense that neither venv nor dockerized devnet is specified
-
 module.exports = {
     starknet: {
-        network: process.env.NETWORK,
+        network: process.env.NETWORK
+    },
+    networks: {
         integratedDevnet: {
+            // using the default runner
+            // neither venv nor dockerized version is specified
             url: "http://127.0.0.1/5050",
             args: ["--seed", "42"]
         }
