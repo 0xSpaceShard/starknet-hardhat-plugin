@@ -219,5 +219,5 @@ export async function getNonceUtil(
         throw new StarknetPluginError(msg);
     }
 
-    return parseInt(executed.stdout.toString(), 16);
+    return parseInt(executed.stdout.toString());
 }
