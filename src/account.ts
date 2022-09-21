@@ -480,6 +480,9 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment
     ) {
         super(starknetContract, privateKey, hre);
+        console.warn(
+            "Warning! Argent account used by this version of the plugin is not adapted to Starknet 0.10"
+        );
     }
 
     protected getMessageHash(
