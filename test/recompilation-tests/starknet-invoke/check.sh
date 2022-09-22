@@ -11,6 +11,7 @@ address=${tail%%$'\n'*}
 # Remove artifact contract to force recompilation
 rm -rf starknet-artifacts/contracts/contract.cairo
 
+export WALLET_NAME=RecompileTest
 ../scripts/deploy-funded-cli-account.sh
 
 npx hardhat starknet-invoke \
@@ -19,4 +20,4 @@ npx hardhat starknet-invoke \
     --function increase_balance \
     --address "$address" \
     --inputs "10 20" \
-    --wallet OpenZeppelin
+    --wallet RecompileTest

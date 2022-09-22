@@ -3,6 +3,7 @@ set -eu
 
 npx hardhat starknet-compile contracts/contract.cairo
 
+export WALLET_NAME=WalletTest
 ../scripts/deploy-funded-cli-account.sh
 
 npx hardhat test --no-compile test/wallet-test.ts
@@ -11,5 +12,5 @@ output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-arti
 echo $output
 ADDRESS=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
 
-npx hardhat starknet-call --contract contract --function get_balance --address "$ADDRESS" --wallet OpenZeppelin --starknet-network "$NETWORK"
-npx hardhat starknet-invoke --contract contract --function increase_balance --inputs "10 20" --address "$ADDRESS" --wallet OpenZeppelin --starknet-network "$NETWORK"
+npx hardhat starknet-call --contract contract --function get_balance --address "$ADDRESS" --wallet "$WALLET_NAME" --starknet-network "$NETWORK"
+npx hardhat starknet-invoke --contract contract --function increase_balance --inputs "10 20" --address "$ADDRESS" --wallet "$WALLET_NAME" --starknet-network "$NETWORK"

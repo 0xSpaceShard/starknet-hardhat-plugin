@@ -6,8 +6,8 @@ module.exports = {
         network: process.env.NETWORK,
         recompile: true,
         wallets: {
-            OpenZeppelin: {
-                accountName: "OpenZeppelin",
+            RecompileTest: {
+                accountName: "RecompileTest",
                 modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
                 accountPath: "./starknet_accounts"
             }
