@@ -11,7 +11,7 @@ address=${tail%%$'\n'*}
 # Remove artifact contract to force recompilation
 rm -rf starknet-artifacts/contracts/contract.cairo
 
-export WALLET_NAME=RecompileTest
+export ACCOUNT_DIR="./starknet_accounts_recompile_test"
 ../scripts/deploy-funded-cli-account.sh
 
 npx hardhat starknet-invoke \

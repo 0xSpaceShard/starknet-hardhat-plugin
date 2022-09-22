@@ -9,10 +9,10 @@ module.exports = {
     starknet: {
         network: process.env.NETWORK,
         wallets: {
-            WalletTest: {
-                accountName: "WalletTest",
+            OpenZeppelin: {
+                accountName: "OpenZeppelin",
                 modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-                accountPath: "./starknet_accounts"
+                accountPath: process.env.ACCOUNT_DIR
             }
         }
     }
