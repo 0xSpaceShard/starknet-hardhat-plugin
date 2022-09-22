@@ -12,7 +12,7 @@ module.exports = {
             OpenZeppelin: {
                 accountName: "OpenZeppelin",
                 modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-                accountPath: "~/.starknet_accounts"
+                accountPath: "./starknet_accounts"
             }
         }
     }

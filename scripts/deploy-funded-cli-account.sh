@@ -9,8 +9,8 @@ if [[ "$NETWORK" != "devnet" ]]; then
     exit 1
 fi
 
-ACCOUNT_FILE="$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-# delete to avoid conflict if already exists
+ACCOUNT_FILE="./starknet_accounts/starknet_open_zeppelin_accounts.json"
+# delete to avoid conflict if an account with the specified name already exists
 rm -f "$ACCOUNT_FILE"
 
 npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wallet OpenZeppelin

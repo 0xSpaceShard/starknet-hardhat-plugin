@@ -1,9 +1,7 @@
 #!/bin/bash
-set -e
+set -eu
 
 npx hardhat starknet-compile contracts/contract.cairo
-output=$(npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wallet OpenZeppelin)
-echo $output
 
 ../scripts/deploy-funded-cli-account.sh
 
