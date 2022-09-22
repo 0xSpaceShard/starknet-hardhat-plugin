@@ -488,7 +488,7 @@ async function starknetInteractAction(
                     resolve();
                 },
                 (error) => {
-                    reject(`Invoke transaction ${txHash} is REJECTED: ${error}`);
+                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
                 }
             )
         );

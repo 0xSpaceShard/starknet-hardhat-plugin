@@ -402,7 +402,9 @@ export class StarknetContractFactory {
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(classHash),
-                (error) => reject(`Declare transaction ${txHash} is REJECTED: ${error}`)
+                (error) => {
+                    reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
+                }
             );
         });
     }
@@ -627,7 +629,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    reject(`Invoke transaction ${txHash} is REJECTED: ${error}`);
+                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
                 }
             );
         });
