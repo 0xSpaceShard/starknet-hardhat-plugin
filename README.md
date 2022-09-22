@@ -131,7 +131,7 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file
+Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by Starknet CLI.
 
 ```
 npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet

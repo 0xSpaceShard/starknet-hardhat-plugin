@@ -13,15 +13,7 @@ output=$(npx hardhat starknet-deploy --wait --starknet-network "$NETWORK" starkn
 echo $output
 
 address=$(echo $output | sed -r "s/.*Contract address: (\w*).*/\1/")
-
-
 echo "Address: $address"
-
-# test invoke
-npx hardhat starknet-invoke --wait \
-    --contract "signatures" --address "$address" \
-    --function "set_signature_len" --starknet-network "$NETWORK" \
-    --signature "$signature"
 
 output_after_invoke=$(npx hardhat starknet-call \
     --contract "signatures" --address "$address" \
