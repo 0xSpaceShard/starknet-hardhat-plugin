@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-export ACCOUNT_DIR="./starknet_accounts_wallet_test"
+export ACCOUNT_DIR="~/.starknet_accounts_wallet_test"
 
 npx hardhat starknet-compile contracts/contract.cairo
 
