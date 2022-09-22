@@ -10,6 +10,7 @@ if [[ "$NETWORK" != "devnet" ]]; then
 fi
 
 ACCOUNT_FILE="./starknet_accounts/starknet_open_zeppelin_accounts.json"
+mkdir -p ./starknet_accounts && touch "$ACCOUNT_FILE"
 # delete to avoid conflict if an account with the specified name already exists
 rm -f "$ACCOUNT_FILE"
 
