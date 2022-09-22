@@ -9,9 +9,11 @@ if [[ "$NETWORK" != "devnet" ]]; then
     exit 1
 fi
 
-npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wallet OpenZeppelin
-
 ACCOUNT_FILE="$HOME/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+# delete to avoid conflict if already exists
+rm -f "$ACCOUNT_FILE"
+
+npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wallet OpenZeppelin
 ACCOUNT_ADDRESS=$(jq -r .$NETWORK.OpenZeppelin.address $ACCOUNT_FILE)
 
 echo "Funding $ACCOUNT_ADDRESS"
