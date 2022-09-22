@@ -20,4 +20,4 @@ npx hardhat starknet-invoke \
     --function increase_balance \
     --address "$address" \
     --inputs "10 20" \
-    --wallet RecompileTest
+    --wallet OpenZeppelin
