@@ -627,8 +627,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
-                    reject(error);
+                    reject(`Invoke transaction ${txHash} is REJECTED: ${error}`);
                 }
             );
         });
