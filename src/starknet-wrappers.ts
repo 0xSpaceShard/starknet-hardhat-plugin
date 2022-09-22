@@ -21,6 +21,7 @@ interface DeclareWrapperOptions {
     contract: string;
     gatewayUrl: string;
     feederGatewayUrl: string;
+    maxFee: string;
     signature?: string[];
     token?: string;
     sender?: string;
@@ -142,6 +143,11 @@ export abstract class StarknetWrapper {
         if (options.sender) {
             prepared.push("--sender", options.sender);
         }
+
+        if (options.maxFee == null) {
+            throw new StarknetPluginError("No maxFee provided for declare tx");
+        }
+        prepared.push("--max_fee", options.maxFee);
 
         return prepared;
     }

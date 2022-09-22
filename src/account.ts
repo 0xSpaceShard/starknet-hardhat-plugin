@@ -325,7 +325,8 @@ export abstract class Account {
         return contractFactory.declare({
             signature,
             token: options.token,
-            sender: this.address
+            sender: this.address,
+            maxFee: BigInt(maxFee)
         });
     }
 }

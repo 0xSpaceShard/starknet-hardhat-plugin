@@ -381,6 +381,7 @@ export class StarknetContractFactory {
             contract: this.metadataPath,
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
+            maxFee: (options.maxFee || 0).toString(),
             token: options.token,
             signature: handleSignature(options.signature),
             sender: options.sender

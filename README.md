@@ -271,11 +271,11 @@ describe("My Test", function () {
 
   it("should declare and deploy", async function() {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await contractFactory.declare();
+    const account = await starknet.getAccountFromAddress(...);
 
     // You are expected to have a Deployer contract with a deploy method
     const deployer = await starknet.getContractFactory("Deployer");
-    const account = await starknet.getAccountFromAddress(...);
+    const classHash = await account.declare(contractFactory, { maxFee: ... });
     const opts = { maxFee: BigInt(...) };
     const txHash = await account.invoke(deployer, "my_deploy", { class_hash: classHash }, opts);
     const deploymentAddress = ...; // get the address, e.g. from an event emitted by deploy
@@ -367,7 +367,8 @@ it("should estimate fee", async function () {
 ```typescript
 it("should forward to the implementation contract", async function () {
     const implementationFactory = await starknet.getContractFactory("contract");
-    const implementationClassHash = await implementationFactory.declare();
+    const account = ...;
+    const implementationClassHash = await account.declare(implementationFactory);
 
     const proxyFactory = await starknet.getContractFactory("delegate_proxy");
     const proxy = await proxyFactory.deploy({
@@ -613,7 +614,7 @@ npm install --save-dev influenceth__cairo_math_64x61@npm:@influenceth/cairo-math
 
 ```typescript
 paths: {
-    cairoPaths: ["./node_modules"]
+    cairoPaths: ["./node_modules"];
 }
 ```
 
@@ -693,11 +694,11 @@ await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 
 Recompilation is performed when contracts are updated or when artifacts are missing. A file will be created with the name `cairo-files-cache.json` to handle caching. Recompilation is handled before the following [CLI commands](#cli-commands) are executed.
 
-- `npx hardhat starknet-deploy`
-- `npx hardhat starknet-invoke`
-- `npx hardhat starknet-call`
-- `npx hardhat run`
-- `npx hardhat test`
+-   `npx hardhat starknet-deploy`
+-   `npx hardhat starknet-invoke`
+-   `npx hardhat starknet-call`
+-   `npx hardhat run`
+-   `npx hardhat test`
 
 This feature is turned off by default and is specified in the `hardhat.config.ts` file.
 
