@@ -3,7 +3,7 @@ import { LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
-const NAMED_TUPLE_DELIMITER = " : ";
+const NAMED_TUPLE_DELIMITER = ": ";
 const ARGUMENTS_DELIMITER = ", ";
 
 function isNumeric(value: { toString: () => string }) {

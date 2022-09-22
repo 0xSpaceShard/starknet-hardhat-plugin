@@ -7,6 +7,17 @@ output=$(npx hardhat starknet-deploy --starknet-network "$NETWORK" starknet-arti
 # Grab the output Contract address to a variable using parameter expansion
 tail=${output#*$'\n'Contract address: }
 address=${tail%%$'\n'*}
-# Remove artifact contract
+
+# Remove artifact contract to force recompilation
 rm -rf starknet-artifacts/contracts/contract.cairo
-npx hardhat starknet-invoke --starknet-network "$NETWORK" --contract contract --function increase_balance --address "$address" --inputs "10 20"
+
+export ACCOUNT_DIR="$HOME/.starknet_accounts_recompile_test"
+../scripts/deploy-funded-cli-account.sh
+
+npx hardhat starknet-invoke \
+    --starknet-network "$NETWORK" \
+    --contract contract \
+    --function increase_balance \
+    --address "$address" \
+    --inputs "10 20" \
+    --wallet OpenZeppelin

@@ -7,6 +7,7 @@ import {
     AccountImplementationType,
     BlockIdentifier,
     DeployAccountOptions,
+    NonceQueryOptions,
     StarknetContractFactory
 } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
@@ -200,4 +201,23 @@ export async function getBlockUtil(
     }
     const block = JSON.parse(executed.stdout.toString()) as Block;
     return block;
+}
+
+export async function getNonceUtil(
+    hre: HardhatRuntimeEnvironment,
+    address: string,
+    options: NonceQueryOptions
+): Promise<number> {
+    const executed = await hre.starknetWrapper.getNonce({
+        address,
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        ...options
+    });
+
+    if (executed.statusCode) {
+        const msg = `Could not get nonce. Error: ${executed.stderr.toString()}`;
+        throw new StarknetPluginError(msg);
+    }
+
+    return parseInt(executed.stdout.toString());
 }

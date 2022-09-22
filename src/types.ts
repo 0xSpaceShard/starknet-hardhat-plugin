@@ -1,7 +1,12 @@
 import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { CHECK_STATUS_TIMEOUT, CHECK_STATUS_RECOVER_TIMEOUT } from "./constants";
+import {
+    CHECK_STATUS_TIMEOUT,
+    CHECK_STATUS_RECOVER_TIMEOUT,
+    QUERY_VERSION,
+    TRANSACTION_VERSION
+} from "./constants";
 import { adaptLog, copyWithBigint } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
@@ -66,19 +71,16 @@ export interface DecodedEvent {
     data: StringMap;
 }
 
-const TRANSACTION_VERSION = 0;
-const QUERY_VERSION = BigInt(2) ** BigInt(128);
-
 /**
  * Enumerates the ways of interacting with a contract.
  */
 export class InteractChoice {
-    static readonly INVOKE = new InteractChoice("invoke", "invoke", true, TRANSACTION_VERSION);
+    static readonly INVOKE = new InteractChoice(["invoke"], "invoke", true, TRANSACTION_VERSION);
 
-    static readonly CALL = new InteractChoice("call", "call", true, QUERY_VERSION);
+    static readonly CALL = new InteractChoice(["call"], "call", false, QUERY_VERSION);
 
     static readonly ESTIMATE_FEE = new InteractChoice(
-        "estimate_fee",
+        ["invoke", "--estimate_fee"],
         "estimateFee",
         false,
         QUERY_VERSION
@@ -88,7 +90,7 @@ export class InteractChoice {
         /**
          * The way it's supposed to be used passed to CLI commands.
          */
-        public readonly cliCommand: string,
+        public readonly cliCommand: string[],
         /**
          * The way it's supposed to be used internally in code.
          */
@@ -122,7 +124,7 @@ function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
         throw new StarknetPluginError(
-            "Could not parse response. Check that you're using the correct network."
+            `Could not parse response. Check that you're using the correct network. Response received: ${response}`
         );
     }
     return matched[1];
@@ -289,6 +291,9 @@ function defaultToPendingBlock<T extends { blockNumber?: BlockNumber }>(options:
 export interface DeclareOptions {
     token?: string;
     signature?: Array<Numeric>;
+    sender?: string; // address
+    nonce?: Numeric;
+    maxFee?: Numeric;
 }
 
 export interface DeployOptions {
@@ -334,12 +339,14 @@ export interface BlockIdentifier {
     blockHash?: string;
 }
 
+export type NonceQueryOptions = BlockIdentifier;
+
 export class StarknetContractFactory {
     private starknetWrapper: StarknetWrapper;
     public abi: starknet.Abi;
     public abiPath: string;
     private constructorAbi: starknet.CairoFunction;
-    private metadataPath: string;
+    public metadataPath: string;
     private networkID: string;
     private chainID: string;
     private gatewayUrl: string;
@@ -373,8 +380,11 @@ export class StarknetContractFactory {
         const executed = await this.starknetWrapper.declare({
             contract: this.metadataPath,
             gatewayUrl: this.gatewayUrl,
+            feederGatewayUrl: this.feederGatewayUrl,
+            maxFee: (options.maxFee || 0).toString(),
             token: options.token,
-            signature: handleSignature(options.signature)
+            signature: handleSignature(options.signature),
+            sender: options.sender
         });
         if (executed.statusCode) {
             const msg = `Could not declare class: ${executed.stderr.toString()}`;
@@ -392,7 +402,9 @@ export class StarknetContractFactory {
                 this.gatewayUrl,
                 this.feederGatewayUrl,
                 () => resolve(classHash),
-                reject
+                (error) => {
+                    reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
+                }
             );
         });
     }
@@ -576,14 +588,16 @@ export class StarknetContract {
             gatewayUrl: this.gatewayUrl,
             feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
-            maxFee: options.maxFee?.toString() || "0",
+            maxFee: options.maxFee?.toString(),
             nonce: options.nonce?.toString()
         });
 
         if (executed.statusCode) {
             const msg =
-                `Could not perform ${choice.cliCommand} on ${functionName}:\n` +
-                executed.stderr.toString();
+                `Could not perform ${choice.internalCommand} on ${functionName}.\n` +
+                executed.stderr.toString() +
+                "\n" +
+                "Make sure to `invoke` and `estimateFee` through account, and `call` directly through contract.";
             const replacedMsg = adaptLog(msg);
             throw new StarknetPluginError(replacedMsg);
         }
@@ -615,8 +629,7 @@ export class StarknetContract {
                 this.feederGatewayUrl,
                 () => resolve(txHash),
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED.`);
-                    reject(error);
+                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
                 }
             );
         });

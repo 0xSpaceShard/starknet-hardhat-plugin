@@ -11,15 +11,33 @@ import sys
 try:
     from starkware.starknet.cli.starknet_cli import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
+    from starkware.starknet.core.os.class_hash import compute_class_hash
+    from starkware.starknet.services.api.contract_class import ContractClass
 except ImportError:
     sys.exit("Make sure the environment you configured has starknet (cairo-lang) installed!")
 
-async def starknet_compile_main_wrapper():
-    starknet_compile_main()
+async def starknet_main_wrapper(args):
+    sys.argv = [sys.argv[0], *args]
+    return await starknet_main()
+
+async def starknet_compile_main_wrapper(args):
+    sys.argv = [sys.argv[0], *args]
+    return starknet_compile_main()
+
+async def get_class_hash(args):
+    path ,= args
+    with open(path, encoding="utf-8") as file:
+        raw_class = json.load(file)
+
+    loaded_class = ContractClass.load(raw_class)
+    class_hash = compute_class_hash(loaded_class)
+    print(hex(class_hash))
+    return 0
 
 MAIN_MAP = {
-    "starknet": starknet_main,
-    "starknet-compile": starknet_compile_main_wrapper
+    "starknet": starknet_main_wrapper,
+    "starknet-compile": starknet_compile_main_wrapper,
+    "get_class_hash": get_class_hash
 }
 
 class MyRequestHandler(BaseHTTPRequestHandler):
@@ -41,11 +59,8 @@ class MyRequestHandler(BaseHTTPRequestHandler):
         command = json_body["command"]
         main = MAIN_MAP[command]
 
-        args = json_body["args"]
-        sys.argv = [sys.argv[0], *args]
-
         try:
-            return await main()
+            return await main(json_body["args"])
         except:
             return 1 # error exit code
 

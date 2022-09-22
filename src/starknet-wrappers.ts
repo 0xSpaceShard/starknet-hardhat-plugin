@@ -6,6 +6,7 @@ import { BlockNumber, InteractChoice } from "./types";
 import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
+import { StarknetPluginError } from "./starknet-plugin-error";
 
 interface CompileWrapperOptions {
     file: string;
@@ -19,8 +20,11 @@ interface CompileWrapperOptions {
 interface DeclareWrapperOptions {
     contract: string;
     gatewayUrl: string;
+    feederGatewayUrl: string;
+    maxFee: string;
     signature?: string[];
     token?: string;
+    sender?: string;
 }
 
 interface DeployWrapperOptions {
@@ -72,11 +76,18 @@ interface BlockQueryWrapperOptions {
     feederGatewayUrl: string;
 }
 
+interface NonceQueryWrapperOptions {
+    address: string;
+    feederGatewayUrl: string;
+    blockHash?: string;
+    blockNumber?: BlockNumber;
+}
+
 export abstract class StarknetWrapper {
     constructor(private externalServer: ExternalServer) {}
 
     public async execute(
-        command: "starknet" | "starknet-compile",
+        command: "starknet" | "starknet-compile" | "get_class_hash",
         args: string[]
     ): Promise<ProcessResult> {
         return await this.externalServer.post<ProcessResult>({
@@ -116,6 +127,8 @@ export abstract class StarknetWrapper {
             options.contract,
             "--gateway_url",
             options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl,
             "--no_wallet"
         ];
 
@@ -126,6 +139,15 @@ export abstract class StarknetWrapper {
         if (options.token) {
             prepared.push("--token", options.token);
         }
+
+        if (options.sender) {
+            prepared.push("--sender", options.sender);
+        }
+
+        if (options.maxFee == null) {
+            throw new StarknetPluginError("No maxFee provided for declare tx");
+        }
+        prepared.push("--max_fee", options.maxFee);
 
         return prepared;
     }
@@ -161,7 +183,7 @@ export abstract class StarknetWrapper {
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
-            options.choice.cliCommand,
+            ...options.choice.cliCommand,
             "--abi",
             options.abi,
             "--feeder_gateway_url",
@@ -182,9 +204,10 @@ export abstract class StarknetWrapper {
             prepared.push("--signature", ...options.signature);
         }
 
-        if (options.blockNumber !== undefined && options.blockNumber !== null) {
+        if (options.blockNumber != null) {
             prepared.push("--block_number", options.blockNumber.toString());
         }
+
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
             prepared.push("--network_id", options.networkID);
@@ -259,12 +282,9 @@ export abstract class StarknetWrapper {
 
     public abstract getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareBlockQueryOptions(
-        command: string,
-        options: BlockQueryWrapperOptions
-    ): string[] {
+    protected prepareBlockQueryOptions(options: BlockQueryWrapperOptions): string[] {
         const commandArr = [
-            command,
+            "get_block",
             "--gateway_url",
             options.gatewayUrl,
             "--feeder_gateway_url",
@@ -285,6 +305,36 @@ export abstract class StarknetWrapper {
     }
 
     public abstract getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult>;
+
+    protected prepareNonceQueryOptions(options: NonceQueryWrapperOptions): string[] {
+        const commandArr = [
+            "get_nonce",
+            "--feeder_gateway_url",
+            options.feederGatewayUrl,
+            "--contract_address",
+            options.address
+        ];
+
+        if (options.blockHash) {
+            commandArr.push("--block_hash", options.blockHash);
+        }
+
+        if (options.blockNumber != null) {
+            commandArr.push("--block_number", options.blockNumber.toString());
+        }
+
+        return commandArr;
+    }
+
+    public abstract getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult>;
+
+    public async getClassHash(artifactPath: string): Promise<string> {
+        const executed = await this.execute("get_class_hash", [artifactPath]);
+        if (executed.statusCode) {
+            throw new StarknetPluginError(executed.stderr.toString());
+        }
+        return executed.stdout.toString().trim();
+    }
 }
 
 function getFullImageName(image: Image): string {
@@ -378,7 +428,15 @@ export class DockerWrapper extends StarknetWrapper {
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+        const preparedOptions = this.prepareBlockQueryOptions(options);
+
+        const executed = this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        const preparedOptions = this.prepareNonceQueryOptions(options);
 
         const executed = this.execute("starknet", preparedOptions);
         return executed;
@@ -449,7 +507,13 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareBlockQueryOptions("get_block", options);
+        const preparedOptions = this.prepareBlockQueryOptions(options);
+        const executed = await this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareNonceQueryOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }

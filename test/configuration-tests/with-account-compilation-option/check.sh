@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-CONTRACT_NAME=contract_with_execute.cairo
+CONTRACT_NAME=dummy_account.cairo
 CONTRACT_PATH="contracts/$CONTRACT_NAME"
 
 cp "$(dirname "$0")/$CONTRACT_NAME" "$CONTRACT_PATH"
 
-EXPECTED='Only account contracts may have a function named "__execute__". Use --account-contract flag.'
+EXPECTED="Use the --account-contract flag to compile an account contract."
 
 echo "Testing rejection of compilation without the account flag"
 npx hardhat starknet-compile "$CONTRACT_PATH" 2>&1 |
