@@ -19,6 +19,7 @@
 -   [ ] Performed a self-review of the code
 -   [ ] Rebased to the last commit of the target branch (or merged it into my branch)
 -   [ ] Documented the changes
+    -   [ ] If `src/type-extensions.ts` was changed, updated the line number referencing this file in the `## API` section of README.md
 -   [ ] Updated the `test` directory (with a test case consisting of `network.json`, `hardhat.config.ts`, `check.sh`)
 -   [ ] Linked issues which this PR resolves
 -   [ ] Created a PR to the `plugin` branch of [`starknet-hardhat-example`](https://github.com/Shard-Labs/starknet-hardhat-example):
@@ -26,4 +27,3 @@
     -   [ ] Modified `test.sh` to use my example repo branch
     -   [ ] Restored `test.sh` to to use the original branch (after the example repo PR has been merged)
 -   [ ] All tests are passing (for external contributors who don't have access to the CI/CD pipeline)
--   [ ] If a change was made in `src/type-extensions.ts`, update the line number referencing this file in the `## API` section of the README.md
