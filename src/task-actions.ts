@@ -459,7 +459,7 @@ async function starknetInteractAction(
 
     if (statusCode) {
         const msg =
-            `Could not perform ${choice.cliCommand} of ${args.function}:\n` +
+            `Could not perform ${choice.internalCommand} of ${args.function}:\n` +
             executed.stderr.toString();
         const replacedMsg = adaptLog(msg);
         throw new StarknetPluginError(replacedMsg);
@@ -481,8 +481,7 @@ async function starknetInteractAction(
                     resolve();
                 },
                 (error) => {
-                    console.error(`Invoke transaction ${txHash} is REJECTED`);
-                    reject(error);
+                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
                 }
             )
         );
@@ -498,6 +497,10 @@ export async function starknetDeployAccountAction(
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
     fs.mkdirSync(accountDir, { recursive: true });
+
+    console.warn(
+        "Warning! You are deploying a modified version of OZ account which may not be compatible with the Account class."
+    );
 
     const executed = await hre.starknetWrapper.deployAccount({
         accountDir: accountDir,

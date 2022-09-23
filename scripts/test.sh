@@ -85,9 +85,9 @@ fi
 ../scripts/install-devnet.sh
 
 # test integrated devnet
+source ../scripts/set-devnet-vars.sh
 iterate_dir integrated-devnet
 
-source ../scripts/set-devnet-vars.sh
 iterate_dir devnet
 
 echo "Tests passing: $success / $total"

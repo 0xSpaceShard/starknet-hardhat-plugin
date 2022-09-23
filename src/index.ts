@@ -49,7 +49,8 @@ import {
     getTransactionReceiptUtil,
     getWalletUtil,
     shortStringToBigIntUtil,
-    getBlockUtil
+    getBlockUtil,
+    getNonceUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
@@ -284,6 +285,11 @@ extendEnvironment((hre) => {
         getBlock: async (identifier) => {
             const block = await getBlockUtil(hre, identifier);
             return block;
+        },
+
+        getNonce: async (address, options) => {
+            const nonce = await getNonceUtil(hre, address, options);
+            return nonce;
         }
     };
 });

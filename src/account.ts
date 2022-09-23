@@ -1,6 +1,7 @@
 import {
     CallOptions,
     ContractInteractionFunction,
+    DeclareOptions,
     DeployAccountOptions,
     EstimateFeeOptions,
     InteractChoice,
@@ -9,10 +10,11 @@ import {
     InvokeResponse,
     Numeric,
     StarknetContract,
+    StarknetContractFactory,
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix } from "./constants";
+import { TransactionHashPrefix, TRANSACTION_VERSION } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -98,6 +100,7 @@ export abstract class Account {
      * @param toContract target contract to be called
      * @param functionName function in the contract to be called
      * @param calldata calldata to use as input for the contract call
+     * @deprecated This doesn't work with Starknet 0.10 and will be removed in the future; use StarknetContract.call instead
      */
     async call(
         toContract: StarknetContract,
@@ -105,6 +108,7 @@ export abstract class Account {
         calldata?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
+        console.warn("Using Account.call is deprecated. Use StarknetContract.call instead");
         if (this.hasRawOutput()) {
             options = copyWithBigint(options);
             options.rawOutput = true;
@@ -152,6 +156,7 @@ export abstract class Account {
      * Performs a multicall through this account
      * @param callParameters an array with the paramaters for each call
      * @returns an array with each call's repsecting response object
+     * @deprecated not able to sign calls since starknet 0.10
      */
     async multiCall(
         callParameters: CallParameters[],
@@ -198,7 +203,7 @@ export abstract class Account {
     ) {
         options = copyWithBigint(options);
         options.maxFee = BigInt(options?.maxFee || "0");
-        const nonce = options.nonce || (await this.getNonce());
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
         const { messageHash, args } = this.handleMultiInteract(
@@ -270,6 +275,7 @@ export abstract class Account {
         const adaptedMaxFee = "0x" + maxFee.toString(16);
         const adaptedVersion = "0x" + version.toString(16);
         const messageHash = this.getMessageHash(
+            TransactionHashPrefix.INVOKE,
             accountAddress,
             callArray,
             adaptedNonce,
@@ -277,16 +283,13 @@ export abstract class Account {
             adaptedVersion
         );
 
-        const args = {
-            call_array: executeCallArray,
-            calldata: rawCalldata,
-            nonce: adaptedNonce
-        };
+        const args = this.getExecuteArgs(executeCallArray, rawCalldata, adaptedNonce);
 
         return { messageHash, args };
     }
 
     protected abstract getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -294,16 +297,55 @@ export abstract class Account {
         version: string
     ): string;
 
+    protected abstract getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        nonce: string
+    ): any;
+
     protected abstract getSignatures(messageHash: string): bigint[];
 
     protected abstract getExecutionFunctionName(): string;
 
-    protected abstract getNonce(): Promise<bigint>;
+    protected abstract getNonce(): Promise<number>;
 
     /**
      * Whether the execution method of this account returns raw output or not.
      */
     protected abstract hasRawOutput(): boolean;
+
+    public async declare(
+        contractFactory: StarknetContractFactory,
+        options: DeclareOptions = {}
+    ): Promise<string> {
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const maxFee = (options.maxFee || 0).toString();
+
+        const classHash = await this.hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+
+        const calldata = [classHash];
+        const calldataHash = hash.computeHashOnElements(calldata);
+
+        const messageHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DECLARE,
+            TRANSACTION_VERSION.toString(),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            chainId,
+            nonce.toString()
+        ]);
+
+        const signature = this.getSignatures(messageHash);
+        return contractFactory.declare({
+            signature,
+            token: options.token,
+            sender: this.address,
+            maxFee: BigInt(maxFee)
+        });
+    }
 }
 
 /**
@@ -312,7 +354,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.3.1";
+    static readonly VERSION = "0.4.0b-fork";
 
     constructor(
         starknetContract: StarknetContract,
@@ -323,6 +365,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     protected getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -343,17 +386,30 @@ export class OpenZeppelinAccount extends Account {
 
         const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
-        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
-            TransactionHashPrefix.INVOKE,
+            transactionHashPrefix,
             version,
             accountAddress,
-            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            0, // entrypoint selector is implied
             calldataHash,
             maxFee,
-            chainId
+            chainId,
+            nonce
         ]);
+    }
+
+    protected getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _nonce: string
+    ) {
+        return {
+            call_array: executeCallArray,
+            calldata: rawCalldata
+        };
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -397,7 +453,7 @@ export class OpenZeppelinAccount extends Account {
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
-        const { res: expectedPubKey } = await contract.call("get_public_key");
+        const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
 
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
@@ -415,9 +471,8 @@ export class OpenZeppelinAccount extends Account {
         return "__execute__";
     }
 
-    protected async getNonce(): Promise<bigint> {
-        const { res: nonce } = await this.starknetContract.call("get_nonce");
-        return nonce;
+    protected async getNonce(): Promise<number> {
+        return await this.hre.starknet.getNonce(this.address);
     }
 
     protected hasRawOutput(): boolean {
@@ -443,9 +498,13 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment
     ) {
         super(starknetContract, privateKey, hre);
+        console.warn(
+            "Warning! Argent account used by this version of the plugin is not adapted to Starknet 0.10"
+        );
     }
 
     protected getMessageHash(
+        transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
@@ -469,7 +528,7 @@ export class ArgentAccount extends Account {
         hashable.push(rawCalldata.length, ...rawCalldata, nonce);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
-            TransactionHashPrefix.INVOKE,
+            transactionHashPrefix,
             version,
             accountAddress,
             hash.getSelectorFromName(this.getExecutionFunctionName()),
@@ -477,6 +536,18 @@ export class ArgentAccount extends Account {
             maxFee,
             chainId
         ]);
+    }
+
+    protected getExecuteArgs(
+        executeCallArray: ExecuteCallParameters[],
+        rawCalldata: RawCalldata,
+        nonce: string
+    ) {
+        return {
+            call_array: executeCallArray,
+            calldata: rawCalldata,
+            nonce
+        };
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -599,7 +670,7 @@ export class ArgentAccount extends Account {
         return "__execute__";
     }
 
-    protected async getNonce(): Promise<bigint> {
+    protected async getNonce(): Promise<number> {
         const { nonce } = await this.starknetContract.call("get_nonce");
         return nonce;
     }
