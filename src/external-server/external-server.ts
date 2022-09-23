@@ -3,8 +3,6 @@ import net from "net";
 import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
-import { HardhatPluginError } from "hardhat/plugins";
-import { PLUGIN_NAME } from "../constants";
 import { StringMap } from "../types";
 
 function sleep(amountMillis: number): Promise<void> {
@@ -168,7 +166,7 @@ export abstract class ExternalServer {
         } catch (error) {
             const parent = error instanceof Error && error;
             const msg = "Error in interaction with Starknet CLI proxy server";
-            throw new HardhatPluginError(PLUGIN_NAME, msg, parent);
+            throw new StarknetPluginError(msg, parent);
         }
     }
 
