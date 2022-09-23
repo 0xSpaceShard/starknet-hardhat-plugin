@@ -26,3 +26,4 @@
     -   [ ] Modified `test.sh` to use my example repo branch
     -   [ ] Restored `test.sh` to to use the original branch (after the example repo PR has been merged)
 -   [ ] All tests are passing (for external contributors who don't have access to the CI/CD pipeline)
+-   [ ] If a change was made in `src/type-extensions.ts`, update the line number referencing this file in the `## API` section of the README.md
