@@ -17,6 +17,4 @@ if [ "$NETWORK" == "devnet" ]; then
     npx hardhat test --no-compile scripts/transfer-funds.ts
 fi
 
-echo "Temporarily suppressing argent account test"
-# TODO uncomment
-# npx hardhat test --no-compile test/argent-account-test.ts
+npx hardhat test --no-compile test/argent-account-test.ts
