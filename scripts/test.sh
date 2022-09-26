@@ -17,8 +17,8 @@ npm install
 # if docker is available on the system pull docker image
 CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/src/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
 
-if docker --version > /dev/null 2>&1; then
-  docker pull "$CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG"
+if docker --version >/dev/null 2>&1; then
+    docker pull "$CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG"
 fi
 
 # used by some cases
@@ -34,17 +34,22 @@ if [ ! -d "$test_dir" ]; then
     exit -1
 fi
 
-function iterate_dir(){
+function iterate_dir() {
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
         test_name=$(basename $test_case)
 
-        # Skip if there is a network file that doesn't specify the current network.
-        # So by default, if no network.json, proceed with testing on the current network.
         network_file="$test_case/network.json"
 
-        if [[ -f "$network_file" ]] && [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+        if [[ -f "$network_file" ]]; then
+            echo "Test failed! Error: No network file provided!"
+            total=$((total + 1))
+            continue
+        fi
+
+        # Skip if the network file doesn't specify to run the test on the current network
+        if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
             echo "Skipping $network test for $test_name"
             continue
         fi
@@ -54,7 +59,7 @@ function iterate_dir(){
 
         config_file_path="$test_case/$CONFIG_FILE_NAME"
         if [ ! -f "$config_file_path" ]; then
-            echo "Error: No config file provided!"
+            echo "Test failed! Error: No config file provided!"
             continue
         fi
 
