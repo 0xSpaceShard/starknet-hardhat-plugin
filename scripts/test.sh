@@ -42,7 +42,7 @@ function iterate_dir() {
 
         network_file="$test_case/network.json"
 
-        if [[ -f "$network_file" ]]; then
+        if [[ ! -f "$network_file" ]]; then
             echo "Test failed! Error: No network file provided!"
             total=$((total + 1))
             continue
