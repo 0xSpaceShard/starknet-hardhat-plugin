@@ -22,7 +22,12 @@ async def starknet_main_wrapper(args):
 
 async def starknet_compile_main_wrapper(args):
     sys.argv = [sys.argv[0], *args]
-    return starknet_compile_main()
+    try:
+        return starknet_compile_main()
+    except Exception as err:
+        # stderr was previously redirected to our StringIO
+        print(err, file=sys.stderr)
+        return 1
 
 async def get_class_hash(args):
     path ,= args
