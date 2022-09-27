@@ -449,7 +449,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
-    static readonly VERSION = "a98731015b0f5be7071084da0459f95e0ef2ef43";
+    static readonly VERSION = "3e31c25843010149027ca1bdce251b8d63bdfd9c";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -461,9 +461,6 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment
     ) {
         super(starknetContract, privateKey, hre);
-        console.warn(
-            "Warning! Argent account used by this version of the plugin is not adapted to Starknet 0.10"
-        );
     }
 
     protected getMessageHash(
