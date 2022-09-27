@@ -13,7 +13,8 @@ import {
     getNetwork,
     findPath,
     getAccountPath,
-    isStarknetDevnet
+    isStarknetDevnet,
+    warn
 } from "./utils";
 import {
     HardhatNetworkConfig,
@@ -196,8 +197,7 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
         if (intRegex.test(artifactsPath)) {
-            console.warn(
-                "\x1b[33m%s\x1b[0m",
+            warn(
                 `Warning! Found an integer "${artifactsPath}" as an artifact path.\n` +
                     "Make sure that all inputs are passed within a single string (e.g --inputs '10 20 30')"
             );
@@ -498,7 +498,7 @@ export async function starknetDeployAccountAction(
 
     fs.mkdirSync(accountDir, { recursive: true });
 
-    console.warn(
+    warn(
         "Warning! You are deploying a modified version of OZ account which may not be compatible with the Account class."
     );
 

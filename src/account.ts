@@ -27,7 +27,7 @@ import {
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { copyWithBigint } from "./utils";
+import { copyWithBigint, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 
 type ExecuteCallParameters = {
@@ -108,7 +108,7 @@ export abstract class Account {
         calldata?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        console.warn("Using Account.call is deprecated. Use StarknetContract.call instead");
+        warn("Using Account.call is deprecated. Use StarknetContract.call instead");
         if (this.hasRawOutput()) {
             options = copyWithBigint(options);
             options.rawOutput = true;
@@ -283,8 +283,10 @@ export abstract class Account {
             adaptedVersion
         );
 
-        const args = this.getExecuteArgs(executeCallArray, rawCalldata, adaptedNonce);
-
+        const args = {
+            call_array: executeCallArray,
+            calldata: rawCalldata
+        };
         return { messageHash, args };
     }
 
@@ -297,17 +299,15 @@ export abstract class Account {
         version: string
     ): string;
 
-    protected abstract getExecuteArgs(
-        executeCallArray: ExecuteCallParameters[],
-        rawCalldata: RawCalldata,
-        nonce: string
-    ): any;
-
     protected abstract getSignatures(messageHash: string): bigint[];
 
-    protected abstract getExecutionFunctionName(): string;
+    protected getExecutionFunctionName() {
+        return "__execute__";
+    }
 
-    protected abstract getNonce(): Promise<number>;
+    private async getNonce(): Promise<number> {
+        return await this.hre.starknet.getNonce(this.address);
+    }
 
     /**
      * Whether the execution method of this account returns raw output or not.
@@ -400,18 +400,6 @@ export class OpenZeppelinAccount extends Account {
         ]);
     }
 
-    protected getExecuteArgs(
-        executeCallArray: ExecuteCallParameters[],
-        rawCalldata: RawCalldata,
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        _nonce: string
-    ) {
-        return {
-            call_array: executeCallArray,
-            calldata: rawCalldata
-        };
-    }
-
     protected getSignatures(messageHash: string): bigint[] {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
@@ -467,14 +455,6 @@ export class OpenZeppelinAccount extends Account {
         return new OpenZeppelinAccount(contract, privateKey, hre);
     }
 
-    protected getExecutionFunctionName(): string {
-        return "__execute__";
-    }
-
-    protected async getNonce(): Promise<number> {
-        return await this.hre.starknet.getNonce(this.address);
-    }
-
     protected hasRawOutput(): boolean {
         return false;
     }
@@ -486,7 +466,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
-    static readonly VERSION = "0.2.2";
+    static readonly VERSION = "3e31c25843010149027ca1bdce251b8d63bdfd9c";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -498,9 +478,6 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment
     ) {
         super(starknetContract, privateKey, hre);
-        console.warn(
-            "Warning! Argent account used by this version of the plugin is not adapted to Starknet 0.10"
-        );
     }
 
     protected getMessageHash(
@@ -525,29 +502,18 @@ export class ArgentAccount extends Account {
 
         const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
-        hashable.push(rawCalldata.length, ...rawCalldata, nonce);
+        hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
         return hash.computeHashOnElements([
             transactionHashPrefix,
             version,
             accountAddress,
-            hash.getSelectorFromName(this.getExecutionFunctionName()),
+            0, // entrypoint selector is implied
             calldataHash,
             maxFee,
-            chainId
-        ]);
-    }
-
-    protected getExecuteArgs(
-        executeCallArray: ExecuteCallParameters[],
-        rawCalldata: RawCalldata,
-        nonce: string
-    ) {
-        return {
-            call_array: executeCallArray,
-            calldata: rawCalldata,
+            chainId,
             nonce
-        };
+        ]);
     }
 
     protected getSignatures(messageHash: string): bigint[] {
@@ -585,9 +551,9 @@ export class ArgentAccount extends Account {
         }
 
         const call: CallParameters = {
-            functionName: "change_guardian",
+            functionName: "changeGuardian",
             toContract: this.starknetContract,
-            calldata: { new_guardian: BigInt(guardianPublicKey || 0) }
+            calldata: { newGuardian: BigInt(guardianPublicKey || 0) }
         };
 
         const txHash = await this.multiInvoke([call], invokeOptions);
@@ -634,7 +600,7 @@ export class ArgentAccount extends Account {
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = contractFactory.getContractAt(address);
 
-        const { signer: expectedPubKey } = await contract.call("get_signer");
+        const { signer: expectedPubKey } = await contract.call("getSigner");
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
@@ -664,15 +630,6 @@ export class ArgentAccount extends Account {
             },
             { maxFee: initializeOptions.maxFee || 0 }
         );
-    }
-
-    protected getExecutionFunctionName(): string {
-        return "__execute__";
-    }
-
-    protected async getNonce(): Promise<number> {
-        const { nonce } = await this.starknetContract.call("get_nonce");
-        return nonce;
     }
 
     protected hasRawOutput(): boolean {

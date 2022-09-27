@@ -7,7 +7,7 @@ import {
     QUERY_VERSION,
     TRANSACTION_VERSION
 } from "./constants";
-import { adaptLog, copyWithBigint } from "./utils";
+import { adaptLog, copyWithBigint, warn } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { Wallet } from "hardhat/types";
@@ -187,12 +187,12 @@ export async function iterativelyCheckStatus(
         gatewayUrl,
         feederGatewayUrl
     ).catch((reason) => {
-        console.warn(reason);
+        warn(reason);
         return undefined;
     });
 
     if (!statusObject) {
-        console.warn("Retrying transaction status check...");
+        warn("Retrying transaction status check...");
         // eslint-disable-next-line prefer-rest-params
         setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
     } else if (isTxAccepted(statusObject)) {
