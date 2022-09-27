@@ -27,7 +27,7 @@ import {
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { copyWithBigint } from "./utils";
+import { copyWithBigint, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 
 type ExecuteCallParameters = {
@@ -91,7 +91,7 @@ export abstract class Account {
         calldata?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        console.warn("Using Account.call is deprecated. Use StarknetContract.call instead");
+        warn("Using Account.call is deprecated. Use StarknetContract.call instead");
         if (this.hasRawOutput()) {
             options = copyWithBigint(options);
             options.rawOutput = true;

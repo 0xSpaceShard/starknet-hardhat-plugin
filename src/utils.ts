@@ -249,3 +249,11 @@ export function getImageTagByArch(tag: string): string {
     }
     return tag;
 }
+
+/**
+ * Log a yellow message to STDERR.
+ * @param message
+ */
+export function warn(message: string): void {
+    console.warn("\x1b[33m%s\x1b[0m", message);
+}
