@@ -101,13 +101,17 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 
 When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered.
 
+The updating of `package.json` doesn't have to be done directly, but can be done by running
+
+```
+npm version
+```
+
+This will also update `package-lock.json`, create a new commit, and create a new git tag.
+
 If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
-Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names:
-
-```
-git tag v<VERSION>
-```
+Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
 
 When the tag is pushed:
 
