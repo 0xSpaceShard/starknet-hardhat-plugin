@@ -104,8 +104,10 @@ When a push is done to the `master` branch and the version in `package.json` dif
 The updating of `package.json` doesn't have to be done directly, but can be done by running
 
 ```
-npm version
+npm version <NEW_VERSION>
 ```
+
+`NEW_VERSION` can be anything documented [here](https://docs.npmjs.com/cli/v8/commands/npm-version), but will most commonly be `patch`.
 
 This will also update `package-lock.json`, create a new commit, and create a new git tag.
 
@@ -119,7 +121,7 @@ When the tag is pushed:
 git push origin <TAG_NAME>
 ```
 
-a [new GitHub version can be released](https://github.com/Shard-Labs/starknet-devnet/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+a [new GitHub version can be released](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
 
 After releasing a new plugin version, the `plugin` branch of the example repo should be updated and pushed:
 
