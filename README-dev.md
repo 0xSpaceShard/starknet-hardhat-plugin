@@ -76,9 +76,7 @@ When the PR is ready to be merged, do `Squash and merge` and delete the branch.
 
 ## Adapting to a new Starknet / cairo-lang version
 
-When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation):
-
--   This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
+When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation). This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
 
 Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet needs to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
 
@@ -103,7 +101,7 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 
 When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered.
 
-If for whatever reason the publishing workflow in the CI/CD cannot be executed, the version can be released automatically via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
+If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
 Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names:
 
