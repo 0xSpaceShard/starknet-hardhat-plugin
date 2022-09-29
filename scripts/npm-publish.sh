@@ -9,6 +9,7 @@ if [ $LOCAL_VERSION = $NPM_VERSION ]; then
 else
   npm install
   npm run build
+  # NPM access token: https://docs.npmjs.com/creating-and-viewing-access-tokens
   npm config set //registry.npmjs.org/:_authToken=${NPM_TOKEN}
   npm publish --verbose --access=public
 fi

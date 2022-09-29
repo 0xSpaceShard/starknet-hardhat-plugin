@@ -64,6 +64,8 @@ Bear in mind that each workflow consumes credits. Track the spending [here](http
 
 The whole workflow is defined in `.circleci/config.yml` - you may find it somewhat chaotic as it uses dependency caching (we kind of sacrificed config clarity for performance).
 
+Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [shardlabs CircleCI context](https://app.circleci.com/settings/organization/github/Shard-Labs/contexts/f7f363c6-f101-4ac8-9193-343c88da5fb0?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
+
 ### Creating a PR
 
 When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`. You can then modify the `test.sh` script to use your branch instead of the `plugin` branch.
@@ -75,7 +77,8 @@ When the PR is ready to be merged, do `Squash and merge` and delete the branch.
 ## Adapting to a new Starknet / cairo-lang version
 
 When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation):
-- This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
+
+-   This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
 
 Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet needs to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
 
@@ -98,9 +101,28 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 
 ## Version management
 
-When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered. Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags).
+When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered.
 
-After releasing a new plugin version, the `plugin` branch of the example repo should be updated:
-- `package.json` should be updated by running `npm install --save-exact @shardlabs/starknet-hardhat-plugin@<NEW_VERSION>`
-- The `master` branch, which serves as reference to the users, should be synchronized with the `plugin` branch. This can probably be done by doing `git reset plugin` while on `master`.
-- Since you did `npm install`, you may need to link again, as described [initially](#set-up-the-example-repository).
+If for whatever reason the publishing workflow in the CI/CD cannot be executed, the version can be released automatically via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
+
+Releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names:
+
+```
+git tag v<VERSION>
+```
+
+When the tag is pushed:
+
+```
+git push origin <TAG_NAME>
+```
+
+a [new GitHub version can be released](https://github.com/Shard-Labs/starknet-devnet/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+
+After releasing a new plugin version, the `plugin` branch of the example repo should be updated and pushed:
+
+-   `package.json` should be updated by running `npm install --save-exact @shardlabs/starknet-hardhat-plugin@<NEW_VERSION>`
+-   The `master` branch, which serves as reference to the users, should be synchronized with the `plugin` branch. This can probably be done by doing `git reset plugin` while on `master`.
+-   Since you did `npm install`, you may need to link again, as described [initially](#set-up-the-example-repository).
+
+Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67)...
