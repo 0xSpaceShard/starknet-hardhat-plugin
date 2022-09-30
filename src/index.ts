@@ -38,7 +38,8 @@ import {
     starknetTestAction,
     starknetRunAction,
     starknetEstimateFeeAction,
-    starknetPluginVersionAction
+    starknetPluginVersionAction,
+    starknetMigrateAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -398,3 +399,8 @@ task("run")
 task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
     starknetPluginVersionAction
 );
+
+task("migrate", "Migrates a cairo contract to a new version.")
+    .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
+    .addFlag("inplace", "Applies changes to the files in place.")
+    .setAction(starknetMigrateAction);

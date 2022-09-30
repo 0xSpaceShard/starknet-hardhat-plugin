@@ -599,3 +599,27 @@ export async function starknetRunAction(
 export async function starknetPluginVersionAction() {
     console.log(`Version: ${version}`);
 }
+
+export async function starknetMigrateAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    if (!args.paths || args.paths.length < 1) {
+        throw new StarknetPluginError("Expected at least one file to migrate");
+    }
+
+    const root = hre.config.paths.root;
+    const defaultSourcesPath = hre.config.paths.starknetSources;
+    const files: string[] = args.paths || [defaultSourcesPath];
+    const cairoFiles: string[] = [];
+    for (let file of files) {
+        if (!path.isAbsolute(file)) {
+            file = path.normalize(path.join(root, file));
+        }
+        cairoFiles.push(file);
+    }
+
+    const result = await hre.starknetWrapper.migrateContract({
+        files: cairoFiles,
+        inplace: args.inplace
+    });
+
+    processExecuted(result, true);
+}
