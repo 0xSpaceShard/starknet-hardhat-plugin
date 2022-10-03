@@ -83,11 +83,16 @@ interface NonceQueryWrapperOptions {
     blockNumber?: BlockNumber;
 }
 
+interface MigrateContractWrapperOptions {
+    files: string[];
+    inplace: boolean;
+}
+
 export abstract class StarknetWrapper {
     constructor(private externalServer: ExternalServer) {}
 
     public async execute(
-        command: "starknet" | "starknet-compile" | "get_class_hash",
+        command: "starknet" | "starknet-compile" | "get_class_hash" | "cairo-migrate",
         args: string[]
     ): Promise<ProcessResult> {
         return await this.externalServer.post<ProcessResult>({
@@ -334,6 +339,19 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError(executed.stderr.toString());
         }
         return executed.stdout.toString().trim();
+    }
+
+    public async migrateContract(options: MigrateContractWrapperOptions): Promise<ProcessResult> {
+        const commandArr = [...options.files];
+
+        if (options.inplace) {
+            commandArr.push("-i");
+        }
+        const executed = await this.execute("cairo-migrate", commandArr);
+        if (executed.statusCode) {
+            throw new StarknetPluginError(executed.stderr.toString());
+        }
+        return executed;
     }
 }
 
