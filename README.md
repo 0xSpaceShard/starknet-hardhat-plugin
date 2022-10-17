@@ -53,7 +53,7 @@ This plugin was tested with:
     -   If you opt for the containerized version, make sure you have a running Docker daemon.
     -   If you're experiencing Docker access issues, check [this](https://stackoverflow.com/questions/52364905/after-executing-following-code-of-dockerode-npm-getting-error-connect-eacces-v).
 -   Linux / macOS:
-    -   On Windows, we recommend using WSL 2.
+    -   On Windows, we recommend using [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install) with Docker instance installed on [WSL 2](https://learn.microsoft.com/en-us/windows/wsl/install) instead of using Docker Desktop on your windows. Example installation for Ubuntu can be found [here](https://docs.docker.com/engine/install/ubuntu/).
 
 ## CLI commands
 
