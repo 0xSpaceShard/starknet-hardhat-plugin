@@ -589,6 +589,10 @@ export async function starknetRunAction(
     runSuper: RunSuperFunction<TaskArguments>
 ) {
     await new Recompiler(hre).handleCache();
+    if (args.starknetNetwork) {
+        throw new StarknetPluginError(`Using "--starknet-network" with "hardhat run" currently does not have effect.
+Use the "network" property of the "starknet" object in your hardhat config file.`);
+    }
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {

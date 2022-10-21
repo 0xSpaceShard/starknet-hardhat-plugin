@@ -185,6 +185,7 @@ Estimates the gas fee of a function execution.
 ```
 npx hardhat starknet-plugin-version
 ```
+
 Prints the version of the plugin.
 
 ### `migrate`
@@ -192,14 +193,16 @@ Prints the version of the plugin.
 ```
 npx hardhat migrate [PATH...] [--inplace]
 ```
-Converts old cairo code to the new syntax. The `--inplace` flag will change the contract file in place.
+
+Converts old cairo code to the new (cairo-lang 0.10.0) syntax. The `--inplace` flag will change the contract file in place.
+
 ```
 npx hardhat migrate --inplace contract/contract.cairo
 ```
 
 ### `run`
 
-Introduces the `--starknet-network` option to the existing `hardhat run` task.
+Using `--starknet-network` with `hardhat run` currently does not have effect. Use the `network` property of the `starknet` object in your hardhat config file.
 
 ### `test`
 
