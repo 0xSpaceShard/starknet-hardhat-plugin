@@ -2,11 +2,11 @@
 <p align="center" style="margin-bottom: 0px !important">
   <img width="100" src="https://user-images.githubusercontent.com/2848732/181497954-297848fb-4e9d-4bf0-91bd-c1c5da8ae10d.svg" alt="Hardhat Plugin" align="center">
 </p>
-<h1 align="center" style="margin-top: 0px !important">Starknet Hardhat Plugin</h1>
+<h1 align="center" style="margin-top: 0px !important">StarkNet Hardhat Plugin</h1>
 
 [![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=blue)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
 
-If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
+If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for StarkNet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
 ## Contents
 
@@ -65,7 +65,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
-If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
+If no paths are provided, all StarkNet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
@@ -79,7 +79,7 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <CONSTRUCTOR_ARGUMENTS>] [--salt <SALT>]
 ```
 
-If no paths are provided, all Starknet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
+If no paths are provided, all StarkNet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
 
 If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
 
@@ -137,7 +137,7 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by Starknet CLI.
+Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by StarkNet CLI.
 
 ```
 npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
@@ -151,7 +151,7 @@ npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [-
 
 Invokes a function on the target contract.
 If the function takes any inputs, they should be passed as a single string, separated by space.
-If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
+If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the StarkNet argument `--no_wallet` will be used by default.
 
 ```
 npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20" --wallet MyWallet
@@ -224,14 +224,14 @@ To see all the utilities introduced by the `starknet` object, check [this](src/t
 
 Relying on the above described API makes it easier to interact with your contracts and test them.
 
-To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
+To test StarkNet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 
 ```
 npx hardhat test
 ```
 
 Read more about the network used in tests in the [Runtime network](#runtime-network) section.
-These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
+These examples are inspired by the official [StarkNet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
 
