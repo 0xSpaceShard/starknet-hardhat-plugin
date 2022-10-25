@@ -402,7 +402,7 @@ export class OpenZeppelinAccount extends Account {
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy(
-            { public_key: BigInt(signer.publicKey) },
+            { publicKey: BigInt(signer.publicKey) },
             options
         );
 
