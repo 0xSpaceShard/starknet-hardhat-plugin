@@ -337,7 +337,7 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.4.0b-fork";
+    static readonly VERSION = "0.5.0";
 
     constructor(
         starknetContract: StarknetContract,
@@ -402,7 +402,7 @@ export class OpenZeppelinAccount extends Account {
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy(
-            { public_key: BigInt(signer.publicKey) },
+            { publicKey: BigInt(signer.publicKey) },
             options
         );
 
