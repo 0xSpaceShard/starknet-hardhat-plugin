@@ -10,9 +10,11 @@ CONFIG_FILE_NAME="hardhat.config.ts"
 # setup example repo
 rm -rf starknet-hardhat-example
 git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
+npm pack # pack plugin
 cd starknet-hardhat-example
 git log -n 1
 npm install
+npm install ../*.tgz
 
 # if docker is available on the system pull docker image
 CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/src/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
