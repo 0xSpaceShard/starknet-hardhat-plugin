@@ -1,6 +1,6 @@
 import "@nomiclabs/hardhat-ethers";
 
-import "../dist/src/index.js";
+import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     solidity: "0.6.12",
