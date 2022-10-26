@@ -116,10 +116,6 @@ export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 
-function extractAddress(response: string) {
-    return extractFromResponse(response, /^Contract address: (.*)$/m);
-}
-
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -438,21 +434,16 @@ export class StarknetContractFactory {
         constructorArguments?: StringMap,
         options: DeployOptions = {}
     ): Promise<StarknetContract> {
-        const executed = await this.starknetWrapper.deploy({
+        const { deployResponse: executed } = await this.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
             gatewayUrl: this.gatewayUrl,
             salt: options.salt,
             token: options.token
         });
-        if (executed.statusCode) {
-            const msg = `Could not deploy contract: ${executed.stderr.toString()}`;
-            throw new StarknetPluginError(msg);
-        }
 
-        const executedOutput = executed.stdout.toString();
-        const address = extractAddress(executedOutput);
-        const txHash = extractTxHash(executedOutput);
+        const address = executed.contract_address;
+        const txHash = executed.transaction_hash;
         const contract = new StarknetContract({
             abiPath: this.abiPath,
             starknetWrapper: this.starknetWrapper,

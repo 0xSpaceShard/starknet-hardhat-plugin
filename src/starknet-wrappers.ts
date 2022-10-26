@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { PLUGIN_NAME } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
@@ -7,6 +8,7 @@ import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
+import { DeployContractResponse, Provider, ProviderOptions, json } from "starknet";
 
 interface CompileWrapperOptions {
     file: string;
@@ -33,6 +35,11 @@ interface DeployWrapperOptions {
     inputs?: string[];
     salt?: string;
     token?: string;
+}
+
+interface ExtendedDeployResponse {
+    provider: Provider;
+    deployResponse: DeployContractResponse;
 }
 
 interface InteractWrapperOptions {
@@ -99,6 +106,39 @@ export abstract class StarknetWrapper {
             command,
             args
         });
+    }
+
+    public async deployWithProvider(
+        options: DeployWrapperOptions
+    ): Promise<ExtendedDeployResponse> {
+        const providerOptions: ProviderOptions = {
+            sequencer: {
+                baseUrl: options.gatewayUrl
+            }
+        };
+
+        const provider = new Provider(providerOptions);
+
+        try {
+            const compiledContract = json.parse(
+                fs.readFileSync(options.contract).toString("ascii")
+            );
+            const deployResponse = await provider.deployContract({
+                contract: compiledContract,
+                constructorCalldata: options.inputs,
+                addressSalt: options.salt
+                // token: options.token
+            });
+
+            // await provider.waitForTransaction(res.transaction_hash);
+            const res: ExtendedDeployResponse = {
+                provider,
+                deployResponse
+            };
+            return res;
+        } catch (err) {
+            throw new StarknetPluginError(`Could not deploy contract: ${options.contract}`);
+        }
     }
 
     protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
@@ -184,7 +224,9 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract deploy(options: DeployWrapperOptions): Promise<ProcessResult>;
+    public async deploy(options: DeployWrapperOptions): Promise<ExtendedDeployResponse> {
+        return await this.deployWithProvider(options);
+    }
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
@@ -383,14 +425,6 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        const preparedOptions = this.prepareDeployOptions(options);
-
-        const executed = this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.abi]: options.abi
@@ -484,12 +518,6 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeclareOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }

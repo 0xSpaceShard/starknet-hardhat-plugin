@@ -193,7 +193,6 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
     const intRegex = new RegExp(/^-?\d+$/);
 
-    let statusCode = 0;
     const txHashes: string[] = [];
     for (let artifactsPath of artifactsPaths) {
         if (intRegex.test(artifactsPath)) {
@@ -220,21 +219,20 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
         const files = paths.filter(isStarknetCompilationArtifact);
         for (const file of files) {
             console.log("Deploying", file);
-            const executed = await hre.starknetWrapper.deploy({
+            const { deployResponse, provider } = await hre.starknetWrapper.deploy({
                 contract: file,
                 gatewayUrl,
                 inputs: args.inputs?.split(/\s+/),
                 salt: args.salt,
                 token: args.token
             });
+            console.log(`Deploy transaction was sent.
+Contract address: ${deployResponse.contract_address}
+Transaction hash: ${deployResponse.transaction_hash}
+            `);
             if (args.wait) {
-                const execResult = processExecuted(executed, false);
-                if (execResult == 0) {
-                    txHashes.push(extractTxHash(executed.stdout.toString()));
-                }
-                statusCode += execResult;
-            } else {
-                statusCode += processExecuted(executed, true);
+                await provider.waitForTransaction(deployResponse.transaction_hash);
+                txHashes.push(deployResponse.transaction_hash);
             }
         }
     }
@@ -242,30 +240,21 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
     if (args.wait) {
         // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
         console.log(`Checking deployment transaction${txHashes.length === 1 ? "" : "s"}...`);
-        const promises = txHashes.map(
-            (hash) =>
-                new Promise<void>((resolve, reject) =>
-                    iterativelyCheckStatus(
-                        hash,
-                        hre.starknetWrapper,
-                        gatewayUrl,
-                        gatewayUrl,
-                        (status) => {
-                            console.log(`Deployment transaction ${hash} is now ${status}`);
-                            resolve();
-                        },
-                        (error) => {
-                            console.log(`Deployment transaction ${hash} is REJECTED`);
-                            reject(error);
-                        }
-                    )
-                )
-        );
-        await Promise.allSettled(promises);
-    }
-
-    if (statusCode) {
-        throw new StarknetPluginError(`Failed deployment of ${statusCode} contracts`);
+        for (const hash of txHashes) {
+            await iterativelyCheckStatus(
+                hash,
+                hre.starknetWrapper,
+                gatewayUrl,
+                gatewayUrl,
+                (status) => {
+                    console.log(`Deployment transaction ${hash} is now ${status}`);
+                },
+                (error) => {
+                    console.log(`Deployment transaction ${hash} is REJECTED`);
+                    console.log(error);
+                }
+            );
+        }
     }
 }
 

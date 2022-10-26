@@ -87,7 +87,6 @@ export interface TransactionData {
     calldata: string[];
     contract_address: string;
     entry_point_selector: string;
-    entry_point_type: string;
     max_fee: string;
     signature: string[];
     transaction_hash: string;
