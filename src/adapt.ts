@@ -1,5 +1,5 @@
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { LEN_SUFFIX } from "./constants";
+import { HEXADECIMAL_REGEX, LEN_SUFFIX } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
@@ -13,8 +13,7 @@ function isNumeric(value: { toString: () => string }) {
     const strValue = value.toString();
 
     const decimalRegex = /^-?\d+$/;
-    const hexadecimalRegex = /^0x[0-9a-fA-F]+?$/;
-    return decimalRegex.test(strValue) || hexadecimalRegex.test(strValue);
+    return decimalRegex.test(strValue) || HEXADECIMAL_REGEX.test(strValue);
 }
 
 const PRIME = BigInt(2) ** BigInt(251) + BigInt(17) * BigInt(2) ** BigInt(192) + BigInt(1);
