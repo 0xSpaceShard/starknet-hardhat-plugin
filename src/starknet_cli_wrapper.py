@@ -1,6 +1,5 @@
 """Wrapper of Starknet CLI"""
 
-import argparse
 import asyncio
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import HTTPServer, BaseHTTPRequestHandler
