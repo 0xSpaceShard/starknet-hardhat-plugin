@@ -27,7 +27,7 @@
         "test-integrated-devnet-tests": "TEST_SUBDIR=integrated-devnet-tests ./scripts/test.sh",
         "test-recompilation-tests": "TEST_SUBDIR=recompilation-tests ./scripts/test.sh",
         "build": "rm -rf dist && tsc && npm run copy-files",
-        "copy-files": "cp src/starknet_cli_wrapper.py dist/src/",
+        "copy-files": "cp src/*.py dist/src/",
         "lint": "eslint $(git ls-files '*.ts')",
         "format": "prettier-eslint --list-different --write $(git ls-files '*.ts')"
     },
