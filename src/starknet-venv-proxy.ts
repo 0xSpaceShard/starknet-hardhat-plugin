@@ -10,7 +10,9 @@ export class StarknetVenvProxy extends ExternalServer {
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
         this.port = await getFreePort();
+        console.log("DEBUG current dir", process.env.PWD);
         const proxyServerPath = path.join(__dirname, "starknet_cli_wrapper.py");
+        console.log("DEBUG proxyServerPath", proxyServerPath);
         return spawn(this.pythonPath, [proxyServerPath, this.port]);
     }
 
