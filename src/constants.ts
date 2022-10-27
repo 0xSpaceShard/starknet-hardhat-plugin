@@ -46,3 +46,5 @@ export const PREFIX_TRANSACTION = "StarkNet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
+
+export const HEXADECIMAL_REGEX = /^0x[0-9a-fA-F]+?$/;
