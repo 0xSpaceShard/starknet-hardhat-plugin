@@ -69,6 +69,15 @@ interface DeployAccountWrapperOptions {
     network: string;
 }
 
+interface NewAccountWrapperOptions {
+    wallet: string;
+    accountName: string;
+    accountDir: string;
+    gatewayUrl: string;
+    feederGatewayUrl: string;
+    network: string;
+}
+
 interface BlockQueryWrapperOptions {
     number?: BlockNumber;
     hash?: string;
@@ -276,10 +285,38 @@ export abstract class StarknetWrapper {
             prepared.push("--account_dir", options.accountDir);
         }
 
+        prepared.push("--chain_id", "0x534e5f474f45524c49");
+
         return prepared;
     }
 
     public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
+
+    protected prepareNewAccountOptions(options: DeployAccountWrapperOptions): string[] {
+        const prepared = [
+            "new_account",
+            "--network_id",
+            options.network,
+            "--account",
+            options.accountName || "__default__",
+            "--gateway_url",
+            options.gatewayUrl,
+            "--feeder_gateway_url",
+            options.feederGatewayUrl
+        ];
+
+        if (options.wallet) {
+            prepared.push("--wallet", options.wallet);
+        }
+
+        if (options.accountDir) {
+            prepared.push("--account_dir", options.accountDir);
+        }
+
+        return prepared;
+    }
+
+    public abstract newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult>;
 
     public abstract getTransactionReceipt(
         options: TxHashQueryWrapperOptions
@@ -378,6 +415,14 @@ export class DockerWrapper extends StarknetWrapper {
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeclareOptions(options);
+
+        const executed = this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult> {
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        const preparedOptions = this.prepareNewAccountOptions(options);
 
         const executed = this.execute("starknet", preparedOptions);
         return executed;
@@ -485,6 +530,13 @@ export class VenvWrapper extends StarknetWrapper {
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeclareOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareNewAccountOptions(options);
+
+        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 

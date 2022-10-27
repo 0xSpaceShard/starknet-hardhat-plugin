@@ -39,7 +39,8 @@ import {
     starknetRunAction,
     starknetEstimateFeeAction,
     starknetPluginVersionAction,
-    starknetMigrateAction
+    starknetMigrateAction,
+    starknetNewAccountAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -379,6 +380,11 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     )
     .addOptionalParam("nonce", "The nonce to provide to your account")
     .setAction(starknetEstimateFeeAction);
+
+task("starknet-new-account", "Initializes a new account according to the parameters.")
+    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .setAction(starknetNewAccountAction);
 
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")

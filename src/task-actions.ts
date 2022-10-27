@@ -495,6 +495,38 @@ async function starknetInteractAction(
     }
 }
 
+export async function starknetNewAccountAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    const gatewayUrl = getGatewayUrl(args, hre);
+    const wallet = getWalletUtil(args.wallet, hre);
+    const accountDir = getAccountPath(wallet.accountPath, hre);
+
+    fs.mkdirSync(accountDir, { recursive: true });
+
+    warn(
+        "Warning! You are creating a modified version of OZ account which may not be compatible with the Account class."
+    );
+
+    const executed = await hre.starknetWrapper.newAccount({
+        accountDir: accountDir,
+        accountName: wallet.accountName,
+        feederGatewayUrl: gatewayUrl,
+        gatewayUrl: gatewayUrl,
+        network: args.starknetNetwork,
+        wallet: wallet.modulePath
+    });
+
+    const statusCode = processExecuted(executed, true);
+
+    if (statusCode) {
+        const msg = "Could not create a new account contract:\n" + executed.stderr.toString();
+        const replacedMsg = adaptLog(msg);
+        throw new StarknetPluginError(replacedMsg);
+    }
+}
+
 export async function starknetDeployAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
