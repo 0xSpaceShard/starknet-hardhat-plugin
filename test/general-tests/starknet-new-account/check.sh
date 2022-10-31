@@ -2,7 +2,7 @@
 
 set -eu
 
-ACCOUNT_FILE="~/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+ACCOUNT_FILE="$ACCOUNT_DIR/starknet_open_zeppelin_accounts.json"
 
 output=$(npx hardhat starknet-new-account --wallet OpenZeppelin --starknet-network "$NETWORK")
 tail=${output#*$'\n'Account address: }
