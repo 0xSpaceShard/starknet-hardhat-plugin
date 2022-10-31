@@ -2,6 +2,7 @@
 
 set -eu
 
+export ACCOUNT_DIR="$HOME/.starknet_new_account_test"
 ACCOUNT_FILE="$ACCOUNT_DIR/starknet_open_zeppelin_accounts.json"
 
 output=$(npx hardhat starknet-new-account --wallet OpenZeppelin --starknet-network "$NETWORK")
