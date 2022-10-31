@@ -12,7 +12,8 @@ rm -rf starknet-hardhat-example
 git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
-npm install
+npm ci
+npm install ../ # install plugin from source (parent dir)
 
 # if docker is available on the system pull docker image
 CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/src/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
