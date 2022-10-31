@@ -547,7 +547,8 @@ export async function starknetDeployAccountAction(
         feederGatewayUrl: gatewayUrl,
         gatewayUrl: gatewayUrl,
         network: args.starknetNetwork,
-        wallet: wallet.modulePath
+        wallet: wallet.modulePath,
+        chainID: hre.config.starknet.networkConfig.starknetChainId
     });
 
     const statusCode = processExecuted(executed, true);

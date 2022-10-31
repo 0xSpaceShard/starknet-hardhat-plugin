@@ -9,6 +9,7 @@ fi
 
 ACCOUNT_FILE="$ACCOUNT_DIR/starknet_open_zeppelin_accounts.json"
 
+npx hardhat starknet-new-account --starknet-network "$NETWORK" --wallet OpenZeppelin
 npx hardhat starknet-deploy-account --starknet-network "$NETWORK" --wallet OpenZeppelin
 ACCOUNT_ADDRESS=$(jq -r .$NETWORK.OpenZeppelin.address $ACCOUNT_FILE)
 

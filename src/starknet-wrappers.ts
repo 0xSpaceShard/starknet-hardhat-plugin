@@ -67,6 +67,7 @@ interface DeployAccountWrapperOptions {
     gatewayUrl: string;
     feederGatewayUrl: string;
     network: string;
+    chainID: string;
 }
 
 interface NewAccountWrapperOptions {
@@ -285,14 +286,14 @@ export abstract class StarknetWrapper {
             prepared.push("--account_dir", options.accountDir);
         }
 
-        prepared.push("--chain_id", "0x534e5f474f45524c49");
+        prepared.push("--chain_id", options.chainID);
 
         return prepared;
     }
 
     public abstract deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareNewAccountOptions(options: DeployAccountWrapperOptions): string[] {
+    protected prepareNewAccountOptions(options: NewAccountWrapperOptions): string[] {
         const prepared = [
             "new_account",
             "--network_id",
