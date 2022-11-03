@@ -118,7 +118,7 @@ You would typically use the input feature when deploying a single contract requi
 ### `starknet-verify`
 
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract <BOOLEAN>]
+npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
@@ -369,8 +369,9 @@ More detailed documentation can be found [here](#account).
 
     const { res: currBalance } = await contract.call("get_balance");
     const amount = BigInt(10);
-    // Passing max_fee is currently optional
-    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("123") });
+
+    // Read more about max fee specification under # Funds and fees
+    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("1000000000") });
 
     const { res: newBalance } = await contract.call("get_balance");
     expect(newBalance).to.deep.equal(currBalance + amount);
@@ -812,6 +813,13 @@ Once your account has funds, you can specify a max fee greater than zero:
 
 ```typescript
 await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
+```
+
+If you don't specify a `maxFee`, one will be calculated for you by applying an overhead of 50% to the result of fee estimation. You can also customize the overhead by providing a value for `overhead`:
+
+```typescript
+// maxFee will be 40% of estimated fee; if overhead not provided, a default value is used.
+await account.invoke(contract, "foo", { arg1: ... }, { overhead: 0.4 );
 ```
 
 ### Multicalls

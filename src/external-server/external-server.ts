@@ -11,7 +11,7 @@ function sleep(amountMillis: number): Promise<void> {
     });
 }
 
-function isFreePort(port: number): Promise<boolean> {
+export async function isFreePort(port: number): Promise<boolean> {
     return new Promise((accept, reject) => {
         const sock = net.createConnection(port);
         sock.once("connect", () => {

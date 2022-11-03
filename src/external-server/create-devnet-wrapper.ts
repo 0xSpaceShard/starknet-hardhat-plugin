@@ -12,7 +12,9 @@ import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
 import { ExternalServer } from "./external-server";
 
-export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): ExternalServer {
+export async function createIntegratedDevnet(
+    hre: HardhatRuntimeEnvironment
+): Promise<ExternalServer> {
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
         INTEGRATED_DEVNET,
         hre.config.networks,

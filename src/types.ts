@@ -312,6 +312,7 @@ export interface InvokeOptions {
     wallet?: Wallet;
     nonce?: Numeric;
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface CallOptions {

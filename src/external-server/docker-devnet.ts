@@ -18,6 +18,7 @@ export class DockerDevnet extends DockerServer {
     }
 
     protected async getContainerArgs(): Promise<string[]> {
-        return this.devnetArgs || [];
+        const containerArgs = this.devnetArgs || [];
+        return [...containerArgs, "--port", this.port];
     }
 }

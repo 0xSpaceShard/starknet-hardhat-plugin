@@ -27,6 +27,7 @@ import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
+import { getFreePort, isFreePort } from "./external-server/external-server";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -343,14 +344,7 @@ async function handleContractVerification(
 
     const bodyFormData = new FormData();
     bodyFormData.append("compiler-version", args.compilerVersion);
-    let accountContract;
-    if (args.accountContract === "true") {
-        accountContract = "true";
-    } else if (!args.accountContract || args.accountContract === "false") {
-        accountContract = "false";
-    } else {
-        throw new StarknetPluginError("--account-contract must be true or false");
-    }
+    const accountContract = args.accountContract ? "true" : "false";
     bodyFormData.append("account-contract", accountContract);
     bodyFormData.append("license", args.license || "No License (None)");
 
@@ -596,7 +590,15 @@ async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<u
         return;
     }
 
-    const devnet = createIntegratedDevnet(hre);
+    const { hostname, port } = new URL(hre.config.starknet.networkUrl);
+    const isPortFree = await isFreePort(parseInt(port));
+    if (!isPortFree) {
+        const newPort = await getFreePort();
+        const networkUrl = `http://${hostname}:${newPort}`;
+        hre.config.networks.integratedDevnet.url = networkUrl;
+        hre.config.starknet.networkUrl = networkUrl;
+    }
+    const devnet = await createIntegratedDevnet(hre);
 
     await devnet.start();
     await fn();
