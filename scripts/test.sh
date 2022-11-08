@@ -69,7 +69,12 @@ function iterate_dir() {
 
         [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
 
-        NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
+        # check if test_case/check.ts exists
+        if [ -f "$test_case/check.ts" ]; then
+            # run the test
+            NETWORK="$network" npx hardhat test "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+        fi
+        # NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
