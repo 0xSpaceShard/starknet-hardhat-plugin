@@ -7,7 +7,7 @@ const CONTRACT_PATH = "contracts/".concat(CONTRACT_NAME);
 const EXPECTED = "Use the --account-contract flag to compile an account contract.";
 
 shell.echo("Testing rejection of compilation without the account flag");
-shell.cp(CONTRACT_NAME, CONTRACT_PATH);
+exec(`cp $(dirname "$0")/${CONTRACT_NAME} ${CONTRACT_PATH}`);
 contains(`npx hardhat starknet-compile ${CONTRACT_PATH}`, EXPECTED);
 shell.echo("Success");
 
