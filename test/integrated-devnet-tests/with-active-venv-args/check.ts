@@ -1,8 +1,6 @@
-import path from "path";
 import { checkDevnetIsNotRunning, exec } from "../../utils/utils";
 
-exec(`bash ${path.join(__dirname, "venv.sh")}`);
 checkDevnetIsNotRunning();
 exec("npx hardhat starknet-compile contracts/contract.cairo");
-exec("npx hardhat test --no-compile test/integrated-devnet.test.ts");
+exec("npx hardhat test --no-compile test/integrated-devnet-args.test.ts");
 checkDevnetIsNotRunning();
