@@ -1,19 +1,15 @@
 version: 2.1
 
-##########################
-# Executor name definition
-##########################
 executors:
-    linux-node14:
+    linux-node:
         machine:
-            image: ubuntu-2004:202107-02
-    macos-node14:
+            image: ubuntu-2004:2022.10.1
+    macos-node:
         macos:
             xcode: 12.5.1
         environment:
             TERM: xterm-256color
 
-########################################################################################################################################################################################
 # Aliases - encapsulation of lengthy logic
 #
 # `restore_*` aliases refer to downloading the saved cache of their respective key, if it exists
@@ -21,7 +17,6 @@ executors:
 #
 # `save_*` aliases refer to saving the installation data to cache
 #  i.e - `save_macos_brew_cache` will save the result of installing gmp with the command `brew install gmp`
-#
 #
 #   Available caches:
 #
@@ -42,28 +37,23 @@ executors:
 #    {checksum of the dependency version} is the checksum generated with the template {{ checksum "PATH/TO/FILE" }}, where the file contains the latest version of the dependency ;
 #   Exception is "brew-gmp-cache", which we do not need to verify the checksum
 #
-########################################################################################################################################################################################
 aliases:
     - &restore_macos_brew_cache
-      ######################################################
       # Try to restore only if the executor is a macos one #
-      ######################################################
       - when:
             condition:
                 and:
-                    - equal: [macos-node14, << parameters.platform >>]
+                    - equal: [macos-node, << parameters.platform >>]
             steps:
                 - restore_cache:
                       name: "Restore venv Cache"
                       key: brew-gmp-cache-v1-{{ arch }}
     - &save_macos_brew_cache
-      ############################################
       # Save only if the executor is a macos one #
-      ############################################
       - when:
             condition:
                 and:
-                    - equal: [macos-node14, << parameters.platform >>]
+                    - equal: [macos-node, << parameters.platform >>]
             steps:
                 - save_cache:
                       name: "Save brew-gmp Cache"
@@ -79,9 +69,7 @@ aliases:
                           - /usr/local/lib/libgmpxx.dylib
 
     - &restore_venv_cache
-      #############################################################
       # Try to restore only if the test name is "test-venv-tests" #
-      #############################################################
       - when:
             condition:
                 and:
@@ -91,9 +79,7 @@ aliases:
                       name: "Restore venv Cache"
                       key: venv-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
     - &save_venv_cache
-      ###################################################
       # Save only if the test name is "test-venv-tests" #
-      ###################################################
       - when:
             condition:
                 and:
@@ -107,9 +93,7 @@ aliases:
                           - /home/circleci/project/my-venv
 
     - &restore_cairo_cache
-      #################################################################
       # Try to restore only if the test name is not "test-venv-tests" #
-      #################################################################
       - when:
             condition:
                 and:
@@ -120,9 +104,7 @@ aliases:
                       name: "Restore cairo-lang Cache"
                       key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
     - &save_cairo_cache
-      ##############################################################
       # Try to save only if the test name is not "test-venv-tests" #
-      ##############################################################
       - when:
             condition:
                 and:
@@ -153,17 +135,13 @@ aliases:
                 - /usr/local/lib/python3.8/site-packages
                 - /usr/local/lib/python3.9/site-packages
 
-######################################################################################################################################################################
 # Commands
-#
 #   fetch_dependecies_version - retrieves the latest version of the dependencies (starknet-devnet and cairo-lang).
 #                               These are saved to different files, from which we verify the checksum to check for any needed updates, and create caches with new keys
 #
 #   restore_dependency_cache - download dependencies from cache. It calls the `restore_*` aliases defined above for each dependecy.
 #
 #   save_dependency_cache - save the dependencies in cache. It calls the `save_*` aliases defined above for each dependecy.
-#
-######################################################################################################################################################################
 commands:
     fetch_dependecies_version:
         description: "Fetch the dependencies version"
@@ -205,9 +183,6 @@ commands:
             - <<: *save_venv_cache
             - <<: *save_devnet_cache
 
-###################
-# Jobs definition #
-###################
 jobs:
     test:
         parameters:
@@ -219,26 +194,20 @@ jobs:
         steps:
             - checkout
 
-            ############################################################################################################################################################
             # If on a Linux executor, add permissions for user to be able to write to "/usr/local/bin", so that we're able to download cache that will be in that folder
-            ############################################################################################################################################################
             - when:
                   condition:
                       and:
-                          - equal: [linux-node14, << parameters.platform >>]
+                          - equal: [linux-node, << parameters.platform >>]
                   steps:
                       - run:
                             name: Add file permissions
                             command: sudo chown -R circleci /usr/local/bin
 
-            ##################################################
             # Retrieve the latest versions of the dependencies
-            ##################################################
             - fetch_dependecies_version
 
-            #############################################################################################################################################################################
             # Call Command: restore_dependency_cache - restore the dependencies that were saved in cache. The parameters are passed because some caches depend on the executor and test #
-            #############################################################################################################################################################################
             - restore_dependency_cache:
                   platform: << parameters.platform >>
                   test-name: << parameters.test-name >>
@@ -257,14 +226,12 @@ jobs:
                   command: npm run << parameters.test-name >>
                   no_output_timeout: 15m
 
-            #################################################################################################################################################################################
             # Call Command: save_dependency_cache - save dependencies that were installed during the job run. The parameters are passed because some caches depend on the executor and test #
-            #################################################################################################################################################################################
             - save_dependency_cache:
                   platform: << parameters.platform >>
                   test-name: << parameters.test-name >>
     npm_publish:
-        executor: linux-node14
+        executor: linux-node
         steps:
             - checkout
             - run:
@@ -277,7 +244,7 @@ workflows:
             - test:
                   matrix:
                       parameters:
-                          platform: [linux-node14, macos-node14]
+                          platform: [linux-node, macos-node]
                           test-name:
                               [
                                   test-general-tests,
@@ -287,13 +254,13 @@ workflows:
                                   test-recompilation-tests
                               ]
                       exclude:
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-general-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-configuration-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-integrated-devnet-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-recompilation-tests
                   context: shardlabs
             - npm_publish:
