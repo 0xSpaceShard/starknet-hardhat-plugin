@@ -67,14 +67,14 @@ function iterate_dir() {
         # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
-        [ "$network" == "devnet" ] && source ../scripts/run-devnet.sh # sets DEVNET_PID
+        [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
 
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
-        [ "$network" == "devnet" ] && kill -9 "$DEVNET_PID" && sleep 5
+        [ "$network" == "devnet" ] && pkill -f -9 starknet-devnet && sleep 5
 
         echo "----------------------------------------------"
         echo
