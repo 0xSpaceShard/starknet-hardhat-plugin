@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap 'for killable in $(jobs -p); do kill $killable; done' EXIT
+trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
