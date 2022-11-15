@@ -74,7 +74,7 @@ function iterate_dir() {
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
-        [ "$network" == "devnet" ] && kill "$DEVNET_PID"
+        [ "$network" == "devnet" ] && kill "$DEVNET_PID" && sleep 5
 
         echo "----------------------------------------------"
         echo
