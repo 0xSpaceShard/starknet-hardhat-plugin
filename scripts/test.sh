@@ -67,7 +67,7 @@ function iterate_dir() {
         # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
-        [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
+        [ "$network" == "devnet" ] && source ../scripts/run-devnet.sh # sets DEVNET_PID
 
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
