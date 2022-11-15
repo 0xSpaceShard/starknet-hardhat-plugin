@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap 'for killable in $(jobs -p); do kill $killable; done' EXIT
+trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
@@ -67,14 +67,14 @@ function iterate_dir() {
         # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
         /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
 
-        [ "$network" == "devnet" ] && DEVNET_PID=$(../scripts/run-devnet.sh)
+        [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
 
         NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
-        [ "$network" == "devnet" ] && kill "$DEVNET_PID"
+        [ "$network" == "devnet" ] && pkill -f -9 starknet-devnet && sleep 5
 
         echo "----------------------------------------------"
         echo
