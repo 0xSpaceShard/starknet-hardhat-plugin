@@ -15,3 +15,4 @@ spawn("npx", args, { detached: true });
 exec("sleep 1");
 
 exec("npx hardhat test --network localhost test/postman.test.ts");
+exec("kill -9 $(lsof -t -i:8545)");

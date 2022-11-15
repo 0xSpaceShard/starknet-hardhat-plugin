@@ -17,3 +17,4 @@ spawn("starknet-devnet", args, { detached: true });
 exec("npx hardhat starknet-compile contracts/contract.cairo");
 
 contains("npx hardhat test --no-compile test/integrated-devnet.test.ts", "127.0.0.1:5050 already occupied.");
+exec("kill -9 $(lsof -t -i:5050)");
