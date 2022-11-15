@@ -4,10 +4,10 @@ version: 2.1
 # Executor name definition
 ##########################
 executors:
-    linux-node14:
+    linux-node:
         machine:
             image: ubuntu-2004:202107-02
-    macos-node14:
+    macos-node:
         macos:
             xcode: 12.5.1
         environment:
@@ -51,7 +51,7 @@ aliases:
       - when:
             condition:
                 and:
-                    - equal: [macos-node14, << parameters.platform >>]
+                    - equal: [macos-node, << parameters.platform >>]
             steps:
                 - restore_cache:
                       name: "Restore venv Cache"
@@ -63,7 +63,7 @@ aliases:
       - when:
             condition:
                 and:
-                    - equal: [macos-node14, << parameters.platform >>]
+                    - equal: [macos-node, << parameters.platform >>]
             steps:
                 - save_cache:
                       name: "Save brew-gmp Cache"
@@ -225,7 +225,7 @@ jobs:
             - when:
                   condition:
                       and:
-                          - equal: [linux-node14, << parameters.platform >>]
+                          - equal: [linux-node, << parameters.platform >>]
                   steps:
                       - run:
                             name: Add file permissions
@@ -264,7 +264,7 @@ jobs:
                   platform: << parameters.platform >>
                   test-name: << parameters.test-name >>
     npm_publish:
-        executor: linux-node14
+        executor: linux-node
         steps:
             - checkout
             - run:
@@ -277,7 +277,7 @@ workflows:
             - test:
                   matrix:
                       parameters:
-                          platform: [linux-node14, macos-node14]
+                          platform: [linux-node, macos-node]
                           test-name:
                               [
                                   test-general-tests,
@@ -287,13 +287,13 @@ workflows:
                                   test-recompilation-tests
                               ]
                       exclude:
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-general-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-configuration-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-integrated-devnet-tests
-                          - platform: macos-node14
+                          - platform: macos-node
                             test-name: test-recompilation-tests
                   context: shardlabs
             - npm_publish:
