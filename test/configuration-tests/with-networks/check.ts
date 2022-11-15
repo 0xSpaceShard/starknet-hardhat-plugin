@@ -1,10 +1,11 @@
-import { exec } from "../../utils/utils";
+import { contains, exec } from "../../utils/utils";
 import path from "path";
 
 
 exec("npx hardhat starknet-compile contracts/contract.cairo");
 const ARTIFACT_PATH = "starknet-artifacts/contracts/contract.cairo/";
 const INVALID_NETWORK = "foo";
+const EXPECTED = "Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: foo.";
 const PREFIX = path.join(__dirname);
 
 console.log("Testing no starknet network");
@@ -24,7 +25,5 @@ exec("NETWORK='' npx hardhat test --no-compile test/contract-factory-test.ts");
 console.log("Success");
 
 console.log("Testing invalid config network");
-exec(`NETWORK=${INVALID_NETWORK} npx hardhat test --no-compile test/contract-factory-test.ts 2>&1 \
-| tail -n +2 \
-| diff - ${path.join(PREFIX, "invalid-config-network.txt")}`);
+contains(`NETWORK=${INVALID_NETWORK} npx hardhat test --no-compile test/contract-factory-test.ts`, EXPECTED);
 console.log("Success");

@@ -1,7 +1,11 @@
 import { spawn } from "child_process";
 import { checkDevnetIsNotRunning, contains, exec } from "../../utils/utils";
+import shell from "shelljs";
 
-exec("kill $(lsof -t -i:5050)");
+const res = shell.exec("lsof -t -i:5050");
+if (res.code === 0) {
+    exec("kill -9 $(lsof -t -i:5050)");
+}
 
 checkDevnetIsNotRunning();
 
