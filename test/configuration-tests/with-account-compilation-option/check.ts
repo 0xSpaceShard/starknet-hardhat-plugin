@@ -3,7 +3,7 @@ import path from "path";
 import { contains, exec } from "../../utils/utils";
 
 const CONTRACT_NAME = "dummy_account.cairo";
-const CONTRACT_PATH = "contracts/".concat(CONTRACT_NAME);
+const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
 
 const EXPECTED = "Use the --account-contract flag to compile an account contract.";
 

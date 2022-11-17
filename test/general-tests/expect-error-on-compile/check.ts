@@ -4,7 +4,7 @@ import { contains } from "../../utils/utils";
 
 
 const CONTRACT_NAME = "invalid_contract.cairo";
-const CONTRACT_PATH = "contracts/".concat(CONTRACT_NAME);
+const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
 
 copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
 

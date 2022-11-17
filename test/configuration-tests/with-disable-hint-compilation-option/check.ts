@@ -3,7 +3,7 @@ import path from "path";
 import { contains, exec } from "../../utils/utils";
 
 const CONTRACT_NAME = "contract_with_unwhitelisted_hints.cairo";
-const CONTRACT_PATH = "contracts/".concat(CONTRACT_NAME);
+const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
 
 copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
 

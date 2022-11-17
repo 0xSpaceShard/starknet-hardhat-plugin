@@ -3,7 +3,7 @@ import path from "path";
 import { contains, exec } from "../../utils/utils";
 
 const CONTRACT_NAME = "old_contract.cairo";
-const CONTRACT_PATH = "contracts/".concat(CONTRACT_NAME);
+const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
 const NEW_COMMENT = "// Declare this file as a StarkNet contract.";
 
 copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
