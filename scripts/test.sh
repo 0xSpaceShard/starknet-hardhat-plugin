@@ -74,7 +74,6 @@ function iterate_dir() {
             # run the test
             NETWORK="$network" npx mocha -r ts-node/register "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
         fi
-        # NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
 
         rm -rf starknet-artifacts
         git checkout --force
