@@ -33,7 +33,6 @@ export async function checkDevnetIsNotRunning(url?: string): Promise<void> {
     url = url || "http://127.0.0.1:5050";
     try {
         const res = await axios.get(`${url}/is_alive`);
-        console.log(`Devnet is running and responded with status ${res.status}`);
         throw new StarknetPluginError(`Devnet is running and responded with status ${res.status}`);
     } catch (err) {
         console.log("Devnet is not running!");
