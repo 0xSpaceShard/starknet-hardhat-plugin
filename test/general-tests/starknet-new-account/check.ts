@@ -1,30 +1,30 @@
 import { readFileSync } from "fs";
 import path from "path";
-import shell from "shelljs";
-import { exec, extractAddress } from "../../utils/utils";
+import { StarknetPluginError } from "../../../src/starknet-plugin-error";
+import { hardhatStarknetNewAccount } from "../../utils/cli-functions";
+import { ensureEnvVar, extractAddress } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
-const HOME = process.env.HOME;
+const network = ensureEnvVar("NETWORK");
+const home = ensureEnvVar("HOME");
 
-const ACCOUNT_DIR = path.join(`${HOME}`, ".starknet_new_account_test");
-process.env.ACCOUNT_DIR = ACCOUNT_DIR;
-const ACCOUNT_FILE_PATH = path.join(ACCOUNT_DIR, "starknet_open_zeppelin_accounts.json");
+const accountDir = path.join(home, ".starknet_new_account_test");
+process.env.ACCOUNT_DIR = accountDir;
+const accountFilePath = path.join(accountDir, "starknet_open_zeppelin_accounts.json");
 
-const output = exec(`npx hardhat starknet-new-account --wallet OpenZeppelin --starknet-network ${NETWORK}`);
-const ACCOUNT_ADDRESS_FROM_STD = extractAddress(output.stdout, "Account address: ");
+const output = hardhatStarknetNewAccount(`--wallet OpenZeppelin --starknet-network ${network}`.split(" "));
+const accountAddressStd = extractAddress(output.stdout, "Account address: ");
 
 // Read newly created account and grab the address
-const ACCOUNT_FILE = readFileSync(ACCOUNT_FILE_PATH);
-const ACCOUNT_ADDRESS_FROM_FILE = JSON.parse(ACCOUNT_FILE.toString())[`${NETWORK}`].OpenZeppelin.address;
+const accountFile = readFileSync(accountFilePath);
+const accountAddressFile = JSON.parse(accountFile.toString())[network].OpenZeppelin.address;
 
 // Change hex to int
-const addressOne = parseInt(ACCOUNT_ADDRESS_FROM_STD, 16);
-const addressTwo = parseInt(ACCOUNT_ADDRESS_FROM_FILE, 16);
+const addressStd = parseInt(accountAddressStd, 16);
+const addressFile = parseInt(accountAddressFile, 16);
 
 // If address_one and address_two are equal then success
-if (addressOne === addressTwo) {
+if (addressStd === addressFile) {
     console.log("Success");
 } else {
-    console.log("Failed");
-    shell.exit(1);
+    throw new StarknetPluginError("Addresses are not equal");
 }

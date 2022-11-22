@@ -1,3 +1,3 @@
-import { exec } from "../../utils/utils";
+import { hardhatStarknetPluginVersion } from "../../utils/cli-functions";
 
-exec("npx hardhat starknet-plugin-version");
+hardhatStarknetPluginVersion();

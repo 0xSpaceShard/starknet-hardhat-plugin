@@ -1,29 +1,31 @@
-import { contains, exec } from "../../utils/utils";
+import { contains } from "../../utils/utils";
 import path from "path";
+import { readFileSync } from "fs";
+import { hardhatStarknetCompile, hardhatStarknetDeploy, hardhatStarknetTest } from "../../utils/cli-functions";
 
-
-exec("npx hardhat starknet-compile contracts/contract.cairo");
-const ARTIFACT_PATH = "starknet-artifacts/contracts/contract.cairo/";
-const INVALID_NETWORK = "foo";
-const EXPECTED = "Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: foo.";
-const PREFIX = path.join(__dirname);
+hardhatStarknetCompile(["contracts/contract.cairo"]);
+const artifactsPath = "starknet-artifacts/contracts/contract.cairo/";
+const invalidNetwork = "foo";
+const expected = "Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: foo.";
+const prefix = path.join(__dirname);
 
 console.log("Testing no starknet network");
-exec(`npx hardhat starknet-deploy ${ARTIFACT_PATH} --inputs 10 2>&1 \
-| tail -n +2 \
-| diff - ${path.join(PREFIX, "without-starknet-network.txt")}`);
+let execution = hardhatStarknetDeploy(`${artifactsPath} --inputs 10`.split(" "), true);
+contains(execution.stderr, readFileSync(path.join(prefix, "without-starknet-network.txt")).toString());
 console.log("Success");
 
 console.log("Testing invalid CLI network");
-exec(`npx hardhat starknet-deploy --starknet-network ${INVALID_NETWORK} ${ARTIFACT_PATH} --inputs 10 2>&1 \
-| tail -n +2 \
-| diff - ${path.join(PREFIX, "invalid-cli-network.txt")}`);
+execution = hardhatStarknetDeploy(`--starknet-network ${invalidNetwork} ${artifactsPath} --inputs 10`.split(" "), true);
+contains(execution.stderr, readFileSync(path.join(prefix, "invalid-cli-network.txt")).toString());
 console.log("Success");
 
 console.log("Testing no mocha network");
-exec("NETWORK='' npx hardhat test --no-compile test/contract-factory-test.ts");
+process.env.NETWORK = "";
+hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "));
 console.log("Success");
 
 console.log("Testing invalid config network");
-contains(`NETWORK=${INVALID_NETWORK} npx hardhat test --no-compile test/contract-factory-test.ts`, EXPECTED);
+process.env.NETWORK = invalidNetwork;
+execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "), true);
+contains(execution.stderr, expected);
 console.log("Success");

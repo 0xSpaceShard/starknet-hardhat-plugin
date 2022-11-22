@@ -1,11 +1,11 @@
-import { rmSync } from "fs";
-import { exec } from "../../utils/utils";
+import { hardhatStarknetRun } from "../../utils/cli-functions";
+import { rmrfSync } from "../../utils/utils";
 
 // Hardhat run command
 console.log("should recompile with deleted artifact on hardhat run");
-rmSync("starknet-artifacts/contracts/contract.cairo", { recursive: true, force: true });
-exec("npx hardhat run --no-compile scripts/deploy.ts");
+rmrfSync("starknet-artifacts/contracts/contract.cairo");
+hardhatStarknetRun("--no-compile scripts/deploy.ts".split(" "));
 
 console.log("should recompile with cache file deleted on hardhat run");
-rmSync("cache/cairo-files-cache.json", { recursive: true, force: true });
-exec("npx hardhat run --no-compile scripts/deploy.ts");
+rmrfSync("cache/cairo-files-cache.json");
+hardhatStarknetRun("--no-compile scripts/deploy.ts".split(" "));

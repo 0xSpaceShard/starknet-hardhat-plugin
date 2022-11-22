@@ -1,5 +1,2 @@
 Error in plugin Starknet: Could not perform invoke of increase_balance:
 Error: AssertionError: Wrong number of arguments. Expected 2, got 3.
-
-
-For more info run Hardhat with --show-stack-traces

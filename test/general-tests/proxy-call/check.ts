@@ -1,3 +1,3 @@
-import { exec } from "../../utils/utils";
+import { hardhatStarknetTest } from "../../utils/cli-functions";
 
-exec("npx hardhat test --no-compile scripts/delegate-proxy.ts");
+hardhatStarknetTest("--no-compile scripts/delegate-proxy.ts".split(" "));

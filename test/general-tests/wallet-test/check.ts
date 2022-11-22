@@ -1,20 +1,23 @@
 import path from "path";
-import { exec, extractAddress } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetTest, hardhatStarknetDeploy, hardhatStarknetCall, hardhatStarknetInvoke } from "../../utils/cli-functions";
+import { deployFundedAccount } from "../../utils/deploy-funded-account";
+import { ensureEnvVar, extractAddress } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
+const home = ensureEnvVar("HOME");
 
-const HOME = process.env.HOME;
-const ACCOUNT_DIR = path.join(`${HOME}`, ".starknet_accounts_wallet_test");
-process.env.ACCOUNT_DIR = ACCOUNT_DIR;
+const accountDir = path.join(home, ".starknet_accounts_wallet_test");
+process.env.ACCOUNT_DIR = accountDir;
 
-exec("npx hardhat starknet-compile contracts/contract.cairo");
+hardhatStarknetCompile(["contracts/contract.cairo"]);
 
-exec("bash ../scripts/deploy-funded-cli-account.sh");
+(async () => {
+    await deployFundedAccount();
+    hardhatStarknetTest("--no-compile test/wallet-test.ts".split(" "));
 
-exec("npx hardhat test --no-compile test/wallet-test.ts");
+    const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
+    const address = extractAddress(output.stdout, "Contract address: ");
 
-const output = exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} starknet-artifacts/contracts/contract.cairo/ --inputs 10`);
-const ADDRESS = extractAddress(output.stdout, "Contract address: ");
-
-exec(`npx hardhat starknet-call --contract contract --function get_balance --address ${ADDRESS} --wallet OpenZeppelin --starknet-network ${NETWORK}`);
-exec(`npx hardhat starknet-invoke --contract contract --function increase_balance --inputs "10 20" --address ${ADDRESS} --wallet OpenZeppelin --starknet-network ${NETWORK}`);
+    hardhatStarknetCall(`--contract contract --function get_balance --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(" "));
+    hardhatStarknetInvoke(`--contract contract --function increase_balance --inputs "10 20" --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(" "));
+})();

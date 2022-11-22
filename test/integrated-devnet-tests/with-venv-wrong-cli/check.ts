@@ -1,7 +1,12 @@
-import { checkDevnetIsNotRunning, contains, exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { checkDevnetIsNotRunning, contains } from "../../utils/utils";
 
-checkDevnetIsNotRunning();
+(async () => {
+    await checkDevnetIsNotRunning();
 
-exec("npx hardhat starknet-compile contracts/contract.cairo");
+    hardhatStarknetCompile(["contracts/contract.cairo"]);
+    const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "), true);
+    contains(execution.stderr, "starknet-devnet: error: --accounts must be a positive integer; got: invalid_value.");
 
-contains("npx hardhat test --no-compile test/integrated-devnet.test.ts", "starknet-devnet: error: --accounts must be a positive integer; got: invalid_value.");
+    await checkDevnetIsNotRunning();
+})();

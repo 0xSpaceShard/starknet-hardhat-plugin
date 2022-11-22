@@ -1,10 +1,11 @@
 import path from "path";
-import { exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
+import { ensureEnvVar, exec } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
 exec(`bash ${path.join(__dirname, "venv.sh")}`);
-const INITIAL_VALUE = 10;
+const initialValue = 10;
 
-exec("npx hardhat starknet-compile");
-exec(`npx hardhat starknet-deploy starknet-artifacts/contracts/contract.cairo/ --starknet-network ${NETWORK} --inputs ${INITIAL_VALUE}`);
+hardhatStarknetCompile([]);
+hardhatStarknetDeploy(`starknet-artifacts/contracts/contract.cairo/ --starknet-network ${network} --inputs ${initialValue}`.split(" "));

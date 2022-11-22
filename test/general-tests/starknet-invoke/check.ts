@@ -1,37 +1,34 @@
+import { readFileSync } from "fs";
 import path from "path";
-import { exec, extractAddress } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetDeploy, hardhatStarknetInvoke } from "../../utils/cli-functions";
+import { contains, ensureEnvVar, extractAddress } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
-exec("npx hardhat starknet-compile contracts/contract.cairo");
-const output = exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} starknet-artifacts/contracts/contract.cairo/ --inputs 10`);
+hardhatStarknetCompile(["contracts/contract.cairo"]);
+const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
 
-const ADDRESS = extractAddress(output.stdout, "Contract address: ");
-const PREFIX = path.join(__dirname);
+const address = extractAddress(output.stdout, "Contract address: ");
+const prefix = path.join(__dirname);
 
 console.log("Testing no input argument");
-exec(`npx hardhat starknet-invoke --starknet-network ${NETWORK} --contract contract --function increase_balance --address ${ADDRESS} 2>&1 \
-    | tail -n +6 \
-    | diff - ${path.join(PREFIX, "no-inputs.txt")}`);
+let execution = hardhatStarknetInvoke(`--starknet-network ${network} --contract contract --function increase_balance --address ${address}`.split(" "), true);
+contains(execution.stderr, readFileSync(path.join(prefix, "no-inputs.txt")).toString());
 console.log("Success");
 
 console.log("Testing too few input arguments");
-exec(`npx hardhat starknet-invoke --starknet-network ${NETWORK} --contract contract --function increase_balance --address ${ADDRESS} --inputs 10 2>&1 \
-    | tail -n +6 \
-    | diff - ${path.join(PREFIX, "too-few-inputs.txt")}`);
+execution = hardhatStarknetInvoke(`--starknet-network ${network} --contract contract --function increase_balance --address ${address} --inputs 10`.split(" "), true);
+contains(execution.stderr, readFileSync(path.join(prefix, "too-few-inputs.txt")).toString());
 console.log("Success");
 
 console.log("Testing too many input arguments");
-exec(`npx hardhat starknet-invoke --starknet-network ${NETWORK} --contract contract --function increase_balance --address ${ADDRESS} --inputs "10 20 30" 2>&1 \
-    | tail -n +6 \
-    | diff - ${path.join(PREFIX, "too-many-inputs.txt")}`);
+execution = hardhatStarknetInvoke(`--starknet-network ${network} --contract contract --function increase_balance --address ${address} --inputs "10 20 30"`.split(" "), true);
+contains(execution.stderr, readFileSync(path.join(prefix, "too-many-inputs.txt")).toString());
 console.log("Success");
 
 console.log("The success case of starknet-invoke test is temporarily disabled.");
 console.log("To enable it back, uncomment the lines in its check.sh.");
 // console.log("Testing success case");
-// exec(`npx hardhat starknet-invoke --starknet-network ${NETWORK} --contract contract --function increase_balance --address ${ADDRESS} --inputs "10 20" 2>&1 \
-//     | tail -n +2\
-//     | head -n -5\
-//     | diff - <(echo "Invoke transaction was sent.")`);
+// execution = hardhatStarknetInvoke(`--starknet-network ${network} --contract contract --function increase_balance --address ${address} --inputs "10 20"`.split(" "), true);
+// contains(execution.stdout, "Invoke transaction was sent.");
 // console.log("Success");

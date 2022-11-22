@@ -1,26 +1,22 @@
-import { rmSync } from "fs";
 import path from "path";
-import { exec, extractAddress } from "../../utils/utils";
+import { hardhatStarknetDeploy, hardhatStarknetInvoke } from "../../utils/cli-functions";
+import { deployFundedAccount } from "../../utils/deploy-funded-account";
+import { ensureEnvVar, extractAddress, rmrfSync } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
-
+const network = ensureEnvVar("NETWORK");
 // Hardhat starknet-invoke command
 console.log("Testing Recompilation with deleted artifact on hardhat starknet-invoke");
-const output = exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} starknet-artifacts/contracts/contract.cairo/ --inputs 10`);
+const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
 // Grab the output Contract address to a variable using parameter expansion
 const address = extractAddress(output.stdout, "Contract address: ");
 // Remove artifact contract to force recompilation
-rmSync("starknet-artifacts/contracts/contract.cairo", { recursive: true, force: true });
-const HOME = process.env.HOME;
-const ACCOUNT_DIR = path.join(`${HOME}`, ".starknet_accounts_recompile_test");
-process.env.ACCOUNT_DIR = ACCOUNT_DIR;
+rmrfSync("starknet-artifacts/contracts/contract.cairo");
+const home = ensureEnvVar("HOME");
+const accountDir = path.join(home, ".starknet_accounts_recompile_test");
+process.env.ACCOUNT_DIR = accountDir;
 
-exec("bash ../scripts/deploy-funded-cli-account.sh");
-
-exec(`npx hardhat starknet-invoke \
-    --starknet-network ${NETWORK} \
-    --contract contract \
-    --function increase_balance \
-    --address ${address} \
-    --inputs "10 20" \
-    --wallet OpenZeppelin`);
+(async () => {
+    await deployFundedAccount();
+    const args = `--starknet-network ${network} --contract contract --address ${address} --function increase_balance --inputs "10 20" --wallet OpenZeppelin`;
+    hardhatStarknetInvoke(args.split(" "));
+})();

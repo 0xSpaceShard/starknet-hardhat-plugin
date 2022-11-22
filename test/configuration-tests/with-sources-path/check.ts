@@ -1,9 +1,10 @@
-import shell from "shelljs";
-import { exec } from "../../utils/utils";
+import { renameSync } from "fs";
+import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
+import { ensureEnvVar } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
-shell.mv("contracts", "my-starknet-sources");
+renameSync("contracts", "my-starknet-sources");
 
-exec("npx hardhat starknet-compile");
-exec(`npx hardhat starknet-deploy starknet-artifacts/my-starknet-sources/contract.cairo/ --starknet-network ${NETWORK} --inputs 10`);
+hardhatStarknetCompile([]);
+hardhatStarknetDeploy(`starknet-artifacts/my-starknet-sources/contract.cairo/ --starknet-network ${network} --inputs 10`.split(" "));

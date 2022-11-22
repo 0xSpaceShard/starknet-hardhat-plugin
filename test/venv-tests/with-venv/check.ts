@@ -1,8 +1,9 @@
-import { exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetDeploy, hardhatStarknetTest } from "../../utils/cli-functions";
+import { ensureEnvVar } from "../../utils/utils";
 
-const INITIAL_VALUE = 10;
-const NETWORK = process.env.NETWORK;
+const initialValue = 10;
+const network = ensureEnvVar("NETWORK");
 
-exec("npx hardhat starknet-compile");
-exec(`npx hardhat starknet-deploy starknet-artifacts/contracts/contract.cairo/ --starknet-network ${NETWORK} --inputs ${INITIAL_VALUE}`);
-exec("npx hardhat test --no-compile test/quick-test.ts");
+hardhatStarknetCompile([]);
+hardhatStarknetDeploy(`starknet-artifacts/contracts/contract.cairo/ --starknet-network ${network} --inputs ${initialValue}`.split(" "));
+hardhatStarknetTest("--no-compile test/quick-test.ts".split(" "));

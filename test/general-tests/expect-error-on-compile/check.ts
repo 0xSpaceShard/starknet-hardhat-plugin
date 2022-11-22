@@ -1,13 +1,14 @@
 import { copyFileSync } from "fs";
 import path from "path";
+import { hardhatStarknetCompile } from "../../utils/cli-functions";
 import { contains } from "../../utils/utils";
 
+const contractName = "invalid_contract.cairo";
+const contractPath = path.join("contracts", contractName);
 
-const CONTRACT_NAME = "invalid_contract.cairo";
-const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
-
-copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
+copyFileSync(path.join(__dirname, contractName), contractPath);
 
 console.log("Testing rejection of compilation with correct message");
-contains(`npx hardhat starknet-compile ${CONTRACT_PATH}`, "Unknown identifier 'openzeppelin.token.erc721.library.ERC721.nonexistent_method'");
+const compileResult = hardhatStarknetCompile([contractPath], true);
+contains(compileResult.stderr, "Unknown identifier 'openzeppelin.token.erc721.library.ERC721.nonexistent_method'");
 console.log("Success");

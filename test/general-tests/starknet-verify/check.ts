@@ -1,25 +1,26 @@
-import { exec, extractAddress } from "../../utils/utils";
-import shell from "shelljs";
+import { ensureEnvVar, exec, extractAddress } from "../../utils/utils";
+import { StarknetPluginError } from "../../../src/starknet-plugin-error";
+import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
 
 console.log("The starknet-verify test is too flaky so it is temporarily suspended. Make sure it's working!");
-shell.exit(0);
+process.exit(0);
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
-const MAIN_CONTRACT = "contracts/contract.cairo";
-const UTIL_CONTRACT = "contracts/util.cairo";
+const mainContract = "contracts/contract.cairo";
+const utilContract = "contracts/util.cairo";
 
-exec(`npx hardhat starknet-compile ${MAIN_CONTRACT} ${UTIL_CONTRACT}`);
+hardhatStarknetCompile(`${mainContract} ${utilContract}`.split(" "));
 
 console.log("Waiting for deployment to be accepted");
-const output = exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} contract --inputs 10 --wait`);
+const output = hardhatStarknetDeploy(`--starknet-network ${network} contract --inputs 10 --wait`.split(" "));
 const address = extractAddress(output.stdout, "Contract address: ");
 console.log("Verifying contract at $address");
 
 console.log("Sleeping to allow Voyager to index the deployment");
 exec("sleep 1m");
 
-exec(`npx hardhat starknet-verify --starknet-network ${NETWORK} --path ${MAIN_CONTRACT} ${UTIL_CONTRACT} --address ${address} --compiler-version 0.9.0 --license "No License (None)" --account-contract false`);
+exec(`npx hardhat starknet-verify --starknet-network ${network} --path ${mainContract} ${utilContract} --address ${address} --compiler-version 0.9.0 --license "No License (None)" --account-contract false`);
 console.log("Sleeping to allow Voyager to register the verification");
 exec("sleep 15s");
 
@@ -28,5 +29,5 @@ if (is_verified == "true") {
     console.log("Successfully verified!");
 } else {
     console.log("$0: Error: Not verified!");
-    shell.exit(1);
+    throw new StarknetPluginError("Error: Not verified!");
 }

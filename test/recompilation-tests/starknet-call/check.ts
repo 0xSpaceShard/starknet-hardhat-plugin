@@ -1,11 +1,11 @@
-import { rmSync } from "fs";
-import { extractAddress, exec } from "../../utils/utils";
+import { hardhatStarknetDeploy, hardhatStarknetCall } from "../../utils/cli-functions";
+import { extractAddress, ensureEnvVar, rmrfSync } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
 console.log("Testing Recompilation with deleted artifact on starknet-call");
-const output = exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} starknet-artifacts/contracts/contract.cairo/ --inputs 10`);
+const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
 const address = extractAddress(output.stdout, "Contract address: ");
 
-rmSync("starknet-artifacts/contracts/contract.cairo", { recursive: true, force: true });
-exec(`npx hardhat starknet-call --starknet-network ${NETWORK} --contract contract --function sum_points_to_tuple --address ${address} --inputs "10 20 30 40"`);
+rmrfSync("starknet-artifacts/contracts/contract.cairo");
+hardhatStarknetCall(`--starknet-network ${network} --contract contract --function sum_points_to_tuple --address ${address} --inputs "10 20 30 40"`.split(" "));

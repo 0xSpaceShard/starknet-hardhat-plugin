@@ -1,8 +1,8 @@
-import { rmSync } from "fs";
-import { exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
+import { ensureEnvVar, rmrfSync } from "../../utils/utils";
 
-const NETWORK = process.env.NETWORK;
+const network = ensureEnvVar("NETWORK");
 
-exec("npx hardhat starknet-compile contracts/contract.cairo");
-exec(`npx hardhat starknet-deploy --starknet-network ${NETWORK} my-starknet-artifacts/contracts/contract.cairo/ --inputs 10`);
-rmSync("my-starknet-artifacts", { recursive: true, force: true });
+hardhatStarknetCompile("contracts/contract.cairo".split(" "));
+hardhatStarknetDeploy(`--starknet-network ${network} my-starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
+rmrfSync("my-starknet-artifacts");

@@ -1,19 +1,15 @@
 import { spawn } from "child_process";
-import { checkDevnetIsNotRunning, contains, exec } from "../../utils/utils";
-import shell from "shelljs";
+import { checkDevnetIsNotRunning, contains } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
-const res = shell.exec("lsof -t -i:5050");
-if (res.code === 0) {
-    exec("kill -9 $(lsof -t -i:5050)");
-}
+(async () => {
+    await checkDevnetIsNotRunning();
 
-checkDevnetIsNotRunning();
+    const result = spawn("starknet-devnet", "--host 127.0.0.1 --port 5050 --accounts 0".split(" "), { detached: true });
+    hardhatStarknetCompile(["contracts/contract.cairo"]);
+    const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "), true);
+    contains(execution.stderr, "127.0.0.1:5050 already occupied.");
+    result.kill();
 
-const cmd = "starknet-devnet --host 127.0.0.1 --port 5050 --accounts 0";
-const args = cmd.split(" ").slice(1);
-
-spawn("starknet-devnet", args, { detached: true });
-exec("npx hardhat starknet-compile contracts/contract.cairo");
-
-contains("npx hardhat test --no-compile test/integrated-devnet.test.ts", "127.0.0.1:5050 already occupied.");
-exec("kill -9 $(lsof -t -i:5050)");
+    await checkDevnetIsNotRunning();
+})();

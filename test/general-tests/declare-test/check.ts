@@ -1,4 +1,4 @@
-import { exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
-exec("npx hardhat starknet-compile contracts/contract.cairo contracts/deployer.cairo");
-exec("npx hardhat test --no-compile test/declare-deploy.test.ts");
+hardhatStarknetCompile("contracts/contract.cairo contracts/deployer.cairo".split(" "));
+hardhatStarknetTest("--no-compile test/declare-deploy.test.ts".split(" "));

@@ -1,19 +1,21 @@
-import { copyFileSync } from "fs";
+import { copyFileSync, readFileSync } from "fs";
 import path from "path";
-import { contains, exec } from "../../utils/utils";
+import { hardhatStarknetMigrate } from "../../utils/cli-functions";
+import { contains } from "../../utils/utils";
 
-const CONTRACT_NAME = "old_contract.cairo";
-const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
-const NEW_COMMENT = "// Declare this file as a StarkNet contract.";
+const contractName = "old_contract.cairo";
+const contractPath = path.join("contracts", contractName);
+const newComment = "// Declare this file as a StarkNet contract.";
 
-copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
+copyFileSync(path.join(__dirname, contractName), contractPath);
 
 console.log("Testing migration of old cairo contract to a new one");
 // Migrate contract to new version.
-contains(`npx hardhat migrate ${CONTRACT_PATH}`, NEW_COMMENT, "stdout");
+const execution = hardhatStarknetMigrate([contractPath], true);
+contains(execution.stdout, newComment);
 
 // Migrate contract to new version with change content in place option.
-exec(`npx hardhat migrate ${CONTRACT_PATH} --inplace`);
-contains(`cat ${CONTRACT_PATH}`, NEW_COMMENT, "stdout");
+hardhatStarknetMigrate(`${contractPath} --inplace`.split(" "));
+contains(readFileSync(contractPath).toString(), newComment);
 
 console.log("Success");

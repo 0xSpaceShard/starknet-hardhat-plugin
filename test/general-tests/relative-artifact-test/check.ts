@@ -1,7 +1,8 @@
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { exec } from "../../utils/utils";
 
-exec("npx hardhat starknet-compile contracts/contract.cairo contracts/util.cairo");
+hardhatStarknetCompile("contracts/contract.cairo contracts/util.cairo".split(" "));
 
 exec("cp -a starknet-artifacts/contracts test/test-artifacts");
 
-exec("npx hardhat test --no-compile test/relative-artifacts.test.ts");
+hardhatStarknetTest("--no-compile test/relative-artifacts.test.ts".split(" "));

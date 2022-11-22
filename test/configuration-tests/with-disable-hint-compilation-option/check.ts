@@ -1,17 +1,19 @@
 import { copyFileSync } from "fs";
 import path from "path";
-import { contains, exec } from "../../utils/utils";
+import { hardhatStarknetCompile } from "../../utils/cli-functions";
+import { contains } from "../../utils/utils";
 
-const CONTRACT_NAME = "contract_with_unwhitelisted_hints.cairo";
-const CONTRACT_PATH = path.join("contracts", CONTRACT_NAME);
+const contractName = "contract_with_unwhitelisted_hints.cairo";
+const contractPath = path.join("contracts", contractName);
 
-copyFileSync(path.join(__dirname, CONTRACT_NAME), CONTRACT_PATH);
+copyFileSync(path.join(__dirname, contractName), contractPath);
 
-const EXPECTED = `Hint is not whitelisted.
+const expected = `Hint is not whitelisted.
 This may indicate that this library function cannot be used in StarkNet contracts.`;
 
 console.log("Testing rejection of compilation without the --disable-hint-validation flag");
-contains(`npx hardhat starknet-compile ${CONTRACT_PATH}`, EXPECTED);
+const execution = hardhatStarknetCompile([contractName], true);
+contains(execution.stderr, expected);
 console.log("Success");
 
-exec(`npx hardhat starknet-compile ${CONTRACT_PATH} --disable-hint-validation`);
+hardhatStarknetCompile(`${contractPath} --disable-hint-validation`.split(" "));

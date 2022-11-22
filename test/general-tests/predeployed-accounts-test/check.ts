@@ -1,3 +1,3 @@
-import { exec } from "../../utils/utils";
+import { hardhatStarknetTest } from "../../utils/cli-functions";
 
-exec("npx hardhat test --no-compile test/get-predeployed-accounts.test.ts");
+hardhatStarknetTest("--no-compile test/get-predeployed-accounts.test.ts".split(" "));
