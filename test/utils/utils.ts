@@ -36,11 +36,10 @@ export async function checkDevnetIsNotRunning(url?: string): Promise<void> {
         console.log(`Devnet is running and responded with status ${res.status}`);
         throw new StarknetPluginError(`Devnet is running and responded with status ${res.status}`);
     } catch (err) {
-        if (err.toJSON().code == "ECONNREFUSED") {
-            console.log("Devnet is not running!");
-        }
+        console.log("Devnet is not running!");
     }
 }
+
 
 export function ensureEnvVar(varName: string): string {
     if (!process.env[varName]) {
