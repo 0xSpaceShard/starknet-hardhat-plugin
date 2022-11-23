@@ -12,7 +12,7 @@ const expected = `Hint is not whitelisted.
 This may indicate that this library function cannot be used in StarkNet contracts.`;
 
 console.log("Testing rejection of compilation without the --disable-hint-validation flag");
-const execution = hardhatStarknetCompile([contractName]);
+const execution = hardhatStarknetCompile([contractPath], true);
 contains(execution.stderr, expected);
 console.log("Success");
 
