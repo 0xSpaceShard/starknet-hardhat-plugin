@@ -3,6 +3,7 @@ import {
     ContractInteractionFunction,
     DeclareOptions,
     DeployAccountOptions,
+    DeployThroughAccountOptions,
     EstimateFeeOptions,
     InteractChoice,
     InteractOptions,
@@ -14,7 +15,7 @@ import {
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix, TRANSACTION_VERSION } from "./constants";
+import { TransactionHashPrefix, TRANSACTION_VERSION, UDC_DEPLOY_FUNCTION_NAME } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -29,6 +30,7 @@ import {
 } from "./account-utils";
 import { copyWithBigint, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
+import { getTransactionReceiptUtil } from "./extend-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -44,6 +46,7 @@ type ExecuteCallParameters = {
 export abstract class Account {
     public publicKey: string;
     public keyPair: ec.KeyPair;
+    private udc: StarknetContract;
 
     protected constructor(
         public starknetContract: StarknetContract,
@@ -102,6 +105,32 @@ export abstract class Account {
         );
 
         return toContract.adaptOutput(functionName, response.join(" "));
+    }
+
+    async deploy(
+        contractFactory: StarknetContractFactory,
+        constructorArguments?: StringMap,
+        options?: DeployThroughAccountOptions
+    ): Promise<StarknetContract> {
+        const classHash = await contractFactory.getClassHash();
+        const udc = await this.getUDC();
+        const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
+        const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
+            classHash: BigInt(classHash),
+            salt: options.salt,
+            unique: options.unique,
+            calldata: adaptedArgs
+        });
+
+        const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, this.hre);
+        const decodedEvents = await udc.decodeEvents(deploymentReceipt.events);
+        // the only event should be ContractDeployed
+        const deployedContractAddress = decodedEvents[0].data.address;
+
+        const deployedContract = contractFactory.getContractAt(deployedContractAddress);
+        deployedContract.deployTxHash = deployTxHash;
+
+        return deployedContract;
     }
 
     async estimateFee(
@@ -328,6 +357,21 @@ export abstract class Account {
             sender: this.address,
             maxFee: BigInt(maxFee)
         });
+    }
+
+    private async getUDC() {
+        if (!this.udc) {
+            throw new Error("Decide on abi path and decide on how chainId etc. is specified");
+            this.udc = new StarknetContract({
+                abiPath: "", // TODO
+                chainID: this.starknetContract.chainID,
+                feederGatewayUrl: this.starknetContract.feederGatewayUrl,
+                gatewayUrl: this.starknetContract.gatewayUrl,
+                networkID: this.starknetContract.networkID,
+                starknetWrapper: this.starknetContract.starknetWrapper
+            });
+        }
+        return this.udc;
     }
 }
 

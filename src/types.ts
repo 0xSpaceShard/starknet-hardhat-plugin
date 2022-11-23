@@ -302,6 +302,11 @@ export interface DeployOptions {
     token?: string;
 }
 
+export interface DeployThroughAccountOptions {
+    salt?: string;
+    unique?: boolean;
+}
+
 export interface DeployAccountOptions extends DeployOptions {
     /** Optional hex string. If not provided, a random value is generated. */
     privateKey?: string;
@@ -352,6 +357,7 @@ export class StarknetContractFactory {
     private chainID: string;
     private gatewayUrl: string;
     private feederGatewayUrl: string;
+    private classHash: string;
 
     constructor(config: StarknetContractFactoryConfig) {
         this.starknetWrapper = config.starknetWrapper;
@@ -477,7 +483,7 @@ export class StarknetContractFactory {
         });
     }
 
-    private handleConstructorArguments(constructorArguments: StringMap): string[] {
+    handleConstructorArguments(constructorArguments: StringMap): string[] {
         if (!this.constructorAbi) {
             const argsProvided = Object.keys(constructorArguments || {}).length;
             if (argsProvided) {
@@ -524,6 +530,13 @@ export class StarknetContractFactory {
     getAbiPath() {
         return this.abiPath;
     }
+
+    async getClassHash() {
+        if (!this.classHash) {
+            this.classHash = await this.starknetWrapper.getClassHash(this.metadataPath);
+        }
+        return this.classHash;
+    }
 }
 
 export class StarknetContract {
@@ -560,8 +573,7 @@ export class StarknetContract {
 
     /**
      * Set a custom abi and abi path to the contract
-     * @param abi abi of a deployed contract
-     * @param abiPath path to the abi
+     * @param implementation the contract factory of the implementation to be set
      */
     setImplementation(implementation: StarknetContractFactory): void {
         this.abi = implementation.abi;
