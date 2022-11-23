@@ -28,6 +28,6 @@ const is_verified = exec(`curl "https://goerli.voyager.online/api/contract/${add
 if (is_verified == "true") {
     console.log("Successfully verified!");
 } else {
-    console.log("$0: Error: Not verified!");
+    console.log("Error: Not verified!");
     throw new StarknetPluginError("Error: Not verified!");
 }
