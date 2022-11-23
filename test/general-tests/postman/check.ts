@@ -4,7 +4,7 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
 
 hardhatStarknetCompile(["contracts/l1l2.cairo"]);
 
-const result = spawn("npx", ["hardhat", "node"], { detached: true });
+spawn("npx", ["hardhat", "node"], { detached: true });
 exec("sleep 1");
 
 hardhatStarknetTest("--network localhost test/postman.test.ts".split(" "));
