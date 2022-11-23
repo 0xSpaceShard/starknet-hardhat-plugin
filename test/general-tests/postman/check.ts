@@ -8,4 +8,4 @@ const result = spawn("npx", ["hardhat", "node"], { detached: true });
 exec("sleep 1");
 
 hardhatStarknetTest("--network localhost test/postman.test.ts".split(" "));
-result.kill();
+process.kill(result.pid as number);
