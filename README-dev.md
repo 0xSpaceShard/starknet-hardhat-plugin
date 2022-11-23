@@ -76,11 +76,17 @@ When the PR is ready to be merged, do `Squash and merge` and delete the branch.
 
 ## Adapting to a new Starknet / cairo-lang version
 
+Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet might need to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
+
+### In cairo-cli repo
+
 When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation). This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
 
-Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet needs to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
-
 Likely places where the old version has to be replaced with the new version are `README.md` and `constants.ts`.
+
+### In starknet-hardhat-example repo
+
+Change the version in `hardhat.config.ts`. Recompile the contracts. Also if the compiler changed, the `EXPECTED_ADDRESS` in `sample-test.ts` has to be modified.
 
 ## Architecture
 
