@@ -1,18 +1,15 @@
 import axios from "axios";
 import { readFileSync } from "fs";
 import path from "path";
-import { StarknetPluginError } from "../../src/starknet-plugin-error";
 import { DEVNET_URL } from "../constants/constants";
 import { hardhatStarknetDeployAccount, hardhatStarknetNewAccount } from "./cli-functions";
-import { ensureEnvVar } from "./utils";
+import { assertEqual, ensureEnvVar } from "./utils";
 
 export async function deployFundedAccount(url = DEVNET_URL) {
     const network = ensureEnvVar("NETWORK");
     const accountDir = ensureEnvVar("ACCOUNT_DIR");
 
-    if (network !== "devnet") {
-        throw new StarknetPluginError("only works with NETWORK set to devnet");
-    }
+    assertEqual(network, "devnet", "only works with NETWORK set to devnet");
 
     const args = [
         "--starknet-network",

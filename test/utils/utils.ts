@@ -2,24 +2,21 @@ import axios from "axios";
 import assert, { AssertionError } from "assert";
 import { existsSync, rmSync } from "fs";
 import shell from "shelljs";
-import { StarknetPluginError } from "../../src/starknet-plugin-error";
 import { DEVNET_URL } from "../constants/constants";
 
 export function exec(cmd: string) {
     const result = shell.exec(cmd);
-    if (result.code !== 0) {
-        throw new StarknetPluginError(`Command ${cmd} failed.\n${result.stderr}`);
-    }
+    assertEqual(result.code, 0, `Command ${cmd} failed.\n${result.stderr}`);
 
     return result;
 }
 
-export function contains(output: string, pattern: string) {
+export function assertContains(output: string, pattern: string) {
     if (!output.includes(pattern)) {
         console.error("Pattern not in input");
         console.error("Pattern:", pattern);
         console.error("Input:", output);
-        throw new StarknetPluginError("Pattern not in input");
+        throw new AssertionError({ message: "Pattern not in input" });
     }
 }
 
@@ -34,7 +31,7 @@ export function extractAddress(source: string, pattern: string) {
 export async function checkDevnetIsNotRunning(url = DEVNET_URL): Promise<void> {
     try {
         const res = await axios.get(`${url}/is_alive`);
-        throw new StarknetPluginError(`Devnet is running and responded with status ${res.status}`);
+        throw new AssertionError({ message: `Devnet is running and responded with status ${res.status}` });
     } catch (err) {
         console.log("Devnet is not running!");
     }

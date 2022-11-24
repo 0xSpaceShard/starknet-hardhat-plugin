@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { assertExists, checkDevnetIsNotRunning, contains } from "../../utils/utils";
+import { assertExists, checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
@@ -10,12 +10,12 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
 
     hardhatStarknetCompile(["contracts/contract.cairo"]);
     const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "), true);
-    contains(execution.stderr, expectedWarning);
+    assertContains(execution.stderr, expectedWarning);
 
     // Checks if file logs/stderr.log exists and contains the expected warning string
     assertExists("logs/stdout.log", "Expected logs/stdout.log to exist");
     const stdout = readFileSync("logs/stdout.log", "utf-8");
-    contains(stdout, expectedStdout);
+    assertContains(stdout, expectedStdout);
 
     console.log("Success");
     await checkDevnetIsNotRunning();

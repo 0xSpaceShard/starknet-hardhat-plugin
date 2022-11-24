@@ -1,7 +1,7 @@
 import { copyFileSync } from "fs";
 import path from "path";
 import { hardhatStarknetCompile } from "../../utils/cli-functions";
-import { contains } from "../../utils/utils";
+import { assertContains } from "../../utils/utils";
 
 const contractName = "contract_with_unwhitelisted_hints.cairo";
 const contractPath = path.join("contracts", contractName);
@@ -13,7 +13,7 @@ This may indicate that this library function cannot be used in StarkNet contract
 
 console.log("Testing rejection of compilation without the --disable-hint-validation flag");
 const execution = hardhatStarknetCompile([contractPath], true);
-contains(execution.stderr, expected);
+assertContains(execution.stderr, expected);
 console.log("Success");
 
 hardhatStarknetCompile(`${contractPath} --disable-hint-validation`.split(" "));

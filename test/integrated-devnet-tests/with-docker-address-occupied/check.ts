@@ -1,5 +1,5 @@
 import { spawn } from "child_process";
-import { checkDevnetIsNotRunning, contains } from "../../utils/utils";
+import { checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
@@ -9,7 +9,7 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     hardhatStarknetCompile(["contracts/contract.cairo"]);
 
     const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "), true);
-    contains(execution.stderr, "127.0.0.1:5050 already occupied.");
+    assertContains(execution.stderr, "127.0.0.1:5050 already occupied.");
     result.kill();
 
     await checkDevnetIsNotRunning();
