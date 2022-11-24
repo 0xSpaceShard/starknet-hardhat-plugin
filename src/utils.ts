@@ -14,7 +14,8 @@ import {
     ALPHA_TESTNET_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_INTERNALLY
+    INTEGRATED_DEVNET_INTERNALLY,
+    UDC_ADDRESS
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -22,6 +23,9 @@ import { glob } from "glob";
 import { promisify } from "util";
 import { Numeric, StringMap } from "./types";
 import { StarknetChainId } from "starknet/constants";
+import { stark } from "starknet";
+import { handleInternalContractArtifacts } from "./account-utils";
+import { getContractFactoryUtil } from "./extend-utils";
 
 const globPromise = promisify(glob);
 /**
@@ -264,3 +268,29 @@ export function warn(message: string): void {
 export function bigIntToHexString(bn: Numeric): string {
     return "0x" + BigInt(bn).toString(16);
 }
+
+/**
+ * @returns random salt
+ */
+export function generateRandomSalt(): string {
+    return stark.randomAddress();
+}
+
+export async function getUDC(hre: HardhatRuntimeEnvironment) {
+    if (getUDC.udc) {
+        return getUDC.udc;
+    }
+
+    const contractPath = await handleInternalContractArtifacts(
+        "OpenZeppelinUDC",
+        "UDC",
+        "0.5.0",
+        hre
+    );
+    const udcContractFactory = await getContractFactoryUtil(hre, contractPath);
+
+    getUDC.udc = udcContractFactory.getContractAt(UDC_ADDRESS);
+    return getUDC.udc;
+}
+
+getUDC.udc = undefined;

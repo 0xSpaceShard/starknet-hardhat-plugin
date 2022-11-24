@@ -44,33 +44,38 @@ export function signMultiCall(
     return ellipticCurve.sign(keyPair, BigInt(messageHash).toString(16)).map(BigInt);
 }
 
-export async function handleAccountContractArtifacts(
-    accountType: string,
-    artifactsName: string,
+/**
+ * Move from an internal directory to the user's artifacts.
+ * @param contractDir the subdirectory internally holding the artifact
+ * @returns the new path where the artifacts can be found
+ */
+export async function handleInternalContractArtifacts(
+    contractDir: string,
+    contractName: string,
     artifactsVersion: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<string> {
     // Name of the artifacts' parent folder
-    const artifactsBase = artifactsName + ".cairo";
+    const artifactsBase = contractName + ".cairo";
 
     const baseArtifactsPath = path.join(hre.config.paths.starknetArtifacts, INTERNAL_ARTIFACTS_DIR);
 
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
         baseArtifactsPath,
-        accountType,
+        contractDir,
         artifactsVersion,
         artifactsBase
     );
 
-    const jsonArtifact = artifactsName + ".json";
-    const abiArtifact = artifactsName + ABI_SUFFIX;
+    const jsonArtifact = contractName + ".json";
+    const abiArtifact = contractName + ABI_SUFFIX;
 
     const artifactsSourcePath = path.join(
         __dirname,
         "..", // necessary since artifact dir is in the root, not in src
         INTERNAL_ARTIFACTS_DIR,
-        accountType,
+        contractDir,
         artifactsVersion,
         artifactsBase
     );

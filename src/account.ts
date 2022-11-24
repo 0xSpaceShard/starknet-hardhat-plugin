@@ -15,12 +15,7 @@ import {
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import {
-    TransactionHashPrefix,
-    TRANSACTION_VERSION,
-    UDC_ADDRESS,
-    UDC_DEPLOY_FUNCTION_NAME
-} from "./constants";
+import { TransactionHashPrefix, TRANSACTION_VERSION, UDC_DEPLOY_FUNCTION_NAME } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -29,13 +24,13 @@ import { ec } from "elliptic";
 import {
     CallParameters,
     generateKeys,
-    handleAccountContractArtifacts,
+    handleInternalContractArtifacts,
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { bigIntToHexString, copyWithBigint, warn } from "./utils";
+import { bigIntToHexString, copyWithBigint, generateRandomSalt, getUDC, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
-import { getContractFactoryUtil, getTransactionReceiptUtil } from "./extend-utils";
+import { getTransactionReceiptUtil } from "./extend-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -51,7 +46,6 @@ type ExecuteCallParameters = {
 export abstract class Account {
     public publicKey: string;
     public keyPair: ec.KeyPair;
-    private udc: StarknetContract;
 
     protected constructor(
         public starknetContract: StarknetContract,
@@ -118,12 +112,12 @@ export abstract class Account {
         options?: DeployThroughAccountOptions
     ): Promise<StarknetContract> {
         const classHash = await contractFactory.getClassHash();
-        const udc = await this.getUDC();
+        const udc = await getUDC(this.hre);
         const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
         const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
             classHash,
-            salt: options?.salt ?? 0, // TODO generate value?
-            unique: BigInt(options?.unique ?? false),
+            salt: options?.salt ?? generateRandomSalt(),
+            unique: BigInt(options?.unique ?? true),
             calldata: adaptedArgs
         });
 
@@ -363,17 +357,6 @@ export abstract class Account {
             maxFee: BigInt(maxFee)
         });
     }
-
-    private async getUDC() {
-        const version = "0.5.0";
-        // TODO rename to handleInternalContractArtifacts
-        const contractPath = await handleAccountContractArtifacts("UDC", "UDC", version, this.hre);
-        if (!this.udc) {
-            const udcContractFactory = await getContractFactoryUtil(this.hre, contractPath);
-            this.udc = udcContractFactory.getContractAt(UDC_ADDRESS);
-        }
-        return this.udc;
-    }
 }
 
 /**
@@ -436,7 +419,7 @@ export class OpenZeppelinAccount extends Account {
         hre: HardhatRuntimeEnvironment,
         options: DeployAccountOptions = {}
     ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleAccountContractArtifacts(
+        const contractPath = await handleInternalContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             OpenZeppelinAccount.VERSION,
@@ -459,7 +442,7 @@ export class OpenZeppelinAccount extends Account {
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleAccountContractArtifacts(
+        const contractPath = await handleInternalContractArtifacts(
             OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
             OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
             OpenZeppelinAccount.VERSION,
@@ -598,7 +581,7 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment,
         options: DeployAccountOptions = {}
     ): Promise<ArgentAccount> {
-        const contractPath = await handleAccountContractArtifacts(
+        const contractPath = await handleInternalContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
             ArgentAccount.VERSION,
@@ -618,7 +601,7 @@ export class ArgentAccount extends Account {
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<ArgentAccount> {
-        const contractPath = await handleAccountContractArtifacts(
+        const contractPath = await handleInternalContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
             ArgentAccount.VERSION,
