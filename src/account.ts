@@ -116,9 +116,9 @@ export abstract class Account {
         const udc = await this.getUDC();
         const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
         const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
-            classHash: BigInt(classHash),
+            classHash,
             salt: options.salt,
-            unique: options.unique,
+            unique: BigInt(options.unique),
             calldata: adaptedArgs
         });
 
