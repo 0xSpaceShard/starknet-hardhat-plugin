@@ -415,21 +415,18 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeclareOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareNewAccountOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeployOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
@@ -450,42 +447,36 @@ export class DockerWrapper extends StarknetWrapper {
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareDeployAccountOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareBlockQueryOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareNonceQueryOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
