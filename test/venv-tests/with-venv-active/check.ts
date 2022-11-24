@@ -4,7 +4,7 @@ import { ensureEnvVar, exec } from "../../utils/utils";
 
 const network = ensureEnvVar("NETWORK");
 
-exec(`bash ${path.join(__dirname, "venv.sh")}`);
+// exec(`bash ${path.join(__dirname, "venv.sh")}`);
 const initialValue = 10;
 
 hardhatStarknetCompile([]);
