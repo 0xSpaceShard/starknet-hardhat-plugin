@@ -1,6 +1,5 @@
-import path from "path";
 import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
-import { ensureEnvVar, exec } from "../../utils/utils";
+import { ensureEnvVar } from "../../utils/utils";
 
 const network = ensureEnvVar("NETWORK");
 
