@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "fs";
+import { readFileSync } from "fs";
 import { assertExists, checkDevnetIsNotRunning, contains } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 

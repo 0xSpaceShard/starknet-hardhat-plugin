@@ -52,16 +52,16 @@ export function rmrfSync(path: string) {
     rmSync(path, { recursive: true, force: true });
 }
 
-export function assertEqual(val1: any, val2: any, msg?: string) {
+export function assertEqual(val1: unknown, val2: unknown, msg?: string) {
     assert.equal(val1, val2, msg);
 }
 
-export function assertNotEqual(val1: any, val2: any, msg?: string) {
+export function assertNotEqual(val1: unknown, val2: unknown, msg?: string) {
     assert.notEqual(val1, val2, msg);
 }
 
 export function assertExists(path: string, msg?: string) {
-    if(!existsSync(path)) {
+    if (!existsSync(path)) {
         throw new AssertionError({
             message: msg
         });
