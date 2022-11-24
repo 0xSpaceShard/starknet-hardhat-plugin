@@ -24,8 +24,8 @@ export async function deployFundedAccount(url = DEVNET_URL) {
     // Creates new account
     hardhatStarknetNewAccount(args);
 
-    const accountFile = path.join(`${accountDir}`, "starknet_open_zeppelin_accounts.json");
-    const accountAddress = JSON.parse(readFileSync(accountFile, "utf-8"))[`${network}`].OpenZeppelin.address;
+    const accountFile = path.join(accountDir, "starknet_open_zeppelin_accounts.json");
+    const accountAddress = JSON.parse(readFileSync(accountFile, "utf-8"))[network].OpenZeppelin.address;
 
     console.log(`Funding account ${accountAddress} on ${network}.`);
     await axios.post(`${url}/mint`, {

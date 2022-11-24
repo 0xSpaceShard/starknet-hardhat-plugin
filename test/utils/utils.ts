@@ -1,5 +1,6 @@
 import axios from "axios";
-import { rmSync } from "fs";
+import assert, { AssertionError } from "node:assert";
+import { existsSync, rmSync } from "fs";
 import shell from "shelljs";
 import { StarknetPluginError } from "../../src/starknet-plugin-error";
 import { DEVNET_URL } from "../constants/constants";
@@ -49,4 +50,20 @@ export function ensureEnvVar(varName: string): string {
 
 export function rmrfSync(path: string) {
     rmSync(path, { recursive: true, force: true });
+}
+
+export function assertEqual(val1: any, val2: any, msg?: string) {
+    assert.equal(val1, val2, msg);
+}
+
+export function assertNotEqual(val1: any, val2: any, msg?: string) {
+    assert.notEqual(val1, val2, msg);
+}
+
+export function assertExists(path: string, msg?: string) {
+    if(!existsSync(path)) {
+        throw new AssertionError({
+            message: msg
+        });
+    }
 }
