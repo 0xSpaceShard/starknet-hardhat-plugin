@@ -1,5 +1,5 @@
 import axios from "axios";
-import assert, { AssertionError } from "node:assert";
+import assert, { AssertionError } from "assert";
 import { existsSync, rmSync } from "fs";
 import shell from "shelljs";
 import { StarknetPluginError } from "../../src/starknet-plugin-error";
