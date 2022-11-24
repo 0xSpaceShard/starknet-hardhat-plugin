@@ -88,35 +88,7 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
-/**
- * Extracts gatewayUrl from args or process.env.STARKNET_NETWORK.
- *
- * @param args the object containing CLI args
- * @param hre environment whose networks and starknet.network are accessed
- * @returns the URL of the gateway to be used; can return `undefined` if `required` set to `false`
- */
-function getGatewayUrl(args: TaskArguments, hre: HardhatRuntimeEnvironment): string {
-    const gatewayUrl: string = args.gatewayUrl;
-    const networkName: string = args.starknetNetwork || process.env.STARKNET_NETWORK;
-
-    if (gatewayUrl && !networkName) {
-        return gatewayUrl;
-    }
-
-    if (gatewayUrl && networkName) {
-        const msg = "Only one of starknet-network and gateway-url should be provided.";
-        throw new StarknetPluginError(msg);
-    }
-
-    if (!networkName) {
-        // we already know no gatewayUrl is provided
-        const msg = "No starknet-network or gateway-url provided.";
-        throw new StarknetPluginError(msg);
-    }
-
-    const network = getNetwork(networkName, hre.config.networks, "starknet-network");
-    return network.url;
-}
+// TODO dropped process.env.STARKNET_NETWORK support
 
 export async function starknetCompileAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     const root = hre.config.paths.root;
@@ -188,7 +160,6 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
 
 export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     await new Recompiler(hre).handleCache();
-    const gatewayUrl = getGatewayUrl(args, hre);
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
     const intRegex = new RegExp(/^-?\d+$/);
@@ -222,7 +193,6 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
             console.log("Deploying", file);
             const executed = await hre.starknetWrapper.deploy({
                 contract: file,
-                gatewayUrl,
                 inputs: args.inputs?.split(/\s+/),
                 salt: args.salt,
                 token: args.token
@@ -248,8 +218,6 @@ export async function starknetDeployAction(args: TaskArguments, hre: HardhatRunt
                     iterativelyCheckStatus(
                         hash,
                         hre.starknetWrapper,
-                        gatewayUrl,
-                        gatewayUrl,
                         (status) => {
                             console.log(`Deployment transaction ${hash} is now ${status}`);
                             resolve();
@@ -433,7 +401,6 @@ async function starknetInteractAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const gatewayUrl = getGatewayUrl(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract);
     const abiPath = contractFactory.getAbiPath();
 
@@ -451,13 +418,9 @@ async function starknetInteractAction(
         inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
         signature: args.signature?.split(/\s+/),
         wallet: wallet ? wallet.modulePath : undefined,
-        chainID: hre.config.starknet.networkConfig.starknetChainId,
         account: wallet ? wallet.accountName : undefined,
         accountDir: wallet ? accountDir : undefined,
-        gatewayUrl: gatewayUrl,
-        feederGatewayUrl: gatewayUrl,
         blockNumber: args.blockNumber ? args.blockNumber : undefined,
-        networkID: wallet ? args.starknetNetwork : undefined,
         maxFee: args.maxFee ? args.maxFee : undefined,
         nonce: args.nonce ? args.nonce : undefined
     });
@@ -481,8 +444,6 @@ async function starknetInteractAction(
             iterativelyCheckStatus(
                 txHash,
                 hre.starknetWrapper,
-                gatewayUrl,
-                gatewayUrl,
                 (status) => {
                     console.log(`Invoke transaction ${txHash} is now ${status}`);
                     resolve();
@@ -499,7 +460,6 @@ export async function starknetNewAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const gatewayUrl = getGatewayUrl(args, hre);
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
@@ -512,8 +472,6 @@ export async function starknetNewAccountAction(
     const executed = await hre.starknetWrapper.newAccount({
         accountDir: accountDir,
         accountName: wallet.accountName,
-        feederGatewayUrl: gatewayUrl,
-        gatewayUrl: gatewayUrl,
         network: args.starknetNetwork,
         wallet: wallet.modulePath
     });
@@ -531,7 +489,6 @@ export async function starknetDeployAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const gatewayUrl = getGatewayUrl(args, hre);
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
@@ -544,11 +501,8 @@ export async function starknetDeployAccountAction(
     const executed = await hre.starknetWrapper.deployAccount({
         accountDir: accountDir,
         accountName: wallet.accountName,
-        feederGatewayUrl: gatewayUrl,
-        gatewayUrl: gatewayUrl,
-        network: args.starknetNetwork,
-        wallet: wallet.modulePath,
-        chainID: hre.config.starknet.networkConfig.starknetChainId
+        network: args.starknetNetwork, // TODO do we need this?
+        wallet: wallet.modulePath
     });
 
     const statusCode = processExecuted(executed, true);

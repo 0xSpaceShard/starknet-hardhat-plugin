@@ -20,7 +20,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { StringMap } from "./types";
+import { Numeric, StringMap } from "./types";
 import { StarknetChainId } from "starknet/constants";
 
 const globPromise = promisify(glob);
@@ -255,4 +255,12 @@ export function getImageTagByArch(tag: string): string {
  */
 export function warn(message: string): void {
     console.warn("\x1b[33m%s\x1b[0m", message);
+}
+
+/**
+ * Converts BigInt to 0x-prefixed hex string
+ * @param bn
+ */
+export function bigIntToHexString(bn: Numeric): string {
+    return "0x" + BigInt(bn).toString(16);
 }

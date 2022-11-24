@@ -10,9 +10,9 @@ import {
 } from "./constants";
 import { adaptLog, copyWithBigint, warn } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
-import { StarknetWrapper } from "./starknet-wrappers";
-import { Wallet } from "hardhat/types";
+import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
+import { StarknetWrapper } from "./starknet-wrappers";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -44,15 +44,12 @@ export type InvokeResponse = string;
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
     metadataPath: string;
+    hre: HardhatRuntimeEnvironment;
 };
 
 export interface StarknetContractConfig {
-    starknetWrapper: StarknetWrapper;
     abiPath: string;
-    networkID: string;
-    chainID: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
+    hre: HardhatRuntimeEnvironment;
 }
 
 export type Numeric = number | bigint;
@@ -140,16 +137,9 @@ type StatusObject = {
     tx_failure_reason?: starknet.TxFailureReason;
 };
 
-async function checkStatus(
-    hash: string,
-    starknetWrapper: StarknetWrapper,
-    gatewayUrl: string,
-    feederGatewayUrl: string
-): Promise<StatusObject> {
+async function checkStatus(hash: string, starknetWrapper: StarknetWrapper): Promise<StatusObject> {
     const executed = await starknetWrapper.getTxStatus({
-        hash,
-        gatewayUrl,
-        feederGatewayUrl
+        hash
     });
     if (executed.statusCode) {
         throw new StarknetPluginError(executed.stderr.toString());
@@ -177,17 +167,10 @@ function isTxRejected(statusObject: StatusObject): boolean {
 export async function iterativelyCheckStatus(
     txHash: string,
     starknetWrapper: StarknetWrapper,
-    gatewayUrl: string,
-    feederGatewayUrl: string,
     resolve: (status: string) => void,
     reject: (reason: Error) => void
 ) {
-    const statusObject = await checkStatus(
-        txHash,
-        starknetWrapper,
-        gatewayUrl,
-        feederGatewayUrl
-    ).catch((reason) => {
+    const statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
         warn(reason);
         return undefined;
     });
@@ -348,25 +331,17 @@ export interface BlockIdentifier {
 export type NonceQueryOptions = BlockIdentifier;
 
 export class StarknetContractFactory {
-    private starknetWrapper: StarknetWrapper;
+    private hre: HardhatRuntimeEnvironment;
     public abi: starknet.Abi;
     public abiPath: string;
     private constructorAbi: starknet.CairoFunction;
     public metadataPath: string;
-    private networkID: string;
-    private chainID: string;
-    private gatewayUrl: string;
-    private feederGatewayUrl: string;
     private classHash: string;
 
     constructor(config: StarknetContractFactoryConfig) {
-        this.starknetWrapper = config.starknetWrapper;
+        this.hre = config.hre;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
-        this.networkID = config.networkID;
-        this.chainID = config.chainID;
-        this.gatewayUrl = config.gatewayUrl;
-        this.feederGatewayUrl = config.feederGatewayUrl;
         this.metadataPath = config.metadataPath;
 
         // find constructor
@@ -384,10 +359,8 @@ export class StarknetContractFactory {
      * @returns the class hash as a hex string
      */
     async declare(options: DeclareOptions = {}): Promise<string> {
-        const executed = await this.starknetWrapper.declare({
+        const executed = await this.hre.starknetWrapper.declare({
             contract: this.metadataPath,
-            gatewayUrl: this.gatewayUrl,
-            feederGatewayUrl: this.feederGatewayUrl,
             maxFee: (options.maxFee || 0).toString(),
             token: options.token,
             signature: handleSignature(options.signature),
@@ -405,9 +378,7 @@ export class StarknetContractFactory {
         return new Promise((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.starknetWrapper,
-                this.gatewayUrl,
-                this.feederGatewayUrl,
+                this.hre.starknetWrapper,
                 () => resolve(classHash),
                 (error) => {
                     reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
@@ -445,10 +416,9 @@ export class StarknetContractFactory {
         constructorArguments?: StringMap,
         options: DeployOptions = {}
     ): Promise<StarknetContract> {
-        const executed = await this.starknetWrapper.deploy({
+        const executed = await this.hre.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),
-            gatewayUrl: this.gatewayUrl,
             salt: options.salt,
             token: options.token
         });
@@ -462,11 +432,7 @@ export class StarknetContractFactory {
         const txHash = extractTxHash(executedOutput);
         const contract = new StarknetContract({
             abiPath: this.abiPath,
-            starknetWrapper: this.starknetWrapper,
-            networkID: this.networkID,
-            chainID: this.chainID,
-            feederGatewayUrl: this.feederGatewayUrl,
-            gatewayUrl: this.gatewayUrl
+            hre: this.hre
         });
         contract.address = address;
         contract.deployTxHash = txHash;
@@ -474,9 +440,7 @@ export class StarknetContractFactory {
         return new Promise<StarknetContract>((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.starknetWrapper,
-                this.gatewayUrl,
-                this.feederGatewayUrl,
+                this.hre.starknetWrapper,
                 () => resolve(contract),
                 reject
             );
@@ -517,11 +481,7 @@ export class StarknetContractFactory {
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
-            starknetWrapper: this.starknetWrapper,
-            networkID: this.networkID,
-            chainID: this.chainID,
-            feederGatewayUrl: this.feederGatewayUrl,
-            gatewayUrl: this.gatewayUrl
+            hre: this.hre
         });
         contract.address = address;
         return contract;
@@ -533,33 +493,25 @@ export class StarknetContractFactory {
 
     async getClassHash() {
         if (!this.classHash) {
-            this.classHash = await this.starknetWrapper.getClassHash(this.metadataPath);
+            this.classHash = await this.hre.starknetWrapper.getClassHash(this.metadataPath);
         }
         return this.classHash;
     }
 }
 
 export class StarknetContract {
-    private starknetWrapper: StarknetWrapper;
+    private hre: HardhatRuntimeEnvironment;
     private abi: starknet.Abi;
     private eventsSpecifications: starknet.EventAbi;
     private abiPath: string;
-    private networkID: string;
-    private chainID: string;
-    private gatewayUrl: string;
-    private feederGatewayUrl: string;
     private _address: string;
     public deployTxHash: string;
 
     constructor(config: StarknetContractConfig) {
-        this.starknetWrapper = config.starknetWrapper;
+        this.hre = config.hre;
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.eventsSpecifications = extractEventSpecifications(this.abi);
-        this.networkID = config.networkID;
-        this.chainID = config.chainID;
-        this.gatewayUrl = config.gatewayUrl;
-        this.feederGatewayUrl = config.feederGatewayUrl;
     }
 
     get address(): string {
@@ -591,7 +543,7 @@ export class StarknetContract {
         }
 
         const adaptedInput = this.adaptInput(functionName, args);
-        const executed = await this.starknetWrapper.interact({
+        const executed = await this.hre.starknetWrapper.interact({
             choice,
             address: this.address,
             abi: this.abiPath,
@@ -601,10 +553,6 @@ export class StarknetContract {
             wallet: options.wallet?.modulePath,
             account: options.wallet?.accountName,
             accountDir: options.wallet?.accountPath,
-            networkID: this.networkID,
-            chainID: this.chainID,
-            gatewayUrl: this.gatewayUrl,
-            feederGatewayUrl: this.feederGatewayUrl,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
             maxFee: options.maxFee?.toString(),
             nonce: options.nonce?.toString()
@@ -642,9 +590,7 @@ export class StarknetContract {
         return new Promise<string>((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.starknetWrapper,
-                this.gatewayUrl,
-                this.feederGatewayUrl,
+                this.hre.starknetWrapper,
                 () => resolve(txHash),
                 (error) => {
                     reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));

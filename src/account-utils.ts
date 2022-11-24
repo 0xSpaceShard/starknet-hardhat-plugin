@@ -5,7 +5,7 @@ import { ec } from "elliptic";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as fs from "fs";
 import path from "path";
-import { ABI_SUFFIX, ACCOUNT_ARTIFACTS_DIR } from "./constants";
+import { ABI_SUFFIX, INTERNAL_ARTIFACTS_DIR } from "./constants";
 import { flattenStringMap } from "./utils";
 
 export type CallParameters = {
@@ -53,7 +53,7 @@ export async function handleAccountContractArtifacts(
     // Name of the artifacts' parent folder
     const artifactsBase = artifactsName + ".cairo";
 
-    const baseArtifactsPath = path.join(hre.config.paths.starknetArtifacts, ACCOUNT_ARTIFACTS_DIR);
+    const baseArtifactsPath = path.join(hre.config.paths.starknetArtifacts, INTERNAL_ARTIFACTS_DIR);
 
     // Full path to where the artifacts will be saved
     const artifactsTargetPath = path.join(
@@ -69,7 +69,7 @@ export async function handleAccountContractArtifacts(
     const artifactsSourcePath = path.join(
         __dirname,
         "..", // necessary since artifact dir is in the root, not in src
-        ACCOUNT_ARTIFACTS_DIR,
+        INTERNAL_ARTIFACTS_DIR,
         accountType,
         artifactsVersion,
         artifactsBase

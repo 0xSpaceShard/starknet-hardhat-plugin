@@ -15,7 +15,12 @@ import {
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix, TRANSACTION_VERSION, UDC_DEPLOY_FUNCTION_NAME } from "./constants";
+import {
+    TransactionHashPrefix,
+    TRANSACTION_VERSION,
+    UDC_ADDRESS,
+    UDC_DEPLOY_FUNCTION_NAME
+} from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -28,9 +33,9 @@ import {
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { copyWithBigint, warn } from "./utils";
+import { bigIntToHexString, copyWithBigint, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
-import { getTransactionReceiptUtil } from "./extend-utils";
+import { getContractFactoryUtil, getTransactionReceiptUtil } from "./extend-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -117,15 +122,15 @@ export abstract class Account {
         const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
         const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
             classHash,
-            salt: options.salt,
-            unique: BigInt(options.unique),
+            salt: options?.salt ?? 0, // TODO generate value?
+            unique: BigInt(options?.unique ?? false),
             calldata: adaptedArgs
         });
 
         const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, this.hre);
         const decodedEvents = await udc.decodeEvents(deploymentReceipt.events);
         // the only event should be ContractDeployed
-        const deployedContractAddress = decodedEvents[0].data.address;
+        const deployedContractAddress = bigIntToHexString(decodedEvents[0].data.address);
 
         const deployedContract = contractFactory.getContractAt(deployedContractAddress);
         deployedContract.deployTxHash = deployTxHash;
@@ -284,8 +289,8 @@ export abstract class Account {
         });
 
         const adaptedNonce = nonce.toString();
-        const adaptedMaxFee = "0x" + maxFee.toString(16);
-        const adaptedVersion = "0x" + version.toString(16);
+        const adaptedMaxFee = bigIntToHexString(maxFee);
+        const adaptedVersion = bigIntToHexString(version);
         const messageHash = this.getMessageHash(
             TransactionHashPrefix.INVOKE,
             accountAddress,
@@ -360,16 +365,12 @@ export abstract class Account {
     }
 
     private async getUDC() {
+        const version = "0.5.0";
+        // TODO rename to handleInternalContractArtifacts
+        const contractPath = await handleAccountContractArtifacts("UDC", "UDC", version, this.hre);
         if (!this.udc) {
-            throw new Error("Decide on abi path and decide on how chainId etc. is specified");
-            this.udc = new StarknetContract({
-                abiPath: "", // TODO
-                chainID: this.starknetContract.chainID,
-                feederGatewayUrl: this.starknetContract.feederGatewayUrl,
-                gatewayUrl: this.starknetContract.gatewayUrl,
-                networkID: this.starknetContract.networkID,
-                starknetWrapper: this.starknetContract.starknetWrapper
-            });
+            const udcContractFactory = await getContractFactoryUtil(this.hre, contractPath);
+            this.udc = udcContractFactory.getContractAt(UDC_ADDRESS);
         }
         return this.udc;
     }

@@ -157,7 +157,7 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
             "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
         throw new StarknetPluginError(msg);
     }
-    hre.starknetWrapper = new VenvWrapper(venvPath);
+    hre.starknetWrapper = new VenvWrapper(venvPath, hre);
 }
 
 function extractAccountPaths(hre: HardhatRuntimeEnvironment): string[] {
@@ -190,7 +190,8 @@ extendEnvironment((hre) => {
             image,
             hre.config.paths.root,
             accountPaths,
-            hre.config.paths.cairoPaths || []
+            hre.config.paths.cairoPaths || [],
+            hre
         );
     }
 });

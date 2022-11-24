@@ -42,13 +42,9 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     }
 
     return new StarknetContractFactory({
-        starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        networkID: hre.config.starknet.network,
-        chainID: hre.config.starknet.networkConfig.starknetChainId,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        feederGatewayUrl: hre.config.starknet.networkUrl
+        hre
     });
 }
 
@@ -144,8 +140,6 @@ export async function getTransactionUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<Transaction> {
     const executed = await hre.starknetWrapper.getTransaction({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
     if (executed.statusCode) {
@@ -161,8 +155,6 @@ export async function getTransactionReceiptUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<TransactionReceipt> {
     const executed = await hre.starknetWrapper.getTransactionReceipt({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
     if (executed.statusCode) {
@@ -210,7 +202,6 @@ export async function getNonceUtil(
 ): Promise<number> {
     const executed = await hre.starknetWrapper.getNonce({
         address,
-        feederGatewayUrl: hre.config.starknet.networkUrl,
         ...options
     });
 
