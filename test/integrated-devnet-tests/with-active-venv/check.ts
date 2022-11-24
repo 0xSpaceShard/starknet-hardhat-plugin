@@ -1,7 +1,6 @@
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { checkDevnetIsNotRunning } from "../../utils/utils";
 
-// exec(`bash ${path.join(__dirname, "venv.sh")}`);
 (async () => {
     await checkDevnetIsNotRunning();
     hardhatStarknetCompile(["contracts/contract.cairo"]);
