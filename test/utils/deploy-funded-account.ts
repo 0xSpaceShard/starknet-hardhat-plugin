@@ -2,10 +2,11 @@ import axios from "axios";
 import { readFileSync } from "fs";
 import path from "path";
 import { StarknetPluginError } from "../../src/starknet-plugin-error";
+import { DEVNET_URL } from "../constants/constants";
 import { hardhatStarknetDeployAccount, hardhatStarknetNewAccount } from "./cli-functions";
 import { ensureEnvVar } from "./utils";
 
-export async function deployFundedAccount(url?: string) {
+export async function deployFundedAccount(url = DEVNET_URL) {
     const network = ensureEnvVar("NETWORK");
     const accountDir = ensureEnvVar("ACCOUNT_DIR");
 
@@ -27,7 +28,6 @@ export async function deployFundedAccount(url?: string) {
     const accountAddress = JSON.parse(readFileSync(accountFile, "utf-8"))[`${network}`].OpenZeppelin.address;
 
     console.log(`Funding account ${accountAddress} on ${network}.`);
-    url = url ||  "http://127.0.0.1:5050";
     await axios.post(`${url}/mint`, {
         address: accountAddress,
         amount: 1000000000000000000n,

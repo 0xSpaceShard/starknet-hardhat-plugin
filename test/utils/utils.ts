@@ -2,6 +2,7 @@ import axios from "axios";
 import { rmSync } from "fs";
 import shell from "shelljs";
 import { StarknetPluginError } from "../../src/starknet-plugin-error";
+import { DEVNET_URL } from "../constants/constants";
 
 export function exec(cmd: string) {
     const result = shell.exec(cmd);
@@ -29,8 +30,7 @@ export function extractAddress(source: string, pattern: string) {
     return res;
 }
 
-export async function checkDevnetIsNotRunning(url?: string): Promise<void> {
-    url = url || "http://127.0.0.1:5050";
+export async function checkDevnetIsNotRunning(url = DEVNET_URL): Promise<void> {
     try {
         const res = await axios.get(`${url}/is_alive`);
         throw new StarknetPluginError(`Devnet is running and responded with status ${res.status}`);
