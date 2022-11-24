@@ -1,6 +1,5 @@
 import { existsSync, readFileSync } from "fs";
-import { checkDevnetIsNotRunning, contains } from "../../utils/utils";
-import { StarknetPluginError } from "../../../src/starknet-plugin-error";
+import { assertExists, checkDevnetIsNotRunning, contains } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
@@ -14,14 +13,9 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     contains(execution.stderr, expectedWarning);
 
     // Checks if file logs/stderr.log exists and contains the expected warning string
-    if (existsSync("logs/stdout.log")) {
-        const stdout = readFileSync("logs/stdout.log", "utf-8");
-        if (!stdout.includes(expectedStdout)) {
-            throw new StarknetPluginError(`Expected stderr to contain ${expectedStdout}`);
-        }
-    } else {
-        throw new StarknetPluginError("Expected logs/stdout.log to exist");
-    }
+    assertExists("logs/stdout.log", "Expected logs/stdout.log to exist");
+    const stdout = readFileSync("logs/stdout.log", "utf-8");
+    contains(stdout, expectedStdout);
 
     console.log("Success");
     await checkDevnetIsNotRunning();

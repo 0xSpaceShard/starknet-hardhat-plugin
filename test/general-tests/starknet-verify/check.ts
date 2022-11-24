@@ -1,6 +1,6 @@
-import { ensureEnvVar, exec, extractAddress } from "../../utils/utils";
-import { StarknetPluginError } from "../../../src/starknet-plugin-error";
+import { assertEqual, ensureEnvVar, exec, extractAddress } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
+import axios from "axios";
 
 console.log("The starknet-verify test is too flaky so it is temporarily suspended. Make sure it's working!");
 process.exit(0);
@@ -24,10 +24,7 @@ exec(`npx hardhat starknet-verify --starknet-network ${network} --path ${mainCon
 console.log("Sleeping to allow Voyager to register the verification");
 exec("sleep 15s");
 
-const is_verified = exec(`curl "https://goerli.voyager.online/api/contract/${address}/code" | jq ".abiVerified"`);
-if (is_verified == "true") {
-    console.log("Successfully verified!");
-} else {
-    console.log("Error: Not verified!");
-    throw new StarknetPluginError("Error: Not verified!");
-}
+(async () => {
+    const { data } = await axios.get(`https://goerli.voyager.online/api/contract/${address}/code`);
+    assertEqual(data.abiVerified, "true", "Contract is not verified");
+})();

@@ -1,8 +1,7 @@
 import { readFileSync } from "fs";
 import path from "path";
-import { StarknetPluginError } from "../../../src/starknet-plugin-error";
 import { hardhatStarknetNewAccount } from "../../utils/cli-functions";
-import { ensureEnvVar, extractAddress } from "../../utils/utils";
+import { assertEqual, ensureEnvVar, extractAddress } from "../../utils/utils";
 
 const network = ensureEnvVar("NETWORK");
 const home = ensureEnvVar("HOME");
@@ -22,9 +21,5 @@ const accountAddressFile = JSON.parse(accountFile.toString())[network].OpenZeppe
 const addressStd = parseInt(accountAddressStd, 16);
 const addressFile = parseInt(accountAddressFile, 16);
 
-// If address_one and address_two are equal then success
-if (addressStd === addressFile) {
-    console.log("Success");
-} else {
-    throw new StarknetPluginError("Addresses are not equal");
-}
+// If addressStd and addressFile are equal then success
+assertEqual(addressStd, addressFile, "Account address mismatch");

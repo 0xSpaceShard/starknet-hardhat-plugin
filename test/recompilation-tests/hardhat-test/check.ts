@@ -1,8 +1,7 @@
 import { copyFileSync, readFileSync, appendFileSync } from "fs";
 import path from "path";
-import { StarknetPluginError } from "../../../src/starknet-plugin-error";
 import { hardhatStarknetTest } from "../../utils/cli-functions";
-import { rmrfSync } from "../../utils/utils";
+import { assertNotEqual, rmrfSync } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
 const contractName = "contract_test_cache.cairo";
@@ -44,9 +43,7 @@ hardhatStarknetTest("--no-compile test/recompilation/recompilation-main-test.ts"
 // Check that the cache file was updated using diff
 const cacheContentAfter = readFileSync("cache/cairo-files-cache.json");
 const cacheContentBefore = readFileSync("cache-content-before.json");
-if (cacheContentAfter.equals(cacheContentBefore)) {
-    throw new StarknetPluginError("Cache file was not updated");
-}
+assertNotEqual(cacheContentAfter, cacheContentBefore, "Cache file was not updated.");
 
 console.log("Testing Recompilation one contract added another deleted");
 rmrfSync("contracts/contract_test_cache.cairo");
