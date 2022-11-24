@@ -180,7 +180,7 @@ export async function iterativelyCheckStatus(
     gatewayUrl: string,
     feederGatewayUrl: string,
     resolve: (status: string) => void,
-    reject: (reason?: any) => void
+    reject: (reason: Error) => void
 ) {
     const statusObject = await checkStatus(
         txHash,
