@@ -6,7 +6,11 @@ import { ensureEnvVar, extractAddress, rmrfSync } from "../../utils/utils";
 const network = ensureEnvVar("NETWORK");
 // Hardhat starknet-invoke command
 console.log("Testing Recompilation with deleted artifact on hardhat starknet-invoke");
-const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
+const output = hardhatStarknetDeploy(
+    `--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(
+        " "
+    )
+);
 // Grab the output Contract address to a variable using parameter expansion
 const address = extractAddress(output.stdout, "Contract address: ");
 // Remove artifact contract to force recompilation

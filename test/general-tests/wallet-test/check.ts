@@ -1,5 +1,11 @@
 import path from "path";
-import { hardhatStarknetCompile, hardhatStarknetTest, hardhatStarknetDeploy, hardhatStarknetCall, hardhatStarknetInvoke } from "../../utils/cli-functions";
+import {
+    hardhatStarknetCompile,
+    hardhatStarknetTest,
+    hardhatStarknetDeploy,
+    hardhatStarknetCall,
+    hardhatStarknetInvoke
+} from "../../utils/cli-functions";
 import { deployFundedAccount } from "../../utils/deploy-funded-account";
 import { ensureEnvVar, extractAddress } from "../../utils/utils";
 
@@ -15,9 +21,21 @@ hardhatStarknetCompile(["contracts/contract.cairo"]);
     await deployFundedAccount();
     hardhatStarknetTest("--no-compile test/wallet-test.ts".split(" "));
 
-    const output = hardhatStarknetDeploy(`--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(" "));
+    const output = hardhatStarknetDeploy(
+        `--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(
+            " "
+        )
+    );
     const address = extractAddress(output.stdout, "Contract address: ");
 
-    hardhatStarknetCall(`--contract contract --function get_balance --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(" "));
-    hardhatStarknetInvoke(`--contract contract --function increase_balance --inputs "10 20" --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(" "));
+    hardhatStarknetCall(
+        `--contract contract --function get_balance --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(
+            " "
+        )
+    );
+    hardhatStarknetInvoke(
+        `--contract contract --function increase_balance --inputs "10 20" --address ${address} --wallet OpenZeppelin --starknet-network ${network}`.split(
+            " "
+        )
+    );
 })();

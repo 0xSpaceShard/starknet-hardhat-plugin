@@ -13,10 +13,9 @@ export function exec(cmd: string) {
 
 export function assertContains(output: string, pattern: string) {
     if (!output.includes(pattern)) {
-        console.error(`Pattern not in input
-Pattern: ${pattern}
-Input: ${output}`);
-        throw new AssertionError({ message: "Pattern not in input" });
+        throw new AssertionError({
+            message: `Pattern not in input\nPattern: ${pattern}\nInput: ${output}`
+        });
     }
 }
 
@@ -31,12 +30,13 @@ export function extractAddress(source: string, pattern: string) {
 export async function checkDevnetIsNotRunning(url = DEVNET_URL): Promise<void> {
     try {
         const res = await axios.get(`${url}/is_alive`);
-        throw new AssertionError({ message: `Devnet is running and responded with status ${res.status}` });
+        throw new AssertionError({
+            message: `Devnet is running and responded with status ${res.status}`
+        });
     } catch (err) {
         console.log("Devnet is not running!");
     }
 }
-
 
 export function ensureEnvVar(varName: string): string {
     if (!process.env[varName]) {

@@ -7,7 +7,8 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     hardhatStarknetCompile(["contracts/contract.cairo"]);
 
     const expectedStdout = "Account #0";
-    const expectedWarning = "WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS.";
+    const expectedWarning =
+        "WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS.";
 
     const output = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "));
     // Checks if output contains the expected string from stdout

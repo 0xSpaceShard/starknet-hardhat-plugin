@@ -25,7 +25,10 @@ hardhatStarknetTest("--no-compile test/recompilation/recompilation-main-test.ts"
 
 console.log("Testing Recompilation with updated contract");
 // Appending a new function to the contract
-appendFileSync("contracts/contract_test_cache.cairo", readFileSync(path.join(prefix, "get_balance.cairo")).toString());
+appendFileSync(
+    "contracts/contract_test_cache.cairo",
+    readFileSync(path.join(prefix, "get_balance.cairo")).toString()
+);
 hardhatStarknetTest("--no-compile test/recompilation/recompilation-update-test.ts".split(" "));
 
 console.log("Testing Recompilation with cache file deleted");

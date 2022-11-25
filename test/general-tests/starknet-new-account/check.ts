@@ -10,7 +10,9 @@ const accountDir = path.join(home, ".starknet_new_account_test");
 process.env.ACCOUNT_DIR = accountDir;
 const accountFilePath = path.join(accountDir, "starknet_open_zeppelin_accounts.json");
 
-const output = hardhatStarknetNewAccount(`--wallet OpenZeppelin --starknet-network ${network}`.split(" "));
+const output = hardhatStarknetNewAccount(
+    `--wallet OpenZeppelin --starknet-network ${network}`.split(" ")
+);
 const accountAddressStd = extractAddress(output.stdout, "Account address: ");
 
 // Read newly created account and grab the address

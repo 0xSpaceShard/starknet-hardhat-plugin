@@ -11,18 +11,14 @@ export async function deployFundedAccount(url = DEVNET_URL) {
 
     assertEqual(network, "devnet", "only works with NETWORK set to devnet");
 
-    const args = [
-        "--starknet-network",
-        network,
-        "--wallet",
-        "OpenZeppelin"
-    ];
+    const args = ["--starknet-network", network, "--wallet", "OpenZeppelin"];
 
     // Creates new account
     hardhatStarknetNewAccount(args);
 
     const accountFile = path.join(accountDir, "starknet_open_zeppelin_accounts.json");
-    const accountAddress = JSON.parse(readFileSync(accountFile, "utf-8"))[network].OpenZeppelin.address;
+    const accountAddress = JSON.parse(readFileSync(accountFile, "utf-8"))[network].OpenZeppelin
+        .address;
 
     console.log(`Funding account ${accountAddress} on ${network}.`);
     await axios.post(`${url}/mint`, {

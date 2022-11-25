@@ -6,10 +6,14 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     await checkDevnetIsNotRunning();
 
     const expectedStdout = "Account #0";
-    const expectedWarning = "WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS.";
+    const expectedWarning =
+        "WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS.";
 
     hardhatStarknetCompile(["contracts/contract.cairo"]);
-    const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "), true);
+    const execution = hardhatStarknetTest(
+        "--no-compile test/integrated-devnet.test.ts".split(" "),
+        true
+    );
     assertContains(execution.stderr, expectedWarning);
 
     // Checks if file logs/stderr.log exists and contains the expected warning string

@@ -7,4 +7,8 @@ const network = ensureEnvVar("NETWORK");
 renameSync("contracts", "my-starknet-sources");
 
 hardhatStarknetCompile([]);
-hardhatStarknetDeploy(`starknet-artifacts/my-starknet-sources/contract.cairo/ --starknet-network ${network} --inputs 10`.split(" "));
+hardhatStarknetDeploy(
+    `starknet-artifacts/my-starknet-sources/contract.cairo/ --starknet-network ${network} --inputs 10`.split(
+        " "
+    )
+);
