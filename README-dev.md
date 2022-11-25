@@ -38,11 +38,11 @@ If your IDE is reporting Typescript issues after compiling the plugin, you may w
 
 A test case is added by creating a directory in a subdirectory of a test group in the `test` directory. E.g. `declare-test` is a test case in the `general-tests` test group. A test case should contain:
 
--   a `check.sh` script which does the testing logic
+-   a `check.ts` script which does the testing logic
 -   a `network.json` file which specifies on which networks should the test case be run
 -   a `hardhat.config.ts` file will be used
 
-The main testing script is `scripts/test.sh`. It iterates over the test cases the test group specified by the `TEST_SUBDIR` environment variable.
+The main testing script is `scripts/test.ts`. It iterates over the test cases the test group specified by the `TEST_SUBDIR` environment variable.
 
 ### Executing tests locally
 
@@ -50,7 +50,7 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 
 -   positioning yourself in your example repository
 -   configuring the `hardhat.config.ts`
--   executing the `check.sh` script (potentially modifying it to address path differences)
+-   executing the `check.ts` script (potentially modifying it to address path differences)
 
 To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 

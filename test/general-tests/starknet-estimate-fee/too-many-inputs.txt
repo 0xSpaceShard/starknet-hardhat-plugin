@@ -1,5 +1,2 @@
 Error in plugin Starknet: Could not perform estimateFee of sum_points_to_tuple:
 Error: AssertionError: Wrong number of arguments. Expected 4, got 5.
-
-
-For more info run Hardhat with --show-stack-traces
