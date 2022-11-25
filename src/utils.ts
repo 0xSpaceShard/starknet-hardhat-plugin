@@ -21,7 +21,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { Numeric, StringMap } from "./types";
+import { Numeric, StarknetContract, StringMap } from "./types";
 import { StarknetChainId } from "starknet/constants";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
@@ -278,24 +278,25 @@ export function generateRandomSalt(): string {
 
 /**
  * Global handler of UDC
- * @param hre
- * @returns the global UDC instance
  */
-export async function getUDC(hre: HardhatRuntimeEnvironment) {
-    if (getUDC.udc) {
-        return getUDC.udc;
+export class UDC {
+    private static instance: StarknetContract;
+
+    /**
+     * Returns the UDC singleton.
+     */
+    static async getInstance() {
+        if (!UDC.instance) {
+            const hre = await import("hardhat");
+            const contractPath = await handleInternalContractArtifacts(
+                "OpenZeppelinUDC", // dir name
+                "UDC", // file name
+                "0.5.0", // version
+                hre
+            );
+            const udcContractFactory = await getContractFactoryUtil(hre, contractPath);
+            UDC.instance = udcContractFactory.getContractAt(UDC_ADDRESS);
+        }
+        return UDC.instance;
     }
-
-    const contractPath = await handleInternalContractArtifacts(
-        "OpenZeppelinUDC",
-        "UDC",
-        "0.5.0",
-        hre
-    );
-    const udcContractFactory = await getContractFactoryUtil(hre, contractPath);
-
-    getUDC.udc = udcContractFactory.getContractAt(UDC_ADDRESS);
-    return getUDC.udc;
 }
-
-getUDC.udc = undefined;

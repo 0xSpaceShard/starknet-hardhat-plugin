@@ -411,11 +411,13 @@ export class StarknetContractFactory {
      * @param constructorArguments constructor arguments of Starknet contract
      * @param options optional additions to deploying
      * @returns the newly created instance
+     * @deprecated use Account.deploy instead
      */
     async deploy(
         constructorArguments?: StringMap,
         options: DeployOptions = {}
     ): Promise<StarknetContract> {
+        warn("Using StarknetContractFactory.deploy is deprecated. Use Account.deploy instead");
         const executed = await this.hre.starknetWrapper.deploy({
             contract: this.metadataPath,
             inputs: this.handleConstructorArguments(constructorArguments),

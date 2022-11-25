@@ -28,7 +28,7 @@ import {
     parseMulticallOutput,
     signMultiCall
 } from "./account-utils";
-import { bigIntToHexString, copyWithBigint, generateRandomSalt, getUDC, warn } from "./utils";
+import { bigIntToHexString, copyWithBigint, generateRandomSalt, UDC, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 
@@ -119,7 +119,7 @@ export abstract class Account {
         options?: DeployThroughAccountOptions
     ): Promise<StarknetContract> {
         const classHash = await contractFactory.getClassHash();
-        const udc = await getUDC(this.hre);
+        const udc = await UDC.getInstance();
         const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
         const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
             classHash,
