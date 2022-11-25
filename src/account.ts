@@ -436,6 +436,7 @@ export class OpenZeppelinAccount extends Account {
         const signer = generateKeys(options.privateKey);
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        // TODO should add starknetWrapper.deployAccount which potentially calls a function in Starknet CLI (instead of calling a CLI command)
         const contract = await contractFactory.deploy(
             { publicKey: BigInt(signer.publicKey) },
             options
