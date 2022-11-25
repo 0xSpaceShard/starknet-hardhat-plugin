@@ -7,6 +7,7 @@ import * as fs from "fs";
 import path from "path";
 import { ABI_SUFFIX, INTERNAL_ARTIFACTS_DIR } from "./constants";
 import { flattenStringMap } from "./utils";
+import * as crypto from "crypto";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -28,7 +29,7 @@ export function generateRandomStarkPrivateKey(length = 63) {
     const characters = "0123456789ABCDEF";
     let result = "";
     for (let i = 0; i < length; ++i) {
-        result += characters.charAt(Math.floor(Math.random() * characters.length));
+        result += characters.charAt(crypto.randomInt(characters.length));
     }
     return toBN(result, "hex");
 }
