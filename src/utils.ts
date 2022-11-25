@@ -276,6 +276,11 @@ export function generateRandomSalt(): string {
     return stark.randomAddress();
 }
 
+/**
+ * Global handler of UDC
+ * @param hre
+ * @returns the global UDC instance
+ */
 export async function getUDC(hre: HardhatRuntimeEnvironment) {
     if (getUDC.udc) {
         return getUDC.udc;

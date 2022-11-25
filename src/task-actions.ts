@@ -503,7 +503,7 @@ export async function starknetDeployAccountAction(
     const executed = await hre.starknetWrapper.deployAccount({
         accountDir: accountDir,
         accountName: wallet.accountName,
-        network: args.starknetNetwork, // TODO do we need this?
+        network: args.starknetNetwork,
         wallet: wallet.modulePath
     });
 

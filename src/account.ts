@@ -106,6 +106,13 @@ export abstract class Account {
         return toContract.adaptOutput(functionName, response.join(" "));
     }
 
+    /**
+     * Deploy another contract using this account
+     * @param contractFactory the factory of the contract to be deployed
+     * @param constructorArguments
+     * @param options extra options
+     * @returns the deployed StarknetContract
+     */
     async deploy(
         contractFactory: StarknetContractFactory,
         constructorArguments?: StringMap,
