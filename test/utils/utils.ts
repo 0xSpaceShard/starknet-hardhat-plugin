@@ -13,9 +13,9 @@ export function exec(cmd: string) {
 
 export function assertContains(output: string, pattern: string) {
     if (!output.includes(pattern)) {
-        console.error("Pattern not in input");
-        console.error("Pattern:", pattern);
-        console.error("Input:", output);
+        console.error(`Pattern not in input
+Pattern: ${pattern}
+Input: ${output}`);
         throw new AssertionError({ message: "Pattern not in input" });
     }
 }
