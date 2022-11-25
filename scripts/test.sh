@@ -75,7 +75,11 @@ function iterate_dir() {
 
         [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
 
-        NETWORK="$network" "$test_case/check.sh" && success=$((success + 1)) || echo "Test failed!"
+        # check if test_case/check.ts exists
+        if [ -f "$test_case/check.ts" ]; then
+            # run the test
+            NETWORK="$network" npx mocha -r ts-node/register "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+        fi
 
         rm -rf starknet-artifacts
         git checkout --force
