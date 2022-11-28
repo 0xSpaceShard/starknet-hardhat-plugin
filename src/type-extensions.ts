@@ -65,6 +65,7 @@ declare module "hardhat/types/config" {
 
     export interface NetworksConfig {
         alpha: HttpNetworkConfig;
+        alpha2: HttpNetworkConfig,
         alphaMainnet: HttpNetworkConfig;
         integratedDevnet: HardhatNetworkConfig;
     }

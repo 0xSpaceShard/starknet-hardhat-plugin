@@ -1,4 +1,4 @@
-import { assertContains } from "../../utils/utils";
+import { assertContains, ensureEnvVar } from "../../utils/utils";
 import path from "path";
 import { readFileSync } from "fs";
 import {
@@ -43,3 +43,12 @@ process.env.NETWORK = invalidNetwork;
 execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "), true);
 assertContains(execution.stderr, expected);
 console.log("Success");
+
+console.log("Testing with alpha-goerli2 config network");
+process.env.NETWORK = "alpha-goerli2";
+const network = ensureEnvVar("NETWORK");
+hardhatStarknetDeploy(
+    `starknet-artifacts/contracts/contract.cairo --starknet-network ${network} --inputs 10`.split(
+        " "
+    )
+);
