@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 

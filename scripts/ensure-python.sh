@@ -2,7 +2,7 @@
 
 # Ensures that pyenv uses the desired Python version (on Linux).
 
-set -e
+set -eu
 
 PY_VERSION=3.8.9
 

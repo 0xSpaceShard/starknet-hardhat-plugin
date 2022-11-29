@@ -2,7 +2,7 @@
 
 # Logs used versions
 
-set -e
+set -eu
 
 echo "node: $(node --version)"
 echo "npm: $(npm --version)"
