@@ -12,7 +12,7 @@ import {
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
     ALPHA_URL,
-    ALPHA_URL_TWO,
+    ALPHA_GOERLI_URL_2,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
     VOYAGER_MAINNET_CONTRACT_API_URL,
@@ -20,8 +20,8 @@ import {
     INTEGRATED_DEVNET_URL,
     VOYAGER_GOERLI_VERIFIED_URL,
     VOYAGER_MAINNET_VERIFIED_URL,
-    VOYAGER_GOERLI_TWO_CONTRACT_API_URL,
-    VOYAGER_GOERLI_TWO_VERIFIED_URL
+    VOYAGER_GOERLI_2_CONTRACT_API_URL,
+    VOYAGER_GOERLI_2_VERIFIED_URL
 } from "./constants";
 import {
     getAccountPath,
@@ -115,8 +115,8 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
-    if (!config.networks.alpha) {
-        config.networks.alpha = getDefaultHttpNetworkConfig(
+    if (!config.networks.alphaGoerli) {
+        config.networks.alphaGoerli = getDefaultHttpNetworkConfig(
             ALPHA_URL,
             VOYAGER_GOERLI_CONTRACT_API_URL,
             VOYAGER_GOERLI_VERIFIED_URL,
@@ -124,11 +124,11 @@ extendConfig((config: HardhatConfig) => {
         );
     }
 
-    if (!config.networks.alpha2) {
-        config.networks.alpha2 = getDefaultHttpNetworkConfig(
-            ALPHA_URL_TWO,
-            VOYAGER_GOERLI_TWO_CONTRACT_API_URL,
-            VOYAGER_GOERLI_TWO_VERIFIED_URL,
+    if (!config.networks.alphaGoerli2) {
+        config.networks.alphaGoerli2 = getDefaultHttpNetworkConfig(
+            ALPHA_GOERLI_URL_2,
+            VOYAGER_GOERLI_2_CONTRACT_API_URL,
+            VOYAGER_GOERLI_2_VERIFIED_URL,
             StarknetChainId.TESTNET
         );
     }

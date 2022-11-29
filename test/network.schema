@@ -5,7 +5,10 @@
         "devnet": {
             "type": "boolean"
         },
-        "alpha": {
+        "alphaGoerli": {
+            "type": "boolean"
+        },
+        "alphaGoerli2": {
             "type": "boolean"
         },
         "integrated-devnet": {
