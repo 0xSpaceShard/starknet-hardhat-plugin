@@ -38,7 +38,9 @@ import {
     starknetTestAction,
     starknetRunAction,
     starknetEstimateFeeAction,
-    starknetPluginVersionAction
+    starknetPluginVersionAction,
+    starknetMigrateAction,
+    starknetNewAccountAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -376,6 +378,11 @@ task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
     .addOptionalParam("nonce", "The nonce to provide to your account")
     .setAction(starknetEstimateFeeAction);
 
+task("starknet-new-account", "Initializes a new account according to the parameters.")
+    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .setAction(starknetNewAccountAction);
+
 task("starknet-deploy-account", "Deploys a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
@@ -395,3 +402,8 @@ task("run")
 task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
     starknetPluginVersionAction
 );
+
+task("migrate", "Migrates a cairo contract to a new version.")
+    .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
+    .addFlag("inplace", "Applies changes to the files in place.")
+    .setAction(starknetMigrateAction);

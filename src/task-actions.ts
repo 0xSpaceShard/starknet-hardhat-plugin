@@ -488,6 +488,38 @@ async function starknetInteractAction(
     }
 }
 
+export async function starknetNewAccountAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    const gatewayUrl = getGatewayUrl(args, hre);
+    const wallet = getWalletUtil(args.wallet, hre);
+    const accountDir = getAccountPath(wallet.accountPath, hre);
+
+    fs.mkdirSync(accountDir, { recursive: true });
+
+    warn(
+        "Warning! You are creating a modified version of OZ account which may not be compatible with the Account class."
+    );
+
+    const executed = await hre.starknetWrapper.newAccount({
+        accountDir: accountDir,
+        accountName: wallet.accountName,
+        feederGatewayUrl: gatewayUrl,
+        gatewayUrl: gatewayUrl,
+        network: args.starknetNetwork,
+        wallet: wallet.modulePath
+    });
+
+    const statusCode = processExecuted(executed, true);
+
+    if (statusCode) {
+        const msg = "Could not create a new account contract:\n" + executed.stderr.toString();
+        const replacedMsg = adaptLog(msg);
+        throw new StarknetPluginError(replacedMsg);
+    }
+}
+
 export async function starknetDeployAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
@@ -508,7 +540,8 @@ export async function starknetDeployAccountAction(
         feederGatewayUrl: gatewayUrl,
         gatewayUrl: gatewayUrl,
         network: args.starknetNetwork,
-        wallet: wallet.modulePath
+        wallet: wallet.modulePath,
+        chainID: hre.config.starknet.networkConfig.starknetChainId
     });
 
     const statusCode = processExecuted(executed, true);
@@ -582,6 +615,10 @@ export async function starknetRunAction(
     runSuper: RunSuperFunction<TaskArguments>
 ) {
     await new Recompiler(hre).handleCache();
+    if (args.starknetNetwork) {
+        throw new StarknetPluginError(`Using "--starknet-network" with "hardhat run" currently does not have effect.
+Use the "network" property of the "starknet" object in your hardhat config file.`);
+    }
     setRuntimeNetwork(args, hre);
 
     await runWithDevnet(hre, async () => {
@@ -591,4 +628,28 @@ export async function starknetRunAction(
 
 export async function starknetPluginVersionAction() {
     console.log(`Version: ${version}`);
+}
+
+export async function starknetMigrateAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    if (!args.paths || args.paths.length < 1) {
+        throw new StarknetPluginError("Expected at least one file to migrate");
+    }
+
+    const root = hre.config.paths.root;
+    const defaultSourcesPath = hre.config.paths.starknetSources;
+    const files: string[] = args.paths || [defaultSourcesPath];
+    const cairoFiles: string[] = [];
+    for (let file of files) {
+        if (!path.isAbsolute(file)) {
+            file = path.normalize(path.join(root, file));
+        }
+        cairoFiles.push(file);
+    }
+
+    const result = await hre.starknetWrapper.migrateContract({
+        files: cairoFiles,
+        inplace: args.inplace
+    });
+
+    processExecuted(result, true);
 }

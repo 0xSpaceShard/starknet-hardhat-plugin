@@ -9,10 +9,11 @@ import sys
 
 # imports resolvable in the venv specified by user
 try:
-    from starkware.starknet.cli.starknet_cli import main as starknet_main
+    from starknet_cli_legacy import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
     from starkware.starknet.core.os.class_hash import compute_class_hash
     from starkware.starknet.services.api.contract_class import ContractClass
+    from starkware.cairo.lang.migrators.migrator import main as cairo_migrate_main
 except ImportError:
     sys.exit("Make sure the environment you configured has starknet (cairo-lang) installed!")
 
@@ -39,10 +40,19 @@ async def get_class_hash(args):
     print(hex(class_hash))
     return 0
 
+async def cairo_migrate_main_wrapper(args):
+    sys.argv = [sys.argv[0], *args]
+    try:
+        return cairo_migrate_main()
+    except Exception as err:
+        print(err, file=sys.stderr)
+        return 1
+
 MAIN_MAP = {
     "starknet": starknet_main_wrapper,
     "starknet-compile": starknet_compile_main_wrapper,
-    "get_class_hash": get_class_hash
+    "get_class_hash": get_class_hash,
+    "cairo-migrate": cairo_migrate_main_wrapper
 }
 
 class MyRequestHandler(BaseHTTPRequestHandler):

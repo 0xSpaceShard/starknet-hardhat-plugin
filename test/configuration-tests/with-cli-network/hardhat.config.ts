@@ -1,4 +1,4 @@
-import "../dist/src/index.js";
+import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {

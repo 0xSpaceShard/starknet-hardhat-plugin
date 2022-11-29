@@ -5,7 +5,8 @@ import {
     CHECK_STATUS_TIMEOUT,
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
-    TRANSACTION_VERSION
+    TRANSACTION_VERSION,
+    HEXADECIMAL_REGEX
 } from "./constants";
 import { adaptLog, copyWithBigint, warn } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
@@ -503,6 +504,11 @@ export class StarknetContractFactory {
     getContractAt(address: string) {
         if (!address) {
             throw new StarknetPluginError("No address provided");
+        }
+        if (typeof address !== "string" || !HEXADECIMAL_REGEX.test(address)) {
+            throw new StarknetPluginError(
+                `Address must be 0x-prefixed hex string. Got: "${address}".`
+            );
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,

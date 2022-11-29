@@ -21,7 +21,6 @@ import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
 import { StringMap } from "./types";
-import isWsl from "is-wsl";
 import { StarknetChainId } from "starknet/constants";
 
 const globPromise = promisify(glob);
@@ -48,7 +47,7 @@ const MACOS_PLATFORM = "darwin";
  * @returns adapted url
  */
 export function adaptUrl(url: string): string {
-    if (process.platform === MACOS_PLATFORM || isWsl) {
+    if (process.platform === MACOS_PLATFORM) {
         for (const protocol of ["http://", "https://", ""]) {
             for (const host of ["localhost", "127.0.0.1"]) {
                 if (url === `${protocol}${host}`) {

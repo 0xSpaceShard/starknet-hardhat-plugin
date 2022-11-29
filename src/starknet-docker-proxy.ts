@@ -7,6 +7,10 @@ const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
 const PROXY_SERVER_CONTAINER_PATH = `/${PROXY_SERVER_FILE}`;
 
+const LEGACY_CLI_FILE = "starknet_cli_legacy.py";
+const LEGACY_CLI_HOST_PATH = path.join(__dirname, LEGACY_CLI_FILE);
+const LEGACY_CLI_CONTAINER_PATH = `/${LEGACY_CLI_FILE}`;
+
 export class StarknetDockerProxy extends DockerServer {
     /**
      * @param image the Docker image to be used for running the container
@@ -27,6 +31,7 @@ export class StarknetDockerProxy extends DockerServer {
         // To access the files on host machine from inside the container, proper mounting has to be done.
 
         const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
+        volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
 
         for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
