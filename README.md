@@ -749,7 +749,7 @@ function deployAccount(accountType: AccountImplementationType, options?: DeployA
 ```
 
 -   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"` - [v0.5.0](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.5.0)
+    -   `"OpenZeppelin"` - [v0.5.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.5.1)
     -   `"Argent"` - [unofficial v0.2.3](https://github.com/argentlabs/argent-contracts-starknet/tree/3e31c25843010149027ca1bdce251b8d63bdfd9c)
 -   `options` - optional deployment parameters:
     -   `salt` - for fixing the account address
