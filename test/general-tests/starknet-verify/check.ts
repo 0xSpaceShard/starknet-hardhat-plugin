@@ -1,5 +1,9 @@
 import { assertEqual, ensureEnvVar, exec, extractAddress } from "../../utils/utils";
-import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
+import {
+    hardhatStarknetCompile,
+    hardhatStarknetDeploy,
+    hardhatStarknetVerify
+} from "../../utils/cli-functions";
 import axios from "axios";
 
 console.log(
@@ -24,8 +28,10 @@ console.log("Verifying contract at $address");
 console.log("Sleeping to allow Voyager to index the deployment");
 exec("sleep 1m");
 
-exec(
-    `npx hardhat starknet-verify --starknet-network ${network} --path ${mainContract} ${utilContract} --address ${address} --compiler-version 0.9.0 --license "No License (None)" --account-contract false`
+hardhatStarknetVerify(
+    `--starknet-network ${network} --path ${mainContract} ${utilContract} --address ${address} --compiler-version 0.9.0 --license "No License (None)"`.split(
+        " "
+    )
 );
 console.log("Sleeping to allow Voyager to register the verification");
 exec("sleep 15s");

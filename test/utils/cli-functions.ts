@@ -1,9 +1,13 @@
 import shell from "shelljs";
+import { assertEqual } from "./utils";
 
-const exec = (cmd: string, silent?: boolean) => {
+export function exec(cmd: string, silent?: boolean) {
     silent = silent || false;
-    return shell.exec(cmd, { silent: silent });
-};
+    const result = shell.exec(cmd, { silent: silent });
+    assertEqual(result.code, 0, `Command ${cmd} failed.\n${result.stderr}`);
+
+    return result;
+}
 
 export const hardhatStarknetCompile = (args: Array<string>, silent?: boolean) => {
     return exec(`npx hardhat starknet-compile ${args.join(" ")}`, silent);
@@ -39,6 +43,10 @@ export const hardhatStarknetRun = (args: Array<string>, silent?: boolean) => {
 
 export const hardhatStarknetTest = (args: Array<string>, silent?: boolean) => {
     return exec(`npx hardhat test ${args.join(" ")}`, silent);
+};
+
+export const hardhatStarknetVerify = (args: Array<string>, silent?: boolean) => {
+    return exec(`npx hardhat starknet-verify ${args.join(" ")}`, silent);
 };
 
 export const hardhatStarknetMigrate = (args: Array<string>, silent?: boolean) => {
