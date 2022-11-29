@@ -40,6 +40,7 @@ export const SHORT_STRING_MAX_CHARACTERS = 31;
 export enum TransactionHashPrefix {
     DECLARE = "28258975365558885", // BigInt("0x" + Buffer.from("declare").toString("hex")).toString()
     DEPLOY = "110386840629113",
+    DEPLOY_ACCOUNT = "2036277798190617858034555652763252",
     INVOKE = "115923154332517"
 }
 export const PREFIX_TRANSACTION = "StarkNet Transaction";

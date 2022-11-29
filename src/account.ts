@@ -9,6 +9,7 @@ import {
     InteractOptions,
     InvokeOptions,
     InvokeResponse,
+    iterativelyCheckStatus,
     Numeric,
     StarknetContract,
     StarknetContractFactory,
@@ -31,6 +32,7 @@ import {
 import { bigIntToHexString, copyWithBigint, generateRandomSalt, UDC, warn } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
+import axios from "axios";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -372,13 +374,19 @@ export abstract class Account {
 export class OpenZeppelinAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.5.0";
+    static readonly VERSION = "0.5.1";
 
     constructor(
-        starknetContract: StarknetContract,
-        privateKey: string,
+        starknetContract: StarknetContract = undefined,
+        privateKey: string = undefined,
         hre: HardhatRuntimeEnvironment
     ) {
+        if (!privateKey) {
+            privateKey = generateKeys().privateKey; // TODO refactor
+            console.log("DEBUG generating key:", privateKey);
+        } else {
+            console.log("DEBUG using privateKey:", privateKey);
+        }
         super(starknetContract, privateKey, hre);
     }
 
@@ -422,6 +430,72 @@ export class OpenZeppelinAccount extends Account {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
+    async deployAccount(options: DeployAccountOptions = {}) {
+        const hre = await import("hardhat");
+
+        const contractPath = await handleInternalContractArtifacts(
+            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
+            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
+            OpenZeppelinAccount.VERSION,
+            hre
+        );
+
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const signer = generateKeys(this.privateKey);
+        const version = "0x1";
+        const maxFee = "0x0";
+        const nonce = "0x0";
+        const deployerAddress = "0x0";
+        const salt = "0x0";
+        const classHash = await contractFactory.getClassHash();
+        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+        const constructorCalldata = [BigInt(signer.publicKey).toString()];
+        const calldataHash = hash.computeHashOnElements([classHash, salt, ...constructorCalldata]); // TODO should add anything else?
+        const accountAddress = hash.calculateContractAddressFromHash(
+            salt,
+            classHash,
+            constructorCalldata,
+            deployerAddress
+        );
+        const msgHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DEPLOY_ACCOUNT,
+            version,
+            accountAddress,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            chainId,
+            nonce
+        ]);
+
+        const resp = await axios
+            .post(`${hre.starknet.networkUrl}/gateway/add_transaction`, {
+                max_fee: maxFee,
+                signature: this.getSignatures(msgHash).map((val) => val.toString()),
+                nonce,
+                class_hash: classHash,
+                contract_address_salt: salt,
+                constructor_calldata: constructorCalldata, // TODO check hex string
+                version,
+                type: "DEPLOY_ACCOUNT"
+            })
+            .catch((reason: any) => {
+                throw new StarknetPluginError(reason);
+            });
+
+        this.starknetContract = contractFactory.getContractAt(resp.data.address);
+        return new Promise<void>((resolve, reject) => {
+            iterativelyCheckStatus(
+                resp.data.transaction_hash,
+                hre.starknetWrapper,
+                () => {
+                    resolve();
+                },
+                reject
+            );
+        });
+    }
+
     static async deployFromABI(
         hre: HardhatRuntimeEnvironment,
         options: DeployAccountOptions = {}
@@ -436,7 +510,6 @@ export class OpenZeppelinAccount extends Account {
         const signer = generateKeys(options.privateKey);
 
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        // TODO should add starknetWrapper.deployAccount which potentially calls a function in Starknet CLI (instead of calling a CLI command)
         const contract = await contractFactory.deploy(
             { publicKey: BigInt(signer.publicKey) },
             options
