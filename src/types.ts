@@ -747,7 +747,7 @@ export class StarknetContract {
      * @param events as received from the server.
      * @returns structured object with parameter names.
      */
-    async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
+    decodeEvents(events: starknet.Event[]): DecodedEvent[] {
         const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
             const rawEventData = event.data.map(BigInt).join(" ");

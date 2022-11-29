@@ -401,7 +401,7 @@ it("should return transaction data and transaction receipt", async function () {
     const txHash = await account.invoke(contract, "increase_balance", { amount: 10 });
 
     const receipt = await starknet.getTransactionReceipt(txHash);
-    const decodedEvents = await contract.decodeEvents(receipt.events);
+    const decodedEvents = contract.decodeEvents(receipt.events);
     // decodedEvents contains hex data array converted to a structured object
     // { name: "increase_balance_called", data: { current_balance: 0n, amount: 10n } }
 });
