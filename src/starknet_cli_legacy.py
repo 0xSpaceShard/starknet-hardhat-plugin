@@ -63,11 +63,13 @@ from starkware.starkware_utils.error_handling import StarkErrorCode
 
 NETWORKS = {
     "alpha-goerli": "alpha4.starknet.io",
+    "alpha-goerli2": "alpha4-2.starknet.io",
     "alpha-mainnet": "alpha-mainnet.starknet.io",
 }
 
 CHAIN_IDS = {
     "alpha-goerli": StarknetChainId.TESTNET.value,
+    "alpha-goerli2": StarknetChainId.TESTNET.value,
     "alpha-mainnet": StarknetChainId.MAINNET.value,
 }
 

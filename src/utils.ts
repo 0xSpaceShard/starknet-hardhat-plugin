@@ -12,6 +12,8 @@ import {
     ALPHA_MAINNET_INTERNALLY,
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
+    ALPHA_TESTNET_2,
+    ALPHA_TESTNET_2_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY
@@ -146,6 +148,8 @@ export function getNetwork<N extends NetworkConfig>(
         networkName = ALPHA_MAINNET_INTERNALLY;
     } else if (isTestnet(networkName)) {
         networkName = ALPHA_TESTNET_INTERNALLY;
+    } else if (isTestnetTwo(networkName)) {
+        networkName = ALPHA_TESTNET_2_INTERNALLY;
     } else if (isStarknetDevnet(networkName)) {
         networkName = INTEGRATED_DEVNET_INTERNALLY;
     }
@@ -167,6 +171,10 @@ export function getNetwork<N extends NetworkConfig>(
 
 function isTestnet(networkName: string): boolean {
     return networkName === ALPHA_TESTNET || networkName === ALPHA_TESTNET_INTERNALLY;
+}
+
+function isTestnetTwo(networkName: string): boolean {
+    return networkName === ALPHA_TESTNET_2 || networkName === ALPHA_TESTNET_2_INTERNALLY;
 }
 
 function isMainnet(networkName: string): boolean {

@@ -1,4 +1,4 @@
 Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: foo.
-Valid hardhat networks: hardhat, localhost, devnet, alpha, alphaMainnet, integratedDevnet
+Valid hardhat networks: hardhat, localhost, devnet, alphaGoerli, alphaGoerli2, alphaMainnet, integratedDevnet
 
 For more info run Hardhat with --show-stack-traces
