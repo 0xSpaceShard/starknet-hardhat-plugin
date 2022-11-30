@@ -31,6 +31,8 @@ console.log("Sleeping to allow Voyager to register the verification");
 exec("sleep 15s");
 
 (async () => {
-    const { data } = await axios.get(`https://goerli-2.voyager.online/api/contract/${address}/code`);
+    const { data } = await axios.get(
+        `https://goerli-2.voyager.online/api/contract/${address}/code`
+    );
     assertEqual(data.abiVerified, "true", "Contract is not verified");
 })();

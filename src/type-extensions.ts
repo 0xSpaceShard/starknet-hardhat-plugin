@@ -65,7 +65,7 @@ declare module "hardhat/types/config" {
 
     export interface NetworksConfig {
         alphaGoerli: HttpNetworkConfig;
-        alphaGoerli2: HttpNetworkConfig,
+        alphaGoerli2: HttpNetworkConfig;
         alphaMainnet: HttpNetworkConfig;
         integratedDevnet: HardhatNetworkConfig;
     }
