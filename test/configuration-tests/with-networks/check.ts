@@ -43,3 +43,10 @@ process.env.NETWORK = invalidNetwork;
 execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "), true);
 assertContains(execution.stderr, expected);
 console.log("Success");
+
+console.log("Testing with alpha-goerli2 config network");
+hardhatStarknetDeploy(
+    "starknet-artifacts/contracts/contract.cairo --starknet-network alpha-goerli2 --inputs 10".split(
+        " "
+    )
+);

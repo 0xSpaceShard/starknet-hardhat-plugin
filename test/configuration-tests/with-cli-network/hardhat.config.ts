@@ -2,7 +2,7 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        network: "alpha"
+        network: "alphaGoerli2"
     },
     networks: {
         devnet: {
