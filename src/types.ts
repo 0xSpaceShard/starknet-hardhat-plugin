@@ -312,6 +312,7 @@ export interface InvokeOptions {
     wallet?: Wallet;
     nonce?: Numeric;
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface CallOptions {
@@ -752,7 +753,7 @@ export class StarknetContract {
      * @param events as received from the server.
      * @returns structured object with parameter names.
      */
-    async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
+    decodeEvents(events: starknet.Event[]): DecodedEvent[] {
         const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
             if (parseInt(event.from_address, 16) !== parseInt(this.address, 16)) continue;

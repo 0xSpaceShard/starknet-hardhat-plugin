@@ -12,13 +12,16 @@ import {
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
     ALPHA_URL,
+    ALPHA_GOERLI_URL_2,
     ALPHA_MAINNET_URL,
     VOYAGER_GOERLI_CONTRACT_API_URL,
     VOYAGER_MAINNET_CONTRACT_API_URL,
     DEFAULT_STARKNET_NETWORK,
     INTEGRATED_DEVNET_URL,
     VOYAGER_GOERLI_VERIFIED_URL,
-    VOYAGER_MAINNET_VERIFIED_URL
+    VOYAGER_MAINNET_VERIFIED_URL,
+    VOYAGER_GOERLI_2_CONTRACT_API_URL,
+    VOYAGER_GOERLI_2_VERIFIED_URL
 } from "./constants";
 import {
     getAccountPath,
@@ -112,11 +115,20 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
 
 // add url to alpha network
 extendConfig((config: HardhatConfig) => {
-    if (!config.networks.alpha) {
-        config.networks.alpha = getDefaultHttpNetworkConfig(
+    if (!config.networks.alphaGoerli) {
+        config.networks.alphaGoerli = getDefaultHttpNetworkConfig(
             ALPHA_URL,
             VOYAGER_GOERLI_CONTRACT_API_URL,
             VOYAGER_GOERLI_VERIFIED_URL,
+            StarknetChainId.TESTNET
+        );
+    }
+
+    if (!config.networks.alphaGoerli2) {
+        config.networks.alphaGoerli2 = getDefaultHttpNetworkConfig(
+            ALPHA_GOERLI_URL_2,
+            VOYAGER_GOERLI_2_CONTRACT_API_URL,
+            VOYAGER_GOERLI_2_VERIFIED_URL,
             StarknetChainId.TESTNET
         );
     }
@@ -301,10 +313,7 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addParam("path", "The path of the main cairo contract (e.g. contracts/contract.cairo)")
     .addParam("address", "The address where the contract is deployed")
     .addParam("compilerVersion", "The compiler version used to compile the cairo contract")
-    .addOptionalParam(
-        "accountContract",
-        "The contract type which specifies whether it's an account contract. Omitting it sets false."
-    )
+    .addFlag("accountContract", "The contract type which specifies it's an account contract.")
     .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
     .addOptionalVariadicPositionalParam(
         "paths",
