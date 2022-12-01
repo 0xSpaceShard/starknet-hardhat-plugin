@@ -45,6 +45,7 @@ assertContains(execution.stderr, expected);
 console.log("Success");
 
 console.log("Testing with alpha-goerli2 config network");
+process.env.NETWORK = "alpha-goerli2";
 hardhatStarknetDeploy(
     "starknet-artifacts/contracts/contract.cairo --starknet-network alpha-goerli2 --inputs 10".split(
         " "
