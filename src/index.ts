@@ -44,8 +44,6 @@ import {
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
-    deployAccountUtil,
-    getAccountFromAddressUtil,
     getContractFactoryUtil,
     getTransactionUtil,
     getTransactionReceiptUtil,
@@ -57,6 +55,7 @@ import {
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { StarknetChainId } from "starknet/constants";
+import { ArgentAccount, OpenZeppelinAccount } from "./account";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -265,16 +264,6 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccount: async (accountType, options) => {
-            const account = await deployAccountUtil(accountType, hre, options);
-            return account;
-        },
-
-        getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
-            return account;
-        },
-
         getTransaction: async (txHash) => {
             const transaction = await getTransactionUtil(txHash, hre);
             return transaction;
@@ -295,6 +284,9 @@ extendEnvironment((hre) => {
             return nonce;
         }
     };
+
+    hre.OpenZeppelinAccount = OpenZeppelinAccount;
+    hre.ArgentAccount = ArgentAccount;
 });
 
 task("starknet-verify", "Verifies a contract on a Starknet network.")

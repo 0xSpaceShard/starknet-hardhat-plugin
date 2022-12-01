@@ -37,9 +37,6 @@ export type TxStatus =
     /** The transaction was accepted on-chain. */
     | "ACCEPTED_ON_L1";
 
-// Types of account implementations
-export type AccountImplementationType = "OpenZeppelin" | "Argent";
-
 export type InvokeResponse = string;
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
@@ -715,6 +712,7 @@ export class StarknetContract {
     async decodeEvents(events: starknet.Event[]): Promise<DecodedEvent[]> {
         const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
+            event.from_address == this.address;
             const rawEventData = event.data.map(BigInt).join(" ");
             // encoded event name guaranteed to be at index 0
             const eventSpecification = this.eventsSpecifications[event.keys[0]];

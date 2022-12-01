@@ -33,6 +33,7 @@ import { bigIntToHexString, copyWithBigint, generateRandomSalt, UDC, warn } from
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 import axios from "axios";
+import { StarknetChainId } from "starknet/constants";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -48,11 +49,12 @@ type ExecuteCallParameters = {
 export abstract class Account {
     public publicKey: string;
     public keyPair: ec.KeyPair;
+    protected deployed: boolean;
 
     protected constructor(
         public starknetContract: StarknetContract,
         public privateKey: string,
-        protected hre: HardhatRuntimeEnvironment
+        public salt: string
     ) {
         const signer = generateKeys(privateKey);
         this.publicKey = signer.publicKey;
@@ -130,7 +132,8 @@ export abstract class Account {
             calldata: adaptedArgs
         });
 
-        const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, this.hre);
+        const hre = await import("hardhat");
+        const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, hre);
         const decodedEvents = await udc.decodeEvents(deploymentReceipt.events);
         // the only event should be ContractDeployed
         const deployedContractAddress = bigIntToHexString(decodedEvents[0].data.address);
@@ -139,6 +142,14 @@ export abstract class Account {
         deployedContract.deployTxHash = deployTxHash;
 
         return deployedContract;
+    }
+
+    private assertDeployed() {
+        if (!this.deployed) {
+            throw new StarknetPluginError(
+                "Prior to usage, the account must be funded and deployed."
+            );
+        }
     }
 
     async estimateFee(
@@ -221,17 +232,20 @@ export abstract class Account {
         callParameters: CallParameters[],
         options: InteractOptions = {}
     ) {
+        this.assertDeployed();
         options = copyWithBigint(options);
         options.maxFee = BigInt(options?.maxFee || "0");
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
+        const hre = await import("hardhat");
         const { messageHash, args } = this.handleMultiInteract(
-            this.starknetContract.address,
+            this.address,
             callParameters,
             nonce,
             options.maxFee,
-            choice.transactionVersion
+            choice.transactionVersion,
+            hre.starknet.networkConfig.starknetChainId
         );
 
         if (options.signature) {
@@ -264,7 +278,8 @@ export abstract class Account {
         callParameters: CallParameters[],
         nonce: Numeric,
         maxFee: Numeric,
-        version: Numeric
+        version: Numeric,
+        chainId: StarknetChainId
     ) {
         const callArray: Call[] = callParameters.map((callParameters) => {
             return {
@@ -300,7 +315,8 @@ export abstract class Account {
             callArray,
             adaptedNonce,
             adaptedMaxFee,
-            adaptedVersion
+            adaptedVersion,
+            chainId
         );
 
         const args = {
@@ -316,7 +332,8 @@ export abstract class Account {
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string;
 
     protected abstract getSignatures(messageHash: string): bigint[];
@@ -326,7 +343,8 @@ export abstract class Account {
     }
 
     private async getNonce(): Promise<number> {
-        return await this.hre.starknet.getNonce(this.address);
+        const hre = await import("hardhat");
+        return await hre.starknet.getNonce(this.address);
     }
 
     /**
@@ -341,8 +359,9 @@ export abstract class Account {
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         const maxFee = (options.maxFee || 0).toString();
 
-        const classHash = await this.hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+        const hre = await import("hardhat");
+        const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = hre.config.starknet.networkConfig.starknetChainId;
 
         const calldata = [classHash];
         const calldataHash = hash.computeHashOnElements(calldata);
@@ -372,22 +391,44 @@ export abstract class Account {
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
-    static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.5.1";
+    private static contractFactory: StarknetContractFactory;
 
-    constructor(
-        starknetContract: StarknetContract = undefined,
-        privateKey: string = undefined,
-        hre: HardhatRuntimeEnvironment
-    ) {
-        if (!privateKey) {
-            privateKey = generateKeys().privateKey; // TODO refactor
-            console.log("DEBUG generating key:", privateKey);
-        } else {
-            console.log("DEBUG using privateKey:", privateKey);
+    private constructor(starknetContract: StarknetContract, privateKey: string, salt: string) {
+        super(starknetContract, privateKey, salt);
+    }
+
+    private static handleInternalContractArtifacts(hre: HardhatRuntimeEnvironment) {
+        return handleInternalContractArtifacts("OpenZeppelinAccount", "Account", "0.5.1", hre);
+    }
+
+    private static async getContractFactory() {
+        const hre = await import("hardhat");
+        if (!OpenZeppelinAccount.contractFactory) {
+            const contractPath = OpenZeppelinAccount.handleInternalContractArtifacts(hre);
+            OpenZeppelinAccount.contractFactory = await hre.starknet.getContractFactory(
+                contractPath
+            );
         }
-        super(starknetContract, privateKey, hre);
+        return OpenZeppelinAccount.contractFactory;
+    }
+
+    public static async createAccount(
+        options: {
+            salt?: string;
+            privateKey?: string;
+        } = {}
+    ): Promise<OpenZeppelinAccount> {
+        const signer = generateKeys(options.privateKey);
+        const salt = options.salt || generateRandomSalt();
+        const contractFactory = await OpenZeppelinAccount.getContractFactory();
+        const address = hash.calculateContractAddressFromHash(
+            salt,
+            await contractFactory.getClassHash(),
+            [signer.publicKey],
+            "0x0" // deployer address
+        );
+        const contract = contractFactory.getContractAt(address);
+        return new OpenZeppelinAccount(contract, signer.privateKey, salt);
     }
 
     protected getMessageHash(
@@ -396,7 +437,8 @@ export class OpenZeppelinAccount extends Account {
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string {
         const hashable: Array<BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
@@ -409,8 +451,6 @@ export class OpenZeppelinAccount extends Account {
             );
             rawCalldata.push(...call.calldata);
         });
-
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
         hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -430,41 +470,32 @@ export class OpenZeppelinAccount extends Account {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
-    async deployAccount(options: DeployAccountOptions = {}) {
+    async deployAccount(
+        options: {
+            maxFee?: Numeric;
+        } = {}
+    ) {
         const hre = await import("hardhat");
 
-        const contractPath = await handleInternalContractArtifacts(
-            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
-            OpenZeppelinAccount.VERSION,
-            hre
-        );
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const signer = generateKeys(this.privateKey);
-        const version = "0x1";
-        const maxFee = "0x0";
+        const version = bigIntToHexString(TRANSACTION_VERSION);
         const nonce = "0x0";
-        const deployerAddress = "0x0";
-        const salt = "0x0";
+        const maxFee = bigIntToHexString(options.maxFee || 0); // TODO
+        const contractFactory = await OpenZeppelinAccount.getContractFactory();
         const classHash = await contractFactory.getClassHash();
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
-        const constructorCalldata = [BigInt(signer.publicKey).toString()];
-        const calldataHash = hash.computeHashOnElements([classHash, salt, ...constructorCalldata]); // TODO should add anything else?
-        const accountAddress = hash.calculateContractAddressFromHash(
-            salt,
+        const constructorCalldata = [BigInt(this.publicKey).toString()];
+        const calldataHash = hash.computeHashOnElements([
             classHash,
-            constructorCalldata,
-            deployerAddress
-        );
+            this.salt,
+            ...constructorCalldata
+        ]);
         const msgHash = hash.computeHashOnElements([
             TransactionHashPrefix.DEPLOY_ACCOUNT,
             version,
-            accountAddress,
+            this.address,
             0, // entrypoint selector is implied
             calldataHash,
             maxFee,
-            chainId,
+            hre.config.starknet.networkConfig.starknetChainId,
             nonce
         ]);
 
@@ -474,63 +505,33 @@ export class OpenZeppelinAccount extends Account {
                 signature: this.getSignatures(msgHash).map((val) => val.toString()),
                 nonce,
                 class_hash: classHash,
-                contract_address_salt: salt,
-                constructor_calldata: constructorCalldata, // TODO check hex string
+                contract_address_salt: this.salt,
+                constructor_calldata: [BigInt(this.publicKey).toString()],
                 version,
                 type: "DEPLOY_ACCOUNT"
             })
-            .catch((reason: any) => {
-                throw new StarknetPluginError(reason);
+            .catch((error: any) => {
+                const msg = `Deploying account failed: ${error.response.data.message}`;
+                throw new StarknetPluginError(msg, error);
             });
 
-        this.starknetContract = contractFactory.getContractAt(resp.data.address);
-        return new Promise<void>((resolve, reject) => {
+        this.starknetContract.deployTxHash = resp.data.transaction_hash;
+        this.deployed = true;
+        return new Promise<string>((resolve, reject) => {
             iterativelyCheckStatus(
                 resp.data.transaction_hash,
                 hre.starknetWrapper,
-                () => {
-                    resolve();
-                },
+                () => resolve(resp.data.transaction_hash),
                 reject
             );
         });
     }
 
-    static async deployFromABI(
-        hre: HardhatRuntimeEnvironment,
-        options: DeployAccountOptions = {}
-    ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleInternalContractArtifacts(
-            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
-            OpenZeppelinAccount.VERSION,
-            hre
-        );
-
-        const signer = generateKeys(options.privateKey);
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy(
-            { publicKey: BigInt(signer.publicKey) },
-            options
-        );
-
-        return new OpenZeppelinAccount(contract, signer.privateKey, hre);
-    }
-
     static async getAccountFromAddress(
         address: string,
-        privateKey: string,
-        hre: HardhatRuntimeEnvironment
+        privateKey: string
     ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleInternalContractArtifacts(
-            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
-            OpenZeppelinAccount.VERSION,
-            hre
-        );
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contractFactory = await OpenZeppelinAccount.getContractFactory();
         const contract = contractFactory.getContractAt(address);
 
         const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
@@ -544,7 +545,9 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, hre);
+        const account = new OpenZeppelinAccount(contract, privateKey, undefined);
+        account.deployed = true;
+        return account;
     }
 
     protected hasRawOutput(): boolean {
@@ -564,21 +567,19 @@ export class ArgentAccount extends Account {
     public guardianPrivateKey: string;
     public guardianKeyPair: ec.KeyPair;
 
-    constructor(
-        starknetContract: StarknetContract,
-        privateKey: string,
-        hre: HardhatRuntimeEnvironment
-    ) {
-        super(starknetContract, privateKey, hre);
+    private constructor(starknetContract: StarknetContract, privateKey: string, salt: string) {
+        super(starknetContract, privateKey, salt);
     }
 
+    // TODO why didn't this report an error when chainId was missing?
     protected getMessageHash(
         transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string {
         const hashable: Array<BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
@@ -591,8 +592,6 @@ export class ArgentAccount extends Account {
             );
             rawCalldata.push(...call.calldata);
         });
-
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
         hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -662,7 +661,7 @@ export class ArgentAccount extends Account {
         hre: HardhatRuntimeEnvironment,
         options: DeployAccountOptions = {}
     ): Promise<ArgentAccount> {
-        const contractPath = await handleInternalContractArtifacts(
+        const contractPath = handleInternalContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
             ArgentAccount.VERSION,
@@ -674,7 +673,7 @@ export class ArgentAccount extends Account {
         const contractFactory = await hre.starknet.getContractFactory(contractPath);
         const contract = await contractFactory.deploy({}, options);
 
-        return new ArgentAccount(contract, signer.privateKey, hre);
+        return new ArgentAccount(contract, signer.privateKey, undefined); // TODO
     }
 
     static async getAccountFromAddress(
@@ -682,7 +681,7 @@ export class ArgentAccount extends Account {
         privateKey: string,
         hre: HardhatRuntimeEnvironment
     ): Promise<ArgentAccount> {
-        const contractPath = await handleInternalContractArtifacts(
+        const contractPath = handleInternalContractArtifacts(
             ArgentAccount.ACCOUNT_TYPE_NAME,
             ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
             ArgentAccount.VERSION,
@@ -696,7 +695,7 @@ export class ArgentAccount extends Account {
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
-        const account = new ArgentAccount(contract, privateKey, hre);
+        const account = new ArgentAccount(contract, privateKey, undefined);
 
         if (expectedPubKey === BigInt(0)) {
             // not yet initialized

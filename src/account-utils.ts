@@ -50,12 +50,12 @@ export function signMultiCall(
  * @param contractDir the subdirectory internally holding the artifact
  * @returns the new path where the artifacts can be found
  */
-export async function handleInternalContractArtifacts(
+export function handleInternalContractArtifacts(
     contractDir: string,
     contractName: string,
     artifactsVersion: string,
     hre: HardhatRuntimeEnvironment
-): Promise<string> {
+): string {
     // Name of the artifacts' parent folder
     const artifactsBase = contractName + ".cairo";
 
@@ -81,8 +81,8 @@ export async function handleInternalContractArtifacts(
         artifactsBase
     );
 
-    await ensureArtifact(jsonArtifact, artifactsTargetPath, artifactsSourcePath);
-    await ensureArtifact(abiArtifact, artifactsTargetPath, artifactsSourcePath);
+    ensureArtifact(jsonArtifact, artifactsTargetPath, artifactsSourcePath);
+    ensureArtifact(abiArtifact, artifactsTargetPath, artifactsSourcePath);
 
     return artifactsTargetPath;
 }
@@ -94,7 +94,7 @@ export async function handleInternalContractArtifacts(
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
  * @param artifactSourcePath path to the folder where the artifacts are stored
  */
-async function ensureArtifact(
+function ensureArtifact(
     fileName: string,
     artifactsTargetPath: string,
     artifactSourcePath: string

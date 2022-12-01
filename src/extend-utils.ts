@@ -4,13 +4,10 @@ import * as path from "path";
 
 import { ABI_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import {
-    AccountImplementationType,
     BlockIdentifier,
-    DeployAccountOptions,
     NonceQueryOptions,
     StarknetContractFactory
 } from "./types";
-import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt } from "./starknet-types";
 
@@ -92,47 +89,6 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     }
     wallet.accountPath = getAccountPath(wallet.accountPath, hre);
     return wallet;
-}
-
-export async function deployAccountUtil(
-    accountType: AccountImplementationType,
-    hre: HardhatRuntimeEnvironment,
-    options?: DeployAccountOptions
-): Promise<Account> {
-    let account: Account;
-    switch (accountType) {
-        case "OpenZeppelin":
-            account = await OpenZeppelinAccount.deployFromABI(hre, options);
-            break;
-        case "Argent":
-            account = await ArgentAccount.deployFromABI(hre, options);
-            break;
-        default:
-            throw new StarknetPluginError("Invalid account type requested.");
-    }
-
-    return account;
-}
-
-export async function getAccountFromAddressUtil(
-    address: string,
-    privateKey: string,
-    accountType: AccountImplementationType,
-    hre: HardhatRuntimeEnvironment
-): Promise<Account> {
-    let account: Account;
-    switch (accountType) {
-        case "OpenZeppelin":
-            account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
-        case "Argent":
-            account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
-        default:
-            throw new StarknetPluginError("Invalid account type requested.");
-    }
-
-    return account;
 }
 
 export async function getTransactionUtil(

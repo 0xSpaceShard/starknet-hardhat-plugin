@@ -1,9 +1,7 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
 import {
-    AccountImplementationType,
     BlockIdentifier,
-    DeployAccountOptions,
     NonceQueryOptions,
     StarknetContract,
     StarknetContractFactory,
@@ -103,8 +101,6 @@ type StarknetContractType = StarknetContract;
 type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
 type AccountType = Account;
-type OpenZeppelinAccountType = OpenZeppelinAccount;
-type ArgentAccountType = ArgentAccount;
 type TransactionReceiptType = TransactionReceipt;
 type TransactionType = Transaction;
 type BlockType = Block;
@@ -234,30 +230,6 @@ declare module "hardhat/types/runtime" {
 
             devnet: Devnet;
 
-            /**
-             * Deploys an Account contract based on the ABI and the type of Account selected
-             * @param accountType the enumerator value of the type of Account to use
-             * @param options optional deployment options
-             * @returns an Account object
-             */
-            deployAccount: (
-                accountType: AccountImplementationType,
-                options?: DeployAccountOptions
-            ) => Promise<Account>;
-
-            /**
-             * Returns an Account already deployed based on the address and validated by the private key
-             * @param address the address where the account is deployed
-             * @param privateKey the private key of the account
-             * @param accountType the enumerator value of the type of Account to use
-             * @returns an Account object
-             */
-            getAccountFromAddress: (
-                address: string,
-                privateKey: string,
-                accountType: AccountImplementationType
-            ) => Promise<Account>;
-
             getTransaction: (txHash: string) => Promise<Transaction>;
 
             getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
@@ -277,6 +249,9 @@ declare module "hardhat/types/runtime" {
              */
             getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
         };
+
+        OpenZeppelinAccount: typeof OpenZeppelinAccount;
+        ArgentAccount: typeof ArgentAccount;
     }
 
     type StarknetContract = StarknetContractType;
@@ -284,8 +259,6 @@ declare module "hardhat/types/runtime" {
     type StringMap = StringMapType;
     type Wallet = WalletConfig;
     type Account = AccountType;
-    type OpenZeppelinAccount = OpenZeppelinAccountType;
-    type ArgentAccount = ArgentAccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;
     type Block = BlockType;

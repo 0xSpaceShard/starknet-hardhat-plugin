@@ -288,7 +288,7 @@ export class UDC {
     static async getInstance() {
         if (!UDC.instance) {
             const hre = await import("hardhat");
-            const contractPath = await handleInternalContractArtifacts(
+            const contractPath = handleInternalContractArtifacts(
                 "OpenZeppelinUDC", // dir name
                 "UDC", // file name
                 "0.5.0", // version
