@@ -1,4 +1,4 @@
 {
     "$schema": "../../network.schema",
-    "alpha": true
+    "alphaGoerli2": true
 }

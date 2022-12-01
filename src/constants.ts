@@ -16,17 +16,22 @@ export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITO
 export const INTERNAL_ARTIFACTS_DIR = "contract-artifacts";
 
 export const ALPHA_TESTNET = "alpha-goerli";
-export const ALPHA_TESTNET_INTERNALLY = "alpha";
+export const ALPHA_TESTNET_2 = "alpha-goerli2";
+export const ALPHA_TESTNET_INTERNALLY = "alphaGoerli";
+export const ALPHA_TESTNET_2_INTERNALLY = "alphaGoerli2";
 export const ALPHA_MAINNET = "alpha-mainnet";
 export const ALPHA_MAINNET_INTERNALLY = "alphaMainnet";
 export const DEFAULT_STARKNET_NETWORK = ALPHA_TESTNET_INTERNALLY;
 export const ALPHA_URL = "https://alpha4.starknet.io";
+export const ALPHA_GOERLI_URL_2 = "https://alpha4-2.starknet.io";
 export const ALPHA_MAINNET_URL = "https://alpha-mainnet.starknet.io";
 export const INTEGRATED_DEVNET = "integrated-devnet";
 export const INTEGRATED_DEVNET_INTERNALLY = "integratedDevnet";
 
 export const VOYAGER_GOERLI_CONTRACT_API_URL = "https://goerli.voyager.online/api/contract/";
 export const VOYAGER_GOERLI_VERIFIED_URL = "https://goerli.voyager.online/contract/";
+export const VOYAGER_GOERLI_2_CONTRACT_API_URL = "https://goerli-2.voyager.online/api/contract";
+export const VOYAGER_GOERLI_2_VERIFIED_URL = "https://goerli-2.voyager.online/contract/";
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
 

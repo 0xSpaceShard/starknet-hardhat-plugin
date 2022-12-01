@@ -103,9 +103,9 @@ module.exports = {
 
 you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
 
-The Alpha networks and integrated Devnet are available by default, you don't need to define them in the config file; just pass:
+The AlphaGoerli networks and integrated Devnet are available by default, you don't need to define them in the config file; just pass:
 
--   `--starknet-network alpha` or `--starknet-network alpha-goerli` for Alpha Testnet (on Goerli)
+-   `--starknet-network alphaGoerli` or `--starknet-network alpha-goerli` for AlphaGoerli Testnet (on Goerli)
 -   `--starknet-network alpha-mainnet` for Alpha Mainnet
 -   `--starknet-network integrated-devnet` for integrated Devnet
 
@@ -123,7 +123,7 @@ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPEND
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
 
-Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alpha' network in case this parameter is not passed.
+Like in the previous command, this plugin relies on `--starknet-network`, but will default to 'alphaGoerli' network in case this parameter is not passed.
 
 The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
