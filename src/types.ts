@@ -287,9 +287,8 @@ export interface DeployThroughAccountOptions {
     unique?: boolean;
 }
 
-export interface DeployAccountOptions extends DeployOptions {
-    /** Optional hex string. If not provided, a random value is generated. */
-    privateKey?: string;
+export interface DeployAccountOptions {
+    maxFee?: Numeric;
 }
 
 export interface InvokeOptions {

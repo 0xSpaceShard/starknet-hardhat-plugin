@@ -1,13 +1,22 @@
-import { StarknetContract, StringMap } from "./types";
+import { iterativelyCheckStatus, StarknetContract, StringMap } from "./types";
 import { toBN } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { ec } from "elliptic";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as fs from "fs";
 import path from "path";
-import { ABI_SUFFIX, INTERNAL_ARTIFACTS_DIR } from "./constants";
-import { flattenStringMap } from "./utils";
+import {
+    ABI_SUFFIX,
+    INTERNAL_ARTIFACTS_DIR,
+    TransactionHashPrefix,
+    TRANSACTION_VERSION
+} from "./constants";
+import { flattenStringMap, numericToHexString } from "./utils";
 import * as crypto from "crypto";
+import { hash } from "starknet";
+import { StarknetChainId } from "starknet/constants";
+import axios, { AxiosError } from "axios";
+import { StarknetPluginError } from "./starknet-plugin-error";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -158,4 +167,60 @@ export function generateKeys(providedPrivateKey?: string): KeysType {
     const publicKey = ellipticCurve.getStarkKey(keyPair);
     const privateKey = "0x" + starkPrivateKey.toString(16);
     return { publicKey, privateKey, keyPair };
+}
+
+export function calculateDeployAccountHash(
+    accountAddress: string,
+    constructorCalldata: string[],
+    salt: string,
+    classHash: string,
+    maxFee: string,
+    chainId: StarknetChainId
+) {
+    const calldataHash = hash.computeHashOnElements([classHash, salt, ...constructorCalldata]);
+    return hash.computeHashOnElements([
+        TransactionHashPrefix.DEPLOY_ACCOUNT,
+        numericToHexString(TRANSACTION_VERSION),
+        accountAddress,
+        0, // entrypoint selector is implied
+        calldataHash,
+        maxFee,
+        chainId,
+        "0x0" // initial nonce
+    ]);
+}
+
+export async function sendDeployAccountTx(
+    signatures: string[],
+    classHash: string,
+    constructorCalldata: string[],
+    salt: string,
+    maxFee: string
+) {
+    const hre = await import("hardhat");
+    const resp = await axios
+        .post(`${hre.starknet.networkUrl}/gateway/add_transaction`, {
+            max_fee: maxFee,
+            signature: signatures,
+            // TODO try ommitting nonce
+            nonce: "0x0", // initial nonce
+            class_hash: classHash,
+            contract_address_salt: salt,
+            constructor_calldata: constructorCalldata,
+            version: numericToHexString(TRANSACTION_VERSION),
+            type: "DEPLOY_ACCOUNT"
+        })
+        .catch((error: AxiosError) => {
+            const msg = `Deploying account failed: ${error.response.data.message}`;
+            throw new StarknetPluginError(msg, error);
+        });
+
+    return new Promise<string>((resolve, reject) => {
+        iterativelyCheckStatus(
+            resp.data.transaction_hash,
+            hre.starknetWrapper,
+            () => resolve(resp.data.transaction_hash),
+            reject
+        );
+    });
 }

@@ -271,10 +271,10 @@ export function warn(message: string): void {
 
 /**
  * Converts BigInt to 0x-prefixed hex string
- * @param bn
+ * @param numeric
  */
-export function bigIntToHexString(bn: Numeric): string {
-    return "0x" + BigInt(bn).toString(16);
+export function numericToHexString(numeric: Numeric): string {
+    return "0x" + BigInt(numeric).toString(16);
 }
 
 /**
