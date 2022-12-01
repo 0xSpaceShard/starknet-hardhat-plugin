@@ -431,7 +431,7 @@ export class OpenZeppelinAccount extends Account {
         return new OpenZeppelinAccount(contract, signer.privateKey, salt);
     }
 
-    protected getMessageHash(
+    protected override getMessageHash(
         transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
@@ -466,7 +466,7 @@ export class OpenZeppelinAccount extends Account {
         ]);
     }
 
-    protected getSignatures(messageHash: string): bigint[] {
+    protected override getSignatures(messageHash: string): bigint[] {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
@@ -550,7 +550,7 @@ export class OpenZeppelinAccount extends Account {
         return account;
     }
 
-    protected hasRawOutput(): boolean {
+    protected override hasRawOutput(): boolean {
         return false;
     }
 }
@@ -571,7 +571,6 @@ export class ArgentAccount extends Account {
         super(starknetContract, privateKey, salt);
     }
 
-    // TODO why didn't this report an error when chainId was missing?
     protected getMessageHash(
         transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
@@ -607,7 +606,7 @@ export class ArgentAccount extends Account {
         ]);
     }
 
-    protected getSignatures(messageHash: string): bigint[] {
+    protected override getSignatures(messageHash: string): bigint[] {
         const signatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
         if (this.guardianPrivateKey) {
             const guardianSignatures = signMultiCall(
@@ -723,7 +722,7 @@ export class ArgentAccount extends Account {
         );
     }
 
-    protected hasRawOutput(): boolean {
+    protected override hasRawOutput(): boolean {
         return true;
     }
 }

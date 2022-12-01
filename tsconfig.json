@@ -9,7 +9,8 @@
         "resolveJsonModule": true,
         "strictNullChecks": false,
         "declaration": true,
-        "module": "commonjs"
+        "module": "commonjs",
+        "noImplicitOverride": true
     },
     "include": ["./src", "config.json", "contract-artifacts/**/*.json"]
 }
