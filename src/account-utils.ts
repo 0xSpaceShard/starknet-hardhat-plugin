@@ -94,11 +94,7 @@ export function handleInternalContractArtifacts(
  * @param artifactsTargetPath folder to where the artifacts will be downloaded. E.g. "project/starknet-artifacts/Account.cairo"
  * @param artifactSourcePath path to the folder where the artifacts are stored
  */
-function ensureArtifact(
-    fileName: string,
-    artifactsTargetPath: string,
-    artifactSourcePath: string
-) {
+function ensureArtifact(fileName: string, artifactsTargetPath: string, artifactSourcePath: string) {
     const finalTargetPath = path.join(artifactsTargetPath, fileName);
     if (!fs.existsSync(finalTargetPath)) {
         fs.mkdirSync(artifactsTargetPath, { recursive: true });

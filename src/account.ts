@@ -361,7 +361,7 @@ export abstract class Account {
 
         const hre = await import("hardhat");
         const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
-        const chainId = hre.config.starknet.networkConfig.starknetChainId;
+        const chainId = hre.starknet.networkConfig.starknetChainId;
 
         const calldata = [classHash];
         const calldataHash = hash.computeHashOnElements(calldata);
@@ -495,7 +495,7 @@ export class OpenZeppelinAccount extends Account {
             0, // entrypoint selector is implied
             calldataHash,
             maxFee,
-            hre.config.starknet.networkConfig.starknetChainId,
+            hre.starknet.networkConfig.starknetChainId,
             nonce
         ]);
 

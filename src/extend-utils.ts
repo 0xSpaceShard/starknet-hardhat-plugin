@@ -3,11 +3,7 @@ import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import { ABI_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
-import {
-    BlockIdentifier,
-    NonceQueryOptions,
-    StarknetContractFactory
-} from "./types";
+import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt } from "./starknet-types";
 
