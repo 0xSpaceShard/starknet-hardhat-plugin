@@ -275,11 +275,6 @@ export interface DeclareOptions {
 
 export interface DeployOptions {
     salt?: string;
-    token?: string;
-}
-
-export interface DeployThroughAccountOptions {
-    salt?: string;
     unique?: boolean;
     maxFee?: Numeric;
 }

@@ -1,9 +1,8 @@
 import {
-    CallOptions,
     ContractInteractionFunction,
     DeclareOptions,
     DeployAccountOptions,
-    DeployThroughAccountOptions,
+    DeployOptions,
     EstimateFeeOptions,
     InteractChoice,
     InteractOptions,
@@ -25,11 +24,10 @@ import {
     CallParameters,
     generateKeys,
     handleInternalContractArtifacts,
-    parseMulticallOutput,
     sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC, warn } from "./utils";
+import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 import { StarknetChainId } from "starknet/constants";
@@ -83,33 +81,6 @@ export abstract class Account {
     }
 
     /**
-     * Uses the account contract as a proxy to call a function on the target contract with a signature
-     *
-     * @param toContract target contract to be called
-     * @param functionName function in the contract to be called
-     * @param calldata calldata to use as input for the contract call
-     * @deprecated This doesn't work with Starknet 0.10 and will be removed in the future; use StarknetContract.call instead
-     */
-    async call(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap,
-        options: CallOptions = {}
-    ): Promise<StringMap> {
-        warn("Using Account.call is deprecated. Use StarknetContract.call instead");
-        if (this.hasRawOutput()) {
-            options = copyWithBigint(options);
-            options.rawOutput = true;
-        }
-
-        const { response } = <{ response: string[] }>(
-            await this.interact(InteractChoice.CALL, toContract, functionName, calldata, options)
-        );
-
-        return toContract.adaptOutput(functionName, response.join(" "));
-    }
-
-    /**
      * Deploy another contract using this account
      * @param contractFactory the factory of the contract to be deployed
      * @param constructorArguments
@@ -119,7 +90,7 @@ export abstract class Account {
     async deploy(
         contractFactory: StarknetContractFactory,
         constructorArguments?: StringMap,
-        options: DeployThroughAccountOptions = {}
+        options: DeployOptions = {}
     ): Promise<StarknetContract> {
         const classHash = await contractFactory.getClassHash();
         const udc = await UDC.getInstance();
@@ -186,28 +157,6 @@ export abstract class Account {
         };
 
         return await this.multiInteract(choice, [call], options);
-    }
-
-    /**
-     * Performs a multicall through this account
-     * @param callParameters an array with the paramaters for each call
-     * @returns an array with each call's repsecting response object
-     * @deprecated not able to sign calls since starknet 0.10
-     */
-    async multiCall(
-        callParameters: CallParameters[],
-        options: CallOptions = {}
-    ): Promise<StringMap[]> {
-        if (this.hasRawOutput()) {
-            options = copyWithBigint(options);
-            options.rawOutput = true;
-        }
-
-        const { response } = <{ response: string[] }>(
-            await this.multiInteract(InteractChoice.CALL, callParameters, options)
-        );
-        const output: StringMap[] = parseMulticallOutput(response, callParameters);
-        return output;
     }
 
     /**
