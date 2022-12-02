@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 LOCAL_VERSION=$(jq -r ".version" package.json)
 NPM_VERSION=$(npm view @shardlabs/starknet-hardhat-plugin dist-tags.latest)

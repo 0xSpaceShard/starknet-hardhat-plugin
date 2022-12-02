@@ -311,14 +311,7 @@ async function handleContractVerification(
 
     const bodyFormData = new FormData();
     bodyFormData.append("compiler-version", args.compilerVersion);
-    let accountContract;
-    if (args.accountContract === "true") {
-        accountContract = "true";
-    } else if (!args.accountContract || args.accountContract === "false") {
-        accountContract = "false";
-    } else {
-        throw new StarknetPluginError("--account-contract must be true or false");
-    }
+    const accountContract = args.accountContract ? "true" : "false";
     bodyFormData.append("account-contract", accountContract);
     bodyFormData.append("license", args.license || "No License (None)");
 
