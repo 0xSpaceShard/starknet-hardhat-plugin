@@ -1,48 +1,60 @@
 import shell from "shelljs";
+import { assertEqual, assertNotEqual } from "./utils";
 
-const exec = (cmd: string, silent?: boolean) => {
-    silent = silent || false;
-    return shell.exec(cmd, { silent: silent });
+export function exec(cmd: string, expectFailure = false) {
+    const result = shell.exec(cmd, { silent: expectFailure });
+    const msg = `Command ${cmd} failed.\n${result.stderr}`;
+    if (!expectFailure) {
+        assertEqual(result.code, 0, msg);
+    } else {
+        assertNotEqual(result.code, 0, msg);
+    }
+
+    return result;
+}
+
+export const hardhatStarknetCompile = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetCompile = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-compile ${args.join(" ")}`, silent);
+export const hardhatStarknetDeploy = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-deploy ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetDeploy = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-deploy ${args.join(" ")}`, silent);
+export const hardhatStarknetInvoke = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-invoke ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetInvoke = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-invoke ${args.join(" ")}`, silent);
+export const hardhatStarknetCall = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-call ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetCall = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-call ${args.join(" ")}`, silent);
+export const hardhatStarknetEstimateFee = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-estimate-fee ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetEstimateFee = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-estimate-fee ${args.join(" ")}`, silent);
+export const hardhatStarknetNewAccount = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-new-account ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetNewAccount = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-new-account ${args.join(" ")}`, silent);
+export const hardhatStarknetDeployAccount = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-deploy-account ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetDeployAccount = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat starknet-deploy-account ${args.join(" ")}`, silent);
+export const hardhatStarknetRun = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat run ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetRun = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat run ${args.join(" ")}`, silent);
+export const hardhatStarknetTest = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat test ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetTest = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat test ${args.join(" ")}`, silent);
+export const hardhatStarknetVerify = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-verify ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetMigrate = (args: Array<string>, silent?: boolean) => {
-    return exec(`npx hardhat migrate ${args.join(" ")}`, silent);
+export const hardhatStarknetMigrate = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat migrate ${args.join(" ")}`, expectFailure);
 };
 
 export const hardhatStarknetPluginVersion = () => {

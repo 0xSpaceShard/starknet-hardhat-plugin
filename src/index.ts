@@ -313,10 +313,7 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addParam("path", "The path of the main cairo contract (e.g. contracts/contract.cairo)")
     .addParam("address", "The address where the contract is deployed")
     .addParam("compilerVersion", "The compiler version used to compile the cairo contract")
-    .addOptionalParam(
-        "accountContract",
-        "The contract type which specifies whether it's an account contract. Omitting it sets false."
-    )
+    .addFlag("accountContract", "The contract type which specifies it's an account contract.")
     .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
     .addOptionalVariadicPositionalParam(
         "paths",

@@ -13,10 +13,8 @@ hardhatStarknetCompile(["contracts/contract.cairo"]);
 const output = hardhatStarknetDeploy(
     `--starknet-network ${network} starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(
         " "
-    ),
-    true
+    )
 );
-console.log(output.stdout);
 
 const address = extractAddress(output.stdout, "Contract address: ");
 const prefix = path.join(__dirname);
