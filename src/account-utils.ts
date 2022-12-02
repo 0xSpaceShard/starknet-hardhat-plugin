@@ -169,6 +169,8 @@ export function generateKeys(providedPrivateKey?: string): KeysType {
     return { publicKey, privateKey, keyPair };
 }
 
+const INITIAL_NONCE = "0x0";
+
 export function calculateDeployAccountHash(
     accountAddress: string,
     constructorCalldata: string[],
@@ -186,7 +188,7 @@ export function calculateDeployAccountHash(
         calldataHash,
         maxFee,
         chainId,
-        "0x0" // initial nonce
+        INITIAL_NONCE
     ]);
 }
 
@@ -202,8 +204,7 @@ export async function sendDeployAccountTx(
         .post(`${hre.starknet.networkUrl}/gateway/add_transaction`, {
             max_fee: maxFee,
             signature: signatures,
-            // TODO try ommitting nonce
-            nonce: "0x0", // initial nonce
+            nonce: INITIAL_NONCE,
             class_hash: classHash,
             contract_address_salt: salt,
             constructor_calldata: constructorCalldata,

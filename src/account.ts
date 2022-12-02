@@ -119,17 +119,24 @@ export abstract class Account {
     async deploy(
         contractFactory: StarknetContractFactory,
         constructorArguments?: StringMap,
-        options?: DeployThroughAccountOptions
+        options: DeployThroughAccountOptions = {}
     ): Promise<StarknetContract> {
         const classHash = await contractFactory.getClassHash();
         const udc = await UDC.getInstance();
         const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
-        const deployTxHash = await this.invoke(udc, UDC_DEPLOY_FUNCTION_NAME, {
-            classHash,
-            salt: options?.salt ?? generateRandomSalt(),
-            unique: BigInt(options?.unique ?? true),
-            calldata: adaptedArgs
-        });
+        const deployTxHash = await this.invoke(
+            udc,
+            UDC_DEPLOY_FUNCTION_NAME,
+            {
+                classHash,
+                salt: options?.salt ?? generateRandomSalt(),
+                unique: BigInt(options?.unique ?? true),
+                calldata: adaptedArgs
+            },
+            {
+                maxFee: options?.maxFee
+            }
+        );
 
         const hre = await import("hardhat");
         const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, hre);
@@ -544,10 +551,17 @@ export class ArgentAccount extends Account {
     protected constructor(
         starknetContract: StarknetContract,
         privateKey: string,
+        guardianPrivateKey: string,
         salt: string,
         deployed: boolean
     ) {
         super(starknetContract, privateKey, salt, deployed);
+        this.guardianPrivateKey = guardianPrivateKey;
+        if (this.guardianPrivateKey) {
+            const guardianSigner = generateKeys(this.guardianPrivateKey);
+            this.guardianKeyPair = guardianSigner.keyPair;
+            this.guardianPublicKey = guardianSigner.publicKey;
+        }
     }
 
     private static async getContractFactory() {
@@ -568,6 +582,7 @@ export class ArgentAccount extends Account {
         options: {
             salt?: string;
             privateKey?: string;
+            guardianPrivateKey?: string;
         } = {}
     ): Promise<ArgentAccount> {
         const signer = generateKeys(options.privateKey);
@@ -580,7 +595,13 @@ export class ArgentAccount extends Account {
             "0x0" // deployer address
         );
         const contract = contractFactory.getContractAt(address);
-        return new ArgentAccount(contract, signer.privateKey, salt, false);
+        return new ArgentAccount(
+            contract,
+            signer.privateKey,
+            options.guardianPrivateKey,
+            salt,
+            false
+        );
     }
 
     protected getMessageHash(
@@ -639,7 +660,6 @@ export class ArgentAccount extends Account {
         const classHash = await contractFactory.getClassHash();
         const constructorCalldata: string[] = [];
 
-        // TODO consider calling this from sendDeployAccountTx
         const msgHash = calculateDeployAccountHash(
             this.address,
             constructorCalldata,
@@ -656,8 +676,6 @@ export class ArgentAccount extends Account {
             this.salt,
             maxFee
         );
-
-        // TODO initialize?
 
         this.starknetContract.deployTxHash = deploymentTxHash;
         this.deployed = true;
@@ -703,7 +721,10 @@ export class ArgentAccount extends Account {
 
     static async getAccountFromAddress(
         address: string,
-        privateKey: string
+        privateKey: string,
+        options: {
+            guardianPrivateKey?: string;
+        } = {}
     ): Promise<ArgentAccount> {
         const contractFactory = await ArgentAccount.getContractFactory();
         const contract = contractFactory.getContractAt(address);
@@ -720,23 +741,22 @@ export class ArgentAccount extends Account {
             );
         }
 
-        return new ArgentAccount(contract, privateKey, undefined, true);
+        return new ArgentAccount(contract, privateKey, options.guardianPrivateKey, undefined, true);
     }
 
     public async initialize(
         options: {
             maxFee?: Numeric;
         } = {}
-    ): Promise<void> {
-        await this.invoke(
+    ): Promise<InvokeResponse> {
+        return await this.invoke(
             this.starknetContract,
             "initialize",
             {
-                // TODO provide the public key in createAccount method
                 signer: this.publicKey,
                 guardian: this.guardianPublicKey || "0"
             },
-            { maxFee: options.maxFee || 0 }
+            { maxFee: options.maxFee }
         );
     }
 
