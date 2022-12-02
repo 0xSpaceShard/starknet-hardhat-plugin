@@ -21,17 +21,13 @@ export async function deployFundedAccount(url = DEVNET_URL) {
         .address;
 
     console.log(`Funding account ${accountAddress} on ${network}.`);
-    const data = JSON.stringify({
+    const data = {
         address: accountAddress,
         amount: 10 ** 18,
         lite: true
-    });
+    };
 
-    await axios.post(`${url}/mint`, data, {
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
+    await axios.post(`${url}/mint`, data);
 
     // Deploying funded account on the network
     hardhatStarknetDeployAccount(args);
