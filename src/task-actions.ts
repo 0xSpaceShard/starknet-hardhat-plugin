@@ -88,8 +88,6 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
-// TODO dropped process.env.STARKNET_NETWORK support
-
 export async function starknetCompileAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
