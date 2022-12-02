@@ -770,7 +770,7 @@ export class StarknetContract {
         }
 
         if (decodedEvents.length === 0) {
-            const msg = `No events were decoded. You might be using a wrong contract. ${this.abiPath}`;
+            const msg = `No events were decoded. You might be using a wrong contract.\nABI used for decoding: ${this.abiPath}`;
             throw new StarknetPluginError(msg);
         }
         return decodedEvents;
