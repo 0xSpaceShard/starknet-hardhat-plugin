@@ -8,6 +8,7 @@ import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { StarknetChainId } from "starknet/constants";
 
 interface CompileWrapperOptions {
     file: string;
@@ -83,16 +84,21 @@ interface MigrateContractWrapperOptions {
 }
 
 export abstract class StarknetWrapper {
-    private gatewayUrl: string;
-    private feederGatewayUrl: string;
-    private chainID: string;
-    private networkID: string;
+    constructor(private externalServer: ExternalServer, private hre: HardhatRuntimeEnvironment) {
+        // TODO this gets executed before hre.starknet is set in e.g. starknetTestAction, so the private getters were created
+        // The problem is that we are effecitvely relying on global variables here.
+    }
 
-    constructor(private externalServer: ExternalServer, hre: HardhatRuntimeEnvironment) {
-        this.gatewayUrl = adaptUrl(hre.config.starknet.networkUrl);
-        this.feederGatewayUrl = adaptUrl(hre.config.starknet.networkUrl);
-        this.chainID = hre.config.starknet.networkConfig.starknetChainId;
-        this.networkID = hre.config.starknet.network;
+    private get gatewayUrl(): string {
+        return adaptUrl(this.hre.starknet.networkUrl);
+    }
+
+    private get chainID(): StarknetChainId {
+        return this.hre.starknet.networkConfig.starknetChainId;
+    }
+
+    private get networkID(): string {
+        return this.hre.starknet.network;
     }
 
     public async execute(
@@ -137,7 +143,7 @@ export abstract class StarknetWrapper {
             "--gateway_url",
             this.gatewayUrl,
             "--feeder_gateway_url",
-            this.feederGatewayUrl,
+            this.gatewayUrl,
             "--no_wallet"
         ];
 
@@ -196,7 +202,7 @@ export abstract class StarknetWrapper {
             "--abi",
             options.abi,
             "--feeder_gateway_url",
-            this.feederGatewayUrl,
+            this.gatewayUrl,
             "--gateway_url",
             this.gatewayUrl,
             "--function",
@@ -253,7 +259,7 @@ export abstract class StarknetWrapper {
             "--gateway_url",
             this.gatewayUrl,
             "--feeder_gateway_url",
-            this.feederGatewayUrl
+            this.gatewayUrl
         ];
     }
 
@@ -269,7 +275,7 @@ export abstract class StarknetWrapper {
             "--gateway_url",
             this.gatewayUrl,
             "--feeder_gateway_url",
-            this.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options.wallet) {
@@ -297,7 +303,7 @@ export abstract class StarknetWrapper {
             "--gateway_url",
             this.gatewayUrl,
             "--feeder_gateway_url",
-            this.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options.wallet) {
@@ -325,7 +331,7 @@ export abstract class StarknetWrapper {
             "--gateway_url",
             this.gatewayUrl,
             "--feeder_gateway_url",
-            this.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options?.hash) {
@@ -347,7 +353,7 @@ export abstract class StarknetWrapper {
         const commandArr = [
             "get_nonce",
             "--feeder_gateway_url",
-            this.feederGatewayUrl,
+            this.gatewayUrl,
             "--contract_address",
             options.address
         ];

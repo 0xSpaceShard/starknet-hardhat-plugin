@@ -636,13 +636,17 @@ export class StarknetContract {
 
     /**
      * Decode the events to a structured object with parameter names.
+     * Only decodes the events originating from this contract.
      * @param events as received from the server.
      * @returns structured object with parameter names.
+     * @throws if no events decoded
      */
     decodeEvents(events: starknet.Event[]): DecodedEvent[] {
         const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
+            // skip events originating from other contracts, e.g. fee token
             if (parseInt(event.from_address, 16) !== parseInt(this.address, 16)) continue;
+
             const rawEventData = event.data.map(BigInt).join(" ");
             // encoded event name guaranteed to be at index 0
             const eventSpecification = this.eventsSpecifications[event.keys[0]];
@@ -656,7 +660,7 @@ export class StarknetContract {
         }
 
         if (decodedEvents.length === 0) {
-            const msg = `No events were decoded. You might be using a wrong contract.\nABI used for decoding: ${this.abiPath}`;
+            const msg = `No events were decoded. You might be using a wrong contract. ABI used for decoding: ${this.abiPath}`;
             throw new StarknetPluginError(msg);
         }
         return decodedEvents;

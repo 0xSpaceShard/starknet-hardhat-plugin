@@ -128,7 +128,7 @@ export abstract class Account {
 
         const hre = await import("hardhat");
         const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, hre);
-        const decodedEvents = await udc.decodeEvents(deploymentReceipt.events);
+        const decodedEvents = udc.decodeEvents(deploymentReceipt.events);
         // the only event should be ContractDeployed
         const deployedContractAddress = numericToHexString(decodedEvents[0].data.address);
 
