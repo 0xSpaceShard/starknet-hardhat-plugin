@@ -449,7 +449,7 @@ export class OpenZeppelinAccount extends Account {
 export class ArgentAccount extends Account {
     static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
     static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
-    static readonly VERSION = "3e31c25843010149027ca1bdce251b8d63bdfd9c";
+    static readonly VERSION = "780760e4156afe592bb1feff7e769cf279ae9831";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
