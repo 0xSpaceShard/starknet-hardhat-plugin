@@ -111,10 +111,6 @@ export function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 
-function extractAddress(response: string) {
-    return extractFromResponse(response, /^Contract address: (.*)$/m);
-}
-
 function extractFromResponse(response: string, regex: RegExp) {
     const matched = response.match(regex);
     if (!matched || !matched[1]) {
@@ -285,6 +281,7 @@ export interface DeployOptions {
 export interface DeployThroughAccountOptions {
     salt?: string;
     unique?: boolean;
+    maxFee?: Numeric;
 }
 
 export interface DeployAccountOptions {
@@ -379,68 +376,6 @@ export class StarknetContractFactory {
                 (error) => {
                     reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
                 }
-            );
-        });
-    }
-
-    /**
-     * Deploy a contract instance to a new address.
-     * Optionally pass constructor arguments.
-     *
-     * E.g. if there is a function
-     * ```text
-     * @constructor
-     * func constructor{
-     *     syscall_ptr : felt*,
-     *     pedersen_ptr : HashBuiltin*,
-     *     range_check_ptr
-     * } (initial_balance : felt):
-     *     balance.write(initial_balance)
-     *     return ()
-     * end
-     * ```
-     * this plugin allows you to call it like:
-     * ```
-     * const contractFactory = ...;
-     * const instance = await contractFactory.deploy({ initial_balance: 100 });
-     * ```
-     * @param constructorArguments constructor arguments of Starknet contract
-     * @param options optional additions to deploying
-     * @returns the newly created instance
-     * @deprecated use Account.deploy instead
-     */
-    async deploy(
-        constructorArguments?: StringMap,
-        options: DeployOptions = {}
-    ): Promise<StarknetContract> {
-        warn("Using StarknetContractFactory.deploy is deprecated. Use Account.deploy instead");
-        const executed = await this.hre.starknetWrapper.deploy({
-            contract: this.metadataPath,
-            inputs: this.handleConstructorArguments(constructorArguments),
-            salt: options.salt,
-            token: options.token
-        });
-        if (executed.statusCode) {
-            const msg = `Could not deploy contract: ${executed.stderr.toString()}`;
-            throw new StarknetPluginError(msg);
-        }
-
-        const executedOutput = executed.stdout.toString();
-        const address = extractAddress(executedOutput);
-        const txHash = extractTxHash(executedOutput);
-        const contract = new StarknetContract({
-            abiPath: this.abiPath,
-            hre: this.hre
-        });
-        contract.address = address;
-        contract.deployTxHash = txHash;
-
-        return new Promise<StarknetContract>((resolve, reject) => {
-            iterativelyCheckStatus(
-                txHash,
-                this.hre.starknetWrapper,
-                () => resolve(contract),
-                reject
             );
         });
     }
