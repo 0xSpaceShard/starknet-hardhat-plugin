@@ -756,6 +756,7 @@ export class StarknetContract {
     decodeEvents(events: starknet.Event[]): DecodedEvent[] {
         const decodedEvents: DecodedEvent[] = [];
         for (const event of events) {
+            if (parseInt(event.from_address, 16) !== parseInt(this.address, 16)) continue;
             const rawEventData = event.data.map(BigInt).join(" ");
             // encoded event name guaranteed to be at index 0
             const eventSpecification = this.eventsSpecifications[event.keys[0]];
@@ -768,6 +769,10 @@ export class StarknetContract {
             decodedEvents.push({ name: eventSpecification.name, data: adapted });
         }
 
+        if (decodedEvents.length === 0) {
+            const msg = `No events were decoded. You might be using a wrong contract.\nABI used for decoding: ${this.abiPath}`;
+            throw new StarknetPluginError(msg);
+        }
         return decodedEvents;
     }
 }

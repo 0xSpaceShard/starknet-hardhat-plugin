@@ -72,7 +72,7 @@ function iterate_dir() {
         # check if test_case/check.ts exists
         if [ -f "$test_case/check.ts" ]; then
             # run the test
-            NETWORK="$network" npx mocha -r ts-node/register "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+            NETWORK="$network" npx ts-node "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
         fi
 
         rm -rf starknet-artifacts
