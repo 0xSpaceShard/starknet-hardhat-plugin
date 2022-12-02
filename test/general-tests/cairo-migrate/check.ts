@@ -11,7 +11,7 @@ copyFileSync(path.join(__dirname, contractName), contractPath);
 
 console.log("Testing migration of old cairo contract to a new one");
 // Migrate contract to new version.
-const execution = hardhatStarknetMigrate([contractPath], true);
+const execution = hardhatStarknetMigrate([contractPath]);
 assertContains(execution.stdout, newComment);
 
 // Migrate contract to new version with change content in place option.
