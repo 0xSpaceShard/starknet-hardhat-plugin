@@ -120,7 +120,8 @@ export interface FunctionInvocation {
 export interface TransactionTrace {
     function_invocation: FunctionInvocation;
     signature: string[];
-    validate_invocation: FunctionInvocation;
+    validate_invocation?: FunctionInvocation;
+    fee_transfer_invocation?: FunctionInvocation;
 }
 
 export interface Block {
