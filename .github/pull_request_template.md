@@ -20,7 +20,7 @@
 -   [ ] Rebased to the last commit of the target branch (or merged it into my branch)
 -   [ ] Documented the changes
     -   [ ] If `src/type-extensions.ts` was changed, updated the line number referencing this file in the `## API` section of README.md
--   [ ] Updated the `test` directory (with a test case consisting of `network.json`, `hardhat.config.ts`, `check.sh`)
+-   [ ] Updated the `test` directory (with a test case consisting of `network.json`, `hardhat.config.ts`, `check.ts`)
 -   [ ] Linked issues which this PR resolves
 -   [ ] Created a PR to the `plugin` branch of [`starknet-hardhat-example`](https://github.com/Shard-Labs/starknet-hardhat-example):
     -   < EXAMPLE_REPO_PR_URL > <!-- paste here if applicable -->

@@ -18,7 +18,7 @@ import {
     PredeployedAccount
 } from "./devnet-utils";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
-import { Transaction, TransactionReceipt, Block } from "./starknet-types";
+import { Transaction, TransactionReceipt, Block, TransactionTrace } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
 import { StarknetChainId } from "starknet/constants";
 
@@ -107,6 +107,7 @@ type AccountType = Account;
 type OpenZeppelinAccountType = OpenZeppelinAccount;
 type ArgentAccountType = ArgentAccount;
 type TransactionReceiptType = TransactionReceipt;
+type TransactionTraceType = TransactionTrace;
 type TransactionType = Transaction;
 type BlockType = Block;
 
@@ -264,6 +265,13 @@ declare module "hardhat/types/runtime" {
             getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
 
             /**
+             * Returns execution information in a nested structure of calls.
+             * @param txHash the transaction hash
+             * @returns the transaction trace
+             */
+            getTransactionTrace: (txHash: string) => Promise<TransactionTrace>;
+
+            /**
              * Returns an entire block and the transactions contained within it.
              * @param identifier optional block identifier (by block number or hash). To query the latest block, remove the identifier.
              * @returns a block object
@@ -289,5 +297,6 @@ declare module "hardhat/types/runtime" {
     type ArgentAccount = ArgentAccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;
+    type TransactionTrace = TransactionTraceType;
     type Block = BlockType;
 }

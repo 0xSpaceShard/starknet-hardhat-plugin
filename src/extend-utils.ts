@@ -12,7 +12,7 @@ import {
 } from "./types";
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
-import { Transaction, TransactionReceipt } from "./starknet-types";
+import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -171,6 +171,24 @@ export async function getTransactionReceiptUtil(
     }
     const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
     return txReceipt;
+}
+
+export async function getTransactionTraceUtil(
+    txHash: string,
+    hre: HardhatRuntimeEnvironment
+): Promise<TransactionTrace> {
+    const executed = await hre.starknetWrapper.getTransactionTrace({
+        feederGatewayUrl: hre.config.starknet.networkUrl,
+        gatewayUrl: hre.config.starknet.networkUrl,
+        hash: txHash
+    });
+
+    if (executed.statusCode) {
+        const msg = `Could not get the transaction trace. Error: ${executed.stderr.toString()}`;
+        throw new StarknetPluginError(msg);
+    }
+    const txTrace = JSON.parse(executed.stdout.toString()) as TransactionTrace;
+    return txTrace;
 }
 
 export async function getBlockUtil(

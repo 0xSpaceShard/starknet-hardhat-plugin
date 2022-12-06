@@ -265,6 +265,8 @@ export abstract class StarknetWrapper {
 
     public abstract getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
+    public abstract getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
+
     protected prepareDeployAccountOptions(options: DeployAccountWrapperOptions): string[] {
         const prepared = [
             "deploy_account",
@@ -489,6 +491,18 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
+    public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
+        options.gatewayUrl = adaptUrl(options.gatewayUrl);
+        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
+        const preparedOptions = this.prepareTxQueryOptions(
+            "get_transaction_trace",
+            options
+        );
+
+        const executed = this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
@@ -573,6 +587,15 @@ export class VenvWrapper extends StarknetWrapper {
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
+        const executed = await this.execute("starknet", preparedOptions);
+        return executed;
+    }
+
+    public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareTxQueryOptions(
+            "get_transaction_trace",
+            options
+        );
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
