@@ -377,18 +377,16 @@ export class OpenZeppelinAccount extends Account {
 
     private static async getContractFactory() {
         const hre = await import("hardhat");
-        if (!OpenZeppelinAccount.contractFactory) {
+        if (!this.contractFactory) {
             const contractPath = handleInternalContractArtifacts(
                 "OpenZeppelinAccount",
                 "Account",
                 "0.5.1",
                 hre
             );
-            OpenZeppelinAccount.contractFactory = await hre.starknet.getContractFactory(
-                contractPath
-            );
+            this.contractFactory = await hre.starknet.getContractFactory(contractPath);
         }
-        return OpenZeppelinAccount.contractFactory;
+        return this.contractFactory;
     }
 
     public static async createAccount(
@@ -399,7 +397,7 @@ export class OpenZeppelinAccount extends Account {
     ): Promise<OpenZeppelinAccount> {
         const signer = generateKeys(options.privateKey);
         const salt = options.salt || generateRandomSalt();
-        const contractFactory = await OpenZeppelinAccount.getContractFactory();
+        const contractFactory = await this.getContractFactory();
         const address = hash.calculateContractAddressFromHash(
             salt,
             await contractFactory.getClassHash(),
@@ -407,7 +405,7 @@ export class OpenZeppelinAccount extends Account {
             "0x0" // deployer address
         );
         const contract = contractFactory.getContractAt(address);
-        return new OpenZeppelinAccount(contract, signer.privateKey, salt, false);
+        return new this(contract, signer.privateKey, salt, false);
     }
 
     protected override getMessageHash(
@@ -483,7 +481,7 @@ export class OpenZeppelinAccount extends Account {
         address: string,
         privateKey: string
     ): Promise<OpenZeppelinAccount> {
-        const contractFactory = await OpenZeppelinAccount.getContractFactory();
+        const contractFactory = await this.getContractFactory();
         const contract = contractFactory.getContractAt(address);
 
         const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
@@ -496,7 +494,7 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, undefined, true);
+        return new this(contract, privateKey, undefined, true);
     }
 
     protected override hasRawOutput(): boolean {
@@ -532,16 +530,16 @@ export class ArgentAccount extends Account {
 
     private static async getContractFactory() {
         const hre = await import("hardhat");
-        if (!ArgentAccount.contractFactory) {
+        if (!this.contractFactory) {
             const contractPath = handleInternalContractArtifacts(
                 "ArgentAccount",
                 "ArgentAccount",
                 "780760e4156afe592bb1feff7e769cf279ae9831",
                 hre
             );
-            ArgentAccount.contractFactory = await hre.starknet.getContractFactory(contractPath);
+            this.contractFactory = await hre.starknet.getContractFactory(contractPath);
         }
-        return ArgentAccount.contractFactory;
+        return this.contractFactory;
     }
 
     public static async createAccount(
@@ -553,7 +551,7 @@ export class ArgentAccount extends Account {
     ): Promise<ArgentAccount> {
         const signer = generateKeys(options.privateKey);
         const salt = options.salt || generateRandomSalt();
-        const contractFactory = await ArgentAccount.getContractFactory();
+        const contractFactory = await this.getContractFactory();
         const address = hash.calculateContractAddressFromHash(
             salt,
             await contractFactory.getClassHash(),
@@ -561,13 +559,7 @@ export class ArgentAccount extends Account {
             "0x0" // deployer address
         );
         const contract = contractFactory.getContractAt(address);
-        return new ArgentAccount(
-            contract,
-            signer.privateKey,
-            options.guardianPrivateKey,
-            salt,
-            false
-        );
+        return new this(contract, signer.privateKey, options.guardianPrivateKey, salt, false);
     }
 
     protected getMessageHash(
@@ -692,7 +684,7 @@ export class ArgentAccount extends Account {
             guardianPrivateKey?: string;
         } = {}
     ): Promise<ArgentAccount> {
-        const contractFactory = await ArgentAccount.getContractFactory();
+        const contractFactory = await this.getContractFactory();
         const contract = contractFactory.getContractAt(address);
 
         const { signer: expectedPubKey } = await contract.call("getSigner");
@@ -707,7 +699,7 @@ export class ArgentAccount extends Account {
             );
         }
 
-        return new ArgentAccount(contract, privateKey, options.guardianPrivateKey, undefined, true);
+        return new this(contract, privateKey, options.guardianPrivateKey, undefined, true);
     }
 
     public async initialize(
