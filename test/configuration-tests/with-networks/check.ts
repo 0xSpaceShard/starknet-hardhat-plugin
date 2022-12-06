@@ -44,6 +44,7 @@ execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".spl
 assertContains(execution.stderr, expected);
 console.log("Success");
 
+console.log("Testing deployment with alpha-goerli2 config network is temporarily disabled.");
 // console.log("Testing with alpha-goerli2 config network");
 // process.env.NETWORK = "alpha-goerli2";
 // hardhatStarknetDeploy(
