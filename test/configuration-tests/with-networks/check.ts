@@ -44,10 +44,10 @@ execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".spl
 assertContains(execution.stderr, expected);
 console.log("Success");
 
-console.log("Testing with alpha-goerli2 config network");
-process.env.NETWORK = "alpha-goerli2";
-hardhatStarknetDeploy(
-    "starknet-artifacts/contracts/contract.cairo --starknet-network alpha-goerli2 --inputs 10".split(
-        " "
-    )
-);
+// console.log("Testing with alpha-goerli2 config network");
+// process.env.NETWORK = "alpha-goerli2";
+// hardhatStarknetDeploy(
+//     "starknet-artifacts/contracts/contract.cairo --starknet-network alpha-goerli2 --inputs 10".split(
+//         " "
+//     )
+// );
