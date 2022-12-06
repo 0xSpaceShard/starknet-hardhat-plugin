@@ -55,7 +55,8 @@ import {
     getWalletUtil,
     shortStringToBigIntUtil,
     getBlockUtil,
-    getNonceUtil
+    getNonceUtil,
+    getTransactionTraceUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
@@ -294,6 +295,11 @@ extendEnvironment((hre) => {
         getTransactionReceipt: async (txHash) => {
             const txReceipt = await getTransactionReceiptUtil(txHash, hre);
             return txReceipt;
+        },
+
+        getTransactionTrace: async (txHash) => {
+            const txTrace = await getTransactionTraceUtil(txHash, hre);
+            return txTrace;
         },
 
         getBlock: async (identifier) => {

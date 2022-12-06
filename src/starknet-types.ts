@@ -102,6 +102,27 @@ export interface Transaction {
     transaction_index: number;
 }
 
+export interface FunctionInvocation {
+    call_type: string;
+    calldata: string[];
+    caller_address: string;
+    class_hash: string;
+    contract_address: string;
+    entry_point_type: string;
+    events: unknown[];
+    execution_resources: ExecutionResources;
+    internal_calls: unknown[];
+    messages: unknown[];
+    result: string[];
+    selector: string;
+}
+
+export interface TransactionTrace {
+    function_invocation: FunctionInvocation;
+    signature: string[];
+    validate_invocation: FunctionInvocation;
+}
+
 export interface Block {
     block_hash: string;
     parent_block_hash: string;
