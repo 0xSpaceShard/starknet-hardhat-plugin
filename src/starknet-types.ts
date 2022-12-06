@@ -102,6 +102,12 @@ export interface Transaction {
     transaction_index: number;
 }
 
+export interface OrderedMessage {
+    order: number;
+    to_address: string;
+    payload: number[];
+}
+
 export interface FunctionInvocation {
     call_type: string;
     calldata: string[];
@@ -109,16 +115,16 @@ export interface FunctionInvocation {
     class_hash: string;
     contract_address: string;
     entry_point_type: string;
-    events: unknown[];
+    events: Event[];
     execution_resources: ExecutionResources;
-    internal_calls: unknown[];
-    messages: unknown[];
+    internal_calls: FunctionInvocation[];
+    messages: OrderedMessage[];
     result: string[];
     selector: string;
 }
 
 export interface TransactionTrace {
-    function_invocation: FunctionInvocation;
+    function_invocation?: FunctionInvocation;
     signature: string[];
     validate_invocation?: FunctionInvocation;
     fee_transfer_invocation?: FunctionInvocation;
