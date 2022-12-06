@@ -271,21 +271,6 @@ export abstract class StarknetWrapper {
 
     public abstract getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult>;
 
-    protected prepareTransactionTraceOptions(
-        command: string,
-        options: TxTraceWrapperOptions
-    ): string[] {
-        return [
-            command,
-            "--hash",
-            options.hash,
-            "--gateway_url",
-            options.gatewayUrl,
-            "--feeder_gateway_url",
-            options.feederGatewayUrl
-        ];
-    }
-
     public abstract getTransactionTrace(options: TxTraceWrapperOptions): Promise<ProcessResult>;
 
     protected prepareDeployAccountOptions(options: DeployAccountWrapperOptions): string[] {
@@ -515,7 +500,7 @@ export class DockerWrapper extends StarknetWrapper {
     public async getTransactionTrace(options: TxTraceWrapperOptions): Promise<ProcessResult> {
         options.gatewayUrl = adaptUrl(options.gatewayUrl);
         options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareTransactionTraceOptions(
+        const preparedOptions = this.prepareTxQueryOptions(
             "get_transaction_trace",
             options
         );
@@ -613,7 +598,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getTransactionTrace(options: TxTraceWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTransactionTraceOptions(
+        const preparedOptions = this.prepareTxQueryOptions(
             "get_transaction_trace",
             options
         );
