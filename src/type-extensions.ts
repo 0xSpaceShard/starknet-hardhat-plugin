@@ -20,7 +20,7 @@ import {
 import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
 import { Transaction, TransactionReceipt, Block, TransactionTrace } from "./starknet-types";
 import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
-import { StarknetChainId } from "starknet/constants";
+import { StarknetChainId } from "./constants";
 
 type StarknetConfig = {
     dockerizedVersion?: string;

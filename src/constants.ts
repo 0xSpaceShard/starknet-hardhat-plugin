@@ -47,6 +47,13 @@ export enum TransactionHashPrefix {
     DEPLOY = "110386840629113",
     INVOKE = "115923154332517"
 }
+
+export enum StarknetChainId {
+    MAINNET = "0x534e5f4d41494e",
+    TESTNET = "0x534e5f474f45524c49",
+    TESTNET2 = "0x534e5f474f45524c4932"
+}
+
 export const PREFIX_TRANSACTION = "StarkNet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
