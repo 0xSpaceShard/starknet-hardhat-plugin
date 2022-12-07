@@ -17,14 +17,14 @@ import {
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
-    UDC_ADDRESS
+    UDC_ADDRESS,
+    StarknetChainId
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
 import { Numeric, StarknetContract } from "./types";
-import { StarknetChainId } from "starknet/constants";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
