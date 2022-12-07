@@ -21,7 +21,8 @@ import {
     VOYAGER_GOERLI_VERIFIED_URL,
     VOYAGER_MAINNET_VERIFIED_URL,
     VOYAGER_GOERLI_2_CONTRACT_API_URL,
-    VOYAGER_GOERLI_2_VERIFIED_URL
+    VOYAGER_GOERLI_2_VERIFIED_URL,
+    StarknetChainId
 } from "./constants";
 import {
     getAccountPath,
@@ -60,7 +61,6 @@ import {
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
-import { StarknetChainId } from "starknet/constants";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -130,7 +130,7 @@ extendConfig((config: HardhatConfig) => {
             ALPHA_GOERLI_URL_2,
             VOYAGER_GOERLI_2_CONTRACT_API_URL,
             VOYAGER_GOERLI_2_VERIFIED_URL,
-            StarknetChainId.TESTNET
+            StarknetChainId.TESTNET2
         );
     }
 

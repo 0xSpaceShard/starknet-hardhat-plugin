@@ -69,8 +69,8 @@ NETWORKS = {
 
 CHAIN_IDS = {
     "alpha-goerli": StarknetChainId.TESTNET.value,
-    "alpha-goerli2": StarknetChainId.TESTNET.value,
-    "alpha-mainnet": StarknetChainId.MAINNET.value,
+    "alpha-goerli2": StarknetChainId.TESTNET2.value,
+    "alpha-mainnet": StarknetChainId.MAINNET.value
 }
 
 FEE_MARGIN_OF_ESTIMATION = 1.1

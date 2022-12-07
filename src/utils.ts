@@ -16,14 +16,14 @@ import {
     ALPHA_TESTNET_2_INTERNALLY,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_INTERNALLY
+    INTEGRATED_DEVNET_INTERNALLY,
+    StarknetChainId
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
 import { StringMap } from "./types";
-import { StarknetChainId } from "starknet/constants";
 
 const globPromise = promisify(glob);
 /**
