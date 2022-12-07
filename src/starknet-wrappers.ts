@@ -1,5 +1,5 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME, StarknetChainId } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
@@ -8,7 +8,6 @@ import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { StarknetChainId } from "starknet/constants";
 
 interface CompileWrapperOptions {
     file: string;
@@ -478,13 +477,7 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareTxQueryOptions(
-            "get_transaction_trace",
-            options
-        );
-
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
@@ -573,10 +566,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions(
-            "get_transaction_trace",
-            options
-        );
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }

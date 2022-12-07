@@ -59,6 +59,7 @@ import {
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
+import { ArgentAccount, OpenZeppelinAccount } from "./account";
 
 exitHook(() => {
     ExternalServer.cleanAll();

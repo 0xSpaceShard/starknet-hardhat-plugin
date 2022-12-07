@@ -9,12 +9,12 @@ import {
     ABI_SUFFIX,
     INTERNAL_ARTIFACTS_DIR,
     TransactionHashPrefix,
-    TRANSACTION_VERSION
+    TRANSACTION_VERSION,
+    StarknetChainId
 } from "./constants";
 import { numericToHexString } from "./utils";
 import * as crypto from "crypto";
 import { hash } from "starknet";
-import { StarknetChainId } from "starknet/constants";
 import axios, { AxiosError } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 

@@ -14,7 +14,7 @@ import {
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix, TRANSACTION_VERSION, UDC_DEPLOY_FUNCTION_NAME } from "./constants";
+import { StarknetChainId, TransactionHashPrefix, TRANSACTION_VERSION, UDC_DEPLOY_FUNCTION_NAME } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
@@ -30,7 +30,6 @@ import {
 import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
-import { StarknetChainId } from "starknet/constants";
 
 type ExecuteCallParameters = {
     to: bigint;

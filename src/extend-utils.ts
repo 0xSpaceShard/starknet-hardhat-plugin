@@ -122,8 +122,6 @@ export async function getTransactionTraceUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<TransactionTrace> {
     const executed = await hre.starknetWrapper.getTransactionTrace({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
 
