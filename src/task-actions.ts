@@ -556,7 +556,6 @@ export async function starknetTestAction(
 ) {
     await new Recompiler(hre).handleCache();
     setRuntimeNetwork(args, hre);
-    console.log("DEBUG in starknetTestAction", hre.starknet.networkUrl);
 
     await runWithDevnet(hre, async () => {
         await runSuper(args);

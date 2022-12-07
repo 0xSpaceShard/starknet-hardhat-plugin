@@ -138,6 +138,13 @@ export abstract class Account {
         return deployedContract;
     }
 
+    protected assertNotDeployed() {
+        if (this.deployed) {
+            const msg = "The account is not expected to be deployed.";
+            throw new StarknetPluginError(msg);
+        }
+    }
+
     private assertDeployed() {
         if (!this.deployed) {
             const msg = "Prior to usage, the account must be funded and deployed.";
@@ -321,10 +328,11 @@ export abstract class Account {
     }
 
     /**
-     * Whether the execution method of this account returns raw output or not.
+     * Declare the contract class corresponding to the `contractFactory`
+     * @param contractFactory
+     * @param options
+     * @returns the hash of the declared class
      */
-    protected abstract hasRawOutput(): boolean;
-
     public async declare(
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
@@ -389,6 +397,12 @@ export class OpenZeppelinAccount extends Account {
         return this.contractFactory;
     }
 
+    /**
+     * Generates a new key pair if none specified.
+     * The created account needs to be deployed using the `deployAccount` method.
+     * @param options
+     * @returns an undeployed instance of account
+     */
     public static async createAccount(
         options: {
             salt?: string;
@@ -448,6 +462,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {
+        this.assertNotDeployed();
         const hre = await import("hardhat");
 
         const maxFee = numericToHexString(options.maxFee || 0);
@@ -496,17 +511,21 @@ export class OpenZeppelinAccount extends Account {
 
         return new this(contract, privateKey, undefined, true);
     }
-
-    protected override hasRawOutput(): boolean {
-        return false;
-    }
 }
 
 /**
- * Wrapper for the Argent implementation of an Account
+ * Wrapper for the Argent implementation of Account
  */
 export class ArgentAccount extends Account {
-    private static contractFactory: StarknetContractFactory;
+    private static readonly VERSION: string = "780760e4156afe592bb1feff7e769cf279ae9831";
+
+    private static proxyContractFactory: StarknetContractFactory;
+    private static implementationContractFactory: StarknetContractFactory;
+
+    private static readonly PROXY_CLASS_HASH =
+        "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
+    private static readonly IMPLEMENTATION_CLASS_HASH =
+        "0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
@@ -528,20 +547,51 @@ export class ArgentAccount extends Account {
         }
     }
 
-    private static async getContractFactory() {
+    private static async getImplementationContractFactory() {
         const hre = await import("hardhat");
-        if (!this.contractFactory) {
+        if (!this.implementationContractFactory) {
             const contractPath = handleInternalContractArtifacts(
                 "ArgentAccount",
                 "ArgentAccount",
-                "780760e4156afe592bb1feff7e769cf279ae9831",
+                this.VERSION,
                 hre
             );
-            this.contractFactory = await hre.starknet.getContractFactory(contractPath);
+            this.implementationContractFactory = await hre.starknet.getContractFactory(
+                contractPath
+            );
         }
-        return this.contractFactory;
+        return this.implementationContractFactory;
     }
 
+    private static async getProxyContractFactory() {
+        const hre = await import("hardhat");
+        if (!this.proxyContractFactory) {
+            const contractPath = handleInternalContractArtifacts(
+                "ArgentAccount",
+                "Proxy",
+                this.VERSION,
+                hre
+            );
+            this.proxyContractFactory = await hre.starknet.getContractFactory(contractPath);
+        }
+        return this.proxyContractFactory;
+    }
+
+    private static generateGuardianPublicKey(guardianPrivateKey: string) {
+        if (!guardianPrivateKey) {
+            return "0x0";
+        }
+        return generateKeys(guardianPrivateKey).publicKey;
+    }
+
+    /**
+     * Generates a new key pair if none specified.
+     * Does NOT generate a new guardian key pair if none specified.
+     * If you don't specify a guardian private key, no guardian will be assigned.
+     * The created account needs to be deployed using the `deployAccount` method.
+     * @param options
+     * @returns an undeployed instance of account
+     */
     public static async createAccount(
         options: {
             salt?: string;
@@ -550,16 +600,26 @@ export class ArgentAccount extends Account {
         } = {}
     ): Promise<ArgentAccount> {
         const signer = generateKeys(options.privateKey);
+        const guardianPrivateKey = options?.guardianPrivateKey;
+        const guardianPublicKey = this.generateGuardianPublicKey(guardianPrivateKey);
         const salt = options.salt || generateRandomSalt();
-        const contractFactory = await this.getContractFactory();
+        const constructorCalldata = [
+            this.IMPLEMENTATION_CLASS_HASH,
+            hash.getSelectorFromName("initialize"),
+            "2",
+            signer.publicKey,
+            guardianPublicKey
+        ];
         const address = hash.calculateContractAddressFromHash(
             salt,
-            await contractFactory.getClassHash(),
-            [], // empty constructor, parameters are passed in initialize
+            this.PROXY_CLASS_HASH,
+            constructorCalldata,
             "0x0" // deployer address
         );
-        const contract = contractFactory.getContractAt(address);
-        return new this(contract, signer.privateKey, options.guardianPrivateKey, salt, false);
+
+        const proxyContractFactory = await this.getProxyContractFactory();
+        const contract = proxyContractFactory.getContractAt(address);
+        return new this(contract, signer.privateKey, guardianPrivateKey, salt, false);
     }
 
     protected getMessageHash(
@@ -610,31 +670,44 @@ export class ArgentAccount extends Account {
         return signatures;
     }
 
+    /**
+     * Deploys (initializes) the account.
+     * @param options
+     * @returns the tx hash of the deployment
+     */
     public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {
+        this.assertNotDeployed();
         const hre = await import("hardhat");
 
         const maxFee = numericToHexString(options.maxFee || 0);
-        const contractFactory = await ArgentAccount.getContractFactory();
-        const classHash = await contractFactory.getClassHash();
-        const constructorCalldata: string[] = [];
+
+        const constructorCalldata: string[] = [
+            ArgentAccount.IMPLEMENTATION_CLASS_HASH,
+            hash.getSelectorFromName("initialize"),
+            "2",
+            this.publicKey,
+            ArgentAccount.generateGuardianPublicKey(this.guardianPrivateKey)
+        ].map((val) => BigInt(val).toString());
 
         const msgHash = calculateDeployAccountHash(
             this.address,
             constructorCalldata,
             this.salt,
-            classHash,
+            ArgentAccount.PROXY_CLASS_HASH,
             maxFee,
             hre.starknet.networkConfig.starknetChainId
         );
 
         const deploymentTxHash = await sendDeployAccountTx(
             this.getSignatures(msgHash).map((val) => val.toString()),
-            classHash,
+            ArgentAccount.PROXY_CLASS_HASH,
             constructorCalldata,
             this.salt,
             maxFee
         );
 
+        const implementationFactory = await ArgentAccount.getImplementationContractFactory();
+        this.starknetContract.setImplementation(implementationFactory);
         this.starknetContract.deployTxHash = deploymentTxHash;
         this.deployed = true;
         return deploymentTxHash;
@@ -645,7 +718,7 @@ export class ArgentAccount extends Account {
      * @param newGuardianPrivateKey private key of the guardian to update
      * @returns hash of the transaction which changes the guardian
      */
-    async setGuardian(
+    public async setGuardian(
         newGuardianPrivateKey: string,
         invokeOptions?: InvokeOptions
     ): Promise<string> {
@@ -677,6 +750,15 @@ export class ArgentAccount extends Account {
         return txHash;
     }
 
+    /**
+     * Returns an account previously deployed to `address`.
+     * A check is performed if the public key stored in the account matches the provided `privateKey`.
+     * No check is done for the optoinal guardian private key.
+     * @param address
+     * @param privateKey
+     * @param options
+     * @returns the retrieved account
+     */
     static async getAccountFromAddress(
         address: string,
         privateKey: string,
@@ -684,8 +766,10 @@ export class ArgentAccount extends Account {
             guardianPrivateKey?: string;
         } = {}
     ): Promise<ArgentAccount> {
-        const contractFactory = await this.getContractFactory();
+        const contractFactory = await this.getProxyContractFactory();
         const contract = contractFactory.getContractAt(address);
+        const implementationFactory = await this.getImplementationContractFactory();
+        contract.setImplementation(implementationFactory);
 
         const { signer: expectedPubKey } = await contract.call("getSigner");
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
@@ -700,25 +784,5 @@ export class ArgentAccount extends Account {
         }
 
         return new this(contract, privateKey, options.guardianPrivateKey, undefined, true);
-    }
-
-    public async initialize(
-        options: {
-            maxFee?: Numeric;
-        } = {}
-    ): Promise<InvokeResponse> {
-        return await this.invoke(
-            this.starknetContract,
-            "initialize",
-            {
-                signer: this.publicKey,
-                guardian: this.guardianPublicKey || "0"
-            },
-            { maxFee: options.maxFee }
-        );
-    }
-
-    protected override hasRawOutput(): boolean {
-        return true;
     }
 }
