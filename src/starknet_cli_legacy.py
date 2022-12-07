@@ -69,7 +69,7 @@ NETWORKS = {
 
 CHAIN_IDS = {
     "alpha-goerli": StarknetChainId.TESTNET.value,
-    "alpha-goerli2": StarknetChainId.TESTNET2.value,
+    "alpha-goerli2": StarknetChainId.TESTNET.value, # Should be changed to StarknetChainId.TESTNET2.value when adapting 0.10.3.
     "alpha-mainnet": StarknetChainId.MAINNET.value
 }
 
