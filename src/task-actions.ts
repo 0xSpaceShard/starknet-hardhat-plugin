@@ -531,9 +531,8 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     }
 
     hre.starknet.network = networkName;
-    hre.starknet.networkUrl = networkConfig.url;
     hre.starknet.networkConfig = networkConfig;
-    console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkUrl}`);
+    console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkConfig.url}`);
 }
 
 async function runWithDevnet(hre: HardhatRuntimeEnvironment, fn: () => Promise<unknown>) {

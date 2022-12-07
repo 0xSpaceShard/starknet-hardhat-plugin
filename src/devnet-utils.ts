@@ -53,7 +53,7 @@ export class DevnetUtils implements Devnet {
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
-        return `${this.hre.starknet.networkUrl}`;
+        return `${this.hre.starknet.networkConfig.url}`;
     }
 
     private async withErrorHandler<T>(asyncFn: () => Promise<T>, errorMessage: string) {

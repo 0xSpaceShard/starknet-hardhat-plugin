@@ -90,7 +90,7 @@ export abstract class StarknetWrapper {
     }
 
     private get gatewayUrl(): string {
-        return adaptUrl(this.hre.starknet.networkUrl);
+        return adaptUrl(this.hre.starknet.networkConfig.url);
     }
 
     private get chainID(): StarknetChainId {

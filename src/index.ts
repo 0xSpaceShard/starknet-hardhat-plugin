@@ -158,7 +158,6 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
         config.networks,
         "starknet.network in hardhat.config"
     );
-    config.starknet.networkUrl = networkConfig.url;
     config.starknet.networkConfig = networkConfig;
 });
 
@@ -294,7 +293,10 @@ extendEnvironment((hre) => {
         getNonce: async (address, options) => {
             const nonce = await getNonceUtil(hre, address, options);
             return nonce;
-        }
+        },
+
+        network: undefined,
+        networkConfig: undefined
     };
 
     hre.OpenZeppelinAccount = OpenZeppelinAccount;

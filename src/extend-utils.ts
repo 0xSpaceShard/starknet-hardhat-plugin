@@ -122,8 +122,8 @@ export async function getBlockUtil(
     identifier?: BlockIdentifier
 ): Promise<Block> {
     const blockOptions = {
-        feederGatewayUrl: hre.starknet.networkUrl,
-        gatewayUrl: hre.starknet.networkUrl,
+        feederGatewayUrl: hre.starknet.networkConfig.url,
+        gatewayUrl: hre.starknet.networkConfig.url,
         number: identifier?.blockNumber,
         hash: identifier?.blockHash
     };

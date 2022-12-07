@@ -161,7 +161,7 @@ export async function sendDeployAccountTx(
 ) {
     const hre = await import("hardhat");
     const resp = await axios
-        .post(`${hre.starknet.networkUrl}/gateway/add_transaction`, {
+        .post(`${hre.starknet.networkConfig.url}/gateway/add_transaction`, {
             max_fee: maxFee,
             signature: signatures,
             nonce: INITIAL_NONCE,

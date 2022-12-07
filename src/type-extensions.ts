@@ -210,18 +210,12 @@ declare module "hardhat/types/runtime" {
              * The selected starknet-network name.
              * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
              */
-            network?: string;
-
-            /**
-             * The selected starknet-network url.
-             * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
-             */
-            networkUrl?: string;
+            network: string;
 
             /**
              * The configuration object of the selected starknet-network.
              */
-            networkConfig?: HardhatNetworkConfig;
+            networkConfig: HardhatNetworkConfig;
 
             /**
              * @param name the name of the wallet to get

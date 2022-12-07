@@ -719,7 +719,7 @@ export class ArgentAccount extends Account {
      * @returns hash of the transaction which changes the guardian
      */
     public async setGuardian(
-        newGuardianPrivateKey: string,
+        newGuardianPrivateKey?: string,
         invokeOptions?: InvokeOptions
     ): Promise<string> {
         let guardianKeyPair: ec.KeyPair;
