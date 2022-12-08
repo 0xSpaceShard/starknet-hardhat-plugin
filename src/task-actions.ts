@@ -156,9 +156,8 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
     }
 }
 
-// myTODO how should network setting be handled for tasks other than test and run?
-
 export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    setRuntimeNetwork(args, hre);
     await new Recompiler(hre).handleCache();
     const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
     const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
@@ -394,6 +393,7 @@ async function starknetInteractAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    setRuntimeNetwork(args, hre);
     const contractFactory = await hre.starknet.getContractFactory(args.contract);
     const abiPath = contractFactory.getAbiPath();
 
@@ -482,6 +482,7 @@ export async function starknetDeployAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    setRuntimeNetwork(args, hre);
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
