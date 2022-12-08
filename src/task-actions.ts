@@ -156,7 +156,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
     }
 }
 
-// TODO how should network setting be handled for tasks other than test and run?
+// myTODO how should network setting be handled for tasks other than test and run?
 
 export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
     await new Recompiler(hre).handleCache();

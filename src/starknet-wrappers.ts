@@ -84,7 +84,7 @@ interface MigrateContractWrapperOptions {
 
 export abstract class StarknetWrapper {
     constructor(private externalServer: ExternalServer, private hre: HardhatRuntimeEnvironment) {
-        // TODO this gets executed before hre.starknet is set in e.g. starknetTestAction, so the private getters were created
+        // myTODO this gets executed before hre.starknet is set in e.g. starknetTestAction, so the private getters were created
         // Basically, we are relying on global variables here.
     }
 
