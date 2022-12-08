@@ -453,6 +453,7 @@ export async function starknetNewAccountAction(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    setRuntimeNetwork(args, hre);
     const wallet = getWalletUtil(args.wallet, hre);
     const accountDir = getAccountPath(wallet.accountPath, hre);
 
