@@ -84,7 +84,7 @@ function iterate_dir() {
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
-        [ "$network" == "devnet" ] && pkill -f -9 starknet-devnet && sleep 5
+        [ "$network" == "devnet" ] && pkill -f -SIGKILL starknet-devnet && sleep 5
 
         echo "----------------------------------------------"
         echo
