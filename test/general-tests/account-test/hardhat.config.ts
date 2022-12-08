@@ -2,11 +2,9 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        network: process.env.NETWORK
-    },
-    networks: {
-        devnet: {
-            url: "http://127.0.0.1:5050"
+        network: process.env.NETWORK,
+        integratedDevnet: {
+            args: ["--seed", "42", "--fork-network", "alpha-goerli"]
         }
     }
 };

@@ -1,4 +1,4 @@
 {
     "$schema": "../../network.schema",
-    "devnet": true
+    "integrated-devnet": true
 }
