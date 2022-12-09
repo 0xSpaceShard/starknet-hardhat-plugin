@@ -4,14 +4,11 @@ import axios from "axios";
 import FormData = require("form-data");
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
-import { iterativelyCheckStatus, extractTxHash, InteractChoice } from "./types";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
     adaptLog,
     traverseFiles,
-    checkArtifactExists,
     getNetwork,
-    findPath,
     getAccountPath,
     isStarknetDevnet,
     warn
@@ -58,18 +55,6 @@ function processExecuted(executed: ProcessResult, logStatus: boolean): number {
         console.log(`\t${finalMsg}\n`);
     }
     return executed.statusCode ? 1 : 0;
-}
-
-function isStarknetCompilationArtifact(filePath: string) {
-    const content = fs.readFileSync(filePath).toString();
-    let parsed = null;
-    try {
-        parsed = JSON.parse(content);
-    } catch (err) {
-        return false;
-    }
-
-    return !!parsed.entry_points_by_type;
 }
 
 /**
@@ -153,86 +138,6 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
     if (statusCode) {
         const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
         throw new StarknetPluginError(msg);
-    }
-}
-
-export async function starknetDeployAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    setRuntimeNetwork(args, hre);
-    await new Recompiler(hre).handleCache();
-    const defaultArtifactsPath = hre.config.paths.starknetArtifacts;
-    const artifactsPaths: string[] = args.paths || [defaultArtifactsPath];
-    const intRegex = new RegExp(/^-?\d+$/);
-
-    let statusCode = 0;
-    const txHashes: string[] = [];
-    for (let artifactsPath of artifactsPaths) {
-        if (intRegex.test(artifactsPath)) {
-            warn(
-                `Warning! Found an integer "${artifactsPath}" as an artifact path.\n` +
-                    "Make sure that all inputs are passed within a single string (e.g --inputs '10 20 30')"
-            );
-        }
-
-        // Check if input is the name of the contract and not a path
-        if (artifactsPath === path.basename(artifactsPath)) {
-            const metadataSearchTarget = path.join(
-                `${artifactsPath}.cairo`,
-                `${path.basename(artifactsPath)}.json`
-            );
-            const foundPath = await findPath(defaultArtifactsPath, metadataSearchTarget);
-            artifactsPath = foundPath || metadataSearchTarget;
-        } else if (!path.isAbsolute(artifactsPath)) {
-            artifactsPath = path.normalize(path.join(hre.config.paths.root, artifactsPath));
-        }
-        checkArtifactExists(artifactsPath);
-
-        const paths = await traverseFiles(artifactsPath, "*.json");
-        const files = paths.filter(isStarknetCompilationArtifact);
-        for (const file of files) {
-            console.log("Deploying", file);
-            const executed = await hre.starknetWrapper.deploy({
-                contract: file,
-                inputs: args.inputs?.split(/\s+/),
-                salt: args.salt,
-                token: args.token
-            });
-            if (args.wait) {
-                const execResult = processExecuted(executed, false);
-                if (execResult == 0) {
-                    txHashes.push(extractTxHash(executed.stdout.toString()));
-                }
-                statusCode += execResult;
-            } else {
-                statusCode += processExecuted(executed, true);
-            }
-        }
-    }
-
-    if (args.wait) {
-        // If the "wait" flag was passed as an argument, check the previously stored transaction hashes for their statuses
-        console.log(`Checking deployment transaction${txHashes.length === 1 ? "" : "s"}...`);
-        const promises = txHashes.map(
-            (hash) =>
-                new Promise<void>((resolve, reject) =>
-                    iterativelyCheckStatus(
-                        hash,
-                        hre.starknetWrapper,
-                        (status) => {
-                            console.log(`Deployment transaction ${hash} is now ${status}`);
-                            resolve();
-                        },
-                        (error) => {
-                            console.log(`Deployment transaction ${hash} is REJECTED`);
-                            reject(error);
-                        }
-                    )
-                )
-        );
-        await Promise.allSettled(promises);
-    }
-
-    if (statusCode) {
-        throw new StarknetPluginError(`Failed deployment of ${statusCode} contracts`);
     }
 }
 
@@ -369,84 +274,6 @@ function handleMultiPartContractVerification(
             contentType: "application/octet-stream"
         });
     });
-}
-
-export async function starknetInvokeAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await new Recompiler(hre).handleCache();
-    await starknetInteractAction(InteractChoice.INVOKE, args, hre);
-}
-
-export async function starknetCallAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    await new Recompiler(hre).handleCache();
-    await starknetInteractAction(InteractChoice.CALL, args, hre);
-}
-
-export async function starknetEstimateFeeAction(
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
-) {
-    await starknetInteractAction(InteractChoice.ESTIMATE_FEE, args, hre);
-}
-
-async function starknetInteractAction(
-    choice: InteractChoice,
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
-) {
-    setRuntimeNetwork(args, hre);
-    const contractFactory = await hre.starknet.getContractFactory(args.contract);
-    const abiPath = contractFactory.getAbiPath();
-
-    let wallet, accountDir;
-    if (args.wallet) {
-        wallet = getWalletUtil(args.wallet, hre);
-        accountDir = getAccountPath(wallet.accountPath, hre);
-    }
-
-    const executed = await hre.starknetWrapper.interact({
-        choice: choice,
-        address: args.address,
-        abi: abiPath,
-        functionName: args.function,
-        inputs: args.inputs ? args.inputs.split(/\s+/) : undefined,
-        signature: args.signature?.split(/\s+/),
-        wallet: wallet ? wallet.modulePath : undefined,
-        account: wallet ? wallet.accountName : undefined,
-        accountDir: wallet ? accountDir : undefined,
-        blockNumber: args.blockNumber ? args.blockNumber : undefined,
-        maxFee: args.maxFee ? args.maxFee : undefined,
-        nonce: args.nonce ? args.nonce : undefined
-    });
-
-    const statusCode = processExecuted(executed, true);
-
-    if (statusCode) {
-        const msg =
-            `Could not perform ${choice.internalCommand} of ${args.function}:\n` +
-            executed.stderr.toString();
-        const replacedMsg = adaptLog(msg);
-        throw new StarknetPluginError(replacedMsg);
-    }
-
-    if (choice === InteractChoice.INVOKE && args.wait) {
-        // If the "wait" flag was passed as an argument, check the transaction hash for its status
-        console.log("Checking transaction...");
-        const executedOutput = executed.stdout.toString();
-        const txHash = extractTxHash(executedOutput);
-        await new Promise<void>((resolve, reject) =>
-            iterativelyCheckStatus(
-                txHash,
-                hre.starknetWrapper,
-                (status) => {
-                    console.log(`Invoke transaction ${txHash} is now ${status}`);
-                    resolve();
-                },
-                (error) => {
-                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
-                }
-            )
-        );
-    }
 }
 
 export async function starknetNewAccountAction(

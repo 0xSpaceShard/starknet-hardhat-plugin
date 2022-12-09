@@ -86,13 +86,13 @@ Likely places where the old version has to be replaced with the new version are 
 
 ### In starknet-hardhat-example repo
 
-Change the version in `hardhat.config.ts`. Recompile the contracts. Also if the compiler changed, the `EXPECTED_ADDRESS` in `sample-test.ts` has to be modified.
+Change the version in `hardhat.config.ts`. Recompile the contracts (only important for local usage).
 
 ## Architecture
 
 ### Wrapper
 
-This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-deploy` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
+This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
 There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts) and both rely on a [proxy server](/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 

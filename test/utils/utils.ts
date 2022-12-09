@@ -57,10 +57,9 @@ export function assertNotEqual(val1: unknown, val2: unknown, msg?: string) {
     assert.notEqual(val1, val2, msg);
 }
 
-export function assertExists(path: string, msg?: string) {
-    if (!existsSync(path)) {
-        throw new AssertionError({
-            message: msg
-        });
+export function assertExistence(path: string, expected = true) {
+    if (existsSync(path) !== expected) {
+        const message = `Expected ${path} to ${expected ? "" : "not "}exist`;
+        throw new AssertionError({ message });
     }
 }

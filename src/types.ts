@@ -107,7 +107,7 @@ export function extractClassHash(response: string) {
     return extractFromResponse(response, /^Contract class hash: (.*)$/m);
 }
 
-export function extractTxHash(response: string) {
+function extractTxHash(response: string) {
     return extractFromResponse(response, /^Transaction hash: (.*)$/m);
 }
 

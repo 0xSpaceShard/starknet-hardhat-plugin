@@ -1,12 +1,10 @@
-import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
-import { ensureEnvVar, rmrfSync } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { assertExistence, rmrfSync } from "../../utils/utils";
 
-const network = ensureEnvVar("NETWORK");
+hardhatStarknetCompile(["contracts/contract.cairo"]);
+assertExistence("my-starknet-artifacts/contracts/contract.cairo/");
+assertExistence("starknet-artifacts", false);
 
-hardhatStarknetCompile("contracts/contract.cairo".split(" "));
-hardhatStarknetDeploy(
-    `--starknet-network ${network} my-starknet-artifacts/contracts/contract.cairo/ --inputs 10`.split(
-        " "
-    )
-);
+hardhatStarknetTest(["test/contract-factory-test.ts", "--no-compile"]);
+
 rmrfSync("my-starknet-artifacts");

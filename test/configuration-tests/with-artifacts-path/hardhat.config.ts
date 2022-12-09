@@ -1,9 +1,6 @@
 import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
-    starknet: {
-        network: process.env.NETWORK
-    },
     paths: {
         starknetArtifacts: "my-starknet-artifacts"
     },

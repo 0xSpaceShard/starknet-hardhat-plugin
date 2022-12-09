@@ -1,2 +1,0 @@
-Error in plugin Starknet: Could not perform invoke of increase_balance:
-Error: AssertionError: Expected at least 1 inputs, got 0.

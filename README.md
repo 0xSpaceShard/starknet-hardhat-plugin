@@ -73,48 +73,6 @@ If no paths are provided, all StarkNet contracts in the default contracts direct
 
 `--disable-hint-validation` allows compiling a contract without hint validation (any python code is allowed in hints, ex: print ...).
 
-### `starknet-deploy`
-
-```
-npx hardhat starknet-deploy [--starknet-network <NAME>] [--wait] [--gateway-url <URL>] [ARTIFACT_PATH...] [--inputs <CONSTRUCTOR_ARGUMENTS>] [--salt <SALT>]
-```
-
-If no paths are provided, all StarkNet artifacts from the default artifacts directory are deployed. Paths can be files and directories.
-
-If you're passing constructor arguments, pass them space separated, but as a single string (due to limitations of the plugin system).
-
-If the `--wait` flag is passed, the task will wait until the transaction status of the deployment is one of (`PENDING`, `ACCEPTED_ON_L2`, `ACCEPTED_ON_L1`).
-
-The `--salt` parameter should be a hex string which, when provided, causes the contract to always be deployed to the same address.
-
-The `--token` parameter indicates that your deployment is whitelisted on alpha-mainnet.
-
-Notice that this plugin relies on `--starknet-network` (or `STARKNET_NETWORK` environment variable) and not on Hardhat's `--network`. So if you define
-
-```javascript
-module.exports = {
-    networks: {
-        myNetwork: {
-            url: "http://127.0.0.1:5050"
-        }
-    }
-};
-```
-
-you can use it by calling `npx hardhat starknet-deploy --starknet-network myNetwork`.
-
-The AlphaGoerli networks and integrated Devnet are available by default, you don't need to define them in the config file; just pass:
-
--   `--starknet-network alphaGoerli` or `--starknet-network alpha-goerli` for AlphaGoerli Testnet (on Goerli)
--   `--starknet-network alpha-mainnet` for Alpha Mainnet
--   `--starknet-network integrated-devnet` for integrated Devnet
-
-```
-npx hardhat starknet-deploy starknet-artifacts/contract.cairo/ --inputs "1 2 3"
-```
-
-You would typically use the input feature when deploying a single contract requiring constructor arguments. If you are deploying multiple contracts, they'll all use the same input.
-
 ### `starknet-verify`
 
 ```
@@ -138,6 +96,7 @@ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_N
 ```
 
 Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file which then should be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
+
 ### `starknet-deploy-account`
 
 ```
@@ -149,43 +108,6 @@ Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` f
 ```
 npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
 ```
-
-### `starknet-invoke`
-
-```
-npx hardhat starknet-invoke [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>]
-```
-
-Invokes a function on the target contract.
-If the function takes any inputs, they should be passed as a single string, separated by space.
-If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the StarkNet argument `--no_wallet` will be used by default.
-
-```
-npx hardhat starknet-invoke --starknet-network myNetwork --contract contract --function increase_balance --address $CONTRACT_ADDRESS --inputs "10 20" --wallet MyWallet
-```
-
-### `starknet-call`
-
-```
-npx hardhat starknet-call [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--block-number <BLOCK_NUMBER>]
-```
-
-Calls a function on the target contract and returns its return value.
-If the function takes any inputs, they should be passed as a single string, separated by space.
-The pending block will always be queried by default, and if there's no pending block, the default behaviour is to query the last block. Using the `--block-number` argument will query the specified block.
-If the wallet argument is passed, the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file will be used. If omitted, the Starknet argument `--no_wallet` will be used by default.
-
-```
-npx hardhat starknet-call --starknet-network myNetwork --contract contract --function sum_points_to_tuple --address $CONTRACT_ADDRESS --inputs "10 20 30 40"
-```
-
-### `starknet-estimate-fee`
-
-```
-npx hardhat starknet-estimate-fee [--starknet-network <NAME>] [--gateway-url <URL>] [--contract <CONTRACT_NAME>] [--address <CONTRACT_ADDRESS>] [--function <FUNCTION_NAME>] [--inputs <FUNCTION_INPUTS>] [--signature <INVOKE_SIGNATURE>] [--wallet <WALLET_NAME>] [--block-number <BLOCK_NUMBER>]
-```
-
-Estimates the gas fee of a function execution.
 
 ### `starknet-plugin-version`
 
@@ -568,7 +490,7 @@ module.exports = {
 
 ### Runtime network
 
-To set the network used in your Hardhat scripts/tests, use `starknet["network"]` or the `--starknet-network` CLI option. Not specifying one will default to using alpha-goerli.
+To set the network used in your Hardhat scripts/tests, use `starknet["network"]` or the `--starknet-network` CLI option. Not specifying one will default to using alpha-goerli. Do not confuse this network with Hardhat's default `--network` option which refers to the L1 network.
 
 A faster approach is to use [starknet-devnet](https://github.com/Shard-Labs/starknet-devnet), a Ganache-like local testnet.
 
@@ -578,7 +500,7 @@ module.exports = {
     network: "myNetwork"
   },
   networks: {
-    myNetwork: {
+    devnet: { // this way you can also specify it with `--starknet-network devnet`
       url: "http://127.0.0.1:5050"
     }
   }
@@ -586,9 +508,11 @@ module.exports = {
 };
 ```
 
+Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and `integrated-devnet`.
+
 ### Runtime network - Integrated Devnet
 
-[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`.
+[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`. Target it via the hardhat config file or `--starknet-network integrated-devnet`.
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
@@ -613,8 +537,8 @@ module.exports = {
       // or specify Docker image tag
       dockerizedVersion: "<DEVNET_VERSION>",
 
-      // optional devnet CLI arguments
-      args: ["--lite-mode", "--gas-price", "2000000000"],
+      // optional devnet CLI arguments, read more here: https://shard-labs.github.io/starknet-devnet/docs/guide/run
+      args: ["--gas-price", "2000000000", "--fork-network", "alpha-goerli"],
 
       // stdout: "logs/stdout.log" <- dumps stdout to the file
       stdout: "STDOUT", // <- logs stdout to the terminal
@@ -722,9 +646,6 @@ await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 
 Recompilation is performed when contracts are updated or when artifacts are missing. A file will be created with the name `cairo-files-cache.json` to handle caching. Recompilation is handled before the following [CLI commands](#cli-commands) are executed.
 
--   `npx hardhat starknet-deploy`
--   `npx hardhat starknet-invoke`
--   `npx hardhat starknet-call`
 -   `npx hardhat run`
 -   `npx hardhat test`
 

@@ -193,8 +193,6 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract deploy(options: DeployWrapperOptions): Promise<ProcessResult>;
-
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
             ...options.choice.cliCommand,
@@ -432,12 +430,6 @@ export class DockerWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployOptions(options);
-        const executed = this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.abi]: options.abi
@@ -526,12 +518,6 @@ export class VenvWrapper extends StarknetWrapper {
         const preparedOptions = this.prepareNewAccountOptions(options);
 
         const executed = this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 

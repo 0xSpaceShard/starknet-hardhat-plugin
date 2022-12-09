@@ -1,14 +1,11 @@
 import { renameSync } from "fs";
-import { hardhatStarknetCompile, hardhatStarknetDeploy } from "../../utils/cli-functions";
-import { ensureEnvVar } from "../../utils/utils";
-
-const network = ensureEnvVar("NETWORK");
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { assertExistence } from "../../utils/utils";
 
 renameSync("contracts", "my-starknet-sources");
 
-hardhatStarknetCompile([]);
-hardhatStarknetDeploy(
-    `starknet-artifacts/my-starknet-sources/contract.cairo/ --starknet-network ${network} --inputs 10`.split(
-        " "
-    )
-);
+hardhatStarknetCompile(["contracts/contract.cairo"]);
+assertExistence("starknet-artifacts/my-starknet-sources");
+assertExistence("starknet-artifacts/contracts", false);
+
+hardhatStarknetTest(["test/contract-factory-test.ts", "--no-compile"]);

@@ -1,12 +1,6 @@
 import shell from "shelljs";
 import { assertEqual, assertNotEqual } from "./utils";
 
-// myTODO
-const DUMMY_EXECUTION = {
-    stderr: "Test function temporarily disabled!",
-    stdout: "Test function temporarily disabled!"
-};
-
 export function exec(cmd: string, expectFailure = false) {
     const result = shell.exec(cmd, { silent: expectFailure });
     const msg = `Command ${cmd} failed.\n${result.stderr}`;
@@ -21,25 +15,6 @@ export function exec(cmd: string, expectFailure = false) {
 
 export const hardhatStarknetCompile = (args: Array<string>, expectFailure = false) => {
     return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetDeploy = (args: Array<string>, expectFailure = false) => {
-    return DUMMY_EXECUTION;
-    return exec(`npx hardhat starknet-deploy ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetInvoke = (args: Array<string>, expectFailure = false) => {
-    return DUMMY_EXECUTION;
-    return exec(`npx hardhat starknet-invoke ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetCall = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-call ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetEstimateFee = (args: Array<string>, expectFailure = false) => {
-    return DUMMY_EXECUTION;
-    return exec(`npx hardhat starknet-estimate-fee ${args.join(" ")}`, expectFailure);
 };
 
 export const hardhatStarknetNewAccount = (args: Array<string>, expectFailure = false) => {
