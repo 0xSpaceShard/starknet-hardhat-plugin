@@ -37,7 +37,7 @@ success=0
 test_dir="../test/$TEST_SUBDIR"
 
 if [ ! -d "$test_dir" ]; then
-    echo "Invalid test directory"
+    echo "Invalid test directory: $test_dir"
     exit -1
 fi
 
@@ -79,6 +79,8 @@ function iterate_dir() {
         if [ -f "$test_case/check.ts" ]; then
             # run the test
             NETWORK="$network" npx ts-node "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+        else
+            echo "Error: $test_case/check.ts not found"
         fi
 
         rm -rf starknet-artifacts

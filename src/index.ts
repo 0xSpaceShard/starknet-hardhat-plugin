@@ -2,7 +2,12 @@ import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { lazyObject } from "hardhat/plugins";
-import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig } from "hardhat/types";
+import {
+    ConfigurableTaskDefinition,
+    HardhatConfig,
+    HardhatRuntimeEnvironment,
+    HardhatUserConfig
+} from "hardhat/types";
 import exitHook from "exit-hook";
 
 import "./type-extensions";
@@ -39,7 +44,8 @@ import {
     starknetRunAction,
     starknetPluginVersionAction,
     starknetMigrateAction,
-    starknetNewAccountAction
+    starknetNewAccountAction,
+    starknetDeployAccountAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -295,22 +301,27 @@ task("starknet-new-account", "Initializes a new account according to the paramet
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .setAction(starknetNewAccountAction);
 
-const STARKNET_NETWORK_DESCRIPTION =
-    "Specify the starknet-network to be used; overrides the value from hardhat.config";
+task("starknet-deploy-account", "Deploys a new account according to the parameters.")
+    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
+    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
+    .setAction(starknetDeployAccountAction);
 
-task("test")
-    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
-    .setAction(starknetTestAction);
+function addStarknetNetworkParam(task: ConfigurableTaskDefinition): ConfigurableTaskDefinition {
+    return task.addOptionalParam(
+        "starknetNetwork",
+        "Specify the starknet-network to be used; overrides the value from hardhat.config"
+    );
+}
 
-task("run")
-    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
-    .setAction(starknetRunAction);
+addStarknetNetworkParam(task("test")).setAction(starknetTestAction);
+
+addStarknetNetworkParam(task("run")).setAction(starknetRunAction);
 
 task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
     starknetPluginVersionAction
 );
 
-task("migrate", "Migrates a cairo contract to a new version.")
+task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
     .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
     .addFlag("inplace", "Applies changes to the files in place.")
     .setAction(starknetMigrateAction);

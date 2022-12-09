@@ -1,2 +1,2 @@
-Error in plugin Starknet: Invalid network provided in starknet-network: foo.
+Error in plugin Starknet: Invalid network provided in --starknet-network: foo.
 Valid hardhat networks: hardhat, localhost, devnet, alphaGoerli, alphaGoerli2, alphaMainnet, integratedDevnet
