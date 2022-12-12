@@ -5,6 +5,7 @@ import { lazyObject } from "hardhat/plugins";
 import {
     ConfigurableTaskDefinition,
     HardhatConfig,
+    HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
     HardhatUserConfig
 } from "hardhat/types";
@@ -273,8 +274,8 @@ extendEnvironment((hre) => {
             return nonce;
         },
 
-        network: undefined,
-        networkConfig: undefined
+        network: hre.config.starknet.network,
+        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig
     };
 
     hre.OpenZeppelinAccount = OpenZeppelinAccount;
