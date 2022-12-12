@@ -186,8 +186,7 @@ const expect = require("chai").expect;
 const starknet = require("hardhat").starknet;
 
 describe("My Test", function () {
-  this.timeout(300_000); // 5 min - recommended if used with Alpha testnet (alpha-goerli)
-  // this.timeout(30_000); // 30 seconds - recommended if used with starknet-devnet
+  this.timeout(...);  // Recommended to use a big value if interacting with Alpha Goerli
 ```
 
 #### Deploy / load contract
@@ -200,17 +199,6 @@ describe("My Test", function () {
    * - external function increase_balance(amount: felt) -> (res: felt)
    * - view function get_balance() -> (res: felt)
    */
-  it("should work with old-style deployment", async function () {
-    const account  = ...;
-    const contractFactory = await starknet.getContractFactory("MyContract");
-
-    await account.invoke(contract, "increase_balance", { amount: 10 }); // invoke method by name and pass arguments by name
-    await account.invoke(contract, "increase_balance", { amount: BigInt("20") });
-
-    const { res } = await contract.call("get_balance"); // call method by name and receive the result by name
-    expect(res).to.deep.equal(BigInt(40)); // you can also use 40n instead of BigInt(40)
-  });
-
   it("should load a previously deployed contract", async function () {
     const contractFactory = await starknet.getContractFactory("MyContract");
     const contract = contractFactory.getContractAt("0x123..."); // address of a previously deployed contract
@@ -218,7 +206,7 @@ describe("My Test", function () {
 
   it("should declare and deploy", async function() {
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const account = await starknet.getAccountFromAddress(...);
+    const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
 
     // You are expected to have a Deployer contract with a deploy method
     const deployer = await starknet.getContractFactory("Deployer");
@@ -234,13 +222,11 @@ describe("My Test", function () {
 
 ```typescript
 /**
- * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
  * The contract is assumed to have:
  * - view function sum_array(a_len: felt, a: felt*) -> (res: felt)
  */
 it("should work with arrays", async function () {
-    const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = await contractFactory.deploy(); // no constructor -> no constructor arguments
+    const contract = ...;
     const { res } = await contract.call("sum_array", { a: [1, 2, 3] });
     expect(res).to.deep.equal(BigInt(6));
 });
@@ -250,7 +236,6 @@ it("should work with arrays", async function () {
 
 ```typescript
 /**
- * Assumes there is a file MyContract.cairo whose compilation artifacts have been generated.
  * The contract is assumed to have:
  * - view function sum_pair(pair: (felt, felt)) -> (res : felt)
  * - view func sum_named_pair(pair : (x : felt, y : felt) -> (res : felt)
@@ -258,8 +243,7 @@ it("should work with arrays", async function () {
  * - view func sum_type_alias(pair : PairAlias) -> (res : felt)
  */
 it("should work with tuples", async function () {
-    const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = await contractFactory.deploy();
+    const contract = ...;
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
     expect(res).to.deep.equal(BigInt(30));
@@ -268,44 +252,11 @@ it("should work with tuples", async function () {
 });
 ```
 
-#### Accounts
-
-More detailed documentation can be found [here](#account).
-
-```typescript
-  /**
-   * Assumes there is a file MyContract.cairo, together with OpenZeppelin Account.cairo file and its dependencies.
-   * Assumes their compilation artifacts have been generated.
-   * MyContract is assumed to have:
-   * - external function increase_balance(amount: felt) -> ()
-   * - view function get_balance() -> (res: felt)
-   */
-  it("should succeed when using the account to invoke a function on another contract", async function() {
-    const contractFactory = await starknet.getContractFactory("MyContract");
-    const contract = await contractFactory.deploy()
-
-    const account = await starknet.deployAccount("OpenZeppelin");
-    // or
-    const account = await starknet.getAccountFromAddress(accountAddress, process.env.PRIVATE_KEY, "OpenZeppelin");
-    console.log("Account:", account.address, account.privateKey, account.publicKey);
-
-    const { res: currBalance } = await contract.call("get_balance");
-    const amount = BigInt(10);
-
-    // Read more about max fee specification under # Funds and fees
-    await account.invoke(contract, "increase_balance", { amount }, { maxFee: BigInt("1000000000") });
-
-    const { res: newBalance } = await contract.call("get_balance");
-    expect(newBalance).to.deep.equal(currBalance + amount);
-  });
-});
-```
-
 #### Fee estimation
 
 ```typescript
 it("should estimate fee", async function () {
-    const fee = await contract.estimateFee("increase_balance", { amount: 10n });
+    const fee = await account.estimateFee(contract, "increase_balance", { amount: 10n });
     console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
 });
 ```
@@ -319,7 +270,8 @@ it("should forward to the implementation contract", async function () {
     const implementationClassHash = await account.declare(implementationFactory);
 
     const proxyFactory = await starknet.getContractFactory("delegate_proxy");
-    const proxy = await proxyFactory.deploy({
+    await account.declare(proxyFactory);
+    const proxy = await account.deploy(proxyFactory, {
         implementation_hash_: implementationClassHash
     });
 
@@ -332,7 +284,7 @@ it("should forward to the implementation contract", async function () {
 
 ```typescript
 it("should return transaction data and transaction receipt", async function () {
-    const contract: StarknetContract = await contractFactory.deploy();
+    const contract: StarknetContract = ...;
     console.log("Deployment transaction hash:", contract.deployTxHash);
 
     const transaction = await starknet.getTransaction(contract.deployTxHash);
@@ -405,7 +357,7 @@ await starknet.devnet.load(path); // path for dump file (eg. dump.pkl)
 
 #### Advancing time
 
-The plugin comes with support for [Devnet's timestamp management](https://github.com/Shard-Labs/starknet-devnet/#advancing-time).
+The plugin comes with support for [Devnet's timestamp management](https://shard-labs.github.io/starknet-devnet/docs/guide/advancing-time).
 The time offset for each generated block can be increased by calling `starknet.devnet.increaseTime()`. The time for the next block can be set by calling `starknet.devnet.setTime()`, with subsequent blocks keeping the set offset.
 
 Warning: _block time can be set in the past and lead to unexpected behaviour!_
@@ -417,7 +369,7 @@ await starknet.devnet.increaseTime(1000); // time in seconds
 
 #### Creating an empty block
 
-Devnet offers [empty block creation](https://github.com/Shard-Labs/starknet-devnet/#create-an-empty-block). It can be useful to make available those changes that take effect with the next block.
+Devnet offers [empty block creation](https://shard-labs.github.io/starknet-devnet/docs/guide/blocks#create-an-empty-block). It can be useful to make available those changes that take effect with the next block.
 
 ```typescript
 const emptyBlock = await starknet.devnet.createBlock();
@@ -516,9 +468,9 @@ Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   the version of Devnet to be used for the underlying Devnet Docker image
+-   the version of Devnet to use (effectivelly specifying the version of the underlying Docker image)
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
--   CLI arguments to be used on Devnet startup: [options](https://github.com/Shard-Labs/starknet-devnet/#run)
+-   CLI arguments to be used on Devnet startup: [options](https://shard-labs.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
 
 ```javascript
@@ -632,7 +584,7 @@ module.exports = {
 
 Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
 
-To use the wallet in your scripts, use the `getWallet` utility function (using `Account.getAccountFromAddress(..., "OpenZeppelin")` will probably not work):
+To use the wallet in your scripts, use the `getWallet` utility function (using `Account.getAccountFromAddress(...)` will probably not work):
 
 ```typescript
 import { starknet } from "hardhat";
@@ -661,55 +613,45 @@ module.exports = {
 
 ## Account
 
-An Account can be used to make proxy signed calls/transactions to other contracts.
+In Starknet, an account is a contract through which you interact with other contracts.
 Its usage is exemplified [earlier in the docs](#accounts) and [in the example repo](https://github.com/Shard-Labs/starknet-hardhat-example/blob/plugin/test/oz-account-test.ts).
 
-You can choose to deploy a new Account, or use an existing one.
+There are several Starknet account implementations; this plugin supports the following as properties of `hre.starknet`:
 
-To deploy a new Account, use the `starknet` object's `deployAccount` method:
-
-```typescript
-function deployAccount(accountType: AccountImplementationType, options?: DeployAccountOptions);
-```
-
--   `accountType` - the implementation of the Account that you want to use; currently supported implementations:
-    -   `"OpenZeppelin"` - [v0.5.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.5.1)
-    -   `"Argent"` - Commit [780760e](https://github.com/argentlabs/argent-contracts-starknet/tree/780760e4156afe592bb1feff7e769cf279ae9831) of branch develop.
--   `options` - optional deployment parameters:
-    -   `salt` - for fixing the account address
-    -   `privateKey` - if you don't provide one, it will be randomly generated
-    -   `token` - for indicating that the account is whitelisted on alpha-mainnet
-
-Use it like this:
+-   `OpenZeppelinAccount` - [v0.5.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.5.1)
+-   `ArgentAccount` - Commit [780760e](https://github.com/argentlabs/argent-contracts-starknet/tree/780760e4156afe592bb1feff7e769cf279ae9831) of branch develop.
 
 ```typescript
-const account = await starknet.deployAccount("OpenZeppelin");
-const accountWithPredefinedKey = await starknet.deployAccount("OpenZeppelin", {
-    privateKey: process.env.MY_KEY
+import { starknet } from "hardhat";
+const account = await starknet.OpenZeppelinAccount.createAccount();
+const accountFromOptions = await starknet.OpenZeppelinAccount.createAccount({
+    salt: "0x123", // salt to always deploy to an expected address
+    privateKey: process.env.MY_KEY // the key only known to you, the public key will be inferred
 });
+console.log(account.address);
 ```
 
-To retrieve an already deployed Account, use the `starknet` object's `getAccountFromAddress` method:
+After creating the account, you need to fund it (give it some ETH):
+
+-   On alpha-goerli use [this faucet](https://faucet.goerli.starknet.io/).
+-   On starknet-devnet use [this faucet](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token/).
+-   Alternatively transfer some amount from an already funded account to the newly deployed account.
+
+After funding the account, you need to deploy it (in case of `ArgentAccount`, this will also take care of initialization):
 
 ```typescript
-function getAccountFromAddress(
-    address: string, // the address where the account you want to use is deployed
-    privateKey: string, // the account's private key
-    accountType: AccountImplementationType // the implementation of the Account that you want to use.
-);
+await account.deployAccount({ maxFee: ... });
 ```
 
-E.g.:
+To retrieve an already deployed Account, use the `getAccountFromAddress` method. What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
 
 ```typescript
-const account = await starknet.getAccountFromAddress(
+const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(
     accountAddress,
-    process.env.PRIVATE_KEY,
-    "OpenZeppelin"
+    process.env.PRIVATE_KEY
 );
 ```
 
-You can then use the Account object to call and invoke your contracts using the `invoke` and `call` methods, that take as arguments the target contract, function name, and arguments:
 Use the `invoke` method of `Account` to invoke (change the state), but `call` method of `StarknetContract` to call (read the state).
 
 ```typescript
@@ -717,22 +659,7 @@ await account.invoke(contract, "increase_balance", { amount });
 const { res: amount } = await contract.call("get_balance");
 ```
 
-### Funds and Fees
-
--   **On alpha-goerli**
-    -   Deploy an account using `starknet.deployAccount`.
-    -   Give it finds through [the faucet](https://faucet.goerli.starknet.io/).
-    -   Later load the account using `starknet.getAccountFromAddress`.
--   **On starknet-devnet**
-    -   Since v0.2.3, Devnet comes with prefunded OpenZeppelin accounts.
-    -   To get the addresses and keys of these accounts, the options are:
-        -   use `starknet.devnet.getPredeployedAccounts()`
-        -   observe data logged on Devnet startup
-    -   Load one of the predeployed accounts using `starknet.getAccountFromAddress`
-    -   [Read more](https://github.com/Shard-Labs/starknet-devnet#predeployed-accounts)
-    -   Alternatively use [Devnet's faucet](https://github.com/Shard-Labs/starknet-devnet#mint-token---local-faucet) to fund the accounts that you deployed
-
-Once your account has funds, you can specify a max fee greater than zero:
+Once your account is funded and deployed, you can specify a max fee greater than zero:
 
 ```typescript
 await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
@@ -741,8 +668,8 @@ await account.invoke(contract, "foo", { arg1: ... }, { maxFee: BigInt(...) });
 If you don't specify a `maxFee`, one will be calculated for you by applying an overhead of 50% to the result of fee estimation. You can also customize the overhead by providing a value for `overhead`:
 
 ```typescript
-// maxFee will be 40% of estimated fee; if overhead not provided, a default value is used.
-await account.invoke(contract, "foo", { arg1: ... }, { overhead: 0.4 );
+// maxFee will be 40% of estimated fee; if overhead not provided, the default value is used.
+await account.invoke(contract, "foo", { arg1: ... }, { overhead: 0.4 });
 ```
 
 ### Multicalls
@@ -766,23 +693,12 @@ const fee = await account.multiEstimateFee(interactionArray);
 const txHash = await account.multiInvoke(interactionArray);
 ```
 
-OpenZeppelin and Argent accounts have some differences:
-
--   Argent account needs to be initialized after deployment. This has to be done with another funded account.
--   Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
+Unlike OpenZeppelin account, Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
 
 ```typescript
-import { ArgentAccount } from "hardhat/types/runtime";
-
-const argentAccount = (await starknet.deployAccount("Argent")) as ArgentAccount;
-
-const fundedAccount = ...;
-await argentAccount.initialize({
-  fundedAccount: fundedAccount,
-  maxFee: 1e18
-});
-
-argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
+await argentAccount.setGuardian(process.env.GUARDIAN_PRIVATE_KEY, { maxFee: 1e18 });
+// to unset it, use an undefined key
+await argentAccount.setGuardian(undefined, { maxFee: 1e18 });
 ```
 
 ## More examples
