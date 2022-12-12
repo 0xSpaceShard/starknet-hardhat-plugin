@@ -275,11 +275,11 @@ extendEnvironment((hre) => {
         },
 
         network: hre.config.starknet.network,
-        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig
-    };
+        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig,
 
-    hre.OpenZeppelinAccount = OpenZeppelinAccount;
-    hre.ArgentAccount = ArgentAccount;
+        OpenZeppelinAccount: OpenZeppelinAccount,
+        ArgentAccount: ArgentAccount
+    };
 });
 
 task("starknet-verify", "Verifies a contract on a Starknet network.")

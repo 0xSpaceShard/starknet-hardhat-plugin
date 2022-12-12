@@ -251,10 +251,11 @@ declare module "hardhat/types/runtime" {
              * @returns the nonce
              */
             getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
-        };
 
-        OpenZeppelinAccount: typeof OpenZeppelinAccount;
-        ArgentAccount: typeof ArgentAccount;
+            OpenZeppelinAccount: typeof OpenZeppelinAccount;
+
+            ArgentAccount: typeof ArgentAccount;
+        };
     }
 
     type StarknetContract = StarknetContractType;
