@@ -21,7 +21,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
         throw new StarknetPluginError(
-            `Could not find metadata for contract "${contractPath}.cairo"`
+            `Could not find JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
         );
     }
 
@@ -31,7 +31,9 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
-        throw new StarknetPluginError(`Could not find ABI for contract "${contractPath}.cairo"`);
+        throw new StarknetPluginError(
+            `Could not find ABI JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
+        );
     }
 
     return new StarknetContractFactory({
