@@ -103,6 +103,16 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
     -   for users that already have `cairo-lang` installed
     -   faster than Docker wrapper - not necessarily true since Docker wrapper also started using a proxy server
 
+### Accessing HardhatRuntimeEnvironment (hre)
+
+Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting clases has become a possibility:
+
+```typescript
+const hre = await import("hardhat");
+```
+
+In `type-extensions.ts`, classes are specified using `typeof`, e.g. `OpenZeppelinAccount: typeof OpenZeppelinAccount`. However, exporting classes this way doesn't export their type.
+
 ## Version management
 
 When a push is done to the `master` branch and the version in `package.json` differs from the one published on `npm`, the release process is triggered.
