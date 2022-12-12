@@ -643,6 +643,8 @@ After funding the account, you need to deploy it (in case of `ArgentAccount`, th
 await account.deployAccount({ maxFee: ... });
 ```
 
+To successfully deploy `ArgentAccount`, the chain you are interacting with is expected to have its contracts declared. Alpha Goerli and Alpha Mainnet satisfy this criterion, but if you're working with Devnet, this is most easily achievable by running a [Devnet forked](https://shard-labs.github.io/starknet-devnet/docs/guide/fork) from e.g. alpha-goerli.
+
 To retrieve an already deployed Account, use the `getAccountFromAddress` method. What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
 
 ```typescript
