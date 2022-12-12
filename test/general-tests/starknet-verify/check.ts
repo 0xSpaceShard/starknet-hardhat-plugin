@@ -1,9 +1,5 @@
-import { assertEqual, ensureEnvVar, exec, extractAddress } from "../../utils/utils";
-import {
-    hardhatStarknetCompile,
-    hardhatStarknetDeploy,
-    hardhatStarknetVerify
-} from "../../utils/cli-functions";
+import { assertEqual, ensureEnvVar, exec } from "../../utils/utils";
+import { hardhatStarknetCompile, hardhatStarknetVerify } from "../../utils/cli-functions";
 import axios from "axios";
 
 console.log(
@@ -18,12 +14,8 @@ const utilContract = "contracts/util.cairo";
 
 hardhatStarknetCompile(`${mainContract} ${utilContract}`.split(" "));
 
-console.log("Waiting for deployment to be accepted");
-const output = hardhatStarknetDeploy(
-    `--starknet-network ${network} contract --inputs 10 --wait`.split(" ")
-);
-const address = extractAddress(output.stdout, "Contract address: ");
-console.log("Verifying contract at $address");
+throw new Error("Missing code: Deploy with salt and extract address");
+const address = "";
 
 console.log("Sleeping to allow Voyager to index the deployment");
 exec("sleep 1m");

@@ -9,7 +9,13 @@ CONFIG_FILE_NAME="hardhat.config.ts"
 
 # setup example repo
 rm -rf starknet-hardhat-example
-git clone -b plugin --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
+EXAMPLE_REPO_BRANCH="plugin"
+if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
+    echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
+    exit 1
+fi
+
+git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
 npm ci
@@ -31,7 +37,7 @@ success=0
 test_dir="../test/$TEST_SUBDIR"
 
 if [ ! -d "$test_dir" ]; then
-    echo "Invalid test directory"
+    echo "Invalid test directory: $test_dir"
     exit -1
 fi
 
@@ -73,12 +79,15 @@ function iterate_dir() {
         if [ -f "$test_case/check.ts" ]; then
             # run the test
             NETWORK="$network" npx ts-node "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+        else
+            echo "Error: $test_case/check.ts not found"
         fi
 
         rm -rf starknet-artifacts
         git checkout --force
         git clean -fd
-        [ "$network" == "devnet" ] && pkill -f -9 starknet-devnet && sleep 5
+        # specifying signal for pkill fails on mac
+        [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
 
         echo "----------------------------------------------"
         echo

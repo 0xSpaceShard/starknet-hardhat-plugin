@@ -1,30 +1,17 @@
 import { assertContains } from "../../utils/utils";
 import path from "path";
 import { readFileSync } from "fs";
-import {
-    hardhatStarknetCompile,
-    hardhatStarknetDeploy,
-    hardhatStarknetTest
-} from "../../utils/cli-functions";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
 hardhatStarknetCompile(["contracts/contract.cairo"]);
-const artifactsPath = "starknet-artifacts/contracts/contract.cairo/";
-const invalidNetwork = "foo";
-const expected =
-    "Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: foo.";
-const prefix = path.join(__dirname);
 
-console.log("Testing no starknet network");
-let execution = hardhatStarknetDeploy(`${artifactsPath} --inputs 10`.split(" "), true);
-assertContains(
-    execution.stderr,
-    readFileSync(path.join(prefix, "without-starknet-network.txt")).toString()
-);
-console.log("Success");
+const invalidNetwork = "foo";
+const expected = `Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: ${invalidNetwork}.`;
+const prefix = __dirname;
 
 console.log("Testing invalid CLI network");
-execution = hardhatStarknetDeploy(
-    `--starknet-network ${invalidNetwork} ${artifactsPath} --inputs 10`.split(" "),
+let execution = hardhatStarknetTest(
+    ["test/contract-factory-test.ts", "--no-compile", "--starknet-network", invalidNetwork],
     true
 );
 assertContains(
@@ -35,20 +22,18 @@ console.log("Success");
 
 console.log("Testing no mocha network");
 process.env.NETWORK = "";
-hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "));
+hardhatStarknetTest(["--no-compile", "test/contract-factory-test.ts"]);
 console.log("Success");
 
 console.log("Testing invalid config network");
 process.env.NETWORK = invalidNetwork;
-execution = hardhatStarknetTest("--no-compile test/contract-factory-test.ts".split(" "), true);
+execution = hardhatStarknetTest(["--no-compile", "test/contract-factory-test.ts"], true);
 assertContains(execution.stderr, expected);
 console.log("Success");
 
 console.log("Testing deployment with alpha-goerli2 config network is temporarily disabled.");
 // console.log("Testing with alpha-goerli2 config network");
 // process.env.NETWORK = "alpha-goerli2";
-// hardhatStarknetDeploy(
-//     "starknet-artifacts/contracts/contract.cairo --starknet-network alpha-goerli2 --inputs 10".split(
-//         " "
-//     )
+// execution = hardhatStarknetTest(
+//    ["test/contract-factory-test.ts", "--no-compile", "--starknet-network", "alpha-goerli2"]
 // );

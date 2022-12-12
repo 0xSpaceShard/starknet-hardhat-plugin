@@ -2,8 +2,7 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        venv: "active",
-        network: process.env.NETWORK
+        venv: "active"
     },
     networks: {
         devnet: {

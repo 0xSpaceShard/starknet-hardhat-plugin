@@ -17,22 +17,6 @@ export const hardhatStarknetCompile = (args: Array<string>, expectFailure = fals
     return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetDeploy = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-deploy ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetInvoke = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-invoke ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetCall = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-call ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetEstimateFee = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-estimate-fee ${args.join(" ")}`, expectFailure);
-};
-
 export const hardhatStarknetNewAccount = (args: Array<string>, expectFailure = false) => {
     return exec(`npx hardhat starknet-new-account ${args.join(" ")}`, expectFailure);
 };

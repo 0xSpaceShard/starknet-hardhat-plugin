@@ -3,14 +3,7 @@ import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
 import { ABI_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
-import {
-    AccountImplementationType,
-    BlockIdentifier,
-    DeployAccountOptions,
-    NonceQueryOptions,
-    StarknetContractFactory
-} from "./types";
-import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
+import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
 
@@ -28,7 +21,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     const metadataPath = await findPath(artifactsPath, metadataSearchTarget);
     if (!metadataPath) {
         throw new StarknetPluginError(
-            `Could not find metadata for contract "${contractPath}.cairo"`
+            `Could not find JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
         );
     }
 
@@ -38,17 +31,15 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
     if (!abiPath) {
-        throw new StarknetPluginError(`Could not find ABI for contract "${contractPath}.cairo"`);
+        throw new StarknetPluginError(
+            `Could not find ABI JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
+        );
     }
 
     return new StarknetContractFactory({
-        starknetWrapper: hre.starknetWrapper,
         metadataPath,
         abiPath,
-        networkID: hre.config.starknet.network,
-        chainID: hre.config.starknet.networkConfig.starknetChainId,
-        gatewayUrl: hre.config.starknet.networkUrl,
-        feederGatewayUrl: hre.config.starknet.networkUrl
+        hre
     });
 }
 
@@ -98,54 +89,11 @@ export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
     return wallet;
 }
 
-export async function deployAccountUtil(
-    accountType: AccountImplementationType,
-    hre: HardhatRuntimeEnvironment,
-    options?: DeployAccountOptions
-): Promise<Account> {
-    let account: Account;
-    switch (accountType) {
-        case "OpenZeppelin":
-            account = await OpenZeppelinAccount.deployFromABI(hre, options);
-            break;
-        case "Argent":
-            account = await ArgentAccount.deployFromABI(hre, options);
-            break;
-        default:
-            throw new StarknetPluginError("Invalid account type requested.");
-    }
-
-    return account;
-}
-
-export async function getAccountFromAddressUtil(
-    address: string,
-    privateKey: string,
-    accountType: AccountImplementationType,
-    hre: HardhatRuntimeEnvironment
-): Promise<Account> {
-    let account: Account;
-    switch (accountType) {
-        case "OpenZeppelin":
-            account = await OpenZeppelinAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
-        case "Argent":
-            account = await ArgentAccount.getAccountFromAddress(address, privateKey, hre);
-            break;
-        default:
-            throw new StarknetPluginError("Invalid account type requested.");
-    }
-
-    return account;
-}
-
 export async function getTransactionUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<Transaction> {
     const executed = await hre.starknetWrapper.getTransaction({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
     if (executed.statusCode) {
@@ -161,8 +109,6 @@ export async function getTransactionReceiptUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<TransactionReceipt> {
     const executed = await hre.starknetWrapper.getTransactionReceipt({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
     if (executed.statusCode) {
@@ -178,8 +124,6 @@ export async function getTransactionTraceUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<TransactionTrace> {
     const executed = await hre.starknetWrapper.getTransactionTrace({
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
         hash: txHash
     });
 
@@ -196,8 +140,8 @@ export async function getBlockUtil(
     identifier?: BlockIdentifier
 ): Promise<Block> {
     const blockOptions = {
-        feederGatewayUrl: hre.config.starknet.networkUrl,
-        gatewayUrl: hre.config.starknet.networkUrl,
+        feederGatewayUrl: hre.starknet.networkConfig.url,
+        gatewayUrl: hre.starknet.networkConfig.url,
         number: identifier?.blockNumber,
         hash: identifier?.blockHash
     };
@@ -228,7 +172,6 @@ export async function getNonceUtil(
 ): Promise<number> {
     const executed = await hre.starknetWrapper.getNonce({
         address,
-        feederGatewayUrl: hre.config.starknet.networkUrl,
         ...options
     });
 

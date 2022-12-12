@@ -1,9 +1,7 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
 import {
-    AccountImplementationType,
     BlockIdentifier,
-    DeployAccountOptions,
     NonceQueryOptions,
     StarknetContract,
     StarknetContractFactory,
@@ -104,8 +102,6 @@ type StarknetContractType = StarknetContract;
 type StarknetContractFactoryType = StarknetContractFactory;
 type StringMapType = StringMap;
 type AccountType = Account;
-type OpenZeppelinAccountType = OpenZeppelinAccount;
-type ArgentAccountType = ArgentAccount;
 type TransactionReceiptType = TransactionReceipt;
 type TransactionTraceType = TransactionTrace;
 type TransactionType = Transaction;
@@ -215,18 +211,12 @@ declare module "hardhat/types/runtime" {
              * The selected starknet-network name.
              * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
              */
-            network?: string;
-
-            /**
-             * The selected starknet-network url.
-             * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
-             */
-            networkUrl?: string;
+            network: string;
 
             /**
              * The configuration object of the selected starknet-network.
              */
-            networkConfig?: HardhatNetworkConfig;
+            networkConfig: HardhatNetworkConfig;
 
             /**
              * @param name the name of the wallet to get
@@ -235,30 +225,6 @@ declare module "hardhat/types/runtime" {
             getWallet: (name: string) => WalletConfig;
 
             devnet: Devnet;
-
-            /**
-             * Deploys an Account contract based on the ABI and the type of Account selected
-             * @param accountType the enumerator value of the type of Account to use
-             * @param options optional deployment options
-             * @returns an Account object
-             */
-            deployAccount: (
-                accountType: AccountImplementationType,
-                options?: DeployAccountOptions
-            ) => Promise<Account>;
-
-            /**
-             * Returns an Account already deployed based on the address and validated by the private key
-             * @param address the address where the account is deployed
-             * @param privateKey the private key of the account
-             * @param accountType the enumerator value of the type of Account to use
-             * @returns an Account object
-             */
-            getAccountFromAddress: (
-                address: string,
-                privateKey: string,
-                accountType: AccountImplementationType
-            ) => Promise<Account>;
 
             getTransaction: (txHash: string) => Promise<Transaction>;
 
@@ -285,6 +251,10 @@ declare module "hardhat/types/runtime" {
              * @returns the nonce
              */
             getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
+
+            OpenZeppelinAccount: typeof OpenZeppelinAccount;
+
+            ArgentAccount: typeof ArgentAccount;
         };
     }
 
@@ -293,8 +263,6 @@ declare module "hardhat/types/runtime" {
     type StringMap = StringMapType;
     type Wallet = WalletConfig;
     type Account = AccountType;
-    type OpenZeppelinAccount = OpenZeppelinAccountType;
-    type ArgentAccount = ArgentAccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;
     type TransactionTrace = TransactionTraceType;

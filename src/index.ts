@@ -2,7 +2,13 @@ import * as path from "path";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { lazyObject } from "hardhat/plugins";
-import { HardhatConfig, HardhatRuntimeEnvironment, HardhatUserConfig } from "hardhat/types";
+import {
+    ConfigurableTaskDefinition,
+    HardhatConfig,
+    HardhatNetworkConfig,
+    HardhatRuntimeEnvironment,
+    HardhatUserConfig
+} from "hardhat/types";
 import exitHook from "exit-hook";
 
 import "./type-extensions";
@@ -34,22 +40,16 @@ import {
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     starknetCompileAction,
-    starknetDeployAction,
     starknetVoyagerAction,
-    starknetInvokeAction,
-    starknetCallAction,
-    starknetDeployAccountAction,
     starknetTestAction,
     starknetRunAction,
-    starknetEstimateFeeAction,
     starknetPluginVersionAction,
     starknetMigrateAction,
-    starknetNewAccountAction
+    starknetNewAccountAction,
+    starknetDeployAccountAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
-    deployAccountUtil,
-    getAccountFromAddressUtil,
     getContractFactoryUtil,
     getTransactionUtil,
     getTransactionReceiptUtil,
@@ -61,6 +61,7 @@ import {
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
+import { ArgentAccount, OpenZeppelinAccount } from "./account";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -160,7 +161,6 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
         config.networks,
         "starknet.network in hardhat.config"
     );
-    config.starknet.networkUrl = networkConfig.url;
     config.starknet.networkConfig = networkConfig;
 });
 
@@ -170,7 +170,7 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
             "Error in config file. Only one of (starknet.dockerizedVersion, starknet.venv) can be specified.";
         throw new StarknetPluginError(msg);
     }
-    hre.starknetWrapper = new VenvWrapper(venvPath);
+    hre.starknetWrapper = new VenvWrapper(venvPath, hre);
 }
 
 function extractAccountPaths(hre: HardhatRuntimeEnvironment): string[] {
@@ -203,7 +203,8 @@ extendEnvironment((hre) => {
             image,
             hre.config.paths.root,
             accountPaths,
-            hre.config.paths.cairoPaths || []
+            hre.config.paths.cairoPaths || [],
+            hre
         );
     }
 });
@@ -223,35 +224,6 @@ task("starknet-compile", "Compiles Starknet contracts")
     .addFlag("accountContract", "Allows compiling an account contract.")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
-
-task("starknet-deploy", "Deploys Starknet contracts which have been compiled.")
-    .addFlag("wait", "Wait for deployment transaction to be at least ACCEPTED_ON_L2")
-    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
-    .addOptionalParam(
-        "inputs",
-        "Space separated values forming constructor input.\n" +
-            "Pass them as a single string; e.g. --inputs '1 2 3'\n" +
-            "You would typically use this feature when deploying a single contract.\n" +
-            "If you're deploying multiple contracts, they'll all use the same input."
-    )
-    .addOptionalParam(
-        "salt",
-        "An optional salt controlling where the contract will be deployed.\n" +
-            "The contract deployment address is determined by the hash of contract, salt and caller.\n" +
-            "If the salt is not supplied, the contract will be deployed with a random salt."
-    )
-    .addOptionalParam(
-        "token",
-        "An optional token indicating that your deployment is whitelisted on mainnet"
-    )
-    .addOptionalVariadicPositionalParam(
-        "paths",
-        "The paths to be used for deployment.\n" +
-            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
-            "If no paths are provided, the default artifacts directory is traversed."
-    )
-    .setAction(starknetDeployAction);
 
 extendEnvironment((hre) => {
     hre.starknet = {
@@ -277,16 +249,6 @@ extendEnvironment((hre) => {
 
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
-        deployAccount: async (accountType, options) => {
-            const account = await deployAccountUtil(accountType, hre, options);
-            return account;
-        },
-
-        getAccountFromAddress: async (address, privateKey, accountType) => {
-            const account = await getAccountFromAddressUtil(address, privateKey, accountType, hre);
-            return account;
-        },
-
         getTransaction: async (txHash) => {
             const transaction = await getTransactionUtil(txHash, hre);
             return transaction;
@@ -310,7 +272,13 @@ extendEnvironment((hre) => {
         getNonce: async (address, options) => {
             const nonce = await getNonceUtil(hre, address, options);
             return nonce;
-        }
+        },
+
+        network: hre.config.starknet.network,
+        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig,
+
+        OpenZeppelinAccount: OpenZeppelinAccount,
+        ArgentAccount: ArgentAccount
     };
 });
 
@@ -329,73 +297,6 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     )
     .setAction(starknetVoyagerAction);
 
-task("starknet-invoke", "Invokes a function on a contract in the provided address.")
-    .addFlag("wait", "Wait for invoke transaction to be at least ACCEPTED_ON_L2")
-    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
-    .addParam("contract", "The name of the contract to invoke from")
-    .addParam("function", "The name of the function to invoke")
-    .addParam("address", "The address where the contract is deployed")
-    .addOptionalParam(
-        "inputs",
-        "Space separated values forming function input.\n" +
-            "Pass them as a single string; e.g. --inputs '1 2 3'"
-    )
-    .addOptionalParam("signature", "The call signature")
-    .addOptionalParam(
-        "wallet",
-        "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when invoking."
-    )
-    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
-    .setAction(starknetInvokeAction);
-
-task("starknet-call", "Invokes a function on a contract in the provided address.")
-    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
-    .addParam("contract", "The name of the contract to invoke from")
-    .addParam("function", "The name of the function to invoke")
-    .addParam("address", "The address where the contract is deployed")
-    .addOptionalParam(
-        "inputs",
-        "Space separated values forming function input.\n" +
-            "Pass them as a single string; e.g. --inputs '1 2 3'"
-    )
-    .addOptionalParam("signature", "The call signature")
-    .addOptionalParam(
-        "wallet",
-        "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling."
-    )
-    .addOptionalParam(
-        "blockNumber",
-        "The number of the block to call. If omitted, the pending block will be queried."
-    )
-    .addOptionalParam("nonce", "The nonce to provide to your account")
-    .addOptionalParam("maxFee", "Maximum gas fee which you will tolerate.")
-    .setAction(starknetCallAction);
-
-task("starknet-estimate-fee", "Estimates the gas fee of a function execution.")
-    .addOptionalParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .addOptionalParam("gatewayUrl", `The URL of the gateway to be used (e.g. ${ALPHA_URL})`)
-    .addParam("contract", "The name of the contract to invoke from")
-    .addParam("function", "The name of the function to invoke")
-    .addParam("address", "The address where the contract is deployed")
-    .addOptionalParam(
-        "inputs",
-        "Space separated values forming function input.\n" +
-            "Pass them as a single string; e.g. --inputs '1 2 3'"
-    )
-    .addOptionalParam("signature", "The call signature")
-    .addOptionalParam(
-        "wallet",
-        "The wallet to use, defined in the 'hardhat.config' file. If omitted, the '--no_wallet' flag will be passed when calling."
-    )
-    .addOptionalParam(
-        "blockNumber",
-        "The number of the block to call. If omitted, the pending block will be queried."
-    )
-    .addOptionalParam("nonce", "The nonce to provide to your account")
-    .setAction(starknetEstimateFeeAction);
-
 task("starknet-new-account", "Initializes a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
@@ -406,22 +307,22 @@ task("starknet-deploy-account", "Deploys a new account according to the paramete
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
     .setAction(starknetDeployAccountAction);
 
-const STARKNET_NETWORK_DESCRIPTION =
-    "Specify the starknet-network to be used; overrides the value from hardhat.config";
+function addStarknetNetworkParam(task: ConfigurableTaskDefinition): ConfigurableTaskDefinition {
+    return task.addOptionalParam(
+        "starknetNetwork",
+        "Specify the starknet-network to be used; overrides the value from hardhat.config"
+    );
+}
 
-task("test")
-    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
-    .setAction(starknetTestAction);
+addStarknetNetworkParam(task("test")).setAction(starknetTestAction);
 
-task("run")
-    .addOptionalParam("starknetNetwork", STARKNET_NETWORK_DESCRIPTION)
-    .setAction(starknetRunAction);
+addStarknetNetworkParam(task("run")).setAction(starknetRunAction);
 
 task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
     starknetPluginVersionAction
 );
 
-task("migrate", "Migrates a cairo contract to a new version.")
+task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
     .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
     .addFlag("inplace", "Applies changes to the files in place.")
     .setAction(starknetMigrateAction);

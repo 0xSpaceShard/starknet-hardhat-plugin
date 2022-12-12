@@ -76,17 +76,23 @@ When the PR is ready to be merged, do `Squash and merge` and delete the branch.
 
 ## Adapting to a new Starknet / cairo-lang version
 
+Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet might need to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
+
+### In cairo-cli repo
+
 When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation). This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
 
-Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet needs to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
-
 Likely places where the old version has to be replaced with the new version are `README.md` and `constants.ts`.
+
+### In starknet-hardhat-example repo
+
+Change the version in `hardhat.config.ts`. Recompile the contracts (only important for local usage).
 
 ## Architecture
 
 ### Wrapper
 
-This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-deploy` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
+This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
 There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts) and both rely on a [proxy server](/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
@@ -96,6 +102,16 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 -   Venv wrapper:
     -   for users that already have `cairo-lang` installed
     -   faster than Docker wrapper - not necessarily true since Docker wrapper also started using a proxy server
+
+### Accessing HardhatRuntimeEnvironment (hre)
+
+Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting clases has become a possibility:
+
+```typescript
+const hre = await import("hardhat");
+```
+
+In `type-extensions.ts`, classes are specified using `typeof`, e.g. `OpenZeppelinAccount: typeof OpenZeppelinAccount`. However, exporting classes this way doesn't export their type.
 
 ## Version management
 

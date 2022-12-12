@@ -1,8 +1,8 @@
 import {
-    CallOptions,
     ContractInteractionFunction,
     DeclareOptions,
     DeployAccountOptions,
+    DeployOptions,
     EstimateFeeOptions,
     InteractChoice,
     InteractOptions,
@@ -14,21 +14,27 @@ import {
     StringMap
 } from "./types";
 import * as starknet from "./starknet-types";
-import { TransactionHashPrefix, TRANSACTION_VERSION } from "./constants";
+import {
+    StarknetChainId,
+    TransactionHashPrefix,
+    TRANSACTION_VERSION,
+    UDC_DEPLOY_FUNCTION_NAME
+} from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
+    calculateDeployAccountHash,
     CallParameters,
     generateKeys,
-    handleAccountContractArtifacts,
-    parseMulticallOutput,
+    handleInternalContractArtifacts,
+    sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { copyWithBigint, warn } from "./utils";
+import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
+import { getTransactionReceiptUtil } from "./extend-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -48,7 +54,8 @@ export abstract class Account {
     protected constructor(
         public starknetContract: StarknetContract,
         public privateKey: string,
-        protected hre: HardhatRuntimeEnvironment
+        public salt: string,
+        protected deployed: boolean
     ) {
         const signer = generateKeys(privateKey);
         this.publicKey = signer.publicKey;
@@ -95,30 +102,58 @@ export abstract class Account {
     }
 
     /**
-     * Uses the account contract as a proxy to call a function on the target contract with a signature
-     *
-     * @param toContract target contract to be called
-     * @param functionName function in the contract to be called
-     * @param calldata calldata to use as input for the contract call
-     * @deprecated This doesn't work with Starknet 0.10 and will be removed in the future; use StarknetContract.call instead
+     * Deploy another contract using this account
+     * @param contractFactory the factory of the contract to be deployed
+     * @param constructorArguments
+     * @param options extra options
+     * @returns the deployed StarknetContract
      */
-    async call(
-        toContract: StarknetContract,
-        functionName: string,
-        calldata?: StringMap,
-        options: CallOptions = {}
-    ): Promise<StringMap> {
-        warn("Using Account.call is deprecated. Use StarknetContract.call instead");
-        if (this.hasRawOutput()) {
-            options = copyWithBigint(options);
-            options.rawOutput = true;
-        }
-
-        const { response } = <{ response: string[] }>(
-            await this.interact(InteractChoice.CALL, toContract, functionName, calldata, options)
+    async deploy(
+        contractFactory: StarknetContractFactory,
+        constructorArguments?: StringMap,
+        options: DeployOptions = {}
+    ): Promise<StarknetContract> {
+        const classHash = await contractFactory.getClassHash();
+        const udc = await UDC.getInstance();
+        const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
+        const deployTxHash = await this.invoke(
+            udc,
+            UDC_DEPLOY_FUNCTION_NAME,
+            {
+                classHash,
+                salt: options?.salt ?? generateRandomSalt(),
+                unique: BigInt(options?.unique ?? true),
+                calldata: adaptedArgs
+            },
+            {
+                maxFee: options?.maxFee
+            }
         );
 
-        return toContract.adaptOutput(functionName, response.join(" "));
+        const hre = await import("hardhat");
+        const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, hre);
+        const decodedEvents = udc.decodeEvents(deploymentReceipt.events);
+        // the only event should be ContractDeployed
+        const deployedContractAddress = numericToHexString(decodedEvents[0].data.address);
+
+        const deployedContract = contractFactory.getContractAt(deployedContractAddress);
+        deployedContract.deployTxHash = deployTxHash;
+
+        return deployedContract;
+    }
+
+    protected assertNotDeployed() {
+        if (this.deployed) {
+            const msg = "The account is not expected to be deployed.";
+            throw new StarknetPluginError(msg);
+        }
+    }
+
+    private assertDeployed() {
+        if (!this.deployed) {
+            const msg = "Prior to usage, the account must be funded and deployed.";
+            throw new StarknetPluginError(msg);
+        }
     }
 
     async estimateFee(
@@ -153,28 +188,6 @@ export abstract class Account {
     }
 
     /**
-     * Performs a multicall through this account
-     * @param callParameters an array with the paramaters for each call
-     * @returns an array with each call's repsecting response object
-     * @deprecated not able to sign calls since starknet 0.10
-     */
-    async multiCall(
-        callParameters: CallParameters[],
-        options: CallOptions = {}
-    ): Promise<StringMap[]> {
-        if (this.hasRawOutput()) {
-            options = copyWithBigint(options);
-            options.rawOutput = true;
-        }
-
-        const { response } = <{ response: string[] }>(
-            await this.multiInteract(InteractChoice.CALL, callParameters, options)
-        );
-        const output: StringMap[] = parseMulticallOutput(response, callParameters);
-        return output;
-    }
-
-    /**
      * Performes multiple invokes as a single transaction through this account
      * @param callParameters an array with the paramaters for each invoke
      * @returns the transaction hash of the invoke
@@ -201,17 +214,20 @@ export abstract class Account {
         callParameters: CallParameters[],
         options: InteractOptions = {}
     ) {
+        this.assertDeployed();
         options = copyWithBigint(options);
         options.maxFee = BigInt(options?.maxFee || "0");
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         delete options.nonce; // the options object is incompatible if passed on with nonce
 
+        const hre = await import("hardhat");
         const { messageHash, args } = this.handleMultiInteract(
-            this.starknetContract.address,
+            this.address,
             callParameters,
             nonce,
             options.maxFee,
-            choice.transactionVersion
+            choice.transactionVersion,
+            hre.starknet.networkConfig.starknetChainId
         );
 
         if (options.signature) {
@@ -235,7 +251,7 @@ export abstract class Account {
      * @param accountAddress address of the account contract
      * @param callParameters array witht the call parameters
      * @param nonce current nonce
-     * @param maxFee the maximum fee amoutn set for the contract interaction
+     * @param maxFee the maximum fee amount set for the contract interaction
      * @param version the transaction version
      * @returns the message hash for the multicall and the arguments to execute it with
      */
@@ -244,7 +260,8 @@ export abstract class Account {
         callParameters: CallParameters[],
         nonce: Numeric,
         maxFee: Numeric,
-        version: Numeric
+        version: Numeric,
+        chainId: StarknetChainId
     ) {
         const callArray: Call[] = callParameters.map((callParameters) => {
             return {
@@ -272,15 +289,16 @@ export abstract class Account {
         });
 
         const adaptedNonce = nonce.toString();
-        const adaptedMaxFee = "0x" + maxFee.toString(16);
-        const adaptedVersion = "0x" + version.toString(16);
+        const adaptedMaxFee = numericToHexString(maxFee);
+        const adaptedVersion = numericToHexString(version);
         const messageHash = this.getMessageHash(
             TransactionHashPrefix.INVOKE,
             accountAddress,
             callArray,
             adaptedNonce,
             adaptedMaxFee,
-            adaptedVersion
+            adaptedVersion,
+            chainId
         );
 
         const args = {
@@ -296,24 +314,29 @@ export abstract class Account {
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string;
 
     protected abstract getSignatures(messageHash: string): bigint[];
+
+    public abstract deployAccount(options?: DeployAccountOptions): Promise<string>;
 
     protected getExecutionFunctionName() {
         return "__execute__";
     }
 
     private async getNonce(): Promise<number> {
-        return await this.hre.starknet.getNonce(this.address);
+        const hre = await import("hardhat");
+        return await hre.starknet.getNonce(this.address);
     }
 
     /**
-     * Whether the execution method of this account returns raw output or not.
+     * Declare the contract class corresponding to the `contractFactory`
+     * @param contractFactory
+     * @param options
+     * @returns the hash of the declared class
      */
-    protected abstract hasRawOutput(): boolean;
-
     public async declare(
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
@@ -321,8 +344,9 @@ export abstract class Account {
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         const maxFee = (options.maxFee || 0).toString();
 
-        const classHash = await this.hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
+        const hre = await import("hardhat");
+        const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = hre.starknet.networkConfig.starknetChainId;
 
         const calldata = [classHash];
         const calldataHash = hash.computeHashOnElements(calldata);
@@ -352,25 +376,64 @@ export abstract class Account {
  * Wrapper for the OpenZeppelin implementation of an Account
  */
 export class OpenZeppelinAccount extends Account {
-    static readonly ACCOUNT_TYPE_NAME = "OpenZeppelinAccount";
-    static readonly ACCOUNT_ARTIFACTS_NAME = "Account";
-    static readonly VERSION = "0.5.0";
+    private static contractFactory: StarknetContractFactory;
 
-    constructor(
+    protected constructor(
         starknetContract: StarknetContract,
         privateKey: string,
-        hre: HardhatRuntimeEnvironment
+        salt: string,
+        deployed: boolean
     ) {
-        super(starknetContract, privateKey, hre);
+        super(starknetContract, privateKey, salt, deployed);
     }
 
-    protected getMessageHash(
+    private static async getContractFactory() {
+        const hre = await import("hardhat");
+        if (!this.contractFactory) {
+            const contractPath = handleInternalContractArtifacts(
+                "OpenZeppelinAccount",
+                "Account",
+                "0.5.1",
+                hre
+            );
+            this.contractFactory = await hre.starknet.getContractFactory(contractPath);
+        }
+        return this.contractFactory;
+    }
+
+    /**
+     * Generates a new key pair if none specified.
+     * The created account needs to be deployed using the `deployAccount` method.
+     * @param options
+     * @returns an undeployed instance of account
+     */
+    public static async createAccount(
+        options: {
+            salt?: string;
+            privateKey?: string;
+        } = {}
+    ): Promise<OpenZeppelinAccount> {
+        const signer = generateKeys(options.privateKey);
+        const salt = options.salt || generateRandomSalt();
+        const contractFactory = await this.getContractFactory();
+        const address = hash.calculateContractAddressFromHash(
+            salt,
+            await contractFactory.getClassHash(),
+            [signer.publicKey],
+            "0x0" // deployer address
+        );
+        const contract = contractFactory.getContractAt(address);
+        return new this(contract, signer.privateKey, salt, false);
+    }
+
+    protected override getMessageHash(
         transactionHashPrefix: TransactionHashPrefix,
         accountAddress: string,
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string {
         const hashable: Array<BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
@@ -383,8 +446,6 @@ export class OpenZeppelinAccount extends Account {
             );
             rawCalldata.push(...call.calldata);
         });
-
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
         hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -400,49 +461,49 @@ export class OpenZeppelinAccount extends Account {
         ]);
     }
 
-    protected getSignatures(messageHash: string): bigint[] {
+    protected override getSignatures(messageHash: string): bigint[] {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
-    static async deployFromABI(
-        hre: HardhatRuntimeEnvironment,
-        options: DeployAccountOptions = {}
-    ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleAccountContractArtifacts(
-            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
-            OpenZeppelinAccount.VERSION,
-            hre
+    public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {
+        this.assertNotDeployed();
+        const hre = await import("hardhat");
+
+        const maxFee = numericToHexString(options.maxFee || 0);
+        const contractFactory = await OpenZeppelinAccount.getContractFactory();
+        const classHash = await contractFactory.getClassHash();
+        const constructorCalldata = [BigInt(this.publicKey).toString()];
+
+        const msgHash = calculateDeployAccountHash(
+            this.address,
+            constructorCalldata,
+            this.salt,
+            classHash,
+            maxFee,
+            hre.starknet.networkConfig.starknetChainId
         );
 
-        const signer = generateKeys(options.privateKey);
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy(
-            { publicKey: BigInt(signer.publicKey) },
-            options
+        const deploymentTxHash = await sendDeployAccountTx(
+            this.getSignatures(msgHash).map((val) => val.toString()),
+            classHash,
+            constructorCalldata,
+            this.salt,
+            maxFee
         );
 
-        return new OpenZeppelinAccount(contract, signer.privateKey, hre);
+        this.starknetContract.deployTxHash = deploymentTxHash;
+        this.deployed = true;
+        return deploymentTxHash;
     }
 
     static async getAccountFromAddress(
         address: string,
-        privateKey: string,
-        hre: HardhatRuntimeEnvironment
+        privateKey: string
     ): Promise<OpenZeppelinAccount> {
-        const contractPath = await handleAccountContractArtifacts(
-            OpenZeppelinAccount.ACCOUNT_TYPE_NAME,
-            OpenZeppelinAccount.ACCOUNT_ARTIFACTS_NAME,
-            OpenZeppelinAccount.VERSION,
-            hre
-        );
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contractFactory = await this.getContractFactory();
         const contract = contractFactory.getContractAt(address);
 
         const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
-
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
@@ -452,32 +513,117 @@ export class OpenZeppelinAccount extends Account {
             );
         }
 
-        return new OpenZeppelinAccount(contract, privateKey, hre);
-    }
-
-    protected hasRawOutput(): boolean {
-        return false;
+        return new this(contract, privateKey, undefined, true);
     }
 }
 
 /**
- * Wrapper for the Argent implementation of an Account
+ * Wrapper for the Argent implementation of Account
  */
 export class ArgentAccount extends Account {
-    static readonly ACCOUNT_TYPE_NAME = "ArgentAccount";
-    static readonly ACCOUNT_ARTIFACTS_NAME = "ArgentAccount";
-    static readonly VERSION = "780760e4156afe592bb1feff7e769cf279ae9831";
+    private static readonly VERSION: string = "780760e4156afe592bb1feff7e769cf279ae9831";
+
+    private static proxyContractFactory: StarknetContractFactory;
+    private static implementationContractFactory: StarknetContractFactory;
+
+    private static readonly PROXY_CLASS_HASH =
+        "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
+    private static readonly IMPLEMENTATION_CLASS_HASH =
+        "0x33434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2";
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
     public guardianKeyPair: ec.KeyPair;
 
-    constructor(
+    protected constructor(
         starknetContract: StarknetContract,
         privateKey: string,
-        hre: HardhatRuntimeEnvironment
+        guardianPrivateKey: string,
+        salt: string,
+        deployed: boolean
     ) {
-        super(starknetContract, privateKey, hre);
+        super(starknetContract, privateKey, salt, deployed);
+        this.guardianPrivateKey = guardianPrivateKey;
+        if (this.guardianPrivateKey) {
+            const guardianSigner = generateKeys(this.guardianPrivateKey);
+            this.guardianKeyPair = guardianSigner.keyPair;
+            this.guardianPublicKey = guardianSigner.publicKey;
+        }
+    }
+
+    private static async getImplementationContractFactory() {
+        const hre = await import("hardhat");
+        if (!this.implementationContractFactory) {
+            const contractPath = handleInternalContractArtifacts(
+                "ArgentAccount",
+                "ArgentAccount",
+                this.VERSION,
+                hre
+            );
+            this.implementationContractFactory = await hre.starknet.getContractFactory(
+                contractPath
+            );
+        }
+        return this.implementationContractFactory;
+    }
+
+    private static async getProxyContractFactory() {
+        const hre = await import("hardhat");
+        if (!this.proxyContractFactory) {
+            const contractPath = handleInternalContractArtifacts(
+                "ArgentAccount",
+                "Proxy",
+                this.VERSION,
+                hre
+            );
+            this.proxyContractFactory = await hre.starknet.getContractFactory(contractPath);
+        }
+        return this.proxyContractFactory;
+    }
+
+    private static generateGuardianPublicKey(guardianPrivateKey: string) {
+        if (!guardianPrivateKey) {
+            return "0x0";
+        }
+        return generateKeys(guardianPrivateKey).publicKey;
+    }
+
+    /**
+     * Generates a new key pair if none specified.
+     * Does NOT generate a new guardian key pair if none specified.
+     * If you don't specify a guardian private key, no guardian will be assigned.
+     * The created account needs to be deployed using the `deployAccount` method.
+     * @param options
+     * @returns an undeployed instance of account
+     */
+    public static async createAccount(
+        options: {
+            salt?: string;
+            privateKey?: string;
+            guardianPrivateKey?: string;
+        } = {}
+    ): Promise<ArgentAccount> {
+        const signer = generateKeys(options.privateKey);
+        const guardianPrivateKey = options?.guardianPrivateKey;
+        const guardianPublicKey = this.generateGuardianPublicKey(guardianPrivateKey);
+        const salt = options.salt || generateRandomSalt();
+        const constructorCalldata = [
+            this.IMPLEMENTATION_CLASS_HASH,
+            hash.getSelectorFromName("initialize"),
+            "2",
+            signer.publicKey,
+            guardianPublicKey
+        ];
+        const address = hash.calculateContractAddressFromHash(
+            salt,
+            this.PROXY_CLASS_HASH,
+            constructorCalldata,
+            "0x0" // deployer address
+        );
+
+        const proxyContractFactory = await this.getProxyContractFactory();
+        const contract = proxyContractFactory.getContractAt(address);
+        return new this(contract, signer.privateKey, guardianPrivateKey, salt, false);
     }
 
     protected getMessageHash(
@@ -486,7 +632,8 @@ export class ArgentAccount extends Account {
         callArray: Call[],
         nonce: string,
         maxFee: string,
-        version: string
+        version: string,
+        chainId: StarknetChainId
     ): string {
         const hashable: Array<BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
@@ -499,8 +646,6 @@ export class ArgentAccount extends Account {
             );
             rawCalldata.push(...call.calldata);
         });
-
-        const chainId = this.hre.config.starknet.networkConfig.starknetChainId;
 
         hashable.push(rawCalldata.length, ...rawCalldata);
         const calldataHash = hash.computeHashOnElements(hashable);
@@ -516,7 +661,7 @@ export class ArgentAccount extends Account {
         ]);
     }
 
-    protected getSignatures(messageHash: string): bigint[] {
+    protected override getSignatures(messageHash: string): bigint[] {
         const signatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
         if (this.guardianPrivateKey) {
             const guardianSignatures = signMultiCall(
@@ -530,12 +675,55 @@ export class ArgentAccount extends Account {
     }
 
     /**
+     * Deploys (initializes) the account.
+     * @param options
+     * @returns the tx hash of the deployment
+     */
+    public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {
+        this.assertNotDeployed();
+        const hre = await import("hardhat");
+
+        const maxFee = numericToHexString(options.maxFee || 0);
+
+        const constructorCalldata: string[] = [
+            ArgentAccount.IMPLEMENTATION_CLASS_HASH,
+            hash.getSelectorFromName("initialize"),
+            "2",
+            this.publicKey,
+            ArgentAccount.generateGuardianPublicKey(this.guardianPrivateKey)
+        ].map((val) => BigInt(val).toString());
+
+        const msgHash = calculateDeployAccountHash(
+            this.address,
+            constructorCalldata,
+            this.salt,
+            ArgentAccount.PROXY_CLASS_HASH,
+            maxFee,
+            hre.starknet.networkConfig.starknetChainId
+        );
+
+        const deploymentTxHash = await sendDeployAccountTx(
+            this.getSignatures(msgHash).map((val) => val.toString()),
+            ArgentAccount.PROXY_CLASS_HASH,
+            constructorCalldata,
+            this.salt,
+            maxFee
+        );
+
+        const implementationFactory = await ArgentAccount.getImplementationContractFactory();
+        this.starknetContract.setImplementation(implementationFactory);
+        this.starknetContract.deployTxHash = deploymentTxHash;
+        this.deployed = true;
+        return deploymentTxHash;
+    }
+
+    /**
      * Updates the guardian key in the contract. Set it to `undefined` to remove the guardian.
      * @param newGuardianPrivateKey private key of the guardian to update
      * @returns hash of the transaction which changes the guardian
      */
-    async setGuardian(
-        newGuardianPrivateKey: string,
+    public async setGuardian(
+        newGuardianPrivateKey?: string,
         invokeOptions?: InvokeOptions
     ): Promise<string> {
         let guardianKeyPair: ec.KeyPair;
@@ -566,45 +754,30 @@ export class ArgentAccount extends Account {
         return txHash;
     }
 
-    static async deployFromABI(
-        hre: HardhatRuntimeEnvironment,
-        options: DeployAccountOptions = {}
-    ): Promise<ArgentAccount> {
-        const contractPath = await handleAccountContractArtifacts(
-            ArgentAccount.ACCOUNT_TYPE_NAME,
-            ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
-            ArgentAccount.VERSION,
-            hre
-        );
-
-        const signer = generateKeys(options.privateKey);
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const contract = await contractFactory.deploy({}, options);
-
-        return new ArgentAccount(contract, signer.privateKey, hre);
-    }
-
+    /**
+     * Returns an account previously deployed to `address`.
+     * A check is performed if the public key stored in the account matches the provided `privateKey`.
+     * No check is done for the optoinal guardian private key.
+     * @param address
+     * @param privateKey
+     * @param options
+     * @returns the retrieved account
+     */
     static async getAccountFromAddress(
         address: string,
         privateKey: string,
-        hre: HardhatRuntimeEnvironment
+        options: {
+            guardianPrivateKey?: string;
+        } = {}
     ): Promise<ArgentAccount> {
-        const contractPath = await handleAccountContractArtifacts(
-            ArgentAccount.ACCOUNT_TYPE_NAME,
-            ArgentAccount.ACCOUNT_ARTIFACTS_NAME,
-            ArgentAccount.VERSION,
-            hre
-        );
-
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const contractFactory = await this.getProxyContractFactory();
         const contract = contractFactory.getContractAt(address);
+        const implementationFactory = await this.getImplementationContractFactory();
+        contract.setImplementation(implementationFactory);
 
         const { signer: expectedPubKey } = await contract.call("getSigner");
         const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
-
-        const account = new ArgentAccount(contract, privateKey, hre);
 
         if (expectedPubKey === BigInt(0)) {
             // not yet initialized
@@ -614,25 +787,6 @@ export class ArgentAccount extends Account {
             );
         }
 
-        return account;
-    }
-
-    public async initialize(initializeOptions: {
-        fundedAccount: Account;
-        maxFee?: Numeric;
-    }): Promise<void> {
-        await initializeOptions.fundedAccount.invoke(
-            this.starknetContract,
-            "initialize",
-            {
-                signer: this.publicKey,
-                guardian: this.guardianPublicKey || "0"
-            },
-            { maxFee: initializeOptions.maxFee || 0 }
-        );
-    }
-
-    protected hasRawOutput(): boolean {
-        return true;
+        return new this(contract, privateKey, options.guardianPrivateKey, undefined, true);
     }
 }

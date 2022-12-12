@@ -17,13 +17,17 @@ import {
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
+    UDC_ADDRESS,
     StarknetChainId
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { StringMap } from "./types";
+import { Numeric, StarknetContract } from "./types";
+import { stark } from "starknet";
+import { handleInternalContractArtifacts } from "./account-utils";
+import { getContractFactoryUtil } from "./extend-utils";
 
 const globPromise = promisify(glob);
 /**
@@ -37,6 +41,8 @@ export function adaptLog(msg: string): string {
         .replace("--network", "--starknet-network")
         .replace("gateway_url", "gateway-url")
         .replace("--account_contract", "--account-contract")
+        .replace("the 'starknet deploy_account' command", "'hardhat starknet-deploy-account'")
+        .replace("the 'new_account' command", "'hardhat starknet-new-account'")
         .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
 }
@@ -224,22 +230,6 @@ export function getAccountPath(accountPath: string, hre: HardhatRuntimeEnvironme
     return accountDir;
 }
 
-export function flattenStringMap(stringMap: StringMap): string[] {
-    let result: string[] = [];
-    Object.keys(stringMap).forEach((key) => {
-        const value = stringMap[key];
-
-        if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-            result = result.concat(flattenStringMap(value));
-        } else if (Array.isArray(value)) {
-            result = result.concat(value);
-        } else {
-            result.push(value);
-        }
-    });
-    return result;
-}
-
 export function copyWithBigint<T>(object: unknown): T {
     return JSON.parse(
         JSON.stringify(object, (_key, value) =>
@@ -263,4 +253,44 @@ export function getImageTagByArch(tag: string): string {
  */
 export function warn(message: string): void {
     console.warn("\x1b[33m%s\x1b[0m", message);
+}
+
+/**
+ * Converts BigInt to 0x-prefixed hex string
+ * @param numeric
+ */
+export function numericToHexString(numeric: Numeric): string {
+    return "0x" + BigInt(numeric).toString(16);
+}
+
+/**
+ * @returns random salt
+ */
+export function generateRandomSalt(): string {
+    return stark.randomAddress();
+}
+
+/**
+ * Global handler of UDC
+ */
+export class UDC {
+    private static instance: StarknetContract;
+
+    /**
+     * Returns the UDC singleton.
+     */
+    static async getInstance() {
+        if (!UDC.instance) {
+            const hre = await import("hardhat");
+            const contractPath = handleInternalContractArtifacts(
+                "OpenZeppelinUDC", // dir name
+                "UDC", // file name
+                "0.5.0", // version
+                hre
+            );
+            const udcContractFactory = await getContractFactoryUtil(hre, contractPath);
+            UDC.instance = udcContractFactory.getContractAt(UDC_ADDRESS);
+        }
+        return UDC.instance;
+    }
 }

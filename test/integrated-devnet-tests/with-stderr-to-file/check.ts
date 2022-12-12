@@ -1,5 +1,5 @@
 import { readFileSync } from "fs";
-import { assertExists, checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
+import { assertExistence, checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
@@ -15,7 +15,7 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     assertContains(output.stdout, expectedStdout);
 
     // Checks if file logs/stderr.log exists and contains the expected warning string
-    assertExists("logs/stderr.log", "Expected logs/stderr.log to exist");
+    assertExistence("logs/stderr.log");
     const stderr = readFileSync("logs/stderr.log", "utf-8");
     assertContains(stderr, expectedWarning);
 

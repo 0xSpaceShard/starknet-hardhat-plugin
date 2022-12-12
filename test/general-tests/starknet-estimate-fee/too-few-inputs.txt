@@ -1,2 +1,0 @@
-Error in plugin Starknet: Could not perform estimateFee of sum_points_to_tuple:
-Error: AssertionError: Expected at least 4 inputs, got 3.

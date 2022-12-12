@@ -13,7 +13,7 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
-export const ACCOUNT_ARTIFACTS_DIR = "account-contract-artifacts";
+export const INTERNAL_ARTIFACTS_DIR = "contract-artifacts";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_2 = "alpha-goerli2";
@@ -45,6 +45,7 @@ export const SHORT_STRING_MAX_CHARACTERS = 31;
 export enum TransactionHashPrefix {
     DECLARE = "28258975365558885", // BigInt("0x" + Buffer.from("declare").toString("hex")).toString()
     DEPLOY = "110386840629113",
+    DEPLOY_ACCOUNT = "2036277798190617858034555652763252",
     INVOKE = "115923154332517"
 }
 
@@ -60,3 +61,6 @@ export const TRANSACTION_VERSION = BigInt(1);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
 
 export const HEXADECIMAL_REGEX = /^0x[0-9a-fA-F]+?$/;
+
+export const UDC_ADDRESS = "0x41A78E741E5AF2FEC34B695679BC6891742439F7AFB8484ECD7766661AD02BF";
+export const UDC_DEPLOY_FUNCTION_NAME = "deployContract";

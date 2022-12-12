@@ -1,5 +1,5 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { PLUGIN_NAME } from "./constants";
+import { PLUGIN_NAME, StarknetChainId } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
@@ -7,6 +7,7 @@ import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 interface CompileWrapperOptions {
     file: string;
@@ -19,8 +20,6 @@ interface CompileWrapperOptions {
 
 interface DeclareWrapperOptions {
     contract: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
     maxFee: string;
     signature?: string[];
     token?: string;
@@ -29,7 +28,6 @@ interface DeclareWrapperOptions {
 
 interface DeployWrapperOptions {
     contract: string;
-    gatewayUrl: string;
     inputs?: string[];
     salt?: string;
     token?: string;
@@ -47,48 +45,34 @@ interface InteractWrapperOptions {
     wallet?: string;
     account?: string;
     accountDir?: string;
-    networkID?: string;
-    chainID?: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
     blockNumber?: BlockNumber;
 }
 
 interface TxHashQueryWrapperOptions {
     hash: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
 }
 
 interface DeployAccountWrapperOptions {
     wallet: string;
     accountName: string;
     accountDir: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
     network: string;
-    chainID: string;
 }
 
 interface NewAccountWrapperOptions {
     wallet: string;
     accountName: string;
     accountDir: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
     network: string;
 }
 
 interface BlockQueryWrapperOptions {
     number?: BlockNumber;
     hash?: string;
-    gatewayUrl: string;
-    feederGatewayUrl: string;
 }
 
 interface NonceQueryWrapperOptions {
     address: string;
-    feederGatewayUrl: string;
     blockHash?: string;
     blockNumber?: BlockNumber;
 }
@@ -99,7 +83,22 @@ interface MigrateContractWrapperOptions {
 }
 
 export abstract class StarknetWrapper {
-    constructor(private externalServer: ExternalServer) {}
+    constructor(private externalServer: ExternalServer, private hre: HardhatRuntimeEnvironment) {
+        // this is dangerous since hre get set here, before being fully initialized (e.g. active network not yet set)
+        // it's dangerous because in getters (e.g. get gatewayUrl) we rely on it being initialized
+    }
+
+    private get gatewayUrl(): string {
+        return adaptUrl(this.hre.starknet.networkConfig.url);
+    }
+
+    private get chainID(): StarknetChainId {
+        return this.hre.starknet.networkConfig.starknetChainId;
+    }
+
+    private get networkID(): string {
+        return this.hre.starknet.network;
+    }
 
     public async execute(
         command: "starknet" | "starknet-compile" | "get_class_hash" | "cairo-migrate",
@@ -141,9 +140,9 @@ export abstract class StarknetWrapper {
             "--contract",
             options.contract,
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--feeder_gateway_url",
-            options.feederGatewayUrl,
+            this.gatewayUrl,
             "--no_wallet"
         ];
 
@@ -175,7 +174,7 @@ export abstract class StarknetWrapper {
             "--contract",
             options.contract,
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--no_wallet"
         ];
 
@@ -194,17 +193,15 @@ export abstract class StarknetWrapper {
         return prepared;
     }
 
-    public abstract deploy(options: DeployWrapperOptions): Promise<ProcessResult>;
-
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
             ...options.choice.cliCommand,
             "--abi",
             options.abi,
             "--feeder_gateway_url",
-            options.feederGatewayUrl,
+            this.gatewayUrl,
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--function",
             options.functionName,
             "--address",
@@ -225,8 +222,8 @@ export abstract class StarknetWrapper {
 
         if (options.wallet) {
             prepared.push("--wallet", options.wallet);
-            prepared.push("--network_id", options.networkID);
-            prepared.push("--chain_id", options.chainID);
+            prepared.push("--network_id", this.networkID);
+            prepared.push("--chain_id", this.chainID);
 
             if (options.account) {
                 prepared.push("--account", options.account);
@@ -257,9 +254,9 @@ export abstract class StarknetWrapper {
             "--hash",
             options.hash,
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--feeder_gateway_url",
-            options.feederGatewayUrl
+            this.gatewayUrl
         ];
     }
 
@@ -275,9 +272,9 @@ export abstract class StarknetWrapper {
             "--account",
             options.accountName || "__default__",
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--feeder_gateway_url",
-            options.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options.wallet) {
@@ -288,7 +285,7 @@ export abstract class StarknetWrapper {
             prepared.push("--account_dir", options.accountDir);
         }
 
-        prepared.push("--chain_id", options.chainID);
+        prepared.push("--chain_id", this.chainID);
 
         return prepared;
     }
@@ -303,9 +300,9 @@ export abstract class StarknetWrapper {
             "--account",
             options.accountName || "__default__",
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--feeder_gateway_url",
-            options.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options.wallet) {
@@ -331,9 +328,9 @@ export abstract class StarknetWrapper {
         const commandArr = [
             "get_block",
             "--gateway_url",
-            options.gatewayUrl,
+            this.gatewayUrl,
             "--feeder_gateway_url",
-            options.feederGatewayUrl
+            this.gatewayUrl
         ];
 
         if (options?.hash) {
@@ -355,7 +352,7 @@ export abstract class StarknetWrapper {
         const commandArr = [
             "get_nonce",
             "--feeder_gateway_url",
-            options.feederGatewayUrl,
+            this.gatewayUrl,
             "--contract_address",
             options.address
         ];
@@ -402,8 +399,14 @@ function getFullImageName(image: Image): string {
 type String2String = { [path: string]: string };
 
 export class DockerWrapper extends StarknetWrapper {
-    constructor(image: Image, rootPath: string, accountPaths: string[], cairoPaths: string[]) {
-        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths));
+    constructor(
+        image: Image,
+        rootPath: string,
+        accountPaths: string[],
+        cairoPaths: string[],
+        hre: HardhatRuntimeEnvironment
+    ) {
+        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths), hre);
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
@@ -416,25 +419,13 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareDeclareOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareNewAccountOptions(options);
-
-        const executed = this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        const preparedOptions = this.prepareDeployOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
@@ -448,81 +439,56 @@ export class DockerWrapper extends StarknetWrapper {
             binds[options.accountDir] = options.accountDir;
         }
 
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareInteractOptions(options);
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareDeployAccountOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
         const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
-        const preparedOptions = this.prepareTxQueryOptions(
-            "get_transaction_trace",
-            options
-        );
-
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        options.gatewayUrl = adaptUrl(options.gatewayUrl);
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareBlockQueryOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
     public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
-        options.feederGatewayUrl = adaptUrl(options.feederGatewayUrl);
         const preparedOptions = this.prepareNonceQueryOptions(options);
-
         const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 }
 
 export class VenvWrapper extends StarknetWrapper {
-    constructor(venvPath: string) {
+    constructor(venvPath: string, hre: HardhatRuntimeEnvironment) {
         let pythonPath: string;
         if (venvPath === "active") {
             console.log(`${PLUGIN_NAME} plugin using the active environment.`);
@@ -533,7 +499,7 @@ export class VenvWrapper extends StarknetWrapper {
             pythonPath = getPrefixedCommand(venvPath, "python3");
         }
 
-        super(new StarknetVenvProxy(pythonPath));
+        super(new StarknetVenvProxy(pythonPath), hre);
     }
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
@@ -555,12 +521,6 @@ export class VenvWrapper extends StarknetWrapper {
         return executed;
     }
 
-    public async deploy(options: DeployWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInteractOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
@@ -592,10 +552,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions(
-            "get_transaction_trace",
-            options
-        );
+        const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }

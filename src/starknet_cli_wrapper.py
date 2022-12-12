@@ -9,7 +9,7 @@ import sys
 
 # imports resolvable in the venv specified by user
 try:
-    from starknet_cli_legacy import main as starknet_main
+    from starkware.starknet.cli.starknet_cli import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
     from starkware.starknet.core.os.class_hash import compute_class_hash
     from starkware.starknet.services.api.contract_class import ContractClass
