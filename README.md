@@ -205,16 +205,18 @@ describe("My Test", function () {
   });
 
   it("should declare and deploy", async function() {
-    const contractFactory = await starknet.getContractFactory("MyContract");
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
+    const contractFactory = await starknet.getContractFactory("MyContract");
+    const classHash = await account.declare(contractFactory);
 
-    // You are expected to have a Deployer contract with a deploy method
-    const deployer = await starknet.getContractFactory("Deployer");
-    const classHash = await account.declare(contractFactory, { maxFee: ... });
-    const opts = { maxFee: BigInt(...) };
-    const txHash = await account.invoke(deployer, "my_deploy", { class_hash: classHash }, opts);
-    const deploymentAddress = ...; // get the address, e.g. from an event emitted by deploy
-    const contract = contractFactory.getContractAt(deploymentAddress);
+    // two ways to obtain the class hash
+    expect(classHash).to.equal(await contractFactory.getClassHash());
+
+
+    const constructorArgs = { initial_balance: 0 };
+    const options = { maxFee: ... };
+    // implicitly invokes UDC
+    const contract = await account.deploy(contractFactory, constructorArgs, options);
   });
 ```
 
@@ -549,6 +551,35 @@ paths: {
 
 ```
 from openzeppelin.token.erc20.library import ERC20
+```
+
+#### With non-npm git repositories:
+
+If you want to install directly from a git repo that doesn't contain `package.json`, you cannot use `npm i`. However, `yarn` supports this.
+
+1. Install (example package: `https://github.com/OpenZeppelin/cairo-contracts`)
+
+```
+yarn add openzeppelin__cairo_contracts@git+https://git@github.com/OpenZeppelin/cairo-contracts.git
+```
+
+### Using `starknet.getContractFactory` with third-party libraries
+
+This paragraph assumes you've read and run [3rd party library installation](#Installing-third-party-libraries).
+The example package used is `https://github.com/OpenZeppelin/cairo-contracts` so you may want to check [non-npm git repos](#With-non-npm-git-repositories).
+
+1. Compile
+
+```
+npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
+```
+
+2. Get contract factory
+
+```typescript
+const contractFactory = await starknet.getContractFactory(
+    "node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20"
+);
 ```
 
 ### Wallet
