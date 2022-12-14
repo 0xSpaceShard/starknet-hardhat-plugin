@@ -4,6 +4,7 @@ import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
+import { REQUEST_TIMEOUT } from "../constants";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -161,7 +162,10 @@ export abstract class ExternalServer {
         await this.ensureStarted();
 
         try {
-            const response = await axios.post<T>(this.url, data);
+            const response = await axios.post<T>(this.url, data, {
+                timeout: REQUEST_TIMEOUT,
+                timeoutErrorMessage: "Request timed out"
+            });
             return response.data;
         } catch (error) {
             const parent = error instanceof Error && error;

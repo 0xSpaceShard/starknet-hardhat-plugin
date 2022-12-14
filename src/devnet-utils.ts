@@ -1,8 +1,10 @@
-import axios from "axios";
+import axios, { AxiosResponse, Method } from "axios";
+
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Block, L2ToL1Message } from "./starknet-types";
+import { REQUEST_TIMEOUT } from "./constants";
 
 interface L1ToL2Message {
     address: string;
@@ -50,100 +52,100 @@ export interface PredeployedAccount {
 }
 
 export class DevnetUtils implements Devnet {
+    private axiosInstance = axios.create({
+        baseURL: this.endpoint,
+        timeout: REQUEST_TIMEOUT,
+        timeoutErrorMessage: "Request timed out"
+    });
+
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
         return `${this.hre.starknet.networkConfig.url}`;
     }
 
-    private async withErrorHandler<T>(asyncFn: () => Promise<T>, errorMessage: string) {
+    private async requestHandler<T>(
+        url: string,
+        method: Method,
+        data?: unknown
+    ): Promise<AxiosResponse> {
         try {
-            return await asyncFn();
+            // Make the request
+            return this.axiosInstance.request<T>({
+                url,
+                method,
+                data
+            });
         } catch (error) {
             const parent = error instanceof Error && error;
-
-            throw new StarknetPluginError(errorMessage, parent);
+            const msg = `Request failed: Could not ${method} ${url}. This is a Devnet-specific functionality.
+Make sure you really want to interact with Devnet and that it is running and available at ${this.endpoint}`;
+            throw new StarknetPluginError(msg, parent);
         }
     }
 
     public async restart() {
-        return this.withErrorHandler<void>(async () => {
-            await axios.post(`${this.endpoint}/restart`);
-        }, "Failed to restart the devnet!");
+        await this.requestHandler<void>("/restart", "POST");
     }
 
     public async flush() {
-        return this.withErrorHandler<FlushResponse>(async () => {
-            const response = await axios.post<FlushResponse>(`${this.endpoint}/postman/flush`);
-            return response.data;
-        }, "Request failed. Make sure your network has the /postman endpoint");
+        const response = await this.requestHandler<FlushResponse>("/postman/flush", "POST");
+        return response.data;
     }
 
     public async loadL1MessagingContract(networkUrl: string, address?: string, networkId?: string) {
-        return this.withErrorHandler<LoadL1MessagingContractResponse>(async () => {
-            const response = await axios.post<LoadL1MessagingContractResponse>(
-                `${this.endpoint}/postman/load_l1_messaging_contract`,
-                {
-                    networkId,
-                    address,
-                    networkUrl
-                }
-            );
+        const body = {
+            networkId,
+            address,
+            networkUrl
+        };
 
-            return response.data;
-        }, "Request failed. Make sure your network has the /postman endpoint");
+        const response = await this.requestHandler<LoadL1MessagingContractResponse>(
+            "/postman/load_l1_messaging_contract",
+            "POST",
+            body
+        );
+        return response.data;
     }
 
     public async increaseTime(seconds: number) {
-        return this.withErrorHandler<IncreaseTimeResponse>(async () => {
-            const response = await axios.post<IncreaseTimeResponse>(
-                `${this.endpoint}/increase_time`,
-                {
-                    time: seconds
-                }
-            );
-            return response.data;
-        }, "Request failed. Make sure your network has the /increase_time endpoint");
+        const response = await this.requestHandler<IncreaseTimeResponse>("/increase_time", "POST", {
+            time: seconds
+        });
+        return response.data;
     }
 
     public async setTime(seconds: number) {
-        return this.withErrorHandler<SetTimeResponse>(async () => {
-            const response = await axios.post<SetTimeResponse>(`${this.endpoint}/set_time`, {
-                time: seconds
-            });
-            return response.data;
-        }, "Request failed. Make sure your network has the /set_time endpoint");
+        const response = await this.requestHandler<SetTimeResponse>("/set_time", "POST", {
+            time: seconds
+        });
+        return response.data;
     }
 
     public async getPredeployedAccounts() {
-        return this.withErrorHandler<PredeployedAccount[]>(async () => {
-            const response = await axios.get<PredeployedAccount[]>(
-                `${this.endpoint}/predeployed_accounts`
-            );
-            return response.data;
-        }, "Request failed. Make sure your network has the /predeployed_accounts endpoint");
+        const response = await this.requestHandler<Array<PredeployedAccount>>(
+            "/predeployed_accounts",
+            "GET"
+        );
+        return response.data;
     }
 
     public async dump(path: string) {
-        return this.withErrorHandler<void>(async () => {
-            await axios.post(`${this.endpoint}/dump`, {
-                path
-            });
-        }, "Request failed. Make sure your network has the /dump endpoint");
+        const response = await this.requestHandler<void>("/dump", "POST", {
+            path
+        });
+        return response.data;
     }
 
     public async load(path: string) {
-        return this.withErrorHandler<void>(async () => {
-            await axios.post(`${this.endpoint}/load`, {
-                path
-            });
-        }, "Request failed. Make sure your network has the /load endpoint");
+        const response = await this.requestHandler<void>("/load", "POST", {
+            path
+        });
+        return response.data;
     }
 
     public async createBlock() {
-        return this.withErrorHandler<Block>(async () => {
-            const response = await axios.post<Block>(`${this.endpoint}/create_block`, {});
-            return response.data;
-        }, "Request failed. Make sure your network has the /create_block endpoint");
+        const response = await this.requestHandler<Block>("/create_block", "POST");
+        return response.data;
     }
 }
