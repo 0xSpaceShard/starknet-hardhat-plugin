@@ -10,7 +10,7 @@ assignees: ""
 
 A clear and concise description of what the bug is. If applicable, add screenshots, but prefer providing copyable text.
 
-**My Hardhat config file**
+**Hardhat config file**
 
 Paste your hardhat.config.ts or hardhat.config.js.
 
@@ -25,14 +25,19 @@ Steps to reproduce the behavior:
 
 1. ...
 2. ...
-   ...
 
 **Plugin version**
 
--   The result of `npx hardhat starknet-plugin-version` in my repo: VERSION
--   The result of `npx hardhat --version` in my repo: VERSION
+Please provide the results of these commands on your system:
+
+| Command                               | Version    |
+| ------------------------------------- | ---------- |
+| `npx hardhat starknet-plugin-version` | your value |
+| `npx hardhat --version`               | your value |
+| `npm --version`                       | your value |
+| `node --version`                      | your value |
 
 **System specifications**
 
 -   OS:
-<!-- Plese note if you're using the M1 chip -->
+<!-- Please note if you're using the M1 chip -->
