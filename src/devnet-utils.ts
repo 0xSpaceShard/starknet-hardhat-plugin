@@ -1,4 +1,5 @@
 import axios, { AxiosResponse, Method } from "axios";
+
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -51,50 +52,45 @@ export interface PredeployedAccount {
 }
 
 export class DevnetUtils implements Devnet {
+    private axiosInstance = axios.create({
+        baseURL: this.endpoint,
+        timeout: REQUEST_TIMEOUT,
+        timeoutErrorMessage: "Request timed out"
+    });
+
     constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
         return `${this.hre.starknet.networkConfig.url}`;
     }
 
-    private async requestHandler(
+    private async requestHandler<T>(
         url: string,
         method: Method,
-        errorMessage?: string,
-        data?: unknown,
-        headers?: any
+        data?: unknown
     ): Promise<AxiosResponse> {
         try {
             // Make the request
-            const axiosInstance = axios.create({
-                baseURL: this.endpoint,
-                timeout: REQUEST_TIMEOUT,
-                timeoutErrorMessage: "Request timed out"
-            });
-
-            return axiosInstance.request({
+            return this.axiosInstance.request<T>({
                 url,
                 method,
-                data,
-                headers
+                data
             });
         } catch (error) {
             const parent = error instanceof Error && error;
-            throw new StarknetPluginError(errorMessage, parent);
+            const msg = `Request failed: Could not ${method} ${url}. This is a Devnet-specific functionality.
+Make sure you really want to interact with Devnet and that it is running and available at ${this.endpoint}`;
+            throw new StarknetPluginError(msg, parent);
         }
     }
 
     public async restart() {
-        await this.requestHandler("/restart", "POST", "Failed to restart the devnet!");
+        await this.requestHandler<void>("/restart", "POST");
     }
 
     public async flush() {
-        const response = await this.requestHandler(
-            "/postman/flush",
-            "POST",
-            "Request failed. Make sure your network has the /flush endpoint"
-        );
-        return response.data as FlushResponse;
+        const response = await this.requestHandler<FlushResponse>("/postman/flush", "POST");
+        return response.data;
     }
 
     public async loadL1MessagingContract(networkUrl: string, address?: string, networkId?: string) {
@@ -104,78 +100,52 @@ export class DevnetUtils implements Devnet {
             networkUrl
         };
 
-        const response = await this.requestHandler(
+        const response = await this.requestHandler<LoadL1MessagingContractResponse>(
             "/postman/load_l1_messaging_contract",
             "POST",
-            "Request failed. Make sure your network has the /postman endpoint",
             body
         );
-        return response.data as LoadL1MessagingContractResponse;
+        return response.data;
     }
 
     public async increaseTime(seconds: number) {
-        const response = await this.requestHandler(
-            "/increase_time",
-            "POST",
-            "Request failed. Make sure your network has the /increase_time endpoint",
-            {
-                time: seconds
-            }
-        );
-        return response.data as IncreaseTimeResponse;
+        const response = await this.requestHandler<IncreaseTimeResponse>("/increase_time", "POST", {
+            time: seconds
+        });
+        return response.data;
     }
 
     public async setTime(seconds: number) {
-        const response = await this.requestHandler(
-            "/set_time",
-            "POST",
-            "Request failed. Make sure your network has the /set_time endpoint",
-            {
-                time: seconds
-            }
-        );
-        return response.data as SetTimeResponse;
+        const response = await this.requestHandler<SetTimeResponse>("/set_time", "POST", {
+            time: seconds
+        });
+        return response.data;
     }
 
     public async getPredeployedAccounts() {
-        const response = await this.requestHandler(
+        const response = await this.requestHandler<Array<PredeployedAccount>>(
             "/predeployed_accounts",
-            "GET",
-            "Request failed. Make sure your network has the /predeployed_accounts endpoint"
+            "GET"
         );
-        return response.data as Array<PredeployedAccount>;
+        return response.data;
     }
 
     public async dump(path: string) {
-        const response = await this.requestHandler(
-            "/dump",
-            "POST",
-            "Request failed. Make sure your network has the /dump endpoint",
-            {
-                path
-            }
-        );
+        const response = await this.requestHandler<void>("/dump", "POST", {
+            path
+        });
         return response.data;
     }
 
     public async load(path: string) {
-        const response = await this.requestHandler(
-            "/load",
-            "POST",
-            "Request failed. Make sure your network has the /load endpoint",
-            {
-                path
-            }
-        );
+        const response = await this.requestHandler<void>("/load", "POST", {
+            path
+        });
         return response.data;
     }
 
     public async createBlock() {
-        const response = await this.requestHandler(
-            "/create_block",
-            "POST",
-            "Request failed. Make sure your network has the /create_block endpoint"
-        );
-        return response.data as Block;
+        const response = await this.requestHandler<Block>("/create_block", "POST");
+        return response.data;
     }
 }
