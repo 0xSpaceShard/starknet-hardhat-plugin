@@ -652,6 +652,8 @@ There are several Starknet account implementations; this plugin supports the fol
 -   `OpenZeppelinAccount` - [v0.5.1](https://github.com/OpenZeppelin/cairo-contracts/releases/tag/v0.5.1)
 -   `ArgentAccount` - Commit [780760e](https://github.com/argentlabs/argent-contracts-starknet/tree/780760e4156afe592bb1feff7e769cf279ae9831) of branch develop.
 
+### Create account
+
 ```typescript
 import { starknet } from "hardhat";
 const account = await starknet.OpenZeppelinAccount.createAccount();
@@ -662,11 +664,18 @@ const accountFromOptions = await starknet.OpenZeppelinAccount.createAccount({
 console.log(account.address);
 ```
 
+### Fund account
+
 After creating the account, you need to fund it (give it some ETH):
 
 -   On alpha-goerli use [this faucet](https://faucet.goerli.starknet.io/).
+-   On alpha-goerli2 use [this](https://www.newton.so/view/636d020159c30b8efc8d1d86)
 -   On starknet-devnet use [this faucet](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token/).
 -   Alternatively transfer some amount from an already funded account to the newly deployed account.
+
+If you're facing issues loading the account you've just funded, check out [this issue](https://github.com/Shard-Labs/starknet-hardhat-plugin/issues/281#issuecomment-1354588817).
+
+### Deploy account
 
 After funding the account, you need to deploy it (in case of `ArgentAccount`, this will also take care of initialization):
 
@@ -674,7 +683,9 @@ After funding the account, you need to deploy it (in case of `ArgentAccount`, th
 await account.deployAccount({ maxFee: ... });
 ```
 
-To successfully deploy `ArgentAccount`, the chain you are interacting with is expected to have its contracts declared. Alpha Goerli and Alpha Mainnet satisfy this criterion, but if you're working with Devnet, this is most easily achievable by running a [Devnet forked](https://shard-labs.github.io/starknet-devnet/docs/guide/fork) from e.g. alpha-goerli.
+To successfully deploy `ArgentAccount`, the chain you are interacting with is expected to have `ArgentAccount` contracts declared. Alpha Goerli and Alpha Mainnet satisfy this criterion, but if you're working with Devnet, this is most easily achievable by running Devnet [forked](https://shard-labs.github.io/starknet-devnet/docs/guide/fork) from e.g. Alpha Goerli.
+
+### Reuse account
 
 To retrieve an already deployed Account, use the `getAccountFromAddress` method. What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
 
@@ -684,6 +695,8 @@ const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(
     process.env.PRIVATE_KEY
 );
 ```
+
+### Interact through account
 
 Use the `invoke` method of `Account` to invoke (change the state), but `call` method of `StarknetContract` to call (read the state).
 
