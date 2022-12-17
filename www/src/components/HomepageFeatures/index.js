@@ -1,35 +1,40 @@
 import React from "react";
 import clsx from "clsx";
 import styles from "./styles.module.css";
-
 const FeatureList = [
     {
-        title: "Easy to Use",
-        Svg: require("@site/static/img/undraw_docusaurus_mountain.svg").default,
+        title: "Test with JavaScript",
+        Svg: require("@site/static/img/undraw_test.svg").default,
         description: (
             <>
-                Docusaurus was designed from the ground up to be easily installed and used to get
-                your website up and running quickly.
+                Write your tests in JS. Example,
+                <pre>{"contract.call('entrypoint', {... });"}</pre>
             </>
         )
     },
     {
-        title: "Focus on What Matters",
-        Svg: require("@site/static/img/undraw_docusaurus_tree.svg").default,
+        title: "Test composability",
+        Svg: require("@site/static/img/undraw_composability.svg").default,
         description: (
             <>
-                Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go ahead and
-                move your docs into the <code>docs</code> directory.
+                Declare, deploy with construtor args and call to test systems composed of multiple
+                smart contracts.
             </>
         )
     },
     {
-        title: "Powered by React",
-        Svg: require("@site/static/img/undraw_docusaurus_react.svg").default,
+        title: "JavaScript/TypeScript",
+        Svg: require("@site/static/img/undraw_at_home.svg").default,
         description: (
             <>
-                Extend or customize your website layout by reusing React. Docusaurus can be extended
-                while reusing the same header and footer.
+                Convenience of JS/TS and Hardhat. Check out{" "}
+                <a
+                    href="https://hardhat.org/tutorial/creating-a-new-hardhat-project.html"
+                    rel="nofollow"
+                >
+                    Setting up a Hardhat project
+                </a>
+                .
             </>
         )
     }
@@ -38,10 +43,10 @@ const FeatureList = [
 function Feature({ Svg, title, description }) {
     return (
         <div className={clsx("col col--4")}>
-            <div className="text--center">
+            <div className="text--center background-circle">
                 <Svg className={styles.featureSvg} role="img" />
             </div>
-            <div className="text--center padding-horiz--md">
+            <div className="margin-top--md text--center padding-horiz--md">
                 <h3>{title}</h3>
                 <p>{description}</p>
             </div>
@@ -52,7 +57,7 @@ function Feature({ Svg, title, description }) {
 export default function HomepageFeatures() {
     return (
         <section className={styles.features}>
-            <div className="container">
+            <div className="container margin-vert--xl">
                 <div className="row">
                     {FeatureList.map((props, idx) => (
                         <Feature key={idx} {...props} />

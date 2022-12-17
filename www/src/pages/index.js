@@ -11,10 +11,10 @@ function HomepageHeader() {
     const { siteConfig } = useDocusaurusContext();
     return (
         <header className={clsx("hero hero--primary", styles.heroBanner)}>
-            <div className="container">
+            <div className="container margin-vert--lg">
                 <img src="img/logo.svg" style={{ width: "8em" }} />
-                <h1 className="hero__title">{siteConfig.title}</h1>
-                <p className="hero__subtitle">{siteConfig.tagline}</p>
+                <h1 className="hero__title margin-top--lg thin">{siteConfig.title}</h1>
+                <p className="hero__subtitle margin-bottom--lg">{siteConfig.tagline}</p>
                 <div className={styles.buttons}>
                     <Link
                         className="margin-horiz--md button button--secondary button--lg"
@@ -44,6 +44,11 @@ export default function Home() {
         >
             <HomepageHeader />
             <main>
+                <div className="container margin-top--xl text--center">
+                    <h1 className="thin">
+                        Development environment for <strike>Ethereum</strike> StarkNet professionals
+                    </h1>
+                </div>
                 <HomepageFeatures />
             </main>
         </Layout>
