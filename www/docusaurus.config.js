@@ -89,7 +89,7 @@ const config = {
                         items: [
                             {
                                 label: "Intro",
-                                to: "/intro"
+                                to: "/docs/intro"
                             },
                             {
                                 label: "Starknet Hardhat example",

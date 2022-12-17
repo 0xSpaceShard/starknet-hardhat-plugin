@@ -48,11 +48,13 @@
     position: absolute;
     background: var(--bg-circle-color, #f6643c);
     border-radius: 50%;
-    padding: 31%;
     transform: translate(-50%, -50%);
     top: 50%;
     left: 50%;
     z-index: -1;
+    width: 209px;
+    height: 212px;
+    box-sizing: border-box;
 }
 
 h1 {
