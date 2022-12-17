@@ -46,7 +46,7 @@ export default function Home() {
             <main>
                 <div className="container margin-top--xl text--center">
                     <h1 className="thin">
-                        Development environment for <strike>Ethereum</strike> StarkNet professionals
+                        <strike>Ethereum</strike> StarkNet Development environment for professionals
                     </h1>
                 </div>
                 <HomepageFeatures />

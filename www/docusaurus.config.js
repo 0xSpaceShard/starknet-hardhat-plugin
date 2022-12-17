@@ -116,7 +116,7 @@ const config = {
                         ]
                     }
                 ],
-                copyright: `Copyright © ${new Date().getFullYear()} Starknet HardHat plugin community`
+                copyright: `Copyright © ${new Date().getFullYear()} Shard Labs`
             },
             prism: {
                 theme: lightCodeTheme,
