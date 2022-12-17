@@ -12,12 +12,23 @@ function HomepageHeader() {
     return (
         <header className={clsx("hero hero--primary", styles.heroBanner)}>
             <div className="container">
+                <img src="img/logo.svg" style={{ width: "8em" }} />
                 <h1 className="hero__title">{siteConfig.title}</h1>
                 <p className="hero__subtitle">{siteConfig.tagline}</p>
                 <div className={styles.buttons}>
-                    <Link className="button button--secondary button--lg" to="/docs/intro">
-                        Docusaurus Tutorial - 5min ⏱️
+                    <Link
+                        className="margin-horiz--md button button--secondary button--lg"
+                        to="docs/intro#cli-commands"
+                    >
+                        CLI commands
                     </Link>
+
+                    <a
+                        className="margin-horiz--md button button--secondary button--lg"
+                        href="https://github.com/Shard-Labs/starknet-hardhat-example"
+                    >
+                        Example
+                    </a>
                 </div>
             </div>
         </header>
