@@ -247,6 +247,10 @@ export function getImageTagByArch(tag: string): string {
     return tag;
 }
 
+export function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Log a yellow message to STDERR.
  * @param message

@@ -8,7 +8,7 @@ import {
     TRANSACTION_VERSION,
     HEXADECIMAL_REGEX
 } from "./constants";
-import { adaptLog, copyWithBigint, warn } from "./utils";
+import { adaptLog, copyWithBigint, sleep, warn } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
@@ -161,17 +161,31 @@ export async function iterativelyCheckStatus(
     txHash: string,
     starknetWrapper: StarknetWrapper,
     resolve: (status: string) => void,
-    reject: (reason: Error) => void
+    reject: (reason: Error) => void,
+    retryCount = 10
 ) {
-    const statusObject = await checkStatus(txHash, starknetWrapper).catch(() => {
-        warn("Checking transaction status failed.");
-        return undefined;
-    });
+    let statusObject;
+    let errorReason;
+    let count = retryCount;
+
+    while (count > 0) {
+        statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
+            errorReason = reason;
+            return undefined;
+        });
+
+        if (statusObject) {
+            break;
+        }
+
+        warn("Retrying transaction status check...");
+        await sleep(CHECK_STATUS_RECOVER_TIMEOUT);
+        count--;
+    }
 
     if (!statusObject) {
-        warn("Retrying...");
-        // eslint-disable-next-line prefer-rest-params
-        setTimeout(iterativelyCheckStatus, CHECK_STATUS_RECOVER_TIMEOUT, ...arguments);
+        warn("Checking transaction status failed.");
+        reject(errorReason);
     } else if (isTxAccepted(statusObject)) {
         resolve(statusObject.tx_status);
     } else if (isTxRejected(statusObject)) {
@@ -183,10 +197,8 @@ export async function iterativelyCheckStatus(
         );
     } else {
         // Make a recursive call, but with a delay.
-        // Local var `arguments` holds what was passed in the current call
-
-        // eslint-disable-next-line prefer-rest-params
-        setTimeout(iterativelyCheckStatus, CHECK_STATUS_TIMEOUT, ...arguments);
+        await sleep(CHECK_STATUS_TIMEOUT);
+        iterativelyCheckStatus(txHash, starknetWrapper, resolve, reject, retryCount);
     }
 }
 
