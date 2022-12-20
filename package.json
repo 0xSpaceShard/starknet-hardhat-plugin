@@ -29,7 +29,7 @@
         "build": "rm -rf dist && tsc && npm run copy-files",
         "copy-files": "cp src/*.py dist/src/",
         "lint": "eslint $(git ls-files '*.ts')",
-        "format": "prettier-eslint --list-different --write $(git ls-files '*.ts')"
+        "format": "prettier-eslint --list-different --write $(git ls-files '*.ts' '*.js')"
     },
     "author": "Shard-Labs",
     "license": "ISC",

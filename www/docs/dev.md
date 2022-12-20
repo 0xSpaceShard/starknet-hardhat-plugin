@@ -1,22 +1,24 @@
+# Contribute
+
 ## Set up development environment
 
 ### Clone the repository
 
 ```
-git clone git@github.com:Shard-Labs/starknet-hardhat-plugin.git
-cd starknet-hardhat-plugin
+$ git clone git@github.com:Shard-Labs/starknet-hardhat-plugin.git
+$ cd starknet-hardhat-plugin
 ```
 
 ### Install dependencies
 
 ```
-npm ci
+$ npm ci
 ```
 
 ### Compile
 
 ```
-npm run build
+$ npm run build
 ```
 
 ### Set up the example repository
@@ -25,11 +27,11 @@ The `starknet-hardhat-example` repository to showcase and test this plugin's fun
 Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, make it use your local plugin repository:
 
 ```
-cd <YOUR_PLUGIN_REPO_PATH>
-npm link
+$ cd <YOUR_PLUGIN_REPO_PATH>
+$ npm link
 
-cd <YOUR_EXAMPLE_REPO_PATH>
-npm link @shardlabs/starknet-hardhat-plugin
+$ cd <YOUR_EXAMPLE_REPO_PATH>
+$ npm link @shardlabs/starknet-hardhat-plugin
 ```
 
 If your IDE is reporting Typescript issues after compiling the plugin, you may want to restart the Typescript language server (e.g. in VS Code on Linux: Ctrl+Shift+P)
@@ -94,7 +96,7 @@ Change the version in `hardhat.config.ts`. Recompile the contracts (only importa
 
 This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](/src/starknet-wrappers.ts) and both rely on a [proxy server](/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
+There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container
@@ -120,7 +122,7 @@ When a push is done to the `master` branch and the version in `package.json` dif
 The updating of `package.json` doesn't have to be done directly, but can be done by running
 
 ```
-npm version <NEW_VERSION>
+$ npm version <NEW_VERSION>
 ```
 
 `NEW_VERSION` can be anything documented [here](https://docs.npmjs.com/cli/v8/commands/npm-version), but will most commonly be `patch`.
@@ -133,16 +135,28 @@ Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugi
 
 When the tag is pushed:
 
-```
-git push origin <TAG_NAME>
+```bash
+$ git push origin <TAG_NAME>
 ```
 
-a [new GitHub version can be released](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+the release can be made public [on GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+
+Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67) etc.
+
+### Docs
+
+To deploy new documentation, run:
+
+```bash
+$ cd www
+$ npm ci
+$ npm run deploy
+```
+
+### Example repo after a new version
 
 After releasing a new plugin version, the `plugin` branch of the example repo should be updated and pushed:
 
 -   `package.json` should be updated by running `npm install --save-exact @shardlabs/starknet-hardhat-plugin@<NEW_VERSION>`
 -   The `master` branch, which serves as reference to the users, should be synchronized with the `plugin` branch. This can probably be done by doing `git reset plugin` while on `master`.
 -   Since you did `npm install`, you may need to link again, as described [initially](#set-up-the-example-repository).
-
-Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67)...

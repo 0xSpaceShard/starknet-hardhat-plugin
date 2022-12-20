@@ -1,0 +1,8 @@
+# No blog posts yet
+# Ref: https://docusaurus.io/docs/blog
+# Use this as template to add author metadata
+shramee:
+    name: Shramee
+    title: Contributor
+    url: https://github.com/shramee
+    image_url: https://github.com/shramee.png
