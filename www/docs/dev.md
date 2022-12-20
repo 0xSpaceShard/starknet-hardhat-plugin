@@ -139,12 +139,24 @@ When the tag is pushed:
 git push origin <TAG_NAME>
 ```
 
-a [new GitHub version can be released](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+the release can be made public [on GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+
+Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67) etc.
+
+### Docs
+
+To deploy new documentation, run:
+
+```bash
+cd www
+npm ci
+npm run deploy
+```
+
+### Example repo after a new version
 
 After releasing a new plugin version, the `plugin` branch of the example repo should be updated and pushed:
 
 -   `package.json` should be updated by running `npm install --save-exact @shardlabs/starknet-hardhat-plugin@<NEW_VERSION>`
 -   The `master` branch, which serves as reference to the users, should be synchronized with the `plugin` branch. This can probably be done by doing `git reset plugin` while on `master`.
 -   Since you did `npm install`, you may need to link again, as described [initially](#set-up-the-example-repository).
-
-Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67)...
