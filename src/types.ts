@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as starknet from "./starknet-types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import {
-    CHECK_STATUS_TIMEOUT,
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
     TRANSACTION_VERSION,
@@ -149,12 +148,12 @@ async function checkStatus(hash: string, starknetWrapper: StarknetWrapper): Prom
 
 const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
 export function isTxAccepted(statusObject: StatusObject): boolean {
-    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
+    return ACCEPTABLE_STATUSES.includes(statusObject?.tx_status);
 }
 
 const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];
 function isTxRejected(statusObject: StatusObject): boolean {
-    return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
+    return UNACCEPTABLE_STATUSES.includes(statusObject?.tx_status);
 }
 
 export async function iterativelyCheckStatus(
@@ -164,42 +163,36 @@ export async function iterativelyCheckStatus(
     reject: (reason: Error) => void,
     retryCount = 10
 ) {
-    let statusObject;
-    let errorReason;
     let count = retryCount;
 
-    while (count > 0) {
-        statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
+    do {
+        let errorReason;
+        // This promise is rejected usually if the network is unavailable
+        const statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
             errorReason = reason;
             return undefined;
         });
 
-        if (statusObject) {
-            break;
+        if (!statusObject) {
+            await sleep(CHECK_STATUS_RECOVER_TIMEOUT);
+            warn("Retrying transaction status check...");
         }
 
-        warn("Retrying transaction status check...");
-        await sleep(CHECK_STATUS_RECOVER_TIMEOUT);
+        if (!statusObject && count === 1) {
+            warn("Checking transaction status failed.");
+            reject(errorReason);
+        } else if (isTxAccepted(statusObject)) {
+            resolve(errorReason);
+        } else if (isTxRejected(statusObject)) {
+            reject(
+                new Error(
+                    "Transaction rejected. Error message:\n\n" +
+                        adaptLog(statusObject.tx_failure_reason.error_message)
+                )
+            );
+        }
         count--;
-    }
-
-    if (!statusObject) {
-        warn("Checking transaction status failed.");
-        reject(errorReason);
-    } else if (isTxAccepted(statusObject)) {
-        resolve(statusObject.tx_status);
-    } else if (isTxRejected(statusObject)) {
-        reject(
-            new Error(
-                "Transaction rejected. Error message:\n\n" +
-                    adaptLog(statusObject.tx_failure_reason.error_message)
-            )
-        );
-    } else {
-        // Make a recursive call, but with a delay.
-        await sleep(CHECK_STATUS_TIMEOUT);
-        iterativelyCheckStatus(txHash, starknetWrapper, resolve, reject, retryCount);
-    }
+    } while (count > 0);
 }
 
 /**
