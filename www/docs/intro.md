@@ -58,7 +58,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 ### `starknet-compile`
 
 ```
-npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
+$ npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
 If no paths are provided, all StarkNet contracts in the default contracts directory are compiled. Paths can be files and directories.
@@ -72,7 +72,7 @@ If no paths are provided, all StarkNet contracts in the default contracts direct
 ### `starknet-verify`
 
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
+$ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
@@ -87,28 +87,30 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 
 ### `starknet-new-account`
 
+**ATTENTION!** Use this only if you want to achieve compatibility with the wallet used in Starknet CLI. For all other uses, [these accounts](#account) should suffice.
+
 ```
-npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
+$ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file which then should be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
+Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
 
 ### `starknet-deploy-account`
 
 ```
-npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
+$ npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
 Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by StarkNet CLI. _Needs to be funded before deploying it._
 
 ```
-npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
+$ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
 ```
 
 ### `starknet-plugin-version`
 
 ```
-npx hardhat starknet-plugin-version
+$ npx hardhat starknet-plugin-version
 ```
 
 Prints the version of the plugin.
@@ -116,13 +118,13 @@ Prints the version of the plugin.
 ### `migrate`
 
 ```
-npx hardhat migrate [PATH...] [--inplace]
+$ npx hardhat migrate [PATH...] [--inplace]
 ```
 
 Converts old cairo code to the new (cairo-lang 0.10.0) syntax. The `--inplace` flag will change the contract file in place.
 
 ```
-npx hardhat migrate --inplace contract/contract.cairo
+$ npx hardhat migrate --inplace contract/contract.cairo
 ```
 
 ### `run`
@@ -152,7 +154,7 @@ Relying on the above described API makes it easier to interact with your contrac
 To test StarkNet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 
 ```
-npx hardhat test
+$ npx hardhat test
 ```
 
 Read more about the network used in tests in the [Runtime network](#runtime-network) section.
@@ -208,7 +210,6 @@ describe("My Test", function () {
     // two ways to obtain the class hash
     expect(classHash).to.equal(await contractFactory.getClassHash());
 
-
     const constructorArgs = { initial_balance: 0 };
     const options = { maxFee: ... };
     // implicitly invokes UDC
@@ -225,6 +226,7 @@ describe("My Test", function () {
  */
 it("should work with arrays", async function () {
     const contract = ...;
+    // you don't have to specify the array length separately
     const { res } = await contract.call("sum_array", { a: [1, 2, 3] });
     expect(res).to.deep.equal(BigInt(6));
 });
@@ -244,9 +246,9 @@ it("should work with tuples", async function () {
     const contract = ...;
     // notice how the pair tuple is passed as javascript array
     const { res } = await contract.call("sum_pair", { pair: [10, 20] });
-    expect(res).to.deep.equal(BigInt(30));
     ... = await contract.call("sum_named_pair", { pair: { x: 10, y: 20 } });
     ... = await contract.call("sum_type_alias", { pair: { x: 10, y: 20 } });
+    expect(res).to.deep.equal(BigInt(30));
 });
 ```
 
@@ -300,7 +302,7 @@ it("should return transaction data and transaction receipt", async function () {
 });
 ```
 
-For more usage examples, including tuple, array and struct support, as well as wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
+For more usage examples, including tuple, array and struct support, as well as Starknet CLI wallet support, check [sample-test.ts](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/Shard-Labs/starknet-hardhat-example).
 
 ### Devnet examples
 
@@ -567,7 +569,7 @@ The example package used is `https://github.com/OpenZeppelin/cairo-contracts` so
 1. Compile
 
 ```
-npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
+$ npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
 ```
 
 2. Get contract factory
@@ -578,7 +580,9 @@ const contractFactory = await starknet.getContractFactory(
 );
 ```
 
-### Wallet
+### Wallet - Starknet CLI
+
+**ATTENTION!** Use this only if you want to achieve compatibility with the wallet used in Starknet CLI. For all other uses, [these accounts](#account) should suffice.
 
 To configure a wallet for your project, specify it by adding an entry to `wallets` in your hardhat config file.
 You can specify multiple wallets/accounts.
@@ -735,6 +739,8 @@ const fee = await account.multiEstimateFee(interactionArray);
 const txHash = await account.multiInvoke(interactionArray);
 ```
 
+### Guardian
+
 Unlike OpenZeppelin account, Argent account offers [guardian functionality](https://support.argent.xyz/hc/en-us/articles/360022631992-About-guardians). The guardian is by default not set (the guardian key is undefined), but if you want to change it, cast the `account` to `ArgentAccount` and execute `setGuardian`.
 
 ```typescript
@@ -746,7 +752,3 @@ await argentAccount.setGuardian(undefined, { maxFee: 1e18 });
 ## More examples
 
 An example Hardhat project using this plugin can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example).
-
-## Contribute
-
-If you're a developer willing to contribute, go through [the development readme](./dev).

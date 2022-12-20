@@ -23,11 +23,18 @@ function HomepageHeader() {
                         CLI commands
                     </Link>
 
+                    <Link
+                        className="margin-horiz--md button button--secondary button--lg"
+                        to="docs/intro#api"
+                    >
+                        JS utilities - API
+                    </Link>
+
                     <a
                         className="margin-horiz--md button button--secondary button--lg"
                         href="https://github.com/Shard-Labs/starknet-hardhat-example"
                     >
-                        Example
+                        Example repo
                     </a>
                 </div>
             </div>
