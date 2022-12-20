@@ -5,20 +5,20 @@
 ### Clone the repository
 
 ```
-git clone git@github.com:Shard-Labs/starknet-hardhat-plugin.git
-cd starknet-hardhat-plugin
+$ git clone git@github.com:Shard-Labs/starknet-hardhat-plugin.git
+$ cd starknet-hardhat-plugin
 ```
 
 ### Install dependencies
 
 ```
-npm ci
+$ npm ci
 ```
 
 ### Compile
 
 ```
-npm run build
+$ npm run build
 ```
 
 ### Set up the example repository
@@ -27,11 +27,11 @@ The `starknet-hardhat-example` repository to showcase and test this plugin's fun
 Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, make it use your local plugin repository:
 
 ```
-cd <YOUR_PLUGIN_REPO_PATH>
-npm link
+$ cd <YOUR_PLUGIN_REPO_PATH>
+$ npm link
 
-cd <YOUR_EXAMPLE_REPO_PATH>
-npm link @shardlabs/starknet-hardhat-plugin
+$ cd <YOUR_EXAMPLE_REPO_PATH>
+$ npm link @shardlabs/starknet-hardhat-plugin
 ```
 
 If your IDE is reporting Typescript issues after compiling the plugin, you may want to restart the Typescript language server (e.g. in VS Code on Linux: Ctrl+Shift+P)
@@ -122,7 +122,7 @@ When a push is done to the `master` branch and the version in `package.json` dif
 The updating of `package.json` doesn't have to be done directly, but can be done by running
 
 ```
-npm version <NEW_VERSION>
+$ npm version <NEW_VERSION>
 ```
 
 `NEW_VERSION` can be anything documented [here](https://docs.npmjs.com/cli/v8/commands/npm-version), but will most commonly be `patch`.
@@ -135,8 +135,8 @@ Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugi
 
 When the tag is pushed:
 
-```
-git push origin <TAG_NAME>
+```bash
+$ git push origin <TAG_NAME>
 ```
 
 the release can be made public [on GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
@@ -148,9 +148,9 @@ Users should be notified about the usage related changes. This can done on Teleg
 To deploy new documentation, run:
 
 ```bash
-cd www
-npm ci
-npm run deploy
+$ cd www
+$ npm ci
+$ npm run deploy
 ```
 
 ### Example repo after a new version

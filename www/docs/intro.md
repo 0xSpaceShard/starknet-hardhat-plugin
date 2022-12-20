@@ -58,7 +58,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 ### `starknet-compile`
 
 ```
-npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
+$ npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
 If no paths are provided, all StarkNet contracts in the default contracts directory are compiled. Paths can be files and directories.
@@ -72,7 +72,7 @@ If no paths are provided, all StarkNet contracts in the default contracts direct
 ### `starknet-verify`
 
 ```
-npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
+$ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
@@ -90,7 +90,7 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 **ATTENTION!** Use this only if you want to achieve compatibility with the wallet used in Starknet CLI. For all other uses, [these accounts](#account) should suffice.
 
 ```
-npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
+$ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
 Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
@@ -98,19 +98,19 @@ Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config`
 ### `starknet-deploy-account`
 
 ```
-npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
+$ npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
 Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by StarkNet CLI. _Needs to be funded before deploying it._
 
 ```
-npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
+$ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
 ```
 
 ### `starknet-plugin-version`
 
 ```
-npx hardhat starknet-plugin-version
+$ npx hardhat starknet-plugin-version
 ```
 
 Prints the version of the plugin.
@@ -118,13 +118,13 @@ Prints the version of the plugin.
 ### `migrate`
 
 ```
-npx hardhat migrate [PATH...] [--inplace]
+$ npx hardhat migrate [PATH...] [--inplace]
 ```
 
 Converts old cairo code to the new (cairo-lang 0.10.0) syntax. The `--inplace` flag will change the contract file in place.
 
 ```
-npx hardhat migrate --inplace contract/contract.cairo
+$ npx hardhat migrate --inplace contract/contract.cairo
 ```
 
 ### `run`
@@ -154,7 +154,7 @@ Relying on the above described API makes it easier to interact with your contrac
 To test StarkNet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 
 ```
-npx hardhat test
+$ npx hardhat test
 ```
 
 Read more about the network used in tests in the [Runtime network](#runtime-network) section.
@@ -569,7 +569,7 @@ The example package used is `https://github.com/OpenZeppelin/cairo-contracts` so
 1. Compile
 
 ```
-npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
+$ npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
 ```
 
 2. Get contract factory
