@@ -28,9 +28,8 @@
         "test-recompilation-tests": "TEST_SUBDIR=recompilation-tests ./scripts/test.sh",
         "build": "rm -rf dist && tsc && npm run copy-files",
         "copy-files": "cp src/*.py dist/src/",
-        "lint": "eslint $(git ls-files '*.ts')",
-        "format": "prettier-eslint --list-different --write $(git ls-files '*.ts')",
-        "formatjs": "prettier-eslint --list-different --write $(git ls-files '*.js')"
+        "lint": "eslint $(git ls-files '*.ts' '*.js' '*.json')",
+        "format": "prettier-eslint --list-different --write $(git ls-files '*.ts' '*.js' '*.json')"
     },
     "author": "Shard-Labs",
     "license": "ISC",
