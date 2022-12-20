@@ -1,0 +1,70 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+    --ifm-color-custom-yellow: #cd9801;
+    --ifm-color-custom-blue: #29296e;
+    --ifm-color-primary: #29296e;
+    --ifm-color-primary-dark: #252563;
+    --ifm-color-primary-darker: #23235e;
+    --ifm-color-primary-darkest: #1d1d4d;
+    --ifm-color-primary-light: #2d2d79;
+    --ifm-color-primary-lighter: #2f2f7f;
+    --ifm-color-primary-lightest: #35358f;
+    /* --bg-circle-color: #cd9801; */
+
+    --ifm-code-font-size: 95%;
+    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+    --ifm-footer-background-color: var(--ifm-color-primary-lightest);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme="dark"] {
+    --ifm-color-primary: #cd9801;
+    --ifm-color-primary-dark: #c39001;
+    --ifm-color-primary-darker: #b98901;
+    --ifm-color-primary-darkest: #aa7e01;
+    --ifm-color-primary-light: #e2a701;
+    --ifm-color-primary-lighter: #ecaf01;
+    --ifm-color-primary-lightest: #fec00e;
+    /* --bg-circle-color: #35358f; */
+    --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+.footer--dark a:hover {
+    color: var(--ifm-color-custom-yellow, #eee);
+}
+
+.background-circle {
+    position: relative;
+}
+.background-circle:before {
+    content: "";
+    display: block;
+    position: absolute;
+    background: var(--bg-circle-color, #f6643c);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    top: 50%;
+    left: 50%;
+    z-index: -1;
+    width: 209px;
+    height: 212px;
+    box-sizing: border-box;
+}
+
+h1 {
+    font-weight: 300;
+}
+
+h2 {
+    font-weight: 400;
+}
+h3,
+h4 {
+    font-weight: 500;
+}
