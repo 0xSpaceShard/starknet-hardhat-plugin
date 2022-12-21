@@ -168,26 +168,26 @@ export async function iterativelyCheckStatus(
     while (true) {
         let count = retryCount;
         let statusObject;
-        let errorReason;
-        do {
+        let error;
+        while (count > 0) {
             // This promise is rejected usually if the network is unavailable
             statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
-                errorReason = reason;
+                error = reason;
                 return undefined;
             });
-
-            if (statusObject) {
+            // Check count at 1 to avoid unnecessary waiting(sleep) in the last iteration
+            if (statusObject || count === 1) {
                 break;
             }
 
             await sleep(CHECK_STATUS_RECOVER_TIMEOUT);
             warn("Retrying transaction status check...");
             count--;
-        } while (count > 0);
+        }
 
         if (!statusObject) {
             warn("Checking transaction status failed.");
-            return reject(errorReason);
+            return reject(error);
         } else if (isTxAccepted(statusObject)) {
             return resolve(statusObject.tx_status);
         } else if (isTxRejected(statusObject)) {
