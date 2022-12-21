@@ -5,7 +5,8 @@ import {
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
     TRANSACTION_VERSION,
-    HEXADECIMAL_REGEX
+    HEXADECIMAL_REGEX,
+    CHECK_STATUS_TIMEOUT
 } from "./constants";
 import { adaptLog, copyWithBigint, sleep, warn } from "./utils";
 import { adaptInputUtil, adaptOutputUtil } from "./adapt";
@@ -148,12 +149,12 @@ async function checkStatus(hash: string, starknetWrapper: StarknetWrapper): Prom
 
 const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
 export function isTxAccepted(statusObject: StatusObject): boolean {
-    return ACCEPTABLE_STATUSES.includes(statusObject?.tx_status);
+    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
 const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];
 function isTxRejected(statusObject: StatusObject): boolean {
-    return UNACCEPTABLE_STATUSES.includes(statusObject?.tx_status);
+    return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
 export async function iterativelyCheckStatus(
@@ -163,36 +164,43 @@ export async function iterativelyCheckStatus(
     reject: (reason: Error) => void,
     retryCount = 10
 ) {
-    let count = retryCount;
-
-    do {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        let count = retryCount;
+        let statusObject;
         let errorReason;
-        // This promise is rejected usually if the network is unavailable
-        const statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
-            errorReason = reason;
-            return undefined;
-        });
+        do {
+            // This promise is rejected usually if the network is unavailable
+            statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
+                errorReason = reason;
+                return undefined;
+            });
 
-        if (!statusObject) {
+            if (statusObject) {
+                break;
+            }
+
             await sleep(CHECK_STATUS_RECOVER_TIMEOUT);
             warn("Retrying transaction status check...");
-        }
+            count--;
+        } while (count > 0);
 
-        if (!statusObject && count === 1) {
+        if (!statusObject) {
             warn("Checking transaction status failed.");
-            reject(errorReason);
+            return reject(errorReason);
         } else if (isTxAccepted(statusObject)) {
-            resolve(errorReason);
+            return resolve(statusObject.tx_status);
         } else if (isTxRejected(statusObject)) {
-            reject(
+            return reject(
                 new Error(
                     "Transaction rejected. Error message:\n\n" +
                         adaptLog(statusObject.tx_failure_reason.error_message)
                 )
             );
         }
-        count--;
-    } while (count > 0);
+
+        await sleep(CHECK_STATUS_TIMEOUT);
+    }
 }
 
 /**
