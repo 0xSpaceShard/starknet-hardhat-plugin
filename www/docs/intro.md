@@ -145,7 +145,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities introduced by the `starknet` object, check [this](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/type-extensions.ts#L182) out.
+To see all the utilities introduced by the `starknet` object, check [this](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/type-extensions.ts#L190) out.
 
 ## Testing
 
@@ -375,7 +375,7 @@ Devnet offers [empty block creation](https://shard-labs.github.io/starknet-devne
 const emptyBlock = await starknet.devnet.createBlock();
 ```
 
-#### Mint some funds to an account
+#### Mint tokens to an account
 
 DevNet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call
 
