@@ -148,4 +148,8 @@ Make sure you really want to interact with Devnet and that it is running and ava
         const response = await this.requestHandler<Block>("/create_block", "POST");
         return response.data;
     }
+
+    public async mint(address: string, amount: number, lite = true) {
+        await this.requestHandler<null>("/mint", "POST", { amount, address, lite });
+    }
 }

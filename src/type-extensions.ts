@@ -174,6 +174,14 @@ declare module "hardhat/types/runtime" {
          * @returns the empty block
          */
         createBlock: () => Promise<Block>;
+
+        /**
+         * Assumes there is a /mint endpoint on the current starknet network
+         * @param address the address to fund
+         * @param amount the amount to fund
+         * @param lite whether to make it lite or not
+         */
+        mint: (address: string, amount: number, lite: boolean) => Promise<void>;
     }
 
     interface HardhatRuntimeEnvironment {
