@@ -380,6 +380,12 @@ const emptyBlock = await starknet.devnet.createBlock();
 
 To debug StarkNet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
 
+Compile with `--disable-hint-validation` flag to allow hints.
+
+```
+$ hardhat starknet-compile --disable-hint-validation
+```
+
 For example, when calling the following `increase_balance` with input `25`.
 
 ```cairo
