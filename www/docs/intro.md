@@ -9,10 +9,11 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for StarkN
 -   [Install](#install)
 -   [CLI commands](#cli-commands)
 -   [API](#api)
--   [Testing](#test)
+-   [Testing](#testing)
     -   [Important notes](#important-notes)
     -   [Examples](#test-examples)
     -   [Devnet examples](#devnet-examples)
+-   [Debugging contracts](#debugging-contracts)
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
@@ -374,6 +375,37 @@ Devnet offers [empty block creation](https://shard-labs.github.io/starknet-devne
 ```typescript
 const emptyBlock = await starknet.devnet.createBlock();
 ```
+
+## Debugging contracts
+
+To debug StarkNet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
+
+For example, when calling the following `increase_balance` with input `25`.
+
+```cairo
+@external
+func increase_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    amount: felt
+) {
+    let (res) = balance.read();
+    %{ print( "Adding balance..." ) %}
+    %{ print( ids.res ) %}
+    balance.write(res + amount);
+    let (afterUpdate) = balance.read();
+    %{ print( ids.afterUpdate ) %}
+    return ();
+}
+```
+
+DevNet logs look like this,
+
+```
+Adding balance...
+0
+25
+```
+
+When using `integrated-devnet` you can specify `stdout` as `STDOUT` or a file in your hardhat config file. Documented in [runtime network](#runtime-network---integrated-devnet) section.
 
 ## Configure the plugin
 
