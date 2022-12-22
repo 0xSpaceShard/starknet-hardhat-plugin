@@ -375,6 +375,14 @@ Devnet offers [empty block creation](https://shard-labs.github.io/starknet-devne
 const emptyBlock = await starknet.devnet.createBlock();
 ```
 
+#### Mint some funds to an account
+
+DevNet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call
+
+```typescript
+await starknet.devnet.mint(account_address, 2e12);
+```
+
 ## Configure the plugin
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
