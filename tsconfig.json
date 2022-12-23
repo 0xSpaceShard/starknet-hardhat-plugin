@@ -10,7 +10,8 @@
         "strictNullChecks": false,
         "declaration": true,
         "module": "commonjs",
-        "noImplicitOverride": true
+        "noImplicitOverride": true,
+        "typeRoots": ["./node_modules/@types"]
     },
     "include": ["./src", "config.json", "contract-artifacts/**/*.json"]
 }
