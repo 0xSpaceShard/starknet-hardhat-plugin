@@ -403,7 +403,7 @@ func increase_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_chec
 }
 ```
 
-DevNet logs look like this,
+Devnet logs look like this,
 
 ```
 Adding balance...
@@ -411,7 +411,7 @@ Adding balance...
 25
 ```
 
-When using `integrated-devnet` you can specify `stdout` as `STDOUT` or a file in your hardhat config file. Documented in [runtime network](#runtime-network---integrated-devnet) section.
+If you want to have your debug lines printed in the same terminal as your hardhat script/test, use `integrated-devnet` with `stdout` set to `"STDOUT"` as documented in [runtime network](#runtime-network---integrated-devnet) section.
 
 ## Configure the plugin
 
