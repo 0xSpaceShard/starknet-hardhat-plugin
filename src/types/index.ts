@@ -1,18 +1,18 @@
 import * as fs from "fs";
-import * as starknet from "./starknet-types";
-import { StarknetPluginError } from "./starknet-plugin-error";
+import * as starknet from "../starknet-types";
+import { StarknetPluginError } from "../starknet-plugin-error";
 import {
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
     TRANSACTION_VERSION,
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
-} from "./constants";
-import { adaptLog, copyWithBigint, sleep, warn } from "./utils";
-import { adaptInputUtil, adaptOutputUtil } from "./adapt";
+} from "../constants";
+import { adaptLog, copyWithBigint, sleep, warn } from "../utils";
+import { adaptInputUtil, adaptOutputUtil } from "../adapt";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
-import { StarknetWrapper } from "./starknet-wrappers";
+import { StarknetWrapper } from "../starknet-wrappers";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
