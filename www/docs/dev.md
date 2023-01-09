@@ -113,7 +113,7 @@ Before v0.7.0 we didn't know how to export classes to users, since every class n
 const hre = await import("hardhat");
 ```
 
-In `type-extensions.ts`, classes are specified using `typeof`, e.g. `OpenZeppelinAccount: typeof OpenZeppelinAccount`. However, exporting classes this way doesn't export their type.
+In `types/starknet.ts`, classes are specified using `typeof`, e.g. `OpenZeppelinAccount: typeof OpenZeppelinAccount`. However, exporting classes this way doesn't export their type.
 
 ## Version management
 
