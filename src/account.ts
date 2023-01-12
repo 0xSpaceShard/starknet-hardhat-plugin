@@ -22,7 +22,7 @@ import {
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { BigNumberish, toBN } from "starknet/utils/number";
+import { BigNumberish, toBN, toHex } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
     calculateDeployAccountHash,
@@ -32,9 +32,10 @@ import {
     sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
+import { numericToHexString, copyWithBigint, generateRandomSalt, UDC, readContract } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
+import axios from "axios";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -169,6 +170,75 @@ export abstract class Account {
             calldata,
             options
         );
+    }
+
+    async estimateDeclareFee(
+        contractFactory: StarknetContractFactory,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const maxFee = (options.maxFee || 0).toString();
+
+        const hre = await import("hardhat");
+        const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const calldata = [classHash];
+        const calldataHash = hash.computeHashOnElements(calldata);
+
+        const messageHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DECLARE,
+            TRANSACTION_VERSION.toString(),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            chainId,
+            nonce.toString()
+        ]);
+
+        const signature = this.getSignatures(messageHash);
+        // To resolve TypeError: Do not know how to serialize a BigInt
+        // coming from axios
+        (BigInt.prototype as any).toJSON = function () {
+            return this.toString();
+        };
+        const resp = await axios.post(
+            `${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`,
+            {
+                type: "DECLARE",
+                sender_address: this.address,
+                contract_class: readContract(contractFactory.metadataPath),
+                signature,
+                version: toHex(toBN(TRANSACTION_VERSION.toString())),
+                nonce: toHex(toBN(nonce.toString()))
+            }
+        );
+
+        const { gas_price, gas_usage, overall_fee, unit } = resp.data;
+        return {
+            amount: BigInt(overall_fee),
+            unit,
+            gas_price: BigInt(gas_price),
+            gas_usage: BigInt(gas_usage)
+        } as starknet.FeeEstimation;
+    }
+
+    async estimateDeployFee(
+        contractFactory: StarknetContractFactory,
+        constructorArguments?: StringMap,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const classHash = await contractFactory.getClassHash();
+        const udc = await UDC.getInstance();
+        const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
+        const calldata: StringMap = {
+            classHash,
+            salt: options?.salt ?? generateRandomSalt(),
+            unique: BigInt(options?.unique ?? true),
+            calldata: adaptedArgs
+        };
+        return await this.estimateFee(udc, UDC_DEPLOY_FUNCTION_NAME, calldata, options);
     }
 
     private async interact(
@@ -342,7 +412,12 @@ export abstract class Account {
         options: DeclareOptions = {}
     ): Promise<string> {
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
-        const maxFee = (options.maxFee || 0).toString();
+        let maxFee;
+        if (options?.maxFee === undefined || options?.maxFee === null) {
+            maxFee = await this.estimateDeclareFee(contractFactory, options);
+            maxFee = maxFee.amount;
+        }
+        maxFee = maxFee.toString();
 
         const hre = await import("hardhat");
         const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);

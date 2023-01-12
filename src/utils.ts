@@ -28,6 +28,8 @@ import { Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
+import { compressProgram } from "starknet/utils/stark";
+import { json, CompiledContract } from "starknet";
 
 const globPromise = promisify(glob);
 /**
@@ -297,4 +299,14 @@ export class UDC {
         }
         return UDC.instance;
     }
+}
+
+export function readContract(contractPath: string) {
+    const parsedContract = json.parse(
+        fs.readFileSync(contractPath).toString("ascii")
+    ) as CompiledContract;
+    return {
+        ...parsedContract,
+        program: compressProgram(parsedContract.program)
+    };
 }

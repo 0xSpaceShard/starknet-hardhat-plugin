@@ -311,6 +311,10 @@ export interface CallOptions {
     nonce?: Numeric;
     maxFee?: Numeric;
     rawOutput?: boolean;
+    token?: string;
+    salt?: string;
+    unique?: boolean;
+    sender?: string; // address
 }
 
 export type EstimateFeeOptions = CallOptions;
