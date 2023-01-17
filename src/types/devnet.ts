@@ -38,8 +38,8 @@ export interface Devnet {
 
     /**
      * Sends a mock tx from L1 to L2 without running L1.
-     * @param {string} l2ContractAddress - Adress of the L2 contract.
-     * @param {string} l1ContractAddress - Adress of the L1 contract.
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
      * @param {string} functionName - Function name for entry point selector.
      * @param {Array<string>} payload - Payload to send to the L2 network.
      * @param {string} nonce - Nonce value
@@ -55,12 +55,12 @@ export interface Devnet {
 
     /**
      * Sends a mock tx from L2 to L1
-     * @param {string} l2ContractAddress - Adress of the L2 contract.
-     * @param {string} l1ContractAddress - Adress of the L1 contract.
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
      * @param {Array<number>} payload - Payload to send to the L1 network.
      * @returns Message hash
      */
-    sendMessageToL1: (
+    consumeMessageFromL2: (
         l2ContractAddress: string,
         l1ContractAddress: string,
         payload: Array<number>

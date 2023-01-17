@@ -155,7 +155,7 @@ Make sure you really want to interact with Devnet and that it is running and ava
         return response.data;
     }
 
-    public async sendMessageToL1(
+    public async consumeMessageFromL2(
         l2ContractAddress: string,
         l1ContractAddress: string,
         payload: number[]
