@@ -9,10 +9,11 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for StarkN
 -   [Install](#install)
 -   [CLI commands](#cli-commands)
 -   [API](#api)
--   [Testing](#test)
+-   [Testing](#testing)
     -   [Important notes](#important-notes)
     -   [Examples](#test-examples)
     -   [Devnet examples](#devnet-examples)
+-   [Debugging contracts](#debugging-contracts)
 -   [Configure the plugin](#configure-the-plugin)
 -   [Account support](#account)
 -   [More examples](#more-examples)
@@ -145,7 +146,7 @@ import { starknet } from "hardhat";
 const starknet = require("hardhat").starknet;
 ```
 
-To see all the utilities introduced by the `starknet` object, check [this](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/type-extensions.ts#L190) out.
+To see all the utilities introduced by the `starknet` object, check [this](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/types/starknet.ts) out.
 
 ## Testing
 
@@ -382,6 +383,43 @@ DevNet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/
 ```typescript
 await starknet.devnet.mint(account_address, 2e12);
 ```
+
+## Debugging contracts
+
+To debug StarkNet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
+
+Compile with `--disable-hint-validation` flag to allow hints.
+
+```
+hardhat starknet-compile --disable-hint-validation
+```
+
+For example, when calling the following `increase_balance` with input `25`.
+
+```cairo
+@external
+func increase_balance{syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr}(
+    amount: felt
+) {
+    let (res) = balance.read();
+    %{ print( "Adding balance..." ) %}
+    %{ print( ids.res ) %}
+    balance.write(res + amount);
+    let (afterUpdate) = balance.read();
+    %{ print( ids.afterUpdate ) %}
+    return ();
+}
+```
+
+Devnet logs look like this,
+
+```
+Adding balance...
+0
+25
+```
+
+If you want to have your debug lines printed in the same terminal as your hardhat script/test, use `integrated-devnet` with `stdout` set to `"STDOUT"` as documented in [runtime network](#runtime-network---integrated-devnet) section.
 
 ## Configure the plugin
 

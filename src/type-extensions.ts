@@ -1,44 +1,12 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import {
-    BlockIdentifier,
-    NonceQueryOptions,
-    StarknetContract,
-    StarknetContractFactory,
-    StringMap
-} from "./types";
+import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import { StarknetWrapper } from "./starknet-wrappers";
-import {
-    FlushResponse,
-    IncreaseTimeResponse,
-    LoadL1MessagingContractResponse,
-    SetTimeResponse,
-    PredeployedAccount
-} from "./devnet-utils";
-import { Account, ArgentAccount, OpenZeppelinAccount } from "./account";
+import * as DevnetTypes from "./types/devnet";
+import * as StarknetTypes from "./types/starknet";
+import { Account } from "./account";
 import { Transaction, TransactionReceipt, Block, TransactionTrace } from "./starknet-types";
-import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
 import { StarknetChainId } from "./constants";
-
-type StarknetConfig = {
-    dockerizedVersion?: string;
-    venv?: string;
-    wallets?: WalletUserConfig;
-    network?: string;
-    networkUrl?: string;
-    networkConfig?: NetworkConfig;
-    recompile?: boolean;
-};
-
-type WalletUserConfig = {
-    [walletName: string]: WalletConfig | undefined;
-};
-
-type WalletConfig = {
-    modulePath: string;
-    accountName?: string;
-    accountPath?: string;
-};
 
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
@@ -54,11 +22,11 @@ declare module "hardhat/types/config" {
     }
 
     export interface HardhatConfig {
-        starknet: StarknetConfig;
+        starknet: StarknetTypes.StarknetConfig;
     }
 
     export interface HardhatUserConfig {
-        starknet?: StarknetConfig;
+        starknet?: StarknetTypes.StarknetConfig;
     }
 
     export interface NetworksConfig {
@@ -108,168 +76,17 @@ type TransactionType = Transaction;
 type BlockType = Block;
 
 declare module "hardhat/types/runtime" {
-    interface Devnet {
-        /**
-         * Restarts the devnet.
-         * @returns void
-         * @throws {@link StarknetPluginError}
-         */
-        restart(): Promise<void>;
-
-        /**
-         * Handles all pending L1 to L2 messages and sends them to the other layer
-         * @returns {Promise} - Metadata for the flushed messages
-         */
-        flush: () => Promise<FlushResponse>;
-
-        /**
-         * Deploys or loads the L1 messaging contract.
-         * @param {string} networkUrl - L1 network url.
-         * @param {string} [address] - Address of the contract to be loaded.
-         * @param {string} [networkId] - Determines if the ganache or tesnet should be used/
-         * @returns
-         */
-        loadL1MessagingContract: (
-            networkUrl: string,
-            address?: string,
-            networkId?: string
-        ) => Promise<LoadL1MessagingContractResponse>;
-
-        /**
-         * Increases block time offset
-         * @param seconds the offset increase in seconds
-         * @returns an object containing the increased block time offset
-         */
-        increaseTime: (seconds: number) => Promise<IncreaseTimeResponse>;
-
-        /**
-         * Sets the timestamp of next block
-         * @param seconds timestamp in seconds
-         * @returns an object containg next block timestamp
-         */
-        setTime: (seconds: number) => Promise<SetTimeResponse>;
-
-        /**
-         * Fetch the predeployed accounts
-         * @returns an object containg array of account's metadata
-         */
-        getPredeployedAccounts: () => Promise<PredeployedAccount[]>;
-
-        /**
-         * Preserves devnet instance to a file
-         * @param path  path for the dumping
-         * @return void
-         */
-        dump: (path: string) => Promise<void>;
-
-        /**
-         * Loads stored Starknet chain state
-         * @param path  path for the dump file
-         * @returns void
-         */
-        load: (path: string) => Promise<void>;
-
-        /**
-         * Creates an empty block
-         * @returns the empty block
-         */
-        createBlock: () => Promise<Block>;
-
-        /**
-         * Assumes there is a /mint endpoint on the current starknet network
-         * @param address the address to fund
-         * @param amount the amount to fund
-         * @param lite whether to make it lite or not
-         */
-        mint: (address: string, amount: number, lite: boolean) => Promise<void>;
-    }
-
+    export interface Devnet extends DevnetTypes.Devnet {}
     interface HardhatRuntimeEnvironment {
         starknetWrapper: StarknetWrapper;
 
-        starknet: {
-            /**
-             * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
-             * the provided string should be `MyContract`.
-             * @param name the case-sensitive contract name
-             * @returns a factory for generating instances of the desired contract
-             */
-            getContractFactory: (name: string) => Promise<StarknetContractFactory>;
-
-            /**
-             * Cairo and Starknet source files may contain short string literals,
-             * which are interpreted as numbers (felts) during Starknet runtime.
-             * Use this utility function to provide short string arguments to your contract functions.
-             *
-             * This function converts such a short string (max 31 characters) to its felt representation (wrapped in a `BigInt`).
-             * Only accepts standard ASCII characters, i.e. characters with charcode between 0 and 127, inclusive.
-             * @param input the input short string
-             * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
-             */
-            shortStringToBigInt: (convertableString: string) => BigInt;
-
-            /**
-             * Converts a BigInt to a string. The opposite of {@link shortStringToBigInt}.
-             * @param input the input BigInt
-             * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
-             */
-            bigIntToShortString: (convertableBigInt: BigInt) => string;
-
-            /**
-             * The selected starknet-network name.
-             * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
-             */
-            network: string;
-
-            /**
-             * The configuration object of the selected starknet-network.
-             */
-            networkConfig: HardhatNetworkConfig;
-
-            /**
-             * @param name the name of the wallet to get
-             * @returns a wallet
-             */
-            getWallet: (name: string) => WalletConfig;
-
-            devnet: Devnet;
-
-            getTransaction: (txHash: string) => Promise<Transaction>;
-
-            getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
-
-            /**
-             * Returns execution information in a nested structure of calls.
-             * @param txHash the transaction hash
-             * @returns the transaction trace
-             */
-            getTransactionTrace: (txHash: string) => Promise<TransactionTrace>;
-
-            /**
-             * Returns an entire block and the transactions contained within it.
-             * @param identifier optional block identifier (by block number or hash). To query the latest block, remove the identifier.
-             * @returns a block object
-             */
-            getBlock: (identifier?: BlockIdentifier) => Promise<Block>;
-
-            /**
-             * Returns the nonce of the contract whose `address` is specified.
-             * @param address the contract address
-             * @param options optional arguments to specify the target
-             * @returns the nonce
-             */
-            getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
-
-            OpenZeppelinAccount: typeof OpenZeppelinAccount;
-
-            ArgentAccount: typeof ArgentAccount;
-        };
+        starknet: StarknetTypes.Starknet;
     }
 
     type StarknetContract = StarknetContractType;
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
-    type Wallet = WalletConfig;
+    type Wallet = StarknetTypes.WalletConfig;
     type Account = AccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;
