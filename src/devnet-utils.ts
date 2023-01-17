@@ -3,7 +3,7 @@ import axios, { AxiosResponse, Method } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { Block, L2ToL1Message } from "./starknet-types";
+import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
 import { REQUEST_TIMEOUT } from "./constants";
 
 interface L1ToL2Message {
@@ -150,6 +150,11 @@ Make sure you really want to interact with Devnet and that it is running and ava
     }
 
     public async mint(address: string, amount: number, lite = true) {
-        await this.requestHandler<null>("/mint", "POST", { amount, address, lite });
+        const response = await this.requestHandler<MintResponse>("/mint", "POST", {
+            amount,
+            address,
+            lite
+        });
+        return response.data;
     }
 }
