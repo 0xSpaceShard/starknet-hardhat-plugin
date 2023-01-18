@@ -2,6 +2,7 @@ import { Image } from "@nomiclabs/hardhat-docker";
 import { DockerServer } from "./docker-server";
 import * as fs from "fs";
 
+export class AmarnaDocker extends DockerServer {
     useShell = false;
     /**
      * @param image the Docker image to be used for running the container
