@@ -39,16 +39,16 @@ export interface Devnet {
     /**
      * Sends a mock tx from L1 to L2 without running L1.
      * @param {string} l2ContractAddress - Address of the L2 contract.
-     * @param {string} l1ContractAddress - Address of the L1 contract.
      * @param {string} functionName - Function name for entry point selector.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
      * @param {Array<string>} payload - Payload to send to the L2 network.
      * @param {string} nonce - Nonce value
      * @returns Transaction hash
      */
     sendMessageToL2: (
         l2ContractAddress: string,
-        l1ContractAddress: string,
         functionName: string,
+        l1ContractAddress: string,
         payload: Array<number>,
         nonce: number
     ) => Promise<L1ToL2MockTxResponse>;

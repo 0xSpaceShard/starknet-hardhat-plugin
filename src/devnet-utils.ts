@@ -140,9 +140,9 @@ Make sure you really want to interact with Devnet and that it is running and ava
         nonce: number
     ) {
         const body = {
-            l2_contract_address: l1ContractAddress,
+            l2_contract_address: l2ContractAddress,
             entry_point_selector: hash.getSelectorFromName(funcionName),
-            l1_contract_address: l2ContractAddress,
+            l1_contract_address: l1ContractAddress,
             payload: payload.map((item) => numericToHexString(item)),
             nonce: numericToHexString(nonce)
         };
