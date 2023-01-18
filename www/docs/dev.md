@@ -23,8 +23,8 @@ $ npm run build
 
 ### Set up the example repository
 
-The `starknet-hardhat-example` repository to showcase and test this plugin's functionality.
-Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, make it use your local plugin repository:
+The `starknet-hardhat-example` repository is used to showcase and test this plugin's functionality.
+Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, link it to use your local plugin repository:
 
 ```
 $ cd <YOUR_PLUGIN_REPO_PATH>
