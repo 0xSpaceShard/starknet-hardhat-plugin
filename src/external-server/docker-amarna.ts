@@ -1,64 +1,41 @@
 import { Image } from "@nomiclabs/hardhat-docker";
-import path from "path";
-import { DockerServer } from "./external-server/docker-server";
-import { getFreePort } from "./external-server/external-server";
+import { DockerServer } from "./docker-server";
+import * as fs from "fs";
 
-const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
-const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
-const PROXY_SERVER_CONTAINER_PATH = `/${PROXY_SERVER_FILE}`;
-
-const LEGACY_CLI_FILE = "starknet_cli_legacy.py";
-const LEGACY_CLI_HOST_PATH = path.join(__dirname, LEGACY_CLI_FILE);
-const LEGACY_CLI_CONTAINER_PATH = `/${LEGACY_CLI_FILE}`;
-
-export class StarknetDockerProxy extends DockerServer {
+    useShell = false;
     /**
      * @param image the Docker image to be used for running the container
-     * @param rootPath the hardhat project root
-     * @param accountPaths the paths holding wallet information
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
-    constructor(
-        image: Image,
-        private rootPath: string,
-        private accountPaths: string[],
-        private cairoPaths: string[]
-    ) {
+    constructor(image: Image, private path: string) {
         super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
 
     protected async getDockerArgs(): Promise<string[]> {
         // To access the files on host machine from inside the container, proper mounting has to be done.
-
-        const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
-        volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
-
-        for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
-            volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
-        }
-
+        const volumes = ["-v", `${this.path}:/src`];
         const dockerArgs = [...volumes];
-        // Check host os
-        const isDarwin = process.platform === "darwin";
-        if (isDarwin) {
-            this.port = await this.getPort();
-            dockerArgs.push("-p", `${this.port}:${this.port}`);
-        } else {
-            dockerArgs.push("--network", "host");
+        if (this.useShell) {
+            // Run ./amarna.sh file for custom args
+            if (fs.existsSync(`${this.path}/amarna.sh`)) {
+                dockerArgs.push("--entrypoint", "./amarna.sh");
+            } else {
+                console.log(
+                    "amarna.sh file not found in the project directory.\n",
+                    "Add amarna.sh file with amarna command to run in the container.\n",
+                    "Running the container with default amarna script.`"
+                );
+            }
         }
-
         return dockerArgs;
     }
 
-    protected async getContainerArgs(): Promise<string[]> {
-        this.port = await this.getPort();
-        return ["python3", PROXY_SERVER_CONTAINER_PATH, this.port];
+    public async run(args: { script?: boolean }) {
+        this.useShell = !!args.script;
+        await this.spawnChildProcess();
     }
 
-    protected async getPort(): Promise<string> {
-        if (!this.port) {
-            this.port = await getFreePort();
-        }
-        return this.port;
+    protected async getContainerArgs(): Promise<string[]> {
+        return [""];
     }
 }

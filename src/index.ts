@@ -17,6 +17,8 @@ import {
     DEFAULT_STARKNET_ARTIFACTS_PATH,
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_IMAGE_TAG,
     ALPHA_URL,
     ALPHA_GOERLI_URL_2,
     ALPHA_MAINNET_URL,
@@ -39,6 +41,7 @@ import {
 } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
+    amarnaAction,
     starknetCompileAction,
     starknetVoyagerAction,
     starknetTestAction,
@@ -62,6 +65,7 @@ import {
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { ArgentAccount, OpenZeppelinAccount } from "./account";
+import { AmarnaDocker } from "./external-server/docker-amarna";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -206,6 +210,9 @@ extendEnvironment((hre) => {
             hre.config.paths.cairoPaths || [],
             hre
         );
+
+        const amarnaImage = { repository: AMARNA_DOCKER_REPOSITORY, tag: AMARNA_DOCKER_IMAGE_TAG };
+        hre.amarnaDocker = new AmarnaDocker(amarnaImage, hre.config.paths.root);
     }
 });
 
@@ -296,6 +303,10 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
             "e.g. path/to/dependency1 path/to/dependency2"
     )
     .setAction(starknetVoyagerAction);
+
+task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
+    .addFlag("script", "Run ./amarna.sh file for custom args.")
+    .setAction(amarnaAction);
 
 task("starknet-new-account", "Initializes a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
