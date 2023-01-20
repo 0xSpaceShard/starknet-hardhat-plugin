@@ -144,6 +144,12 @@ export interface Block {
     starknet_version: string;
 }
 
+export interface MintResponse {
+    new_balance: number;
+    unit: string;
+    tx_hash: string;
+}
+
 export type TxFailureReason = {
     code: string;
     error_message: string;
