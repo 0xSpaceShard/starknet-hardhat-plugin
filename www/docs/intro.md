@@ -378,10 +378,11 @@ const emptyBlock = await starknet.devnet.createBlock();
 
 #### Mint tokens to an account
 
-DevNet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this,
+Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this,
 
 ```typescript
-await starknet.devnet.mint(account_address, 2e12, true);
+const lite_mode = true; // Optional, Default true
+await starknet.devnet.mint(account_address, 2e12, lite_mode);
 ```
 
 ## Debugging contracts
