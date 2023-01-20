@@ -68,6 +68,12 @@ The whole workflow is defined in `.circleci/config.yml` - you may find it somewh
 
 Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [shardlabs CircleCI context](https://app.circleci.com/settings/organization/github/Shard-Labs/contexts/f7f363c6-f101-4ac8-9193-343c88da5fb0?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
 
+To skip running tests on CircleCI, add `[skip ci]` in the first 250 characters of the commit message.
+
+### Testing network
+
+The script `test.sh` runs tests on Devnet and Testnet (alpha-goerli). To skip running tests on Testnet, add `[skip testnet]` to the commit message.
+
 ### Creating a PR
 
 When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`. You can then modify the `test.sh` script to use your branch instead of the `plugin` branch.
