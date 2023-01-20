@@ -15,6 +15,7 @@ import {
 } from "./types";
 import * as starknet from "./starknet-types";
 import {
+    QUERY_VERSION,
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
@@ -22,7 +23,7 @@ import {
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { BigNumberish, toBN, toHex } from "starknet/utils/number";
+import { BigNumberish, toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
     calculateDeployAccountHash,
@@ -32,7 +33,7 @@ import {
     sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC, readContract } from "./utils";
+import { numericToHexString, copyWithBigint, generateRandomSalt, UDC, readContract, bnToDecimalStringArray } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 import axios from "axios";
@@ -188,13 +189,13 @@ export abstract class Account {
 
         const messageHash = hash.computeHashOnElements([
             TransactionHashPrefix.DECLARE,
-            TRANSACTION_VERSION.toString(),
+            numericToHexString(QUERY_VERSION),
             this.address,
             0, // entrypoint selector is implied
             calldataHash,
             maxFee,
             chainId,
-            nonce.toString()
+            numericToHexString(nonce)
         ]);
 
         const signature = this.getSignatures(messageHash);
@@ -209,9 +210,9 @@ export abstract class Account {
                 type: "DECLARE",
                 sender_address: this.address,
                 contract_class: readContract(contractFactory.metadataPath),
-                signature,
-                version: toHex(toBN(TRANSACTION_VERSION.toString())),
-                nonce: toHex(toBN(nonce.toString()))
+                signature: bnToDecimalStringArray(signature || []),
+                version: numericToHexString(QUERY_VERSION),
+                nonce: numericToHexString(nonce)
             }
         );
 

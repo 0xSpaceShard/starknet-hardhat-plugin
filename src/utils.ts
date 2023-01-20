@@ -29,7 +29,8 @@ import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
-import { json, CompiledContract } from "starknet";
+import { CompiledContract } from "starknet";
+import Json from "json-bigint";
 
 const globPromise = promisify(glob);
 /**
@@ -302,7 +303,7 @@ export class UDC {
 }
 
 export function readContract(contractPath: string) {
-    const parsedContract = json.parse(
+    const parsedContract = parse(
         fs.readFileSync(contractPath).toString("ascii")
     ) as CompiledContract;
     return {
@@ -310,3 +311,17 @@ export function readContract(contractPath: string) {
         program: compressProgram(parsedContract.program)
     };
 }
+export function json (alwaysParseAsBig: boolean) {
+    return Json({
+        alwaysParseAsBig,
+        useNativeBigInt: true,
+        protoAction: "preserve",
+        constructorAction: "preserve"
+    });
+}
+
+export function bnToDecimalStringArray(rawCalldata: bigint[]) {
+    return rawCalldata.map(x => x.toString(10));
+}
+
+export const { parse, stringify } = json(false);
