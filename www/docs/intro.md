@@ -332,6 +332,15 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
   });
 ```
 
+#### Mock message between L1 and L2
+
+To send mock messages between L1 and L2 the following two functions can be used. Detailed example can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#170).
+
+```typescript
+starknet.devnet.sendMessageToL2(...); // Sends message to L2
+starknet.devnet.consumeMessageFromL2(...); // Sends message from L2 to L1
+```
+
 #### Restart
 
 Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deployed contracts, blocks and storage updates will be restarted to the empty state.
@@ -374,6 +383,15 @@ Devnet offers [empty block creation](https://shard-labs.github.io/starknet-devne
 
 ```typescript
 const emptyBlock = await starknet.devnet.createBlock();
+```
+
+#### Mint tokens to an account
+
+Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this,
+
+```typescript
+const lite_mode = true; // Optional, Default true
+await starknet.devnet.mint(account_address, 2e12, lite_mode);
 ```
 
 ## Debugging contracts
@@ -708,7 +726,7 @@ After creating the account, you need to fund it (give it some ETH):
 
 -   On alpha-goerli use [this faucet](https://faucet.goerli.starknet.io/).
 -   On alpha-goerli2 use [this](https://www.newton.so/view/636d020159c30b8efc8d1d86)
--   On starknet-devnet use [this faucet](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token/).
+-   On starknet-devnet call [`starknet.devnet.mint()`](#mint-tokens-to-an-account) which uses [devnet faucet](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token/).
 -   Alternatively transfer some amount from an already funded account to the newly deployed account.
 
 If you're facing issues loading the account you've just funded, check out [this issue](https://github.com/Shard-Labs/starknet-hardhat-plugin/issues/281#issuecomment-1354588817).

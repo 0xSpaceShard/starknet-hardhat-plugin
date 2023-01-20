@@ -3,9 +3,11 @@ import {
     IncreaseTimeResponse,
     LoadL1MessagingContractResponse,
     SetTimeResponse,
-    PredeployedAccount
+    PredeployedAccount,
+    L1ToL2MockTxResponse,
+    L2ToL1MockTxResponse
 } from "../devnet-utils";
-import { Block } from "../starknet-types";
+import { Block, MintResponse } from "../starknet-types";
 
 export interface Devnet {
     /**
@@ -33,6 +35,36 @@ export interface Devnet {
         address?: string,
         networkId?: string
     ) => Promise<LoadL1MessagingContractResponse>;
+
+    /**
+     * Sends a mock message from L1 to L2 without running L1.
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} functionName - Function name for entry point selector.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
+     * @param {Array<string>} payload - Payload to send to the L2 network.
+     * @param {string} nonce - Nonce value
+     * @returns Transaction hash
+     */
+    sendMessageToL2: (
+        l2ContractAddress: string,
+        functionName: string,
+        l1ContractAddress: string,
+        payload: Array<number>,
+        nonce: number
+    ) => Promise<L1ToL2MockTxResponse>;
+
+    /**
+     * Sends a mock message from L2 to L1
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
+     * @param {Array<number>} payload - Payload to send to the L1 network.
+     * @returns Message hash
+     */
+    consumeMessageFromL2: (
+        l2ContractAddress: string,
+        l1ContractAddress: string,
+        payload: Array<number>
+    ) => Promise<L2ToL1MockTxResponse>;
 
     /**
      * Increases block time offset
@@ -73,4 +105,12 @@ export interface Devnet {
      * @returns the empty block
      */
     createBlock: () => Promise<Block>;
+
+    /**
+     * Assumes there is a /mint endpoint on the current starknet network
+     * @param address the address to fund
+     * @param amount the amount to fund
+     * @param lite whether to make it lite or not
+     */
+    mint: (address: string, amount: number, lite?: boolean) => Promise<MintResponse>;
 }
