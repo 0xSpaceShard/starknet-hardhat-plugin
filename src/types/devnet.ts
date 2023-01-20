@@ -3,7 +3,9 @@ import {
     IncreaseTimeResponse,
     LoadL1MessagingContractResponse,
     SetTimeResponse,
-    PredeployedAccount
+    PredeployedAccount,
+    L1ToL2MockTxResponse,
+    L2ToL1MockTxResponse
 } from "../devnet-utils";
 import { Block, MintResponse } from "../starknet-types";
 
@@ -33,6 +35,36 @@ export interface Devnet {
         address?: string,
         networkId?: string
     ) => Promise<LoadL1MessagingContractResponse>;
+
+    /**
+     * Sends a mock message from L1 to L2 without running L1.
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} functionName - Function name for entry point selector.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
+     * @param {Array<string>} payload - Payload to send to the L2 network.
+     * @param {string} nonce - Nonce value
+     * @returns Transaction hash
+     */
+    sendMessageToL2: (
+        l2ContractAddress: string,
+        functionName: string,
+        l1ContractAddress: string,
+        payload: Array<number>,
+        nonce: number
+    ) => Promise<L1ToL2MockTxResponse>;
+
+    /**
+     * Sends a mock message from L2 to L1
+     * @param {string} l2ContractAddress - Address of the L2 contract.
+     * @param {string} l1ContractAddress - Address of the L1 contract.
+     * @param {Array<number>} payload - Payload to send to the L1 network.
+     * @returns Message hash
+     */
+    consumeMessageFromL2: (
+        l2ContractAddress: string,
+        l1ContractAddress: string,
+        payload: Array<number>
+    ) => Promise<L2ToL1MockTxResponse>;
 
     /**
      * Increases block time offset

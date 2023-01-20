@@ -332,6 +332,15 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
   });
 ```
 
+#### Mock message between L1 and L2
+
+To send mock messages between L1 and L2 the following two functions can be used. Detailed example can be found [here](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/test/postman.test.ts#170).
+
+```typescript
+starknet.devnet.sendMessageToL2(...); // Sends message to L2
+starknet.devnet.consumeMessageFromL2(...); // Sends message from L2 to L1
+```
+
 #### Restart
 
 Devnet can be restarted by calling `starknet.devnet.restart()`. All of the deployed contracts, blocks and storage updates will be restarted to the empty state.

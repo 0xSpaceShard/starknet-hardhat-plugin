@@ -5,6 +5,8 @@ import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
 import { REQUEST_TIMEOUT } from "./constants";
+import { hash } from "starknet";
+import { numericToHexString } from "./utils";
 
 interface L1ToL2Message {
     address: string;
@@ -34,6 +36,28 @@ export interface FlushResponse {
 export interface LoadL1MessagingContractResponse {
     address: string;
     l1_provider: string;
+}
+
+export interface L1ToL2MockTxRequest {
+    l2_contract_address: string;
+    l1_contract_address: string;
+    entry_point_selector: string;
+    payload: Array<number>;
+    nonce: string;
+}
+
+export interface L1ToL2MockTxResponse {
+    transaction_hash: string;
+}
+
+export interface L2ToL1MockTxRequest {
+    l2_contract_address: string;
+    l1_contract_address: string;
+    payload: Array<number>;
+}
+
+export interface L2ToL1MockTxResponse {
+    message_hash: string;
 }
 
 export interface SetTimeResponse {
@@ -102,6 +126,48 @@ Make sure you really want to interact with Devnet and that it is running and ava
 
         const response = await this.requestHandler<LoadL1MessagingContractResponse>(
             "/postman/load_l1_messaging_contract",
+            "POST",
+            body
+        );
+        return response.data;
+    }
+
+    public async sendMessageToL2(
+        l2ContractAddress: string,
+        funcionName: string,
+        l1ContractAddress: string,
+        payload: number[],
+        nonce: number
+    ) {
+        const body = {
+            l2_contract_address: l2ContractAddress,
+            entry_point_selector: hash.getSelectorFromName(funcionName),
+            l1_contract_address: l1ContractAddress,
+            payload: payload.map((item) => numericToHexString(item)),
+            nonce: numericToHexString(nonce)
+        };
+
+        const response = await this.requestHandler<L1ToL2MockTxResponse>(
+            "/postman/send_message_to_l2",
+            "POST",
+            body
+        );
+        return response.data;
+    }
+
+    public async consumeMessageFromL2(
+        l2ContractAddress: string,
+        l1ContractAddress: string,
+        payload: number[]
+    ) {
+        const body = {
+            l2_contract_address: l2ContractAddress,
+            l1_contract_address: l1ContractAddress,
+            payload: payload.map((item) => numericToHexString(item))
+        };
+
+        const response = await this.requestHandler<L2ToL1MockTxResponse>(
+            "/postman/consume_message_from_l2",
             "POST",
             body
         );
