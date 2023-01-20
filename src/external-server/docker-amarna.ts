@@ -9,7 +9,7 @@ export class AmarnaDocker extends DockerServer {
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
     constructor(image: Image, private path: string) {
-        super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
+        super(image, "127.0.0.1", null, "", "amarna-docker");
     }
 
     protected async getDockerArgs(): Promise<string[]> {
@@ -21,7 +21,7 @@ export class AmarnaDocker extends DockerServer {
             if (fs.existsSync(`${this.path}/amarna.sh`)) {
                 dockerArgs.push("--entrypoint", "./amarna.sh");
             } else {
-                console.log(
+                console.warn(
                     "amarna.sh file not found in the project directory.\n",
                     "Add amarna.sh file with amarna command to run in the container.\n",
                     "Running the container with default amarna script.`"
@@ -37,6 +37,6 @@ export class AmarnaDocker extends DockerServer {
     }
 
     protected async getContainerArgs(): Promise<string[]> {
-        return [""];
+        return [];
     }
 }
