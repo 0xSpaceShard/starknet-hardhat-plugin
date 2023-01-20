@@ -132,6 +132,15 @@ $ npx hardhat migrate --inplace contract/contract.cairo
 
 Using `--starknet-network` with `hardhat run` currently does not have effect. Use the `network` property of the `starknet` object in your hardhat config file.
 
+### `amarna`
+
+```sh
+$ npx hardhat amarna
+```
+
+Runs [Amarna](https://github.com/crytic/amarna), the static-analyzer and linter for Cairo. And write output to `out.sarif` file.
+Use flag `--script` to run custom `./amarna.sh` file to use Amarna with custom rules and args.
+
 ### `test`
 
 Introduces the `--starknet-network` option to the existing `hardhat test` task.

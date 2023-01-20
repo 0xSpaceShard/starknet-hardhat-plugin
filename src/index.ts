@@ -304,10 +304,6 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     )
     .setAction(starknetVoyagerAction);
 
-task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
-    .addFlag("script", "Run ./amarna.sh file for custom args.")
-    .setAction(amarnaAction);
-
 task("starknet-new-account", "Initializes a new account according to the parameters.")
     .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
     .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
@@ -337,3 +333,7 @@ task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
     .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
     .addFlag("inplace", "Applies changes to the files in place.")
     .setAction(starknetMigrateAction);
+
+task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
+    .addFlag("script", "Run ./amarna.sh file to use Amarna with custom args.")
+    .setAction(amarnaAction);
