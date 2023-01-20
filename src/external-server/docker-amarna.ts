@@ -33,6 +33,7 @@ export class AmarnaDocker extends DockerServer {
 
     public async run(args: { script?: boolean }) {
         this.useShell = !!args.script;
+        console.log("Running amarna, this may take a while.");
         await this.spawnChildProcess();
     }
 
