@@ -23,8 +23,8 @@ $ npm run build
 
 ### Set up the example repository
 
-The `starknet-hardhat-example` repository to showcase and test this plugin's functionality.
-Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, make it use your local plugin repository:
+The `starknet-hardhat-example` repository is used to showcase and test this plugin's functionality.
+Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, link it to use your local plugin repository:
 
 ```
 $ cd <YOUR_PLUGIN_REPO_PATH>
@@ -67,6 +67,12 @@ Bear in mind that each workflow consumes credits. Track the spending [here](http
 The whole workflow is defined in `.circleci/config.yml` - you may find it somewhat chaotic as it uses dependency caching (we kind of sacrificed config clarity for performance).
 
 Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [shardlabs CircleCI context](https://app.circleci.com/settings/organization/github/Shard-Labs/contexts/f7f363c6-f101-4ac8-9193-343c88da5fb0?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
+
+To skip running tests on CircleCI, add `[skip ci]` in the first 250 characters of the commit message.
+
+### Testing network
+
+The script `test.sh` runs tests on Devnet and Testnet (alpha-goerli). To skip running tests on Testnet, add `[skip testnet]` to the commit message.
 
 ### Creating a PR
 

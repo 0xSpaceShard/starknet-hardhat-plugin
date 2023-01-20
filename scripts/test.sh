@@ -96,7 +96,11 @@ function iterate_dir() {
 }
 
 # perform tests on Alpha-goerli testnet only on master branch and in a linux environment
-if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$OSTYPE" == "linux-gnu"* ]]; then
+# skip testing on testnet if [skip testnet] included in commit message
+latest_commit_msg=$(git log -1 --pretty=%B)
+if [[ "$CIRCLE_BRANCH" == "master" ]] &&
+    [[ "$OSTYPE" == "linux-gnu"* ]] &&
+    [[ "$latest_commit_msg" != *"[skip testnet]"* ]]; then
     source ../scripts/set-alpha-vars.sh
     iterate_dir alpha
 fi
