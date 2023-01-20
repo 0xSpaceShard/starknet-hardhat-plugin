@@ -16,6 +16,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
+    CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip3 install fastecdsa
     which "$VENV/bin/starknet" || pip3 install cairo-lang=="$(cat /tmp/cairo-lang-version)"
     echo "starknet at: $(which starknet)"
     echo "starknet version: $(starknet --version)"
