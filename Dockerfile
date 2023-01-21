@@ -26,4 +26,4 @@ RUN pip3 install "starknet-devnet==$STARKNET_DEVNET"
 COPY . .
 RUN npm ci
 
-ENTRYPOINT ./scripts/test.sh
+ENTRYPOINT bash
