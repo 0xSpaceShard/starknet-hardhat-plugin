@@ -56,6 +56,16 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 
 To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 
+### Executing tests in docker
+
+You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers.
+
+```
+npm run docker-tester
+```
+
+This is take you in the container shell. Once in the container, you can use the `test-` scripts defined in `package.json` in an isolated environment.
+
 ### Executing tests on CircleCI
 
 If you're a member of the organization and you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/Shard-Labs/workflows/starknet-hardhat-plugin).
