@@ -10,12 +10,12 @@ CONFIG_FILE_NAME="hardhat.config.ts"
 # setup example repo
 rm -rf starknet-hardhat-example
 EXAMPLE_REPO_BRANCH="plugin"
-if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
+if [[ "${CIRCLE_BRANCH:-}" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
 fi
 
-git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:Shard-Labs/starknet-hardhat-example.git
+git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch https://github.com/Shard-Labs/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
 npm ci

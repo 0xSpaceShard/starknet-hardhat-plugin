@@ -2,6 +2,9 @@
 
 set -eu
 
-pip3 install "starknet-devnet==$STARKNET_DEVNET"
+# Get default from config.json file
+STARKNET_DEVNET_DEFAULT=$(node -e "console.log(require('../config.json').STARKNET_DEVNET)")
+
+pip3 install "starknet-devnet==${STARKNET_DEVNET:=$STARKNET_DEVNET_DEFAULT}"
 STARKNET_DEVNET_PATH=$(which starknet-devnet)
 echo "starknet-devnet at: $STARKNET_DEVNET_PATH"
