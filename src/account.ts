@@ -412,13 +412,22 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
-        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
-        let maxFee;
-        if (options?.maxFee === undefined || options?.maxFee === null) {
-            maxFee = await this.estimateDeclareFee(contractFactory, options);
-            maxFee = maxFee.amount;
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "Both maxFee and overhead cannot be specified";
+            throw new StarknetPluginError(msg);
         }
-        maxFee = maxFee.toString();
+
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        if (maxFee === undefined || maxFee === null) {
+            let overhead =
+                options?.overhead === undefined || options?.overhead === null
+                    ? 0.5
+                    : options?.overhead;
+            overhead = Math.round((1 + overhead) * 100);
+            maxFee = (await this.estimateDeclareFee(contractFactory, options)).amount;
+            maxFee = (maxFee * BigInt(overhead)) / BigInt(100);
+        }
 
         const hre = await import("hardhat");
         const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
@@ -433,7 +442,7 @@ export abstract class Account {
             this.address,
             0, // entrypoint selector is implied
             calldataHash,
-            maxFee,
+            maxFee.toString(),
             chainId,
             nonce.toString()
         ]);

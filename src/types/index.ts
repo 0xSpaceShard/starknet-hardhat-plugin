@@ -284,6 +284,7 @@ export interface DeclareOptions {
     sender?: string; // address
     nonce?: Numeric;
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface DeployOptions {
