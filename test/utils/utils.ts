@@ -19,6 +19,14 @@ export function assertContains(output: string, pattern: string) {
     }
 }
 
+export function assertEquals(actual: string, expected: string) {
+    if (actual === expected) {
+        throw new AssertionError({
+            message: `Couldn't assert equality\nActual: ${actual}\nExpected: ${expected}`
+        });
+    }
+}
+
 export function extractAddress(source: string, pattern: string) {
     // Replaces all line breaks with a space
     source = source.replace(/(\r\n|\n|\r)/gm, " ");
