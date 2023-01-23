@@ -257,6 +257,18 @@ it("should work with tuples", async function () {
 
 ```typescript
 it("should estimate fee", async function () {
+    const contractFactory = await starknet.getContractFactory(
+              "contract"
+    );
+    const declareFee = await account.estimateDeclareFee(contractFactory);
+    console.log("Estimated declare fee:", declareFee.amount, declareFee.unit, declareFee.gas_price, declareFee.gas_amount);
+    await account.declare(contractFactory); // computes max fee implicitly
+    // ... 
+    const deployFee = await account.estimateDeployFee(contractFactory);
+    console.log("Estimated deploy fee:", deployFee.amount, deployFee.unit, deployFee.gas_price, deployFee.gas_amount);
+    await account.deploy(contractFactory);  // computes max fee implicitly
+    // ... 
+    const declareFee = await account.estimateDeclareFee(contractFactory);
     const fee = await account.estimateFee(contract, "increase_balance", { amount: 10n });
     console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
 });
