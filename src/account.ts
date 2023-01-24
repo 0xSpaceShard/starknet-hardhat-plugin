@@ -86,7 +86,7 @@ export abstract class Account {
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
         if (options?.maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
+            const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);
         }
 
@@ -94,7 +94,7 @@ export abstract class Account {
             const maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: estimatedFeeToMaxFee(maxFee.amount, options?.maxFee, options?.overhead)
+                maxFee: estimatedFeeToMaxFee(maxFee.amount, options?.overhead)
             };
         }
         return (
@@ -417,18 +417,14 @@ export abstract class Account {
     ): Promise<string> {
         let maxFee = options?.maxFee;
         if (maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
+            const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);
         }
 
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         if (maxFee === undefined || maxFee === null) {
             const estimatedDeclareFee = await this.estimateDeclareFee(contractFactory, options);
-            maxFee = estimatedFeeToMaxFee(
-                estimatedDeclareFee.amount,
-                options?.maxFee,
-                options?.overhead
-            );
+            maxFee = estimatedFeeToMaxFee(estimatedDeclareFee.amount, options?.overhead);
         }
 
         const hre = await import("hardhat");

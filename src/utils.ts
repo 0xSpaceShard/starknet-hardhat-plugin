@@ -303,6 +303,7 @@ export class UDC {
 }
 
 export function readContract(contractPath: string) {
+    const { parse } = hanldeJsonWithBigInt(false);
     const parsedContract = parse(
         fs.readFileSync(contractPath).toString("ascii")
     ) as CompiledContract;
@@ -311,7 +312,8 @@ export function readContract(contractPath: string) {
         program: compressProgram(parsedContract.program)
     };
 }
-export function jsonToBigInt(alwaysParseAsBig: boolean) {
+
+export function hanldeJsonWithBigInt(alwaysParseAsBig: boolean) {
     return JsonBigint({
         alwaysParseAsBig,
         useNativeBigInt: true,
@@ -320,14 +322,11 @@ export function jsonToBigInt(alwaysParseAsBig: boolean) {
     });
 }
 
-const { parse } = jsonToBigInt(false);
-
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {
     return rawCalldata.map((x) => x.toString(10));
 }
 
-export function estimatedFeeToMaxFee(amount?: bigint, maxFee?: Numeric, overhead = 0.5) {
+export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     overhead = Math.round((1 + overhead) * 100);
-    maxFee = (amount * BigInt(overhead)) / BigInt(100);
-    return maxFee;
+    return (amount * BigInt(overhead)) / BigInt(100);
 }
