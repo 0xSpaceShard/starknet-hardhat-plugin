@@ -7,6 +7,7 @@ import * as StarknetTypes from "./types/starknet";
 import { Account } from "./account";
 import { Transaction, TransactionReceipt, Block, TransactionTrace } from "./starknet-types";
 import { StarknetChainId } from "./constants";
+import { AmarnaDocker } from "./external-server/docker-amarna";
 
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
@@ -79,7 +80,7 @@ declare module "hardhat/types/runtime" {
     export interface Devnet extends DevnetTypes.Devnet {}
     interface HardhatRuntimeEnvironment {
         starknetWrapper: StarknetWrapper;
-
+        amarnaDocker: AmarnaDocker;
         starknet: StarknetTypes.Starknet;
     }
 
