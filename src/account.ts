@@ -33,7 +33,15 @@ import {
     sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC, readContract, bnToDecimalStringArray } from "./utils";
+import {
+    numericToHexString,
+    copyWithBigint,
+    generateRandomSalt,
+    UDC,
+    readContract,
+    bnToDecimalStringArray,
+    estimatedFeeToMaxFee
+} from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 import axios from "axios";
@@ -77,21 +85,11 @@ export abstract class Account {
         calldata?: StringMap,
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
-        if (options?.maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
-            throw new StarknetPluginError(msg);
-        }
-
         if (options?.maxFee === undefined || options?.maxFee === null) {
-            let overhead =
-                options?.overhead === undefined || options?.overhead === null
-                    ? 0.5
-                    : options?.overhead;
-            overhead = Math.round((1 + overhead) * 100);
             const maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: (maxFee.amount * BigInt(overhead)) / BigInt(100)
+                maxFee: estimatedFeeToMaxFee(maxFee.amount, options?.maxFee, options?.overhead)
             };
         }
         return (
@@ -413,20 +411,14 @@ export abstract class Account {
         options: DeclareOptions = {}
     ): Promise<string> {
         let maxFee = options?.maxFee;
-        if (maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
-            throw new StarknetPluginError(msg);
-        }
-
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         if (maxFee === undefined || maxFee === null) {
-            let overhead =
-                options?.overhead === undefined || options?.overhead === null
-                    ? 0.5
-                    : options?.overhead;
-            overhead = Math.round((1 + overhead) * 100);
-            maxFee = (await this.estimateDeclareFee(contractFactory, options)).amount;
-            maxFee = (maxFee * BigInt(overhead)) / BigInt(100);
+            const estimatedDeclareFee = await this.estimateDeclareFee(contractFactory, options);
+            maxFee = estimatedFeeToMaxFee(
+                estimatedDeclareFee.amount,
+                options?.maxFee,
+                options?.overhead
+            );
         }
 
         const hre = await import("hardhat");

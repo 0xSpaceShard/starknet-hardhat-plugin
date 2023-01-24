@@ -30,7 +30,7 @@ import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
-import Json from "json-bigint";
+import JsonBigint from "json-bigint";
 
 const globPromise = promisify(glob);
 /**
@@ -311,8 +311,8 @@ export function readContract(contractPath: string) {
         program: compressProgram(parsedContract.program)
     };
 }
-export function json (alwaysParseAsBig: boolean) {
-    return Json({
+export function jsonToBigInt(alwaysParseAsBig: boolean) {
+    return JsonBigint({
         alwaysParseAsBig,
         useNativeBigInt: true,
         protoAction: "preserve",
@@ -320,8 +320,19 @@ export function json (alwaysParseAsBig: boolean) {
     });
 }
 
+const { parse } = jsonToBigInt(false);
+
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {
-    return rawCalldata.map(x => x.toString(10));
+    return rawCalldata.map((x) => x.toString(10));
 }
 
-export const { parse, stringify } = json(false);
+export function estimatedFeeToMaxFee(amount: bigint, maxFee?: Numeric, overhead = 0.5) {
+    if (maxFee && overhead) {
+        const msg = "Both maxFee and overhead cannot be specified";
+        throw new StarknetPluginError(msg);
+    }
+
+    overhead = Math.round((1 + overhead) * 100);
+    maxFee = (amount * BigInt(overhead)) / BigInt(100);
+    return maxFee;
+}
