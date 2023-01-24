@@ -326,12 +326,7 @@ export function bnToDecimalStringArray(rawCalldata: bigint[]) {
     return rawCalldata.map((x) => x.toString(10));
 }
 
-export function estimatedFeeToMaxFee(amount: bigint, maxFee?: Numeric, overhead = 0.5) {
-    if (maxFee && overhead) {
-        const msg = "Both maxFee and overhead cannot be specified";
-        throw new StarknetPluginError(msg);
-    }
-
+export function estimatedFeeToMaxFee(amount?: bigint, maxFee?: Numeric, overhead = 0.5) {
     overhead = Math.round((1 + overhead) * 100);
     maxFee = (amount * BigInt(overhead)) / BigInt(100);
     return maxFee;
