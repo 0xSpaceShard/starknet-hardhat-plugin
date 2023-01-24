@@ -10,4 +10,4 @@ hardhatStarknetCompile([]);
 assertExistence("starknet-artifacts/my-starknet-sources");
 assertExistence("starknet-artifacts/contracts", false);
 
-hardhatStarknetTest(["test/contract-factory-test.ts", "--no-compile"]);
+hardhatStarknetTest(["test/contract-factory-creation.test.ts", "--no-compile"]);

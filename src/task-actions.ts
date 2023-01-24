@@ -141,6 +141,10 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
     }
 }
 
+export async function amarnaAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    await hre.amarnaDocker.run(args);
+}
+
 /**
  * Extracts the verification URL assigned to the network provided.
  * If no `networkName` is provided, defaults to Alpha testnet.

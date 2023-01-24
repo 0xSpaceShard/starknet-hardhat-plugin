@@ -17,6 +17,8 @@ import {
     DEFAULT_STARKNET_ARTIFACTS_PATH,
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_IMAGE_TAG,
     ALPHA_URL,
     ALPHA_GOERLI_URL_2,
     ALPHA_MAINNET_URL,
@@ -39,6 +41,7 @@ import {
 } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
+    amarnaAction,
     starknetCompileAction,
     starknetVoyagerAction,
     starknetTestAction,
@@ -62,6 +65,7 @@ import {
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { ArgentAccount, OpenZeppelinAccount } from "./account";
+import { AmarnaDocker } from "./external-server/docker-amarna";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -206,6 +210,9 @@ extendEnvironment((hre) => {
             hre.config.paths.cairoPaths || [],
             hre
         );
+
+        const amarnaImage = { repository: AMARNA_DOCKER_REPOSITORY, tag: AMARNA_DOCKER_IMAGE_TAG };
+        hre.amarnaDocker = new AmarnaDocker(amarnaImage, hre.config.paths.root);
     }
 });
 
@@ -326,3 +333,7 @@ task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
     .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
     .addFlag("inplace", "Applies changes to the files in place.")
     .setAction(starknetMigrateAction);
+
+task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
+    .addFlag("script", "Run ./amarna.sh file to use Amarna with custom args.")
+    .setAction(amarnaAction);
