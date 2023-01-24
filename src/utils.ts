@@ -303,7 +303,7 @@ export class UDC {
 }
 
 export function readContract(contractPath: string) {
-    const { parse } = hanldeJsonWithBigInt(false);
+    const { parse } = handleJsonWithBigInt(false);
     const parsedContract = parse(
         fs.readFileSync(contractPath).toString("ascii")
     ) as CompiledContract;
@@ -313,7 +313,7 @@ export function readContract(contractPath: string) {
     };
 }
 
-export function hanldeJsonWithBigInt(alwaysParseAsBig: boolean) {
+export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
     return JsonBigint({
         alwaysParseAsBig,
         useNativeBigInt: true,
