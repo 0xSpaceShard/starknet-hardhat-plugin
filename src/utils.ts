@@ -28,6 +28,9 @@ import { Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
+import { compressProgram } from "starknet/utils/stark";
+import { CompiledContract } from "starknet";
+import JsonBigint from "json-bigint";
 
 const globPromise = promisify(glob);
 /**
@@ -297,4 +300,33 @@ export class UDC {
         }
         return UDC.instance;
     }
+}
+
+export function readContract(contractPath: string) {
+    const { parse } = handleJsonWithBigInt(false);
+    const parsedContract = parse(
+        fs.readFileSync(contractPath).toString("ascii")
+    ) as CompiledContract;
+    return {
+        ...parsedContract,
+        program: compressProgram(parsedContract.program)
+    };
+}
+
+export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
+    return JsonBigint({
+        alwaysParseAsBig,
+        useNativeBigInt: true,
+        protoAction: "preserve",
+        constructorAction: "preserve"
+    });
+}
+
+export function bnToDecimalStringArray(rawCalldata: bigint[]) {
+    return rawCalldata.map((x) => x.toString(10));
+}
+
+export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
+    overhead = Math.round((1 + overhead) * 100);
+    return (amount * BigInt(overhead)) / BigInt(100);
 }

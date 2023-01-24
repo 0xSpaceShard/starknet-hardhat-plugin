@@ -15,6 +15,7 @@ import {
 } from "./types";
 import * as starknet from "./starknet-types";
 import {
+    QUERY_VERSION,
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
@@ -32,9 +33,18 @@ import {
     sendDeployAccountTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
+import {
+    numericToHexString,
+    copyWithBigint,
+    generateRandomSalt,
+    UDC,
+    readContract,
+    bnToDecimalStringArray,
+    estimatedFeeToMaxFee
+} from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
+import axios from "axios";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -76,20 +86,15 @@ export abstract class Account {
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
         if (options?.maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
+            const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);
         }
 
         if (options?.maxFee === undefined || options?.maxFee === null) {
-            let overhead =
-                options?.overhead === undefined || options?.overhead === null
-                    ? 0.5
-                    : options?.overhead;
-            overhead = Math.round((1 + overhead) * 100);
             const maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: (maxFee.amount * BigInt(overhead)) / BigInt(100)
+                maxFee: estimatedFeeToMaxFee(maxFee.amount, options?.overhead)
             };
         }
         return (
@@ -169,6 +174,75 @@ export abstract class Account {
             calldata,
             options
         );
+    }
+
+    async estimateDeclareFee(
+        contractFactory: StarknetContractFactory,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const maxFee = (options.maxFee || 0).toString();
+
+        const hre = await import("hardhat");
+        const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const calldata = [classHash];
+        const calldataHash = hash.computeHashOnElements(calldata);
+
+        const messageHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DECLARE,
+            numericToHexString(QUERY_VERSION),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            chainId,
+            numericToHexString(nonce)
+        ]);
+
+        const signature = this.getSignatures(messageHash);
+        // To resolve TypeError: Do not know how to serialize a BigInt
+        // coming from axios
+        (BigInt.prototype as any).toJSON = function () {
+            return this.toString();
+        };
+        const resp = await axios.post(
+            `${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`,
+            {
+                type: "DECLARE",
+                sender_address: this.address,
+                contract_class: readContract(contractFactory.metadataPath),
+                signature: bnToDecimalStringArray(signature || []),
+                version: numericToHexString(QUERY_VERSION),
+                nonce: numericToHexString(nonce)
+            }
+        );
+
+        const { gas_price, gas_usage, overall_fee, unit } = resp.data;
+        return {
+            amount: BigInt(overall_fee),
+            unit,
+            gas_price: BigInt(gas_price),
+            gas_usage: BigInt(gas_usage)
+        } as starknet.FeeEstimation;
+    }
+
+    async estimateDeployFee(
+        contractFactory: StarknetContractFactory,
+        constructorArguments?: StringMap,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const classHash = await contractFactory.getClassHash();
+        const udc = await UDC.getInstance();
+        const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
+        const calldata: StringMap = {
+            classHash,
+            salt: options?.salt ?? generateRandomSalt(),
+            unique: BigInt(options?.unique ?? true),
+            calldata: adaptedArgs
+        };
+        return await this.estimateFee(udc, UDC_DEPLOY_FUNCTION_NAME, calldata, options);
     }
 
     private async interact(
@@ -341,8 +415,17 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
+            throw new StarknetPluginError(msg);
+        }
+
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
-        const maxFee = (options.maxFee || 0).toString();
+        if (maxFee === undefined || maxFee === null) {
+            const estimatedDeclareFee = await this.estimateDeclareFee(contractFactory, options);
+            maxFee = estimatedFeeToMaxFee(estimatedDeclareFee.amount, options?.overhead);
+        }
 
         const hre = await import("hardhat");
         const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
@@ -357,7 +440,7 @@ export abstract class Account {
             this.address,
             0, // entrypoint selector is implied
             calldataHash,
-            maxFee,
+            maxFee.toString(),
             chainId,
             nonce.toString()
         ]);
