@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import { spawnSync } from "child_process";
-import { assertEquals } from "../../utils/utils";
+import { assertEqual } from "../../utils/utils";
 
 console.log("Amarna test");
 console.log("-----------");
@@ -38,7 +38,7 @@ const isSarifFileGenerated = () => {
     }
     // See if the result is file generated
 
-    assertEquals(result, "sarif.out");
+    assertEqual(result, "sarif.out");
 };
 
 setTimeout(() => {
