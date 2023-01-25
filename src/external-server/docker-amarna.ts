@@ -1,6 +1,8 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import { DockerServer } from "./docker-server";
 import * as fs from "fs";
+import { spawnSync } from "child_process";
+import { stdout } from "process";
 
 export class AmarnaDocker extends DockerServer {
     useShell = false;
@@ -33,8 +35,27 @@ export class AmarnaDocker extends DockerServer {
 
     public async run(args: { script?: boolean }) {
         this.useShell = !!args.script;
+        const formattedImage = `${this.image.repository}:${this.image.tag}`;
+        console.log(`Pulling amarna image ${formattedImage}.`);
+        this.spawnSyncOutput("docker", ["pull", formattedImage]);
+        const docker_args = [
+            "run",
+            "--rm",
+            "-ti",
+            "--name",
+            this.containerName,
+            ...(await this.getDockerArgs()),
+            formattedImage,
+            ...(await this.getContainerArgs())
+        ];
         console.log("Running amarna, this may take a while.");
-        await this.spawnChildProcess();
+        this.spawnSyncOutput("docker", docker_args);
+    }
+
+    protected spawnSyncOutput(cmd: string, args: string[]) {
+        const result = spawnSync(cmd, args, { encoding: "utf-8" });
+        console.log(result.stdout);
+        return result;
     }
 
     protected async getContainerArgs(): Promise<string[]> {
