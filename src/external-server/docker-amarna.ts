@@ -41,7 +41,8 @@ export class AmarnaDocker extends DockerServer {
         const docker_args = [
             "run",
             "--rm",
-            "-ti",
+            "-i",
+            "-a",
             "--name",
             this.containerName,
             ...(await this.getDockerArgs()),
@@ -54,7 +55,9 @@ export class AmarnaDocker extends DockerServer {
 
     protected spawnSyncOutput(cmd: string, args: string[]) {
         const result = spawnSync(cmd, args, { encoding: "utf-8" });
-        console.log(result.stdout);
+        console.log(result);
+        result.stdout && console.log(result.stdout);
+        result.stderr && console.error(result.stderr);
         return result;
     }
 

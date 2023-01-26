@@ -20,21 +20,17 @@ fs.existsSync("./out.sarif") && fs.unlinkSync("./out.sarif");
 
 console.log("Running amarna");
 
-spawnSync("npx hardhat amarna");
+const output = spawnSync("npx", ["hardhat", "amarna"], { encoding: "utf-8" });
+output.stdout && console.log(output.stdout);
+output.stderr && console.error(output.stderr);
 
-let count = 0;
-
-let result = "File not generated";
+let status = "File not generated";
 if (fs.existsSync("./out.sarif")) {
     // If the file exists, pass the test and remove the generated file.
-    result = "sarif.out";
+    console.log("Success: sarif.out generated, cleaning up.");
+    status = "sarif.out";
     fs.unlinkSync("./out.sarif"); // Cleanup out.sarif after the test
-} else if (count < 20) {
-    // If less than 20 tries, try again and don't test yet.
-    setTimeout(isSarifFileGenerated, 5000);
-    count++;
-    return;
 }
 // See if the result is file generated
 
-assertEqual(result, "sarif.out");
+assertEqual(status, "sarif.out");
