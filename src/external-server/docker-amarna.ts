@@ -1,27 +1,24 @@
-import { Image } from "@nomiclabs/hardhat-docker";
-import { DockerServer } from "./docker-server";
+import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import * as fs from "fs";
-import { spawnSync } from "child_process";
-import { stdout } from "process";
 
-export class AmarnaDocker extends DockerServer {
+export class AmarnaDocker {
     useShell = false;
+    container: string;
+    docker: HardhatDocker;
     /**
      * @param image the Docker image to be used for running the container
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
-    constructor(image: Image, private path: string) {
-        super(image, "127.0.0.1", null, "", "amarna-docker");
+    constructor(private image: Image, private path: string) {
+        this.container = "amarna-container-" + Math.random();
     }
 
-    protected async getDockerArgs(): Promise<string[]> {
-        // To access the files on host machine from inside the container, proper mounting has to be done.
-        const volumes = ["-v", `${this.path}:/src`];
-        const dockerArgs = [...volumes];
+    protected getDockerArgs(): string[] {
+        let cmd = ["amarna", ".", "-o", "out.sarif"];
         if (this.useShell) {
             // Run ./amarna.sh file for custom args
             if (fs.existsSync(`${this.path}/amarna.sh`)) {
-                dockerArgs.push("--entrypoint", "./amarna.sh");
+                cmd = ["./amarna.sh"];
             } else {
                 console.warn(
                     "amarna.sh file not found in the project directory.\n",
@@ -30,38 +27,29 @@ export class AmarnaDocker extends DockerServer {
                 );
             }
         }
-        return dockerArgs;
+        return cmd;
     }
 
     public async run(args: { script?: boolean }) {
+        const { path } = this;
+        if (!this.docker) {
+            this.docker = await HardhatDocker.create();
+        }
         this.useShell = !!args.script;
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
-        console.log(`Pulling amarna image ${formattedImage}.`);
-        this.spawnSyncOutput("docker", ["pull", formattedImage]);
-        const docker_args = [
-            "run",
-            "--rm",
-            "-i",
-            "-a",
-            "--name",
-            this.containerName,
-            ...(await this.getDockerArgs()),
-            formattedImage,
-            ...(await this.getContainerArgs())
-        ];
+        if (!this.docker.hasPulledImage(this.image)) {
+            console.log(`Pulling amarna image ${formattedImage}.`);
+            await this.docker.pullImage(this.image);
+        }
+        const cmd = this.getDockerArgs();
+
         console.log("Running amarna, this may take a while.");
-        this.spawnSyncOutput("docker", docker_args);
-    }
-
-    protected spawnSyncOutput(cmd: string, args: string[]) {
-        const result = spawnSync(cmd, args, { encoding: "utf-8" });
-        console.log(result);
-        result.stdout && console.log(result.stdout);
-        result.stderr && console.error(result.stderr);
-        return result;
-    }
-
-    protected async getContainerArgs(): Promise<string[]> {
-        return [];
+        const { stdout, stderr } = await this.docker.runContainer(this.image, cmd, {
+            binds: {
+                [path]: "/src"
+            }
+        });
+        // Output the output/error for user to review.
+        console.log(stdout.toString(), stderr.toString());
     }
 }
