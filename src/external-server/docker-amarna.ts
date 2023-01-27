@@ -10,10 +10,10 @@ export class AmarnaDocker {
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
     constructor(private image: Image, private path: string) {
-        this.container = "amarna-container-" + Math.random();
+        this.container = "amarna-container-" + Math.random().toString().slice(2);
     }
 
-    protected getDockerArgs(): string[] {
+    protected getCommand(): string[] {
         let cmd = ["amarna", ".", "-o", "out.sarif"];
         if (this.useShell) {
             // Run ./amarna.sh file for custom args
@@ -41,15 +41,15 @@ export class AmarnaDocker {
             console.log(`Pulling amarna image ${formattedImage}.`);
             await this.docker.pullImage(this.image);
         }
-        const cmd = this.getDockerArgs();
+        const cmd = this.getCommand();
+        const binds = {
+            [path]: "/src"
+        };
 
         console.log("Running amarna, this may take a while.");
-        const { stdout, stderr } = await this.docker.runContainer(this.image, cmd, {
-            binds: {
-                [path]: "/src"
-            }
-        });
+        const { stdout, stderr } = await this.docker.runContainer(this.image, cmd, { binds });
         // Output the output/error for user to review.
-        console.log(stdout.toString(), stderr.toString());
+        stdout.length && console.log(stdout.toString());
+        stderr.length && console.error(stderr.toString());
     }
 }
