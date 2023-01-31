@@ -17,6 +17,7 @@ import * as crypto from "crypto";
 import { hash } from "starknet";
 import axios, { AxiosError } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
+import * as starknet from "./starknet-types";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -184,4 +185,26 @@ export async function sendDeployAccountTx(
             reject
         );
     });
+}
+
+export async function sendEstimateFeeTx(data: unknown) {
+    const hre = await import("hardhat");
+    // To resolve TypeError: Do not know how to serialize a BigInt
+    // coming from axios
+    (BigInt.prototype as any).toJSON = function () {
+        return this.toString();
+    };
+
+    const resp = await axios.post(
+        `${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`,
+        data
+    );
+
+    const { gas_price, gas_usage, overall_fee, unit } = resp.data;
+    return {
+        amount: BigInt(overall_fee),
+        unit,
+        gas_price: BigInt(gas_price),
+        gas_usage: BigInt(gas_usage)
+    } as starknet.FeeEstimation;
 }
