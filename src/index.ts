@@ -212,7 +212,12 @@ extendEnvironment((hre) => {
         );
 
         const amarnaImage = { repository: AMARNA_DOCKER_REPOSITORY, tag: AMARNA_DOCKER_IMAGE_TAG };
-        hre.amarnaDocker = new AmarnaDocker(amarnaImage, hre.config.paths.root);
+        hre.amarnaDocker = new AmarnaDocker(
+            amarnaImage,
+            hre.config.paths.root,
+            hre.config.paths.cairoPaths || [],
+            hre
+        );
     }
 });
 
