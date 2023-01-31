@@ -266,6 +266,15 @@ it("should work with tuples", async function () {
 
 ```typescript
 it("should estimate fee", async function () {
+    const account = await starknet.OpenZeppelinAccount.createAccount({
+      salt: "0x42",
+      privateKey: OZ_ACCOUNT_PRIVATE_KEY
+    });
+
+    // Fee estimation on account deployment
+    const estimatedFee = await account.estimateDeployAccountFee();
+    console.log("Estimated deploy account fee: ", estimatedFee);
+
     const contractFactory = await starknet.getContractFactory(
               "contract"
     );
