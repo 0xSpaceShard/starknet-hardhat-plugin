@@ -59,7 +59,7 @@ export class AmarnaDocker {
             });
 
             dockerArgs.push("--env");
-            dockerArgs.push(`CAIRO_PATHS=${cairoPathsEnv.join(":")}`);
+            dockerArgs.push(`CAIRO_PATH=${cairoPathsEnv.join(":")}`);
         }
 
         Object.keys(binds).forEach((k) => {
