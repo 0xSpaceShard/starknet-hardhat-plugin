@@ -833,7 +833,7 @@ export class ArgentAccount extends Account {
             contract_address_salt: this.salt,
             signature: bnToDecimalStringArray(signature || []),
             version: numericToHexString(QUERY_VERSION),
-            nonce: numericToHexString(0)
+            nonce
         };
 
         return await sendEstimateFeeTx(data);
