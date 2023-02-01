@@ -1,5 +1,5 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
-import { spawn, spawnSync } from "child_process";
+import { spawnSync } from "child_process";
 import * as fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -14,7 +14,7 @@ export class AmarnaDocker {
      */
     constructor(
         private image: Image,
-        private path: string,
+        private rootPath: string,
         private cairoPaths: string[],
         private hre: HardhatRuntimeEnvironment
     ) {
@@ -26,7 +26,7 @@ export class AmarnaDocker {
 
         if (this.useShell) {
             // Run ./amarna.sh file for custom args
-            if (fs.existsSync(`${this.path}/amarna.sh`)) {
+            if (fs.existsSync(`${this.rootPath}/amarna.sh`)) {
                 cmd = ["./amarna.sh"];
             } else {
                 console.warn(
@@ -39,40 +39,49 @@ export class AmarnaDocker {
         return cmd;
     }
 
-    async prepareDockerArgs(): Promise<string[]> {
-        const { path, cairoPaths, container } = this;
+    cairoPathBindings(binds: { [x: string]: string }, dockerArgs: string[]) {
+        const { cairoPaths } = this;
+        if (cairoPaths.length) {
+            const cairoPathsEnv: string[] = [];
+            cairoPaths.forEach((path, i) => {
+                const cPath = `/src/cairo-paths-${i}`;
+                binds[path] = cPath;
+                cairoPathsEnv.push(cPath);
+            });
+
+            dockerArgs.push("--env");
+            dockerArgs.push(`CAIRO_PATH=${cairoPathsEnv.join(":")}`);
+        }
+    }
+
+    private async ensureDockerImage(formattedImage: string): Promise<void> {
+        if (!(await this.docker.hasPulledImage(this.image))) {
+            console.log(`Pulling amarna image ${formattedImage}.`);
+            await this.docker.pullImage(this.image);
+        }
+    }
+
+    private async prepareDockerArgs(): Promise<string[]> {
+        const { rootPath, container } = this;
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
         const binds = {
-            [path]: "/src"
+            [rootPath]: "/src"
         };
 
         const cmd = this.getCommand();
 
         const dockerArgs = ["--rm", "-i", "--name", container];
 
-        if (cairoPaths.length) {
-            const cairoPathsEnv: string[] = [];
-            cairoPaths.forEach((path, i) => {
-                const c_path = `/src/cairo-paths-${i}`;
-                binds[path] = c_path;
-                cairoPathsEnv.push(c_path);
-            });
-
-            dockerArgs.push("--env");
-            dockerArgs.push(`CAIRO_PATH=${cairoPathsEnv.join(":")}`);
-        }
+        this.cairoPathBindings(binds, dockerArgs);
 
         Object.keys(binds).forEach((k) => {
             dockerArgs.push("-v");
             dockerArgs.push(`${k}:${binds[k]}`);
         });
 
-        if (!(await this.docker.hasPulledImage(this.image))) {
-            console.log(`Pulling amarna image ${formattedImage}.`);
-            await this.docker.pullImage(this.image);
-        }
-
         const entrypoint = cmd.shift();
+
+        await this.ensureDockerImage(formattedImage);
 
         return [...dockerArgs, "--entrypoint", entrypoint, formattedImage, ...cmd];
     }
