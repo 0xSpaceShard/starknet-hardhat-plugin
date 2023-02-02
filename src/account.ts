@@ -106,14 +106,18 @@ export abstract class Account {
         return this.starknetContract.address;
     }
 
-    async getAccountBalance(
-        contractFactory: StarknetContractFactory,
-    ): Promise<StringMap> {
-        const ethAddress = '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7'
-        const ethContract = contractFactory.getContractAt(ethAddress)
+    async getAccountBalance(): Promise<StringMap> {
+        const abiPath = process.cwd() + "/contract-artifacts/ERC20/ERC20_abi.json";
+
+        const hre = await import("hardhat");
+        const ethContract = new StarknetContract({
+            abiPath: abiPath,
+            hre: hre
+        });
+        ethContract.address = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
         return (
-            await ethContract.call('balanceOf', {account: this.starknetContract.address})
+            await ethContract.call("balanceOf", {account: this.starknetContract.address})
         );
     }
 
