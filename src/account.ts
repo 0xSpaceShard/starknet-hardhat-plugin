@@ -106,6 +106,17 @@ export abstract class Account {
         return this.starknetContract.address;
     }
 
+    async getAccountBalance(
+        contractFactory: StarknetContractFactory,
+    ): Promise<StringMap> {
+        const ethAddress = '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7'
+        const ethContract = contractFactory.getContractAt(ethAddress)
+
+        return (
+            await ethContract.call('balanceOf', {account: this.starknetContract.address})
+        );
+    }
+
     /**
      * Deploy another contract using this account
      * @param contractFactory the factory of the contract to be deployed
