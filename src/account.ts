@@ -19,13 +19,11 @@ import {
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    UDC_DEPLOY_FUNCTION_NAME,
-    ETH_ADDRESS
+    UDC_DEPLOY_FUNCTION_NAME
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
-import { uint256ToBN } from "starknet/dist/utils/uint256";
 import { ec } from "elliptic";
 import {
     calculateDeployAccountHash,
@@ -106,24 +104,6 @@ export abstract class Account {
 
     get address() {
         return this.starknetContract.address;
-    }
-
-    async getAccountBalance(): Promise<BigInt> {
-        const hre = await import("hardhat");
-
-        const contractPath = handleInternalContractArtifacts(
-            "Token",
-            "ERC20",
-            "",
-            hre
-        );
-        const contractFactory = await hre.starknet.getContractFactory(contractPath);
-        const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
-
-        const result = await ethContract.call("balanceOf", {account: this.starknetContract.address});
-        const convertedBalance = uint256ToBN(result.balance).toString();
-
-        return BigInt(convertedBalance);
     }
 
     /**

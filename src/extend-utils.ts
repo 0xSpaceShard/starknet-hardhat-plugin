@@ -6,6 +6,9 @@ import { ABI_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
+import { handleInternalContractArtifacts } from "./account-utils";
+import { ETH_ADDRESS } from "./constants";
+import { uint256ToBN } from "starknet/dist/utils/uint256";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -181,4 +184,23 @@ export async function getNonceUtil(
     }
 
     return parseInt(executed.stdout.toString());
+}
+
+export async function getBalanceUtil(
+    address: string,
+    hre: HardhatRuntimeEnvironment
+): Promise<BigInt> {
+    const contractPath = handleInternalContractArtifacts(
+        "Token",
+        "ERC20",
+        "",
+        hre
+    );
+    const contractFactory = await hre.starknet.getContractFactory(contractPath);
+    const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
+
+    const result = await ethContract.call("balanceOf", {account: address});
+    const convertedBalance = uint256ToBN(result.balance).toString();
+
+    return BigInt(convertedBalance);
 }
