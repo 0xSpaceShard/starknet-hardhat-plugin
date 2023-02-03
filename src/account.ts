@@ -25,6 +25,7 @@ import {
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
+import { uint256ToBN } from "starknet/dist/utils/uint256";
 import { ec } from "elliptic";
 import {
     calculateDeployAccountHash,
@@ -107,7 +108,7 @@ export abstract class Account {
         return this.starknetContract.address;
     }
 
-    async getAccountBalance(): Promise<StringMap> {
+    async getAccountBalance(): Promise<BigInt> {
         const abiPath = process.cwd() + "/contract-artifacts/ERC20/ERC20_abi.json";
 
         const hre = await import("hardhat");
@@ -117,9 +118,10 @@ export abstract class Account {
         });
         ethContract.address = ETH_ADDRESS;
 
-        return (
-            await ethContract.call("balanceOf", {account: this.starknetContract.address})
-        );
+        const result = await ethContract.call("balanceOf", {account: this.starknetContract.address});
+        const convertedBalance = uint256ToBN(result.balance).toString();
+
+        return BigInt(convertedBalance);
     }
 
     /**
