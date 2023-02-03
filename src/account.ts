@@ -109,14 +109,16 @@ export abstract class Account {
     }
 
     async getAccountBalance(): Promise<BigInt> {
-        const abiPath = process.cwd() + "/contract-artifacts/ERC20/ERC20_abi.json";
-
         const hre = await import("hardhat");
-        const ethContract = new StarknetContract({
-            abiPath: abiPath,
-            hre: hre
-        });
-        ethContract.address = ETH_ADDRESS;
+
+        const contractPath = handleInternalContractArtifacts(
+            "Token",
+            "ERC20",
+            "",
+            hre
+        );
+        const contractFactory = await hre.starknet.getContractFactory(contractPath);
+        const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
         const result = await ethContract.call("balanceOf", {account: this.starknetContract.address});
         const convertedBalance = uint256ToBN(result.balance).toString();
