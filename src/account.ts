@@ -19,7 +19,8 @@ import {
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    UDC_DEPLOY_FUNCTION_NAME
+    UDC_DEPLOY_FUNCTION_NAME,
+    ETH_ADDRESS
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
@@ -114,7 +115,7 @@ export abstract class Account {
             abiPath: abiPath,
             hre: hre
         });
-        ethContract.address = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
+        ethContract.address = ETH_ADDRESS;
 
         return (
             await ethContract.call("balanceOf", {account: this.starknetContract.address})
