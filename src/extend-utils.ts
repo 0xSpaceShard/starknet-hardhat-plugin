@@ -190,16 +190,11 @@ export async function getBalanceUtil(
     address: string,
     hre: HardhatRuntimeEnvironment
 ): Promise<BigInt> {
-    const contractPath = handleInternalContractArtifacts(
-        "Token",
-        "ERC20",
-        "",
-        hre
-    );
+    const contractPath = handleInternalContractArtifacts("Token", "ERC20", "", hre);
     const contractFactory = await hre.starknet.getContractFactory(contractPath);
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
-    const result = await ethContract.call("balanceOf", {account: address});
+    const result = await ethContract.call("balanceOf", { account: address });
     const convertedBalance = uint256ToBN(result.balance).toString();
 
     return BigInt(convertedBalance);
