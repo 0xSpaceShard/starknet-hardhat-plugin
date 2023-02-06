@@ -88,8 +88,11 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
         });
     }
     if (hre.config.paths.cairoPaths) {
-        hre.config.paths.cairoPaths.forEach((path: string) => {
-            cairoPaths.push(path);
+        hre.config.paths.cairoPaths.forEach((cairPath: string) => {
+            if (!path.isAbsolute(cairPath)) {
+                cairPath = path.join(process.env.PWD, cairPath);
+            }
+            cairoPaths.push(cairPath);
         });
     }
     for (let i = 0; i < cairoPaths.length; i++) {
