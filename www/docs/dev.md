@@ -147,7 +147,7 @@ $ git push origin <TAG_NAME>
 
 the release can be made public [on GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
 
-Users should be notified about the usage related changes. This can done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67) etc.
+Users should be notified about the usage related changes. This can be done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67) etc.
 
 ### Docs
 
