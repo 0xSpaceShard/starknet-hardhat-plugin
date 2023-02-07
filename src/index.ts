@@ -60,7 +60,8 @@ import {
     shortStringToBigIntUtil,
     getBlockUtil,
     getNonceUtil,
-    getTransactionTraceUtil
+    getTransactionTraceUtil,
+    getBalanceUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
@@ -279,6 +280,11 @@ extendEnvironment((hre) => {
         getNonce: async (address, options) => {
             const nonce = await getNonceUtil(hre, address, options);
             return nonce;
+        },
+
+        getBalance: async (address) => {
+            const balance = await getBalanceUtil(address, hre);
+            return balance;
         },
 
         network: hre.config.starknet.network,
