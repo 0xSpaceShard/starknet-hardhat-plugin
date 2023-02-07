@@ -554,7 +554,7 @@ Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   the version of Devnet to use (effectivelly specifying the version of the underlying Docker image)
+-   the version of Devnet to use (effectively specifying the version of the underlying Docker image)
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
 -   CLI arguments to be used on Devnet startup: [options](https://shard-labs.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
