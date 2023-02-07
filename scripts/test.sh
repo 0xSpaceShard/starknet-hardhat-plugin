@@ -9,7 +9,7 @@ CONFIG_FILE_NAME="hardhat.config.ts"
 
 # setup example repo
 rm -rf starknet-hardhat-example
-EXAMPLE_REPO_BRANCH="plugin"
+EXAMPLE_REPO_BRANCH="plugin-get-account-balance"
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
