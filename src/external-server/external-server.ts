@@ -169,7 +169,7 @@ export abstract class ExternalServer {
             return response.data;
         } catch (error) {
             const parent = error instanceof Error && error;
-            const msg = "Error in interaction with Starknet CLI proxy server";
+            const msg = `Error in interaction with Starknet CLI proxy server\n${error}`;
             throw new StarknetPluginError(msg, parent);
         }
     }
