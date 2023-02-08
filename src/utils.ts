@@ -134,6 +134,10 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
     return path.join(paths.starknetArtifacts, suffix);
 }
 
+export function adaptPath(root: string, newPath: string): string {
+    return path.normalize(path.join(root, newPath));
+}
+
 export function checkArtifactExists(artifactsPath: string): void {
     if (!fs.existsSync(artifactsPath)) {
         const msg = `Artifact expected to be at ${artifactsPath}, but not found. Consider recompiling your contracts.`;

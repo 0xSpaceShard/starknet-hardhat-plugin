@@ -33,6 +33,7 @@ import {
     StarknetChainId
 } from "./constants";
 import {
+    adaptPath,
     getAccountPath,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
@@ -207,7 +208,7 @@ extendEnvironment((hre) => {
         const cairoPaths = [];
         for (const cairoPath of hre.config.paths.cairoPaths || []) {
             if (!path.isAbsolute(cairoPath)) {
-                cairoPaths.push(path.join(hre.config.paths.root, cairoPath));
+                cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
             } else {
                 cairoPaths.push(cairoPath);
             }
