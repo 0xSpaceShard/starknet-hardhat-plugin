@@ -99,6 +99,10 @@ export class AmarnaDocker {
 
         const result = spawnSync("docker", ["run", ...dockerArgs]);
 
+        if (!this.useShell) {
+            console.log(`Sarif file generated at ${this.rootPath}/out.sarif`);
+        }
+
         // Output the output/error for user to review.
         result.stdout && console.log(result.stdout.toString());
         result.stderr && console.error(result.stderr.toString());
