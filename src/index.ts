@@ -204,7 +204,7 @@ extendEnvironment((hre) => {
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);
         const cairoPaths = [];
-        for (const cairoPath of hre.config.paths.cairoPaths) {
+        for (const cairoPath of hre.config.paths.cairoPaths || []) {
             if (!path.isAbsolute(cairoPath)) {
                 cairoPaths.push(path.join(hre.config.paths.root, cairoPath));
             } else {
