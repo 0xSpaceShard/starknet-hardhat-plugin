@@ -5,7 +5,8 @@ module.exports = {
         network: process.env.NETWORK
     },
     paths: {
-        starknetSources: "my-starknet-sources"
+        starknetSources: "my-starknet-sources",
+        cairoPaths: ["./new-sources"]
     },
     networks: {
         devnet: {
