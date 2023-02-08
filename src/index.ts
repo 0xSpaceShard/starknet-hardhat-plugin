@@ -33,6 +33,7 @@ import {
     StarknetChainId
 } from "./constants";
 import {
+    adaptPath,
     getAccountPath,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
@@ -60,7 +61,8 @@ import {
     shortStringToBigIntUtil,
     getBlockUtil,
     getNonceUtil,
-    getTransactionTraceUtil
+    getTransactionTraceUtil,
+    getBalanceUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
@@ -203,11 +205,20 @@ extendEnvironment((hre) => {
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);
+        const cairoPaths = [];
+        for (const cairoPath of hre.config.paths.cairoPaths || []) {
+            if (!path.isAbsolute(cairoPath)) {
+                cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
+            } else {
+                cairoPaths.push(cairoPath);
+            }
+        }
+
         hre.starknetWrapper = new DockerWrapper(
             image,
             hre.config.paths.root,
             accountPaths,
-            hre.config.paths.cairoPaths || [],
+            cairoPaths,
             hre
         );
 
@@ -284,6 +295,11 @@ extendEnvironment((hre) => {
         getNonce: async (address, options) => {
             const nonce = await getNonceUtil(hre, address, options);
             return nonce;
+        },
+
+        getBalance: async (address) => {
+            const balance = await getBalanceUtil(address, hre);
+            return balance;
         },
 
         network: hre.config.starknet.network,

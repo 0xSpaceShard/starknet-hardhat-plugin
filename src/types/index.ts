@@ -295,6 +295,7 @@ export interface DeployOptions {
 
 export interface DeployAccountOptions {
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface InvokeOptions {

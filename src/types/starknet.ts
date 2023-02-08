@@ -78,6 +78,13 @@ export interface Starknet {
      */
     getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
 
+    /**
+     * Return balance of target contract whose `address` is specified.
+     * @param address of target contract
+     * @returns balance of target as BigInt
+     */
+    getBalance: (address: string) => Promise<BigInt>;
+
     OpenZeppelinAccount: typeof OpenZeppelinAccount;
 
     ArgentAccount: typeof ArgentAccount;
