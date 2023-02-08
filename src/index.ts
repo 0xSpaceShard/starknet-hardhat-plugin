@@ -203,11 +203,20 @@ extendEnvironment((hre) => {
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);
+        const cairoPaths = [];
+        for (const cairoPath of hre.config.paths.cairoPaths) {
+            if (!path.isAbsolute(cairoPath)) {
+                cairoPaths.push(path.join(hre.config.paths.root, cairoPath));
+            } else {
+                cairoPaths.push(cairoPath);
+            }
+        }
+
         hre.starknetWrapper = new DockerWrapper(
             image,
             hre.config.paths.root,
             accountPaths,
-            hre.config.paths.cairoPaths || [],
+            cairoPaths,
             hre
         );
 
