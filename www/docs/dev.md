@@ -151,7 +151,7 @@ Users should be notified about the usage related changes. This can be done on Te
 
 ### Docs
 
-New documentation is **automatically** deployed after publishing a new package version on npm (configured in npm-publish.sh).
+New documentation is **automatically** deployed after publishing a new version with `scripts/npm-publish.sh`.
 
 To manually deploy new documentation, run:
 
