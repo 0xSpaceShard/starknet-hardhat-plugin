@@ -3,6 +3,8 @@ import { spawnSync } from "child_process";
 import * as fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+const DEFAULT_OUTPUT = "out.sarif";
+
 export class AmarnaDocker {
     useShell = false;
     container: string;
@@ -22,7 +24,7 @@ export class AmarnaDocker {
     }
 
     protected getCommand(): string[] {
-        let cmd = ["amarna", ".", "-o", "out.sarif"];
+        let cmd = ["amarna", ".", "-o", DEFAULT_OUTPUT];
 
         if (this.useShell) {
             // Run ./amarna.sh file for custom args
@@ -99,9 +101,8 @@ export class AmarnaDocker {
 
         const result = spawnSync("docker", ["run", ...dockerArgs]);
 
-        if (!this.useShell) {
-            console.log(`Sarif file generated at ${this.rootPath}/out.sarif`);
-        }
+        const defaultOutput = ` at ${this.rootPath}/${DEFAULT_OUTPUT}`;
+        console.log(`Sarif file generated${this.useShell ? "" : defaultOutput}`);
 
         // Output the output/error for user to review.
         result.stdout && console.log(result.stdout.toString());
