@@ -1,25 +1,33 @@
-import { Image } from "@nomiclabs/hardhat-docker";
-import { DockerServer } from "./docker-server";
+import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
+import { spawnSync } from "child_process";
 import * as fs from "fs";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-export class AmarnaDocker extends DockerServer {
+export class AmarnaDocker {
     useShell = false;
+    container: string;
+    docker: HardhatDocker;
+
     /**
      * @param image the Docker image to be used for running the container
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
-    constructor(image: Image, private path: string) {
-        super(image, "127.0.0.1", null, "", "amarna-docker");
+    constructor(
+        private image: Image,
+        private rootPath: string,
+        private cairoPaths: string[],
+        private hre: HardhatRuntimeEnvironment
+    ) {
+        this.container = "amarna-container-" + Math.random().toString().slice(2);
     }
 
-    protected async getDockerArgs(): Promise<string[]> {
-        // To access the files on host machine from inside the container, proper mounting has to be done.
-        const volumes = ["-v", `${this.path}:/src`];
-        const dockerArgs = [...volumes];
+    protected getCommand(): string[] {
+        let cmd = ["amarna", ".", "-o", "out.sarif"];
+
         if (this.useShell) {
             // Run ./amarna.sh file for custom args
-            if (fs.existsSync(`${this.path}/amarna.sh`)) {
-                dockerArgs.push("--entrypoint", "./amarna.sh");
+            if (fs.existsSync(`${this.rootPath}/amarna.sh`)) {
+                cmd = ["./amarna.sh"];
             } else {
                 console.warn(
                     "amarna.sh file not found in the project directory.\n",
@@ -28,16 +36,75 @@ export class AmarnaDocker extends DockerServer {
                 );
             }
         }
-        return dockerArgs;
+        return cmd;
+    }
+
+    cairoPathBindings(binds: { [x: string]: string }, dockerArgs: string[]) {
+        const { cairoPaths } = this;
+        if (cairoPaths.length) {
+            const cairoPathsEnv: string[] = [];
+            cairoPaths.forEach((path, i) => {
+                const cPath = `/src/cairo-paths-${i}`;
+                binds[path] = cPath;
+                cairoPathsEnv.push(cPath);
+            });
+
+            dockerArgs.push("--env");
+            dockerArgs.push(`CAIRO_PATH=${cairoPathsEnv.join(":")}`);
+        }
+    }
+
+    private async ensureDockerImage(formattedImage: string): Promise<void> {
+        if (!(await this.docker.hasPulledImage(this.image))) {
+            console.log(`Pulling amarna image ${formattedImage}.`);
+            await this.docker.pullImage(this.image);
+        }
+    }
+
+    private async prepareDockerArgs(): Promise<string[]> {
+        const { rootPath, container } = this;
+        const formattedImage = `${this.image.repository}:${this.image.tag}`;
+        const binds = {
+            [rootPath]: "/src"
+        };
+
+        const cmd = this.getCommand();
+
+        const dockerArgs = ["--rm", "-i", "--name", container];
+
+        this.cairoPathBindings(binds, dockerArgs);
+
+        Object.keys(binds).forEach((k) => {
+            dockerArgs.push("-v");
+            dockerArgs.push(`${k}:${binds[k]}`);
+        });
+
+        const entrypoint = cmd.shift();
+
+        await this.ensureDockerImage(formattedImage);
+
+        return [...dockerArgs, "--entrypoint", entrypoint, formattedImage, ...cmd];
     }
 
     public async run(args: { script?: boolean }) {
-        this.useShell = !!args.script;
-        console.log("Running amarna, this may take a while.");
-        await this.spawnChildProcess();
-    }
+        if (!this.docker) {
+            this.docker = await HardhatDocker.create();
+        }
 
-    protected async getContainerArgs(): Promise<string[]> {
-        return [];
+        this.useShell = !!args.script;
+
+        const dockerArgs = await this.prepareDockerArgs();
+
+        console.log("Running amarna, this may take a while.");
+
+        const result = spawnSync("docker", ["run", ...dockerArgs]);
+
+        if (!this.useShell) {
+            console.log(`Sarif file generated at ${this.rootPath}/out.sarif`);
+        }
+
+        // Output the output/error for user to review.
+        result.stdout && console.log(result.stdout.toString());
+        result.stderr && console.error(result.stderr.toString());
     }
 }

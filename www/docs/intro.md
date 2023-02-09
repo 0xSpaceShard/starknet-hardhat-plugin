@@ -138,8 +138,10 @@ Using `--starknet-network` with `hardhat run` currently does not have effect. Us
 $ npx hardhat amarna
 ```
 
-Runs [Amarna](https://github.com/crytic/amarna), the static-analyzer and linter for Cairo. And write output to `out.sarif` file.
+Runs [Amarna](https://github.com/crytic/amarna), the static-analyzer and linter for Cairo, in a Docker container. The output from amarna goes in `out.sarif` file.
 Use flag `--script` to run custom `./amarna.sh` file to use Amarna with custom rules and args.
+
+You need to have Docker installed and running to use `hardhat amarna`.
 
 ### `test`
 

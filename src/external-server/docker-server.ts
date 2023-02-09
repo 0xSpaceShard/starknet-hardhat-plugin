@@ -4,10 +4,10 @@ import { ExternalServer } from "./external-server";
 
 export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
-    private containerName: string;
+    protected containerName: string;
 
     constructor(
-        private image: Image,
+        protected image: Image,
         host: string,
         externalPort: string,
         isAliveURL: string,
@@ -22,7 +22,7 @@ export abstract class DockerServer extends ExternalServer {
         this.containerName = containerName;
     }
 
-    private async pullImage() {
+    protected async pullImage() {
         if (!this.docker) {
             this.docker = await HardhatDocker.create();
         }
