@@ -214,10 +214,10 @@ describe("My Test", function () {
     const contract = contractFactory.getContractAt("0x123..."); // address of a previously deployed contract
   });
 
-  it("should declare and deploy", async function() {
+  it("should declare class and deploy", async function() {
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await account.declare(contractFactory);
+    const classHash = await account.declare(contractFactory);  // class declaration
 
     // two ways to obtain the class hash
     expect(classHash).to.equal(await contractFactory.getClassHash());
@@ -269,28 +269,24 @@ it("should work with tuples", async function () {
 ```typescript
 it("should estimate fee", async function () {
     const account = await starknet.OpenZeppelinAccount.createAccount({
-      salt: "0x42",
-      privateKey: OZ_ACCOUNT_PRIVATE_KEY
+        salt: "0x42",
+        privateKey: OZ_ACCOUNT_PRIVATE_KEY
     });
 
-    // Fee estimation on account deployment
     const estimatedFee = await account.estimateDeployAccountFee();
-    console.log("Estimated deploy account fee: ", estimatedFee);
+    await account.deployAccount(); // computes max fee implicitly
 
-    const contractFactory = await starknet.getContractFactory(
-              "contract"
-    );
+    // Every fee estimation returns an object with gas information
+
+    const contractFactory = await starknet.getContractFactory("contract");
     const declareFee = await account.estimateDeclareFee(contractFactory);
-    console.log("Estimated declare fee:", declareFee.amount, declareFee.unit, declareFee.gas_price, declareFee.gas_amount);
     await account.declare(contractFactory); // computes max fee implicitly
-    // ... 
+
     const deployFee = await account.estimateDeployFee(contractFactory);
-    console.log("Estimated deploy fee:", deployFee.amount, deployFee.unit, deployFee.gas_price, deployFee.gas_amount);
-    await account.deploy(contractFactory);  // computes max fee implicitly
-    // ... 
-    const declareFee = await account.estimateDeclareFee(contractFactory);
-    const fee = await account.estimateFee(contract, "increase_balance", { amount: 10n });
-    console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
+    const contract = await account.deploy(contractFactory); // computes max fee implicitly
+
+    const invokeFee = await account.estimateFee(contract, "method", { arg1: 10n });
+    await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
 });
 ```
 
@@ -419,7 +415,7 @@ const emptyBlock = await starknet.devnet.createBlock();
 
 #### Mint tokens to an account
 
-Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this,
+Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this
 
 ```typescript
 const lite_mode = true; // Optional, Default true
@@ -552,7 +548,7 @@ Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and
 
 ### Runtime network - Integrated Devnet
 
-[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`. Target it via the hardhat config file or `--starknet-network integrated-devnet`.
+[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`. Target it via the hardhat config file or `--starknet-network integrated-devnet`. Using `integrated-devnet` makes [forking of existing blockchains](https://shard-labs.github.io/starknet-devnet/docs/guide/fork/) very easy.
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
@@ -763,6 +759,17 @@ After creating the account, you need to fund it (give it some ETH):
 
 If you're facing issues loading the account you've just funded, check out [this issue](https://github.com/Shard-Labs/starknet-hardhat-plugin/issues/281#issuecomment-1354588817).
 
+### Get balance
+
+To find out the balance of your account on the current StarkNet network, you can use `starknet.getBalance`:
+
+```typescript
+import { starknet } from "hardhat";
+const someBalance = starknet.getBalance("0x123...def")
+const myAccount = ...;
+const myAccountBalance = starknet.getBalance(myAccount.address);
+```
+
 ### Deploy account
 
 After funding the account, you need to deploy it (in case of `ArgentAccount`, this will also take care of initialization):
@@ -770,6 +777,8 @@ After funding the account, you need to deploy it (in case of `ArgentAccount`, th
 ```typescript
 await account.deployAccount({ maxFee: ... });
 ```
+
+Alternatively deploy your account by running [this script](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/scripts/deploy-account.ts).
 
 To successfully deploy `ArgentAccount`, the chain you are interacting with is expected to have `ArgentAccount` contracts declared. Alpha Goerli and Alpha Mainnet satisfy this criterion, but if you're working with Devnet, this is most easily achievable by running Devnet [forked](https://shard-labs.github.io/starknet-devnet/docs/guide/fork) from e.g. Alpha Goerli.
 
