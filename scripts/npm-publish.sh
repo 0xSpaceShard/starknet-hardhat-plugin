@@ -14,7 +14,7 @@ else
   npm publish --verbose --access=public
 
   # publish docs
-  cd page && npm ci
+  cd www && npm ci
 
   git config --global user.email "$GIT_USER@users.noreply.github.com"
   git config --global user.name "$GIT_USER"
