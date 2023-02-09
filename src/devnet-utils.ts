@@ -83,7 +83,7 @@ export class DevnetUtils implements Devnet {
         timeoutErrorMessage: "Request timed out"
     });
 
-    constructor(private hre: HardhatRuntimeEnvironment) { }
+    constructor(private hre: HardhatRuntimeEnvironment) {}
 
     private get endpoint() {
         return `${this.hre.starknet.networkConfig.url}`;
@@ -128,7 +128,7 @@ Make sure you really want to interact with Devnet and that it is running and ava
             from_address: hexToDecimalString(fromAddress),
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(funcionName),
-            payload: payload.map(item => numericToHexString(item))
+            payload: payload.map((item) => numericToHexString(item))
         };
 
         const response = await this.requestHandler<FeeEstimation>(

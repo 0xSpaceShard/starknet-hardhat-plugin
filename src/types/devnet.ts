@@ -36,7 +36,7 @@ export interface Devnet {
         toAddress: string,
         funcionName: string,
         payload: Array<number>
-    ) => Promise<FeeEstimation>
+    ) => Promise<FeeEstimation>;
 
     /**
      * Deploys or loads the L1 messaging contract.
