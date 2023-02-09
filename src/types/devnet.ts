@@ -7,7 +7,7 @@ import {
     L1ToL2MockTxResponse,
     L2ToL1MockTxResponse
 } from "../devnet-utils";
-import { Block, MintResponse } from "../starknet-types";
+import { Block, FeeEstimation, MintResponse } from "../starknet-types";
 
 export interface Devnet {
     /**
@@ -22,6 +22,21 @@ export interface Devnet {
      * @returns {Promise} - Metadata for the flushed messages
      */
     flush: () => Promise<FlushResponse>;
+
+    /**
+     * Computes message fee estimation
+     * @param {string} fromAddress - Address of message source
+     * @param {string} toAddress - Address of message destination
+     * @param {string} functionName - Function name for entry point selector
+     * @param {Array<number>} payload - Payload to send
+     * @returns Fee estimation
+     */
+    estimateMessageFee: (
+        fromAddress: string,
+        toAddress: string,
+        funcionName: string,
+        payload: Array<number>
+    ) => Promise<FeeEstimation>
 
     /**
      * Deploys or loads the L1 messaging contract.
