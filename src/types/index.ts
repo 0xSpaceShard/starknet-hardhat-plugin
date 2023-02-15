@@ -599,11 +599,7 @@ export class StarknetContract {
      * @param {Array<Numeric>} payload - Payload to send
      * @returns Fee estimation
      */
-    public async estimateMessageFee(
-        fromAddress: string,
-        functionName: string,
-        payload: Numeric[]
-    ) {
+    async estimateMessageFee(fromAddress: string, functionName: string, payload: Numeric[]) {
         return this.hre.starknetWrapper.estimateMessageFee(
             fromAddress,
             this.address,
