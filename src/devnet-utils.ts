@@ -7,7 +7,7 @@ import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
 import { REQUEST_TIMEOUT } from "./constants";
 import { hash } from "starknet";
 import { numericToHexString } from "./utils";
-import { hexToDecimalString } from "starknet/utils/number";
+import { Numeric } from "./types";
 
 interface L1ToL2Message {
     address: string;
@@ -137,8 +137,8 @@ Make sure you really want to interact with Devnet and that it is running and ava
         l2ContractAddress: string,
         funcionName: string,
         l1ContractAddress: string,
-        payload: number[],
-        nonce: number
+        payload: Numeric[],
+        nonce: Numeric
     ) {
         const body = {
             l2_contract_address: l2ContractAddress,
