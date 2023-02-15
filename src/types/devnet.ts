@@ -24,21 +24,6 @@ export interface Devnet {
     flush: () => Promise<FlushResponse>;
 
     /**
-     * Computes message fee estimation
-     * @param {string} fromAddress - Address of message source
-     * @param {string} toAddress - Address of message destination
-     * @param {string} functionName - Function name for entry point selector
-     * @param {Array<number>} payload - Payload to send
-     * @returns Fee estimation
-     */
-    estimateMessageFee: (
-        fromAddress: string,
-        toAddress: string,
-        funcionName: string,
-        payload: Array<number>
-    ) => Promise<FeeEstimation>;
-
-    /**
      * Deploys or loads the L1 messaging contract.
      * @param {string} networkUrl - L1 network url.
      * @param {string} [address] - Address of the contract to be loaded.

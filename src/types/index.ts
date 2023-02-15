@@ -593,6 +593,26 @@ export class StarknetContract {
     }
 
     /**
+     * Computes message fee estimation
+     * @param {string} fromAddress - Address of message source
+     * @param {string} functionName - Function name for entry point selector
+     * @param {Array<Numeric>} payload - Payload to send
+     * @returns Fee estimation
+     */
+    public async estimateMessageFee(
+        fromAddress: string,
+        functionName: string,
+        payload: Numeric[]
+    ) {
+        return this.hre.starknetWrapper.estimateMessageFee(
+            fromAddress,
+            this.address,
+            functionName,
+            payload
+        );
+    }
+
+    /**
      * Estimate the gas fee of executing `functionName` with `args`.
      * @param functionName
      * @param args arguments to Starknet contract function

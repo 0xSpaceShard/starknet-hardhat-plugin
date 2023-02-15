@@ -3,7 +3,7 @@ import axios, { AxiosResponse, Method } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { Block, MintResponse, L2ToL1Message, FeeEstimation } from "./starknet-types";
+import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
 import { REQUEST_TIMEOUT } from "./constants";
 import { hash } from "starknet";
 import { numericToHexString } from "./utils";
@@ -116,34 +116,6 @@ Make sure you really want to interact with Devnet and that it is running and ava
     public async flush() {
         const response = await this.requestHandler<FlushResponse>("/postman/flush", "POST");
         return response.data;
-    }
-
-    public async estimateMessageFee(
-        fromAddress: string,
-        toAddress: string,
-        funcionName: string,
-        payload: number[]
-    ) {
-        const body = {
-            from_address: hexToDecimalString(fromAddress),
-            to_address: toAddress,
-            entry_point_selector: hash.getSelectorFromName(funcionName),
-            payload: payload.map((item) => numericToHexString(item))
-        };
-
-        const response = await this.requestHandler<FeeEstimation>(
-            "/feeder_gateway/estimate_message_fee",
-            "POST",
-            body
-        );
-
-        const { gas_price, gas_usage, overall_fee, unit } = response.data;
-        return {
-            amount: BigInt(overall_fee),
-            unit,
-            gas_price: BigInt(gas_price),
-            gas_usage: BigInt(gas_usage)
-        };
     }
 
     public async loadL1MessagingContract(networkUrl: string, address?: string, networkId?: string) {
