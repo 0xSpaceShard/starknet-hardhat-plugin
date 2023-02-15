@@ -289,9 +289,8 @@ it("should estimate fee", async function () {
     await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
 
     // computes message estimate fee
-    const estimatedMessageFee = await starknet.devnet.estimateMessageFee(
+    const estimatedMessageFee = await l2contract.estimateMessageFee(
             L1_CONTRACT_ADDRESS,
-            l2contract.address,
             "deposit",
             [556, 123]
         );
