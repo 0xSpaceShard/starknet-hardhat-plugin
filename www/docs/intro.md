@@ -632,7 +632,7 @@ pip install openzeppelin-cairo-contracts
 ```typescript
 paths: {
     // this directory contains the openzeppelin directory
-    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"];
+    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"],
 }
 ```
 
