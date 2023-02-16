@@ -135,7 +135,13 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
 }
 
 export function adaptPath(root: string, newPath: string): string {
-    return path.normalize(path.join(root, newPath));
+    let adaptedPath = newPath;
+    if (newPath[0] === "~") {
+        adaptedPath = path.normalize(path.join(process.env.HOME, newPath.slice(1)));
+    } else if (!path.isAbsolute(newPath)) {
+        adaptedPath = path.normalize(path.join(root, newPath));
+    }
+    return adaptedPath;
 }
 
 export function checkArtifactExists(artifactsPath: string): void {
