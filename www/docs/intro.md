@@ -215,6 +215,7 @@ describe("My Test", function () {
   });
 
   it("should declare class and deploy", async function() {
+    // not compatible with accounts deployed with Starknet CLI
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
     const classHash = await account.declare(contractFactory);  // class declaration
@@ -784,7 +785,7 @@ To successfully deploy `ArgentAccount`, the chain you are interacting with is ex
 
 ### Reuse account
 
-To retrieve an already deployed Account, use the `getAccountFromAddress` method. What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
+To retrieve an already deployed Account, use the `getAccountFromAddress` method. Do not use this method for accounts deployed by e.g. Starknet CLI (those are modified OZ accounts that are not compatible with the OZ version supported by this plugin). What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
 
 ```typescript
 const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(
