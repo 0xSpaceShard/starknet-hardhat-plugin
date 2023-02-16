@@ -134,6 +134,12 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
     return path.join(paths.starknetArtifacts, suffix);
 }
 
+/**
+ * Adapts path relative to the root of the project
+ * @param root string representing the root path set on hre or config
+ * @param newPath string representing the path provided by the user
+ * @returns adapted path
+ */
 export function adaptPath(root: string, newPath: string): string {
     let adaptedPath = newPath;
     if (newPath[0] === "~") {
