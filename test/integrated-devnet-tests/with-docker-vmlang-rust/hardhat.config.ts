@@ -10,7 +10,7 @@ module.exports = {
             vmLang: "rust",
             url: "http://127.0.0.1:5050",
             args: ["--seed", "42"],
-            stderr: "STDOUT"
+            stdout: "STDOUT"
         }
     }
 };
