@@ -58,7 +58,7 @@ export enum StarknetChainId {
     TESTNET2 = "0x534e5f474f45524c4932"
 }
 
-export const PREFIX_TRANSACTION = "StarkNet Transaction";
+export const PREFIX_TRANSACTION = "Starknet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;

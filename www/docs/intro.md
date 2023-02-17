@@ -1,8 +1,8 @@
-# StarkNet Hardhat Plugin
+# Starknet Hardhat Plugin
 
 [![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=blue)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
 
-If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for StarkNet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
+If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
 ## Contents
 
@@ -62,7 +62,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 $ npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
-If no paths are provided, all StarkNet contracts in the default contracts directory are compiled. Paths can be files and directories.
+If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
@@ -94,7 +94,7 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 $ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
+Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by Starknet CLI.
 
 ### `starknet-deploy-account`
 
@@ -102,7 +102,7 @@ Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config`
 $ npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by StarkNet CLI. _Needs to be funded before deploying it._
+Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by Starknet CLI. _Needs to be funded before deploying it._
 
 ```
 $ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
@@ -163,14 +163,14 @@ To see all the utilities introduced by the `starknet` object, check [this](https
 
 Relying on the above described API makes it easier to interact with your contracts and test them.
 
-To test StarkNet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
+To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 
 ```
 $ npx hardhat test
 ```
 
 Read more about the network used in tests in the [Runtime network](#runtime-network) section.
-These examples are inspired by the official [StarkNet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
+These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
 
@@ -425,7 +425,7 @@ await starknet.devnet.mint(account_address, 2e12, lite_mode);
 
 ## Debugging contracts
 
-To debug StarkNet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
+To debug Starknet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
 
 Compile with `--disable-hint-validation` flag to allow hints.
 
@@ -762,7 +762,7 @@ If you're facing issues loading the account you've just funded, check out [this 
 
 ### Get balance
 
-To find out the balance of your account on the current StarkNet network, you can use `starknet.getBalance`:
+To find out the balance of your account on the current Starknet network, you can use `starknet.getBalance`:
 
 ```typescript
 import { starknet } from "hardhat";
