@@ -284,6 +284,7 @@ export interface DeclareOptions {
     sender?: string; // address
     nonce?: Numeric;
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface DeployOptions {
@@ -294,6 +295,7 @@ export interface DeployOptions {
 
 export interface DeployAccountOptions {
     maxFee?: Numeric;
+    overhead?: number;
 }
 
 export interface InvokeOptions {
@@ -311,6 +313,10 @@ export interface CallOptions {
     nonce?: Numeric;
     maxFee?: Numeric;
     rawOutput?: boolean;
+    token?: string;
+    salt?: string;
+    unique?: boolean;
+    sender?: string; // address
 }
 
 export type EstimateFeeOptions = CallOptions;

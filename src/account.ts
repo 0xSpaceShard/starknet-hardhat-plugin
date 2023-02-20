@@ -15,6 +15,7 @@ import {
 } from "./types";
 import * as starknet from "./starknet-types";
 import {
+    QUERY_VERSION,
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
@@ -30,9 +31,18 @@ import {
     generateKeys,
     handleInternalContractArtifacts,
     sendDeployAccountTx,
+    sendEstimateFeeTx,
     signMultiCall
 } from "./account-utils";
-import { numericToHexString, copyWithBigint, generateRandomSalt, UDC } from "./utils";
+import {
+    numericToHexString,
+    copyWithBigint,
+    generateRandomSalt,
+    UDC,
+    readContract,
+    bnToDecimalStringArray,
+    estimatedFeeToMaxFee
+} from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
 
@@ -76,20 +86,15 @@ export abstract class Account {
         options?: InvokeOptions
     ): Promise<InvokeResponse> {
         if (options?.maxFee && options?.overhead) {
-            const msg = "Both maxFee and overhead cannot be specified";
+            const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);
         }
 
         if (options?.maxFee === undefined || options?.maxFee === null) {
-            let overhead =
-                options?.overhead === undefined || options?.overhead === null
-                    ? 0.5
-                    : options?.overhead;
-            overhead = Math.round((1 + overhead) * 100);
             const maxFee = await this.estimateFee(toContract, functionName, calldata, options);
             options = {
                 ...options,
-                maxFee: (maxFee.amount * BigInt(overhead)) / BigInt(100)
+                maxFee: estimatedFeeToMaxFee(maxFee.amount, options?.overhead)
             };
         }
         return (
@@ -169,6 +174,60 @@ export abstract class Account {
             calldata,
             options
         );
+    }
+
+    async estimateDeclareFee(
+        contractFactory: StarknetContractFactory,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const maxFee = (options.maxFee || 0).toString();
+
+        const hre = await import("hardhat");
+        const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const calldata = [classHash];
+        const calldataHash = hash.computeHashOnElements(calldata);
+
+        const messageHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DECLARE,
+            numericToHexString(QUERY_VERSION),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            chainId,
+            numericToHexString(nonce)
+        ]);
+
+        const signature = this.getSignatures(messageHash);
+        const data = {
+            type: "DECLARE",
+            sender_address: this.address,
+            contract_class: readContract(contractFactory.metadataPath),
+            signature: bnToDecimalStringArray(signature || []),
+            version: numericToHexString(QUERY_VERSION),
+            nonce: numericToHexString(nonce)
+        };
+        return await sendEstimateFeeTx(data);
+    }
+
+    async estimateDeployFee(
+        contractFactory: StarknetContractFactory,
+        constructorArguments?: StringMap,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const classHash = await contractFactory.getClassHash();
+        const udc = await UDC.getInstance();
+        const adaptedArgs = contractFactory.handleConstructorArguments(constructorArguments);
+        const calldata: StringMap = {
+            classHash,
+            salt: options?.salt ?? generateRandomSalt(),
+            unique: BigInt(options?.unique ?? true),
+            calldata: adaptedArgs
+        };
+        return await this.estimateFee(udc, UDC_DEPLOY_FUNCTION_NAME, calldata, options);
     }
 
     private async interact(
@@ -320,6 +379,8 @@ export abstract class Account {
 
     protected abstract getSignatures(messageHash: string): bigint[];
 
+    protected abstract estimateDeployAccountFee(): Promise<starknet.FeeEstimation>;
+
     public abstract deployAccount(options?: DeployAccountOptions): Promise<string>;
 
     protected getExecutionFunctionName() {
@@ -341,8 +402,17 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
+            throw new StarknetPluginError(msg);
+        }
+
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
-        const maxFee = (options.maxFee || 0).toString();
+        if (maxFee === undefined || maxFee === null) {
+            const estimatedDeclareFee = await this.estimateDeclareFee(contractFactory, options);
+            maxFee = estimatedFeeToMaxFee(estimatedDeclareFee.amount, options?.overhead);
+        }
 
         const hre = await import("hardhat");
         const classHash = await hre.starknetWrapper.getClassHash(contractFactory.metadataPath);
@@ -357,7 +427,7 @@ export abstract class Account {
             this.address,
             0, // entrypoint selector is implied
             calldataHash,
-            maxFee,
+            maxFee.toString(),
             chainId,
             nonce.toString()
         ]);
@@ -465,11 +535,62 @@ export class OpenZeppelinAccount extends Account {
         return signMultiCall(this.publicKey, this.keyPair, messageHash);
     }
 
+    public override async estimateDeployAccountFee(): Promise<starknet.FeeEstimation> {
+        this.assertNotDeployed();
+        const hre = await import("hardhat");
+
+        const contractFactory = await OpenZeppelinAccount.getContractFactory();
+        const classHash = await contractFactory.getClassHash();
+        const constructorCalldata = [BigInt(this.publicKey).toString()];
+
+        const maxFee = numericToHexString(0);
+        const nonce = numericToHexString(0);
+
+        const calldataHash = hash.computeHashOnElements([
+            classHash,
+            this.salt,
+            ...constructorCalldata
+        ]);
+        const msgHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DEPLOY_ACCOUNT,
+            numericToHexString(QUERY_VERSION),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            hre.starknet.networkConfig.starknetChainId,
+            nonce
+        ]);
+
+        const signature = this.getSignatures(msgHash);
+        const data = {
+            type: "DEPLOY_ACCOUNT",
+            class_hash: classHash,
+            constructor_calldata: constructorCalldata,
+            contract_address_salt: this.salt,
+            signature: bnToDecimalStringArray(signature || []),
+            version: numericToHexString(QUERY_VERSION),
+            nonce
+        };
+
+        return await sendEstimateFeeTx(data);
+    }
+
     public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {
         this.assertNotDeployed();
         const hre = await import("hardhat");
 
-        const maxFee = numericToHexString(options.maxFee || 0);
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
+            throw new StarknetPluginError(msg);
+        }
+
+        if (maxFee === undefined || maxFee === null) {
+            const estimatedDeployFee = await this.estimateDeployAccountFee();
+            maxFee = estimatedFeeToMaxFee(estimatedDeployFee.amount, options?.overhead);
+        }
+
         const contractFactory = await OpenZeppelinAccount.getContractFactory();
         const classHash = await contractFactory.getClassHash();
         const constructorCalldata = [BigInt(this.publicKey).toString()];
@@ -479,7 +600,7 @@ export class OpenZeppelinAccount extends Account {
             constructorCalldata,
             this.salt,
             classHash,
-            maxFee,
+            numericToHexString(maxFee),
             hre.starknet.networkConfig.starknetChainId
         );
 
@@ -488,7 +609,7 @@ export class OpenZeppelinAccount extends Account {
             classHash,
             constructorCalldata,
             this.salt,
-            maxFee
+            numericToHexString(maxFee)
         );
 
         this.starknetContract.deployTxHash = deploymentTxHash;
@@ -674,6 +795,50 @@ export class ArgentAccount extends Account {
         return signatures;
     }
 
+    public override async estimateDeployAccountFee(): Promise<starknet.FeeEstimation> {
+        this.assertNotDeployed();
+        const hre = await import("hardhat");
+
+        const nonce = numericToHexString(0);
+        const maxFee = numericToHexString(0);
+
+        const constructorCalldata: string[] = [
+            ArgentAccount.IMPLEMENTATION_CLASS_HASH,
+            hash.getSelectorFromName("initialize"),
+            "2",
+            this.publicKey,
+            ArgentAccount.generateGuardianPublicKey(this.guardianPrivateKey)
+        ].map((val) => BigInt(val).toString());
+        const calldataHash = hash.computeHashOnElements([
+            ArgentAccount.PROXY_CLASS_HASH,
+            this.salt,
+            ...constructorCalldata
+        ]);
+        const msgHash = hash.computeHashOnElements([
+            TransactionHashPrefix.DEPLOY_ACCOUNT,
+            numericToHexString(QUERY_VERSION),
+            this.address,
+            0, // entrypoint selector is implied
+            calldataHash,
+            maxFee,
+            hre.starknet.networkConfig.starknetChainId,
+            nonce
+        ]);
+
+        const signature = this.getSignatures(msgHash);
+        const data = {
+            type: "DEPLOY_ACCOUNT",
+            class_hash: ArgentAccount.PROXY_CLASS_HASH,
+            constructor_calldata: constructorCalldata,
+            contract_address_salt: this.salt,
+            signature: bnToDecimalStringArray(signature || []),
+            version: numericToHexString(QUERY_VERSION),
+            nonce
+        };
+
+        return await sendEstimateFeeTx(data);
+    }
+
     /**
      * Deploys (initializes) the account.
      * @param options
@@ -683,7 +848,16 @@ export class ArgentAccount extends Account {
         this.assertNotDeployed();
         const hre = await import("hardhat");
 
-        const maxFee = numericToHexString(options.maxFee || 0);
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
+            throw new StarknetPluginError(msg);
+        }
+
+        if (maxFee === undefined || maxFee === null) {
+            const estimatedDeployFee = await this.estimateDeployAccountFee();
+            maxFee = estimatedFeeToMaxFee(estimatedDeployFee.amount, options?.overhead);
+        }
 
         const constructorCalldata: string[] = [
             ArgentAccount.IMPLEMENTATION_CLASS_HASH,
@@ -698,7 +872,7 @@ export class ArgentAccount extends Account {
             constructorCalldata,
             this.salt,
             ArgentAccount.PROXY_CLASS_HASH,
-            maxFee,
+            numericToHexString(maxFee),
             hre.starknet.networkConfig.starknetChainId
         );
 
@@ -707,7 +881,7 @@ export class ArgentAccount extends Account {
             ArgentAccount.PROXY_CLASS_HASH,
             constructorCalldata,
             this.salt,
-            maxFee
+            numericToHexString(maxFee)
         );
 
         const implementationFactory = await ArgentAccount.getImplementationContractFactory();

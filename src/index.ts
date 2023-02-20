@@ -17,6 +17,8 @@ import {
     DEFAULT_STARKNET_ARTIFACTS_PATH,
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_REPOSITORY,
+    AMARNA_DOCKER_IMAGE_TAG,
     ALPHA_URL,
     ALPHA_GOERLI_URL_2,
     ALPHA_MAINNET_URL,
@@ -31,6 +33,7 @@ import {
     StarknetChainId
 } from "./constants";
 import {
+    adaptPath,
     getAccountPath,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
@@ -39,6 +42,7 @@ import {
 } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
+    amarnaAction,
     starknetCompileAction,
     starknetVoyagerAction,
     starknetTestAction,
@@ -57,11 +61,13 @@ import {
     shortStringToBigIntUtil,
     getBlockUtil,
     getNonceUtil,
-    getTransactionTraceUtil
+    getTransactionTraceUtil,
+    getBalanceUtil
 } from "./extend-utils";
 import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { ArgentAccount, OpenZeppelinAccount } from "./account";
+import { AmarnaDocker } from "./external-server/docker-amarna";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -199,10 +205,27 @@ extendEnvironment((hre) => {
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);
+        const cairoPaths = [];
+        for (const cairoPath of hre.config.paths.cairoPaths || []) {
+            if (!path.isAbsolute(cairoPath)) {
+                cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
+            } else {
+                cairoPaths.push(cairoPath);
+            }
+        }
+
         hre.starknetWrapper = new DockerWrapper(
             image,
             hre.config.paths.root,
             accountPaths,
+            cairoPaths,
+            hre
+        );
+
+        const amarnaImage = { repository: AMARNA_DOCKER_REPOSITORY, tag: AMARNA_DOCKER_IMAGE_TAG };
+        hre.amarnaDocker = new AmarnaDocker(
+            amarnaImage,
+            hre.config.paths.root,
             hre.config.paths.cairoPaths || [],
             hre
         );
@@ -274,6 +297,11 @@ extendEnvironment((hre) => {
             return nonce;
         },
 
+        getBalance: async (address) => {
+            const balance = await getBalanceUtil(address, hre);
+            return balance;
+        },
+
         network: hre.config.starknet.network,
         networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig,
 
@@ -326,3 +354,7 @@ task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
     .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
     .addFlag("inplace", "Applies changes to the files in place.")
     .setAction(starknetMigrateAction);
+
+task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
+    .addFlag("script", "Run ./amarna.sh file to use Amarna with custom args.")
+    .setAction(amarnaAction);

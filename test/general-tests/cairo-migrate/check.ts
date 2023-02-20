@@ -5,7 +5,7 @@ import { assertContains } from "../../utils/utils";
 
 const contractName = "old_contract.cairo";
 const contractPath = path.join("contracts", contractName);
-const newComment = "// Declare this file as a StarkNet contract.";
+const newComment = "// Declare this file as a Starknet contract.";
 
 copyFileSync(path.join(__dirname, contractName), contractPath);
 

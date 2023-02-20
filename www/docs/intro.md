@@ -1,8 +1,8 @@
-# StarkNet Hardhat Plugin
+# Starknet Hardhat Plugin
 
 [![npm package](https://img.shields.io/npm/v/@shardlabs/starknet-hardhat-plugin?color=blue)](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin)
 
-If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for StarkNet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
+If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
 ## Contents
 
@@ -62,7 +62,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 $ npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
-If no paths are provided, all StarkNet contracts in the default contracts directory are compiled. Paths can be files and directories.
+If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
@@ -94,7 +94,7 @@ For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.co
 $ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by StarkNet CLI.
+Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by Starknet CLI.
 
 ### `starknet-deploy-account`
 
@@ -102,7 +102,7 @@ Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config`
 $ npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
 ```
 
-Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by StarkNet CLI. _Needs to be funded before deploying it._
+Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by Starknet CLI. _Needs to be funded before deploying it._
 
 ```
 $ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
@@ -132,6 +132,17 @@ $ npx hardhat migrate --inplace contract/contract.cairo
 
 Using `--starknet-network` with `hardhat run` currently does not have effect. Use the `network` property of the `starknet` object in your hardhat config file.
 
+### `amarna`
+
+```sh
+$ npx hardhat amarna
+```
+
+Runs [Amarna](https://github.com/crytic/amarna), the static-analyzer and linter for Cairo, in a Docker container. The output from amarna goes in `out.sarif` file.
+Use flag `--script` to run custom `./amarna.sh` file to use Amarna with custom rules and args.
+
+You need to have Docker installed and running to use `hardhat amarna`.
+
 ### `test`
 
 Introduces the `--starknet-network` option to the existing `hardhat test` task.
@@ -152,14 +163,14 @@ To see all the utilities introduced by the `starknet` object, check [this](https
 
 Relying on the above described API makes it easier to interact with your contracts and test them.
 
-To test StarkNet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
+To test Starknet contracts with Mocha, use the regular Hardhat `test` task which expects test files in your designated test directory:
 
 ```
 $ npx hardhat test
 ```
 
 Read more about the network used in tests in the [Runtime network](#runtime-network) section.
-These examples are inspired by the official [StarkNet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
+These examples are inspired by the official [Starknet Python tutorial](https://www.cairo-lang.org/docs/hello_starknet/unit_tests.html).
 
 ### Important notes
 
@@ -203,10 +214,11 @@ describe("My Test", function () {
     const contract = contractFactory.getContractAt("0x123..."); // address of a previously deployed contract
   });
 
-  it("should declare and deploy", async function() {
+  it("should declare class and deploy", async function() {
+    // not compatible with accounts deployed with Starknet CLI
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await account.declare(contractFactory);
+    const classHash = await account.declare(contractFactory);  // class declaration
 
     // two ways to obtain the class hash
     expect(classHash).to.equal(await contractFactory.getClassHash());
@@ -257,8 +269,25 @@ it("should work with tuples", async function () {
 
 ```typescript
 it("should estimate fee", async function () {
-    const fee = await account.estimateFee(contract, "increase_balance", { amount: 10n });
-    console.log("Estimated fee:", fee.amount, fee.unit, fee.gas_price, fee.gas_amount);
+    const account = await starknet.OpenZeppelinAccount.createAccount({
+        salt: "0x42",
+        privateKey: OZ_ACCOUNT_PRIVATE_KEY
+    });
+
+    const estimatedFee = await account.estimateDeployAccountFee();
+    await account.deployAccount(); // computes max fee implicitly
+
+    // Every fee estimation returns an object with gas information
+
+    const contractFactory = await starknet.getContractFactory("contract");
+    const declareFee = await account.estimateDeclareFee(contractFactory);
+    await account.declare(contractFactory); // computes max fee implicitly
+
+    const deployFee = await account.estimateDeployFee(contractFactory);
+    const contract = await account.deploy(contractFactory); // computes max fee implicitly
+
+    const invokeFee = await account.estimateFee(contract, "method", { arg1: 10n });
+    await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
 });
 ```
 
@@ -387,7 +416,7 @@ const emptyBlock = await starknet.devnet.createBlock();
 
 #### Mint tokens to an account
 
-Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this,
+Devnet allows [minting token](https://shard-labs.github.io/starknet-devnet/docs/guide/mint-token#mint-with-a-transaction). You can call `starknet.devnet.mint` like this
 
 ```typescript
 const lite_mode = true; // Optional, Default true
@@ -396,7 +425,7 @@ await starknet.devnet.mint(account_address, 2e12, lite_mode);
 
 ## Debugging contracts
 
-To debug StarkNet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
+To debug Starknet contracts, you can use `print()` in cairo hints in your contract, and the printed lines will appear in Devnet's log.
 
 Compile with `--disable-hint-validation` flag to allow hints.
 
@@ -520,11 +549,11 @@ Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and
 
 ### Runtime network - Integrated Devnet
 
-[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`. Target it via the hardhat config file or `--starknet-network integrated-devnet`.
+[starknet-devnet](https://github.com/Shard-Labs/starknet-devnet) is available out of the box as a starknet network called `integrated-devnet`. By default, it will spawn Devnet using its Docker image and listening on `http://127.0.0.1:5050`. Target it via the hardhat config file or `--starknet-network integrated-devnet`. Using `integrated-devnet` makes [forking of existing blockchains](https://shard-labs.github.io/starknet-devnet/docs/guide/fork/) very easy.
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   the version of Devnet to use (effectivelly specifying the version of the underlying Docker image)
+-   the version of Devnet to use (effectively specifying the version of the underlying Docker image)
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
 -   CLI arguments to be used on Devnet startup: [options](https://shard-labs.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
@@ -597,7 +626,7 @@ pip install openzeppelin-cairo-contracts
 ```typescript
 paths: {
     // this directory contains the openzeppelin directory
-    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"];
+    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"],
 }
 ```
 
@@ -731,6 +760,17 @@ After creating the account, you need to fund it (give it some ETH):
 
 If you're facing issues loading the account you've just funded, check out [this issue](https://github.com/Shard-Labs/starknet-hardhat-plugin/issues/281#issuecomment-1354588817).
 
+### Get balance
+
+To find out the balance of your account on the current Starknet network, you can use `starknet.getBalance`:
+
+```typescript
+import { starknet } from "hardhat";
+const someBalance = starknet.getBalance("0x123...def")
+const myAccount = ...;
+const myAccountBalance = starknet.getBalance(myAccount.address);
+```
+
 ### Deploy account
 
 After funding the account, you need to deploy it (in case of `ArgentAccount`, this will also take care of initialization):
@@ -739,11 +779,13 @@ After funding the account, you need to deploy it (in case of `ArgentAccount`, th
 await account.deployAccount({ maxFee: ... });
 ```
 
+Alternatively deploy your account by running [this script](https://github.com/Shard-Labs/starknet-hardhat-example/blob/master/scripts/deploy-account.ts).
+
 To successfully deploy `ArgentAccount`, the chain you are interacting with is expected to have `ArgentAccount` contracts declared. Alpha Goerli and Alpha Mainnet satisfy this criterion, but if you're working with Devnet, this is most easily achievable by running Devnet [forked](https://shard-labs.github.io/starknet-devnet/docs/guide/fork) from e.g. Alpha Goerli.
 
 ### Reuse account
 
-To retrieve an already deployed Account, use the `getAccountFromAddress` method. What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
+To retrieve an already deployed Account, use the `getAccountFromAddress` method. Do not use this method for accounts deployed by e.g. Starknet CLI (those are modified OZ accounts that are not compatible with the OZ version supported by this plugin). What may be especially useful are [predeployed+predefined accounts](https://shard-labs.github.io/starknet-devnet/docs/guide/Predeployed-accounts) that come with Devnet (retrieve them with `starknet.devnet.getPredeployedAccounts()`).
 
 ```typescript
 const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(

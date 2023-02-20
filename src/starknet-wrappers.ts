@@ -26,13 +26,6 @@ interface DeclareWrapperOptions {
     sender?: string;
 }
 
-interface DeployWrapperOptions {
-    contract: string;
-    inputs?: string[];
-    salt?: string;
-    token?: string;
-}
-
 interface InteractWrapperOptions {
     maxFee: string;
     nonce: string;
@@ -172,31 +165,6 @@ export abstract class StarknetWrapper {
         const preparedOptions = this.prepareDeclareOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
-    }
-
-    protected prepareDeployOptions(options: DeployWrapperOptions): string[] {
-        const prepared = [
-            "deploy",
-            "--contract",
-            options.contract,
-            "--gateway_url",
-            this.gatewayUrl,
-            "--no_wallet"
-        ];
-
-        if (options.inputs && options.inputs.length) {
-            prepared.push("--inputs", ...options.inputs);
-        }
-
-        if (options.salt) {
-            prepared.push("--salt", options.salt);
-        }
-
-        if (options.token) {
-            prepared.push("--token", options.token);
-        }
-
-        return prepared;
     }
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
