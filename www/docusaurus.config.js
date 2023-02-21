@@ -6,8 +6,8 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-    title: "StarkNet Hardhat Plugin",
-    tagline: "A plugin for integrating StarkNet tools into Hardhat projects",
+    title: "Starknet Hardhat Plugin",
+    tagline: "A plugin for integrating Starknet tools into Hardhat projects",
     url: "https://Shard-Labs.github.io",
     // baseUrl: "/",
     baseUrl: "/starknet-hardhat-plugin/",
@@ -56,9 +56,9 @@ const config = {
         /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
         ({
             navbar: {
-                title: "StarkNet Hardhat Plugin",
+                title: "Starknet Hardhat Plugin",
                 logo: {
-                    alt: "StarkNet Hardhat Plugin Logo",
+                    alt: "Starknet Hardhat Plugin Logo",
                     src: "img/logo.svg"
                 },
                 items: [
