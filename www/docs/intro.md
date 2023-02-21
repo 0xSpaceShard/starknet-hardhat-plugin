@@ -290,9 +290,12 @@ it("should estimate fee", async function () {
 
     // computes message estimate fee
     const estimatedMessageFee = await l2contract.estimateMessageFee(
-            L1_CONTRACT_ADDRESS,
             "deposit",
-            [556, 123]
+            {
+                from_address: L1_CONTRACT_ADDRESS,
+                amount: 123,
+                user: 1
+            }
         );
 });
 ```

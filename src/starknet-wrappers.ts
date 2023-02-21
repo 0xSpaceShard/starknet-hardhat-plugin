@@ -414,7 +414,7 @@ export abstract class StarknetWrapper {
             from_address: hexToDecimalString(args.from_address),
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
-            payload: inputs.map(item => toHex(toBN(item)))
+            payload: inputs.map((item) => toHex(toBN(item)))
         };
 
         const response = await axios.post(
