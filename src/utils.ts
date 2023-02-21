@@ -4,7 +4,8 @@ import {
     HttpNetworkConfig,
     NetworkConfig,
     NetworksConfig,
-    ProjectPathsConfig
+    ProjectPathsConfig,
+    VmLang
 } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import {
@@ -18,7 +19,8 @@ import {
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
     UDC_ADDRESS,
-    StarknetChainId
+    StarknetChainId,
+    DEFAULT_DEVNET_CAIRO_VM
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -191,6 +193,8 @@ export function getNetwork<N extends NetworkConfig>(
         throw new StarknetPluginError(`Cannot use network ${networkName}. No "url" specified.`);
     }
     network.starknetChainId ||= StarknetChainId.TESTNET;
+    network.vmLang ||= DEFAULT_DEVNET_CAIRO_VM as VmLang;
+
     return network;
 }
 

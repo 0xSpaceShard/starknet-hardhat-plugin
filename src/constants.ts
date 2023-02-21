@@ -9,6 +9,7 @@ export const CAIRO_CLI_DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG = config["CAIRO_LANG"];
 export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
 export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = config["STARKNET_DEVNET"];
+export const DEFAULT_DEVNET_CAIRO_VM = "python";
 export const AMARNA_DOCKER_REPOSITORY = "shramee/amarna";
 export const AMARNA_DOCKER_IMAGE_TAG = "latest";
 export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
@@ -58,7 +59,7 @@ export enum StarknetChainId {
     TESTNET2 = "0x534e5f474f45524c4932"
 }
 
-export const PREFIX_TRANSACTION = "StarkNet Transaction";
+export const PREFIX_TRANSACTION = "Starknet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
