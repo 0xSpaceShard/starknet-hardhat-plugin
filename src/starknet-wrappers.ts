@@ -2,15 +2,15 @@ import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import { PLUGIN_NAME, StarknetChainId } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
-import { BlockNumber, InteractChoice, Numeric } from "./types";
-import { adaptUrl, numericToHexString } from "./utils";
+import { BlockNumber, InteractChoice } from "./types";
+import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment, StringMap } from "hardhat/types";
 import { FeeEstimation } from "./starknet-types";
 import { hash } from "starknet";
-import { hexToDecimalString } from "starknet/utils/number";
+import { hexToDecimalString, toBN, toHex } from "starknet/utils/number";
 import axios from "axios";
 
 interface CompileWrapperOptions {
@@ -400,16 +400,21 @@ export abstract class StarknetWrapper {
     }
 
     public async estimateMessageFee(
-        fromAddress: string,
-        toAddress: string,
         functionName: string,
-        payload: Numeric[]
+        toAddress: string,
+        inputs: string[],
+        args: StringMap
     ): Promise<FeeEstimation> {
+        // Remove value of from_address from the array
+        const keys = Object.keys(args);
+        const index = keys.indexOf("from_address");
+        if (index > -1) inputs.splice(index, 1);
+
         const body = {
-            from_address: hexToDecimalString(fromAddress),
+            from_address: hexToDecimalString(args.from_address),
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
-            payload: payload.map((item) => numericToHexString(item))
+            payload: inputs.map(item => toHex(toBN(item)))
         };
 
         const response = await axios.post(

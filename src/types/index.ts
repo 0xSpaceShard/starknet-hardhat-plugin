@@ -593,18 +593,18 @@ export class StarknetContract {
     }
 
     /**
-     * Computes message fee estimation
-     * @param {string} fromAddress - Address of message source
-     * @param {string} functionName - Function name for entry point selector
-     * @param {Array<Numeric>} payload - Payload to send
+     * Computes L1-to-L2 message fee estimation
+     * @param {string} functionName Function name for entry point selector
+     * @param {StringMap} args - Arguments to Starknet contract function
      * @returns Fee estimation
      */
-    async estimateMessageFee(fromAddress: string, functionName: string, payload: Numeric[]) {
+    async estimateMessageFee(functionName: string, args: StringMap) {
+        const adaptedInput = this.adaptInput(functionName, args);
         return this.hre.starknetWrapper.estimateMessageFee(
-            fromAddress,
-            this.address,
             functionName,
-            payload
+            this.address,
+            adaptedInput,
+            args
         );
     }
 
