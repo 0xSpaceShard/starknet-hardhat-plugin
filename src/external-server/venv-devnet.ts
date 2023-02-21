@@ -30,7 +30,7 @@ export class VenvDevnet extends ExternalServer {
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
         const args = ["--host", this.host, "--port", this.port].concat(this.args || []);
-        const options = { env: { ...process.env, STARKNET_DEVNET_CAIRO_VM: this.vmLang } };
+        const options = { env: { PATH: process.env.PATH, STARKNET_DEVNET_CAIRO_VM: this.vmLang } };
         return spawn(this.command, args, options);
     }
 

@@ -572,8 +572,10 @@ module.exports = {
       venv: "<VENV_PATH>",
 
       // use python or rust vm implementation
-      // vmLang: "python" <- use python vm
-      // vmLang: "rust" <- use rust vm (require to install cairo-rs-py to use rust vm)
+      // vmLang: "python" <- use python vm (default value)
+      // vmLang: "rust" <- use rust vm 
+      // (rust vm is available out of the box using dockerized integrated-devnet)
+      // (rustc and cairo-rs-py required using installed devnet)
       // read more here : https://shard-labs.github.io/starknet-devnet/docs/guide/run/#run-with-the-rust-implementation-of-cairo-vm
       vmLang: "<VM_LANG>",
 

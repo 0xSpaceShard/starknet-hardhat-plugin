@@ -5,9 +5,6 @@ import { checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
     await checkDevnetIsNotRunning();
     hardhatStarknetCompile(["contracts/contract.cairo"]);
     const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "));
-    assertContains(
-        execution.stderr,
-        "Using Cairo VM: Rust"
-    );
+    assertContains(execution.stderr, "Using Cairo VM: Rust");
     await checkDevnetIsNotRunning();
 })();
