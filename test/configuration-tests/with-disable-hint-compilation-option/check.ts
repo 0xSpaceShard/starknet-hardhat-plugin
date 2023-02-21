@@ -9,7 +9,7 @@ const contractPath = path.join("contracts", contractName);
 copyFileSync(path.join(__dirname, contractName), contractPath);
 
 const expected = `Hint is not whitelisted.
-This may indicate that this library function cannot be used in Starknet contracts.`;
+This may indicate that this library function cannot be used in StarkNet contracts.`;
 
 console.log("Testing rejection of compilation without the --disable-hint-validation flag");
 const execution = hardhatStarknetCompile([contractPath], true);
