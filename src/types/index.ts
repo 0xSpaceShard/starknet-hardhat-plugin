@@ -593,6 +593,32 @@ export class StarknetContract {
     }
 
     /**
+     * Computes L1-to-L2 message fee estimation
+     * @param {string} functionName Function name for entry point selector
+     * @param {StringMap} args - Arguments to Starknet contract function
+     * @returns Fee estimation
+     */
+    async estimateMessageFee(functionName: string, args: StringMap) {
+        // Check if functionName is annotated with @l1_handler
+        const func = <starknet.CairoFunction>this.abi[functionName];
+
+        if (!func?.type || func.type.toString() !== "l1_handler") {
+            throw new StarknetPluginError(
+                `Cannot estimate message fee on "${functionName}" - not an @l1_handler`
+            );
+        }
+        const adaptedInput = this.adaptInput(functionName, args);
+        // Remove value of from_address from the input array
+        const fromAddress = adaptedInput.shift();
+        return this.hre.starknetWrapper.estimateMessageFee(
+            functionName,
+            fromAddress,
+            this.address,
+            adaptedInput
+        );
+    }
+
+    /**
      * Estimate the gas fee of executing `functionName` with `args`.
      * @param functionName
      * @param args arguments to Starknet contract function

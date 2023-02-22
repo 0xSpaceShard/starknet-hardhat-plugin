@@ -288,6 +288,16 @@ it("should estimate fee", async function () {
 
     const invokeFee = await account.estimateFee(contract, "method", { arg1: 10n });
     await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
+
+    // computes message estimate fee
+    const estimatedMessageFee = await l2contract.estimateMessageFee(
+            "deposit",
+            {
+                from_address: L1_CONTRACT_ADDRESS,
+                amount: 123,
+                user: 1
+            }
+        );
 });
 ```
 

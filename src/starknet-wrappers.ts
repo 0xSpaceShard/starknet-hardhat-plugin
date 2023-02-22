@@ -8,6 +8,10 @@ import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { FeeEstimation } from "./starknet-types";
+import { hash } from "starknet";
+import { toBN, toHex } from "starknet/utils/number";
+import axios from "axios";
 
 interface CompileWrapperOptions {
     file: string;
@@ -393,6 +397,33 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError(executed.stderr.toString());
         }
         return executed;
+    }
+
+    public async estimateMessageFee(
+        functionName: string,
+        fromAddress: string,
+        toAddress: string,
+        inputs: string[]
+    ): Promise<FeeEstimation> {
+        const body = {
+            from_address: fromAddress,
+            to_address: toAddress,
+            entry_point_selector: hash.getSelectorFromName(functionName),
+            payload: inputs.map((item) => toHex(toBN(item)))
+        };
+
+        const response = await axios.post(
+            `${this.hre.starknet.networkConfig.url}/feeder_gateway/estimate_message_fee`,
+            body
+        );
+
+        const { gas_price, gas_usage, overall_fee, unit } = response.data;
+        return {
+            amount: BigInt(overall_fee),
+            unit,
+            gas_price: BigInt(gas_price),
+            gas_usage: BigInt(gas_usage)
+        };
     }
 }
 
