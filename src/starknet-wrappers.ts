@@ -7,7 +7,7 @@ import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { HardhatRuntimeEnvironment, StringMap } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { FeeEstimation } from "./starknet-types";
 import { hash } from "starknet";
 import { hexToDecimalString, toBN, toHex } from "starknet/utils/number";
@@ -401,17 +401,12 @@ export abstract class StarknetWrapper {
 
     public async estimateMessageFee(
         functionName: string,
+        fromAddress: string,
         toAddress: string,
-        inputs: string[],
-        args: StringMap
+        inputs: string[]
     ): Promise<FeeEstimation> {
-        // Remove value of from_address from the array
-        const keys = Object.keys(args);
-        const index = keys.indexOf("from_address");
-        if (index > -1) inputs.splice(index, 1);
-
         const body = {
-            from_address: hexToDecimalString(args.from_address),
+            from_address: hexToDecimalString(fromAddress),
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
             payload: inputs.map((item) => toHex(toBN(item)))
