@@ -137,7 +137,8 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
 }
 
 /**
- * Adapts path relative to the root of the project
+ * Adapts path relative to the root of the project and
+ * tilde will be resolved to homedir
  * @param root string representing the root path set on hre or config
  * @param newPath string representing the path provided by the user
  * @returns adapted path
