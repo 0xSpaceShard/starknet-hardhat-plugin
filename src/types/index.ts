@@ -604,18 +604,15 @@ export class StarknetContract {
 
         if (!func?.type || func.type.toString() !== "l1_handler") {
             throw new StarknetPluginError(
-                `Can not estimate message fee on "${functionName}" - not an @l1_handler`
+                `Cannot estimate message fee on "${functionName}" - not an @l1_handler`
             );
         }
         const adaptedInput = this.adaptInput(functionName, args);
         // Remove value of from_address from the input array
-        const keys = Object.keys(args);
-        const index = keys.indexOf("from_address");
-        if (index > -1) adaptedInput.splice(index, 1);
-
+        const fromAddress = adaptedInput.shift();
         return this.hre.starknetWrapper.estimateMessageFee(
             functionName,
-            args.from_address,
+            fromAddress,
             this.address,
             adaptedInput
         );

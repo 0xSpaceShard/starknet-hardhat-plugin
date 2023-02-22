@@ -10,7 +10,7 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { FeeEstimation } from "./starknet-types";
 import { hash } from "starknet";
-import { hexToDecimalString, toBN, toHex } from "starknet/utils/number";
+import { toBN, toHex } from "starknet/utils/number";
 import axios from "axios";
 
 interface CompileWrapperOptions {
@@ -406,7 +406,7 @@ export abstract class StarknetWrapper {
         inputs: string[]
     ): Promise<FeeEstimation> {
         const body = {
-            from_address: hexToDecimalString(fromAddress),
+            from_address: fromAddress,
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
             payload: inputs.map((item) => toHex(toBN(item)))
