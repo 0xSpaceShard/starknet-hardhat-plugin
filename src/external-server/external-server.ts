@@ -45,20 +45,20 @@ export async function getFreePort(): Promise<string> {
 
 /**
  * Returns function to fix host path for docker volumes
- * Uses environment variable STARKNET_HARDHAT_REPLACE_HOST_PATH
+ * Uses environment variable STARKNET_HARDHAT_DIND_HOST_PATH
  * The variable is set when running from inside DinD container
  * DinD = Docker in Docker
  * @returns {function} Callback to fix docker volume host path
  */
 export function getFixVolumeHostPathCallback(): (path: string) => string {
     // If environment variable is set to replace docker host path
-    const { STARKNET_HARDHAT_REPLACE_HOST_PATH = "" } = process.env;
+    const { STARKNET_HARDHAT_DIND_HOST_PATH = "" } = process.env;
 
-    console.log(`Path replacements ${STARKNET_HARDHAT_REPLACE_HOST_PATH || "<none>"}`);
+    console.log(`Path replacements ${STARKNET_HARDHAT_DIND_HOST_PATH || "<none>"}`);
 
-    if (STARKNET_HARDHAT_REPLACE_HOST_PATH && STARKNET_HARDHAT_REPLACE_HOST_PATH.includes(":")) {
+    if (STARKNET_HARDHAT_DIND_HOST_PATH && STARKNET_HARDHAT_DIND_HOST_PATH.includes(":")) {
         // We have paths to replace
-        const replacement = STARKNET_HARDHAT_REPLACE_HOST_PATH.split(":");
+        const replacement = STARKNET_HARDHAT_DIND_HOST_PATH.split(":");
         if (replacement[0] && replacement[1])
             // Return fixVolumeHostPath function
             return (path: string) => {
