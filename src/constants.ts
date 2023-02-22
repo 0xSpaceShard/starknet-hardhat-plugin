@@ -9,6 +9,7 @@ export const CAIRO_CLI_DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG = config["CAIRO_LANG"];
 export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
 export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = config["STARKNET_DEVNET"];
+export const DEFAULT_DEVNET_CAIRO_VM = "python";
 export const AMARNA_DOCKER_REPOSITORY = "shramee/amarna";
 export const AMARNA_DOCKER_IMAGE_TAG = "latest";
 export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";

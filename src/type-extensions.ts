@@ -45,6 +45,7 @@ declare module "hardhat/types/config" {
         verificationUrl?: string;
         verifiedUrl?: string;
         starknetChainId?: StarknetChainId;
+        vmLang?: VmLang;
     }
 
     export interface HardhatNetworkConfig {
@@ -55,6 +56,7 @@ declare module "hardhat/types/config" {
         args?: string[];
         stdout?: string;
         stderr?: string;
+        vmLang?: VmLang;
     }
 
     export interface HardhatNetworkUserConfig {
@@ -64,7 +66,10 @@ declare module "hardhat/types/config" {
         args?: string[];
         stdout?: string;
         stderr?: string;
+        vmLang?: VmLang;
     }
+
+    type VmLang = "python" | "rust" | "";
 }
 
 type StarknetContractType = StarknetContract;
