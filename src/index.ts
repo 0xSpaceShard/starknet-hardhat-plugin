@@ -100,11 +100,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     let newPath: string;
     if (userConfig.paths && userConfig.paths.starknetSources) {
         const userPath = userConfig.paths.starknetSources;
-        if (path.isAbsolute(userPath)) {
-            newPath = userPath;
-        } else {
-            newPath = path.normalize(path.join(config.paths.root, userPath));
-        }
+        newPath = adaptPath(config.paths.root, userPath);
         config.paths.starknetSources = userConfig.paths.starknetSources;
     } else {
         const defaultPath = path.join(config.paths.root, DEFAULT_STARKNET_SOURCES_PATH);
@@ -119,11 +115,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     let newPath: string;
     if (userConfig.paths && userConfig.paths.starknetArtifacts) {
         const userPath = userConfig.paths.starknetArtifacts;
-        if (path.isAbsolute(userPath)) {
-            newPath = userPath;
-        } else {
-            newPath = path.normalize(path.join(config.paths.root, userPath));
-        }
+        newPath = adaptPath(config.paths.root, userPath);
         config.paths.starknetArtifacts = userConfig.paths.starknetArtifacts;
     } else {
         const defaultPath = path.join(config.paths.root, DEFAULT_STARKNET_ARTIFACTS_PATH);
@@ -219,11 +211,7 @@ extendEnvironment((hre) => {
         const accountPaths = extractAccountPaths(hre);
         const cairoPaths = [];
         for (const cairoPath of hre.config.paths.cairoPaths || []) {
-            if (!path.isAbsolute(cairoPath)) {
-                cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
-            } else {
-                cairoPaths.push(cairoPath);
-            }
+            cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
         }
 
         hre.starknetWrapper = new DockerWrapper(

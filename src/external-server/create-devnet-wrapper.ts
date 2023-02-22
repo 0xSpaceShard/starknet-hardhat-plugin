@@ -32,7 +32,8 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
             hre,
             devnetNetwork?.args,
             devnetNetwork?.stdout,
-            devnetNetwork?.stderr
+            devnetNetwork?.stderr,
+            devnetNetwork.vmLang
         );
     }
 
@@ -55,6 +56,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
         hre,
         devnetNetwork?.args,
         devnetNetwork?.stdout,
-        devnetNetwork?.stderr
+        devnetNetwork?.stderr,
+        devnetNetwork.vmLang
     );
 }

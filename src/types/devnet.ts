@@ -1,3 +1,4 @@
+import { Numeric } from ".";
 import {
     FlushResponse,
     IncreaseTimeResponse,
@@ -49,8 +50,8 @@ export interface Devnet {
         l2ContractAddress: string,
         functionName: string,
         l1ContractAddress: string,
-        payload: Array<number>,
-        nonce: number
+        payload: Array<Numeric>,
+        nonce: Numeric
     ) => Promise<L1ToL2MockTxResponse>;
 
     /**

@@ -7,6 +7,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 export class VenvDevnet extends ExternalServer {
     private command: string;
     private args?: string[];
+    private vmLang?: string;
 
     constructor(
         venvPath: string,
@@ -15,12 +16,14 @@ export class VenvDevnet extends ExternalServer {
         hre: HardhatRuntimeEnvironment,
         args?: string[],
         stdout?: string,
-        stderr?: string
+        stderr?: string,
+        vmLang?: string
     ) {
         super(host, port, "is_alive", "integrated-devnet", hre, stdout, stderr);
 
         this.command = "starknet-devnet";
         this.args = args;
+        this.vmLang = vmLang;
 
         if (venvPath !== "active") {
             this.command = getPrefixedCommand(normalizeVenvPath(venvPath), this.command);
@@ -29,7 +32,8 @@ export class VenvDevnet extends ExternalServer {
 
     protected async spawnChildProcess(): Promise<ChildProcess> {
         const args = ["--host", this.host, "--port", this.port].concat(this.args || []);
-        return spawn(this.command, args);
+        const options = { env: { PATH: process.env.PATH, STARKNET_DEVNET_CAIRO_VM: this.vmLang } };
+        return spawn(this.command, args, options);
     }
 
     protected cleanup(): void {
