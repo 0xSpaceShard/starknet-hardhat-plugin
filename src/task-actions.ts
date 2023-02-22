@@ -11,7 +11,8 @@ import {
     getNetwork,
     getAccountPath,
     isStarknetDevnet,
-    warn
+    warn,
+    adaptPath
 } from "./utils";
 import {
     HardhatNetworkConfig,
@@ -94,16 +95,14 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
     }
     for (let i = 0; i < cairoPaths.length; i++) {
         if (!path.isAbsolute(cairoPaths[i])) {
-            cairoPaths[i] = path.normalize(path.join(root, cairoPaths[i]));
+            cairoPaths[i] = adaptPath(root, cairoPaths[i]);
         }
     }
 
     const cairoPath = cairoPaths.join(":");
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
-        if (!path.isAbsolute(sourcesPath)) {
-            sourcesPath = path.normalize(path.join(root, sourcesPath));
-        }
+        sourcesPath = adaptPath(root, sourcesPath);
         checkSourceExists(sourcesPath);
         const files = await traverseFiles(sourcesPath, "*.cairo");
         const recompiler = new Recompiler(hre);
@@ -199,7 +198,7 @@ export async function starknetVoyagerAction(args: TaskArguments, hre: HardhatRun
 
 function getMainVerificationPath(contractPath: string, root: string) {
     if (!path.isAbsolute(contractPath)) {
-        contractPath = path.normalize(path.join(root, contractPath));
+        contractPath = adaptPath(root, contractPath);
         if (!fs.existsSync(contractPath)) {
             throw new StarknetPluginError(`File ${contractPath} does not exist`);
         }
@@ -268,7 +267,7 @@ function handleMultiPartContractVerification(
 ) {
     paths.forEach(function (item: string, index: number) {
         if (!path.isAbsolute(item)) {
-            paths[index] = path.normalize(path.join(root, item));
+            paths[index] = adaptPath(root, item);
             if (!fs.existsSync(paths[index])) {
                 throw new StarknetPluginError(`File ${paths[index]} does not exist`);
             }
@@ -426,9 +425,7 @@ export async function starknetMigrateAction(args: TaskArguments, hre: HardhatRun
     const files: string[] = args.paths || [defaultSourcesPath];
     const cairoFiles: string[] = [];
     for (let file of files) {
-        if (!path.isAbsolute(file)) {
-            file = path.normalize(path.join(root, file));
-        }
+        file = adaptPath(root, file);
         cairoFiles.push(file);
     }
 

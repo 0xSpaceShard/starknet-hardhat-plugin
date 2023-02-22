@@ -517,6 +517,8 @@ module.exports = {
 
 ### Paths
 
+Prefer providing absolute paths when using the plugin. If a relative path is provided, it will be resolved relative to the root of the project.
+
 ```typescript
 module.exports = {
   paths: {

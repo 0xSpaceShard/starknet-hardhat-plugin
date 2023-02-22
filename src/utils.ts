@@ -136,8 +136,21 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
     return path.join(paths.starknetArtifacts, suffix);
 }
 
+/**
+ * Adapts path relative to the root of the project and
+ * tilde will be resolved to homedir
+ * @param root string representing the root path set on hre or config
+ * @param newPath string representing the path provided by the user
+ * @returns adapted path
+ */
 export function adaptPath(root: string, newPath: string): string {
-    return path.normalize(path.join(root, newPath));
+    let adaptedPath = newPath;
+    if (newPath[0] === "~") {
+        adaptedPath = path.normalize(path.join(process.env.HOME, newPath.slice(1)));
+    } else if (!path.isAbsolute(newPath)) {
+        adaptedPath = path.normalize(path.join(root, newPath));
+    }
+    return adaptedPath;
 }
 
 export function checkArtifactExists(artifactsPath: string): void {
