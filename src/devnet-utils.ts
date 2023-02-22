@@ -7,6 +7,7 @@ import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
 import { REQUEST_TIMEOUT } from "./constants";
 import { hash } from "starknet";
 import { numericToHexString } from "./utils";
+import { Numeric } from "./types";
 
 interface L1ToL2Message {
     address: string;
@@ -134,14 +135,14 @@ Make sure you really want to interact with Devnet and that it is running and ava
 
     public async sendMessageToL2(
         l2ContractAddress: string,
-        funcionName: string,
+        functionName: string,
         l1ContractAddress: string,
-        payload: number[],
-        nonce: number
+        payload: Numeric[],
+        nonce: Numeric
     ) {
         const body = {
             l2_contract_address: l2ContractAddress,
-            entry_point_selector: hash.getSelectorFromName(funcionName),
+            entry_point_selector: hash.getSelectorFromName(functionName),
             l1_contract_address: l1ContractAddress,
             payload: payload.map((item) => numericToHexString(item)),
             nonce: numericToHexString(nonce)
