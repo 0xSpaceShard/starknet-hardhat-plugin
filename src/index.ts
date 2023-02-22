@@ -7,8 +7,7 @@ import {
     HardhatConfig,
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
-    HardhatUserConfig,
-    HardhatAxiosConfig
+    HardhatUserConfig
 } from "hardhat/types";
 import exitHook from "exit-hook";
 
