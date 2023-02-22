@@ -74,7 +74,7 @@ declare module "hardhat/types/config" {
     export interface HardhatAxiosConfig {
         timeout?: number;
     }
-    
+
     type VmLang = "python" | "rust" | "";
 }
 
