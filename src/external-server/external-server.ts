@@ -43,6 +43,33 @@ export async function getFreePort(): Promise<string> {
     throw new StarknetPluginError("Could not find a free port, try rerunning your command!");
 }
 
+/**
+ * Returns function to fix host path for docker volumes
+ * Uses environment variable STARKNET_HARDHAT_REPLACE_HOST_PATH
+ * The variable is set when running from inside DinD container
+ * DinD = Docker in Docker
+ * @returns {function} Callback to fix docker volume host path
+ */
+export function getFixVolumeHostPathCallback(): (path: string) => string {
+    // If environment variable is set to replace docker host path
+    const { STARKNET_HARDHAT_REPLACE_HOST_PATH = "" } = process.env;
+
+    console.log(`Path replacements ${STARKNET_HARDHAT_REPLACE_HOST_PATH || "<none>"}`);
+
+    if (STARKNET_HARDHAT_REPLACE_HOST_PATH && STARKNET_HARDHAT_REPLACE_HOST_PATH.includes(":")) {
+        // We have paths to replace
+        const replacement = STARKNET_HARDHAT_REPLACE_HOST_PATH.split(":");
+        if (replacement[0] && replacement[1])
+            // Return fixVolumeHostPath function
+            return (path: string) => {
+                console.log(`Replacing ${path}`);
+                return path.replace(replacement[0], replacement[1]);
+            };
+    }
+    // Returns a dummy function
+    return (path: string) => path;
+}
+
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;

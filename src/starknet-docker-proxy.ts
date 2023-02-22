@@ -1,7 +1,7 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
-import { getFreePort } from "./external-server/external-server";
+import { getFreePort, getFixVolumeHostPathCallback } from "./external-server/external-server";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -28,13 +28,20 @@ export class StarknetDockerProxy extends DockerServer {
     }
 
     protected async getDockerArgs(): Promise<string[]> {
+        // Fixes docker volume host path in case it's running from another container
+        const fixVolumeHostPath = getFixVolumeHostPathCallback();
         // To access the files on host machine from inside the container, proper mounting has to be done.
-
-        const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
-        volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
+        const volumes = [
+            "-v",
+            `${fixVolumeHostPath(PROXY_SERVER_HOST_PATH)}:${PROXY_SERVER_CONTAINER_PATH}`
+        ];
+        volumes.push(
+            "-v",
+            `${fixVolumeHostPath(LEGACY_CLI_HOST_PATH)}:${LEGACY_CLI_CONTAINER_PATH}`
+        );
 
         for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
-            volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
+            volumes.push("-v", `${fixVolumeHostPath(mirroredPath)}:${mirroredPath}`);
         }
 
         const dockerArgs = [...volumes];
