@@ -288,6 +288,16 @@ it("should estimate fee", async function () {
 
     const invokeFee = await account.estimateFee(contract, "method", { arg1: 10n });
     await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
+
+    // computes message estimate fee
+    const estimatedMessageFee = await l2contract.estimateMessageFee(
+            "deposit",
+            {
+                from_address: L1_CONTRACT_ADDRESS,
+                amount: 123,
+                user: 1
+            }
+        );
 });
 ```
 
@@ -507,6 +517,8 @@ module.exports = {
 
 ### Paths
 
+Prefer providing absolute paths when using the plugin. If a relative path is provided, it will be resolved relative to the root of the project.
+
 ```typescript
 module.exports = {
   paths: {
@@ -557,6 +569,7 @@ By defining/modifying `networks["integratedDevnet"]` in your hardhat config file
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
 -   CLI arguments to be used on Devnet startup: [options](https://shard-labs.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
+-   
 
 ```javascript
 module.exports = {
@@ -570,6 +583,14 @@ module.exports = {
       // venv: "active" <- for the active virtual environment with installed starknet-devnet
       // venv: "path/to/venv" <- for env with installed starknet-devnet (created with e.g. `python -m venv path/to/venv`)
       venv: "<VENV_PATH>",
+
+      // use python or rust vm implementation
+      // vmLang: "python" <- use python vm (default value)
+      // vmLang: "rust" <- use rust vm 
+      // (rust vm is available out of the box using dockerized integrated-devnet)
+      // (rustc and cairo-rs-py required using installed devnet)
+      // read more here : https://shard-labs.github.io/starknet-devnet/docs/guide/run/#run-with-the-rust-implementation-of-cairo-vm
+      vmLang: "<VM_LANG>",
 
       // or specify Docker image tag
       dockerizedVersion: "<DEVNET_VERSION>",

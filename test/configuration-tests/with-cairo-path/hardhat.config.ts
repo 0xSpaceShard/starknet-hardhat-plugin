@@ -5,7 +5,7 @@ module.exports = {
         network: process.env.NETWORK
     },
     paths: {
-        cairoPaths: ["./new-sources"]
+        cairoPaths: ["./new-sources", "~/another-source"]
     },
     networks: {
         devnet: {
