@@ -131,7 +131,8 @@ export abstract class Account {
                 calldata: adaptedArgs
             },
             {
-                maxFee: options?.maxFee
+                maxFee: options?.maxFee,
+                nonce: options?.nonce
             }
         );
 
