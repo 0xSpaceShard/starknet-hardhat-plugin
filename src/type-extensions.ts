@@ -24,12 +24,10 @@ declare module "hardhat/types/config" {
 
     export interface HardhatConfig {
         starknet: StarknetTypes.StarknetConfig;
-        axios: HardhatAxiosConfig;
     }
 
     export interface HardhatUserConfig {
         starknet?: StarknetTypes.StarknetConfig;
-        axios?: HardhatAxiosConfig;
     }
 
     export interface NetworksConfig {
@@ -69,10 +67,6 @@ declare module "hardhat/types/config" {
         stdout?: string;
         stderr?: string;
         vmLang?: VmLang;
-    }
-
-    export interface HardhatAxiosConfig {
-        timeout?: number;
     }
 
     type VmLang = "python" | "rust" | "";

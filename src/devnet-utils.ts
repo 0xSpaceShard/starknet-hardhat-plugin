@@ -78,7 +78,7 @@ export interface PredeployedAccount {
 export class DevnetUtils implements Devnet {
     private axiosInstance = axios.create({
         baseURL: this.endpoint,
-        timeout: this.hre.config.axios.timeout,
+        timeout: this.hre.config.starknet.requestTimeout,
         timeoutErrorMessage: "Request timed out"
     });
 

@@ -1,6 +1,5 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import { DockerServer } from "./docker-server";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export class DockerDevnet extends DockerServer {
     private vmLang?: string;
@@ -9,13 +8,12 @@ export class DockerDevnet extends DockerServer {
         image: Image,
         host: string,
         port: string,
-        hre: HardhatRuntimeEnvironment,
         private devnetArgs?: string[],
         stdout?: string,
         stderr?: string,
         vmLang?: string
     ) {
-        super(image, host, port, "is_alive", "integrated-devnet", hre, devnetArgs, stdout, stderr);
+        super(image, host, port, "is_alive", "integrated-devnet", devnetArgs, stdout, stderr);
         this.vmLang = vmLang;
     }
 

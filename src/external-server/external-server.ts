@@ -53,7 +53,6 @@ export abstract class ExternalServer {
         protected port: string | null,
         private isAliveURL: string,
         protected processName: string,
-        protected hre: HardhatRuntimeEnvironment,
         protected stdout?: string,
         protected stderr?: string
     ) {
@@ -162,9 +161,11 @@ export abstract class ExternalServer {
     public async post<T>(data: StringMap): Promise<T> {
         await this.ensureStarted();
 
+        const hre: HardhatRuntimeEnvironment = await import("hardhat");
+
         try {
             const response = await axios.post<T>(this.url, data, {
-                timeout: this.hre.config.axios.timeout,
+                timeout: hre.config.starknet.requestTimeout,
                 timeoutErrorMessage: "Request timed out"
             });
             return response.data;

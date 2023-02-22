@@ -98,6 +98,7 @@ export type StarknetConfig = {
     networkUrl?: string;
     networkConfig?: NetworkConfig;
     recompile?: boolean;
+    requestTimeout?: number;
 };
 
 export type WalletUserConfig = {

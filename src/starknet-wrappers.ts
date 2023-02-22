@@ -441,7 +441,7 @@ export class DockerWrapper extends StarknetWrapper {
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
     ) {
-        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths, hre), hre);
+        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths), hre);
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
@@ -478,7 +478,7 @@ export class VenvWrapper extends StarknetWrapper {
             pythonPath = getPrefixedCommand(venvPath, "python3");
         }
 
-        super(new StarknetVenvProxy(pythonPath, hre), hre);
+        super(new StarknetVenvProxy(pythonPath), hre);
     }
 
     protected override get gatewayUrl(): string {

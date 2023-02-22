@@ -2,7 +2,6 @@ import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
 import { getFreePort } from "./external-server/external-server";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -23,10 +22,9 @@ export class StarknetDockerProxy extends DockerServer {
         image: Image,
         private rootPath: string,
         private accountPaths: string[],
-        private cairoPaths: string[],
-        hre: HardhatRuntimeEnvironment
+        private cairoPaths: string[]
     ) {
-        super(image, "127.0.0.1", null, "", "starknet-docker-proxy", hre);
+        super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
 
     protected async getDockerArgs(): Promise<string[]> {
