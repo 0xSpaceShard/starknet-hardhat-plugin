@@ -4,7 +4,7 @@ FROM cimg/node:16.19
 ENV TEST_SUBDIR=general-tests
 ENV PYENV_ROOT="$HOME/.pyenv"
 ENV PATH="$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH"
-ENV STARKNET_DEVNET="0.4.2"
+ENV STARKNET_DEVNET=""
 USER root
 
 # Install Python venv
