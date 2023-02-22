@@ -88,7 +88,7 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     let newPath: string;
     if (userConfig.paths && userConfig.paths.starknetSources) {
         const userPath = userConfig.paths.starknetSources;
-        newPath = adaptPath(userPath, config.paths.root);
+        newPath = adaptPath(config.paths.root, userPath);
         config.paths.starknetSources = userConfig.paths.starknetSources;
     } else {
         const defaultPath = path.join(config.paths.root, DEFAULT_STARKNET_SOURCES_PATH);
