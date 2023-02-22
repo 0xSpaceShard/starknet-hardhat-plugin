@@ -29,6 +29,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
             devnetNetwork.venv,
             hostname,
             port,
+            hre,
             devnetNetwork?.args,
             devnetNetwork?.stdout,
             devnetNetwork?.stderr
@@ -51,6 +52,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
         },
         hostname,
         port,
+        hre,
         devnetNetwork?.args,
         devnetNetwork?.stdout,
         devnetNetwork?.stderr

@@ -1,6 +1,7 @@
 import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { ChildProcess, spawn, spawnSync } from "child_process";
 import { ExternalServer } from "./external-server";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export abstract class DockerServer extends ExternalServer {
     private docker: HardhatDocker;
@@ -12,13 +13,14 @@ export abstract class DockerServer extends ExternalServer {
         externalPort: string,
         isAliveURL: string,
         containerName: string,
+        hre: HardhatRuntimeEnvironment,
         protected args?: string[],
         stdout?: string,
         stderr?: string
     ) {
         // to make name unique and allow multiple simultaneous instances
         containerName += "-" + Math.random().toString().slice(2);
-        super(host, externalPort, isAliveURL, containerName, stdout, stderr);
+        super(host, externalPort, isAliveURL, containerName, hre, stdout, stderr);
         this.containerName = containerName;
     }
 

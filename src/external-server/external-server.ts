@@ -4,7 +4,7 @@ import { ChildProcess } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
-import { REQUEST_TIMEOUT } from "../constants";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -53,6 +53,7 @@ export abstract class ExternalServer {
         protected port: string | null,
         private isAliveURL: string,
         protected processName: string,
+        protected hre: HardhatRuntimeEnvironment,
         protected stdout?: string,
         protected stderr?: string
     ) {
@@ -163,7 +164,7 @@ export abstract class ExternalServer {
 
         try {
             const response = await axios.post<T>(this.url, data, {
-                timeout: REQUEST_TIMEOUT,
+                timeout: this.hre.config.axios.timeout,
                 timeoutErrorMessage: "Request timed out"
             });
             return response.data;

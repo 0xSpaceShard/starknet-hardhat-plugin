@@ -586,6 +586,20 @@ module.exports = {
 };
 ```
 
+### Axios 
+
+Default timeout is 30s. It can be changed using the following configuration.
+You may need to increase the timeout value in some situation (declaring large smart contract).
+
+```javascript
+module.exports = {
+  axios: {
+    timeout: 90_000, // 90s
+  },
+  ...
+};
+```
+
 ### Installing third-party libraries
 
 If you want to install a third-party Cairo library and be able to import it in your Cairo files, use the following pattern:

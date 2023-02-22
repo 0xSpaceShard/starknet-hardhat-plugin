@@ -7,7 +7,8 @@ import {
     HardhatConfig,
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
-    HardhatUserConfig
+    HardhatUserConfig,
+    HardhatAxiosConfig
 } from "hardhat/types";
 import exitHook from "exit-hook";
 
@@ -80,6 +81,18 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     }
     if (!config.starknet) {
         config.starknet = {};
+    }
+});
+
+// copy all user-defined axios settings
+extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
+    if (userConfig.axios) {
+        config.axios = JSON.parse(JSON.stringify(userConfig.axios));
+    }
+    if (!config.axios) {
+        config.axios = {
+            timeout: 30_000
+        };
     }
 });
 

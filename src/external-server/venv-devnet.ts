@@ -2,6 +2,7 @@ import { ChildProcess, spawn } from "child_process";
 
 import { getPrefixedCommand, normalizeVenvPath } from "../utils/venv";
 import { ExternalServer } from "./external-server";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 export class VenvDevnet extends ExternalServer {
     private command: string;
@@ -11,11 +12,12 @@ export class VenvDevnet extends ExternalServer {
         venvPath: string,
         host: string,
         port: string,
+        hre: HardhatRuntimeEnvironment,
         args?: string[],
         stdout?: string,
         stderr?: string
     ) {
-        super(host, port, "is_alive", "integrated-devnet", stdout, stderr);
+        super(host, port, "is_alive", "integrated-devnet", hre, stdout, stderr);
 
         this.command = "starknet-devnet";
         this.args = args;

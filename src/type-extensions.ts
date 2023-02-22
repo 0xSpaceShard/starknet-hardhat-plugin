@@ -24,10 +24,12 @@ declare module "hardhat/types/config" {
 
     export interface HardhatConfig {
         starknet: StarknetTypes.StarknetConfig;
+        axios: HardhatAxiosConfig;
     }
 
     export interface HardhatUserConfig {
         starknet?: StarknetTypes.StarknetConfig;
+        axios?: HardhatAxiosConfig;
     }
 
     export interface NetworksConfig {
@@ -64,6 +66,10 @@ declare module "hardhat/types/config" {
         args?: string[];
         stdout?: string;
         stderr?: string;
+    }
+
+    export interface HardhatAxiosConfig {
+        timeout?: number;
     }
 }
 
