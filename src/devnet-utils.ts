@@ -4,7 +4,6 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
-import { REQUEST_TIMEOUT } from "./constants";
 import { hash } from "starknet";
 import { numericToHexString } from "./utils";
 import { Numeric } from "./types";
@@ -79,7 +78,7 @@ export interface PredeployedAccount {
 export class DevnetUtils implements Devnet {
     private axiosInstance = axios.create({
         baseURL: this.endpoint,
-        timeout: REQUEST_TIMEOUT,
+        timeout: this.hre.config.starknet.requestTimeout,
         timeoutErrorMessage: "Request timed out"
     });
 

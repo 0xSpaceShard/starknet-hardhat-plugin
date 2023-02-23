@@ -515,6 +515,19 @@ module.exports = {
 };
 ```
 
+### Request Timeout
+
+Default requestTimeout is 30s. It can be changed using the following configuration.
+You may need to increase the timeout value in some situation (declaring large smart contract).
+
+```typescript
+module.exports = {
+    starknet: {
+        requestTimeout: 90_000, // 90s
+    }
+};
+```
+
 ### Paths
 
 Prefer providing absolute paths when using the plugin. If a relative path is provided, it will be resolved relative to the root of the project.

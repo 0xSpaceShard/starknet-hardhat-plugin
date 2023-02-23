@@ -81,6 +81,9 @@ extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) =>
     if (!config.starknet) {
         config.starknet = {};
     }
+    if (!config.starknet.requestTimeout) {
+        config.starknet.requestTimeout = 30_000;
+    }
 });
 
 // add sources path
