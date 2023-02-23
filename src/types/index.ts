@@ -372,6 +372,7 @@ export class StarknetContractFactory {
             maxFee: (options.maxFee || 0).toString(),
             token: options.token,
             signature: handleSignature(options.signature),
+            sender: options.sender,
             nonce: options.nonce?.toString()
         });
         if (executed.statusCode) {
