@@ -45,9 +45,9 @@ Running tests inside DinD requires some additional setup/parsing when adding new
 
 ### Adding new docker container
 
-If you are adding a new docker container with volumes please refer to the next section, [Adding volumes to a docker container](#adding-volumes-to-a-docker-container), to properly parse host paths for Docker in Docker to work.
+If you are adding a new docker container with volumes please refer to the next section, [Adding docker volumes](#adding-docker-volumes), to properly parse host paths for Docker in Docker to work.
 
-### Adding volumes to a docker container
+### Adding docker volumes
 
 For volume mounts, Use `getVolumeHostPathFilter` function from `./external-server/external-server` to get the filter function to prepare paths for DinD if required.
 
