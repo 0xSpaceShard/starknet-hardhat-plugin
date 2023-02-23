@@ -3,7 +3,7 @@ import "@shardlabs/starknet-hardhat-plugin";
 module.exports = {
     starknet: {
         network: process.env.NETWORK,
-        requestTimout: 1
+        requestTimeout: 1
     },
     networks: {
         devnet: {
