@@ -50,21 +50,16 @@ export async function getFreePort(): Promise<string> {
  * DinD = Docker in Docker
  * @returns {function} Callback to fix docker volume host path
  */
-export function getFixVolumeHostPathCallback(): (path: string) => string {
+export function getVolumeHostPathFilter(): (path: string) => string {
     // If environment variable is set to replace docker host path
     const { STARKNET_HARDHAT_DIND_HOST_PATH = "" } = process.env;
-
-    console.log(`Path replacements ${STARKNET_HARDHAT_DIND_HOST_PATH || "<none>"}`);
 
     if (STARKNET_HARDHAT_DIND_HOST_PATH && STARKNET_HARDHAT_DIND_HOST_PATH.includes(":")) {
         // We have paths to replace
         const replacement = STARKNET_HARDHAT_DIND_HOST_PATH.split(":");
         if (replacement[0] && replacement[1])
-            // Return fixVolumeHostPath function
-            return (path: string) => {
-                console.log(`Replacing ${path}`);
-                return path.replace(replacement[0], replacement[1]);
-            };
+            // Return volumeHostPathFilter function
+            return (path: string) => path.replace(replacement[0], replacement[1]);
     }
     // Returns a dummy function
     return (path: string) => path;
