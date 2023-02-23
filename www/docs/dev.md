@@ -36,6 +36,43 @@ $ npm link @shardlabs/starknet-hardhat-plugin
 
 If your IDE is reporting Typescript issues after compiling the plugin, you may want to restart the Typescript language server (e.g. in VS Code on Linux: Ctrl+Shift+P)
 
+## Dockerized testing environment
+
+We have added a Docker in Docker, called DinD, setup to run the tests that need to use Docker from within a Docker container.
+This allows running tests easily without changing your development environment. Read about running tests in [Executing tests in docker](#executing-tests-in-docker) section. If you are not adding **Docker container volumes** you can skip this section.
+
+Running tests inside DinD requires some additional setup/parsing when adding new Docker container volumes to map container paths.
+
+### Adding new docker container
+
+If you are adding a new docker container with volumes please refer to the next section, [Adding volumes to a docker container](#adding-volumes-to-a-docker-container), to properly parse host paths for Docker in Docker to work.
+
+### Adding volumes to a docker container
+
+For volume mounts, Use `getVolumeHostPathFilter` function from `./external-server/external-server` to get the filter function to prepare paths for DinD if required.
+
+Here's an example,
+
+```js
+// import ...
+import { getVolumeHostPathFilter } from "./external-server/external-server";
+
+// A bunch of code...
+
+const volumeHostPathFilter = getVolumeHostPathFilter();
+// Docker volume mounting args
+const volumes = [
+    "-v",
+    `${volumeHostPathFilter(pathInHost)}:${pathInContainer}`,
+    "-v",
+    `${volumeHostPathFilter(pathInHost2)}:${pathInContainer2}`
+];
+
+// Other bunch of code...
+```
+
+We get the filter function from `getVolumeHostPathFilter()`. Then `host` parts for every volume are passed filtered with `volumeHostPathFilter` function.
+
 ## Testing
 
 A test case is added by creating a directory in a subdirectory of a test group in the `test` directory. E.g. `declare-test` is a test case in the `general-tests` test group. A test case should contain:
@@ -58,7 +95,7 @@ To run all tests, you can use the `test-` scripts defined in `package.json`. For
 
 ### Executing tests in docker
 
-You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers.
+You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment) section.
 
 ```
 npm run docker-tester
