@@ -44,7 +44,7 @@ export async function getFreePort(): Promise<string> {
 }
 
 /**
- * Returns function to fix host path for docker volumes
+ * Returns function to filter host path for docker volumes.
  * Uses environment variable STARKNET_HARDHAT_DIND_HOST_PATH
  * The variable is set when running from inside DinD container
  * DinD = Docker in Docker
