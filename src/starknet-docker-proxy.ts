@@ -1,7 +1,8 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
-import { getFreePort, getVolumeHostPathFilter } from "./external-server/external-server";
+import { getFreePort } from "./external-server/external-server";
+import { getDindVolumeHostPathFilter } from "./utils";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -29,7 +30,7 @@ export class StarknetDockerProxy extends DockerServer {
 
     protected async getDockerArgs(): Promise<string[]> {
         // Fixes docker volume host path in case it's running from another container
-        const volumeHostPathFilter = getVolumeHostPathFilter();
+        const volumeHostPathFilter = getDindVolumeHostPathFilter();
         // To access the files on host machine from inside the container, proper mounting has to be done.
         const volumes = [
             "-v",

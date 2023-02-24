@@ -2,7 +2,7 @@ import { HardhatDocker, Image } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
 import * as fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { getVolumeHostPathFilter } from "./external-server";
+import { getDindVolumeHostPathFilter } from "../utils";
 
 const DEFAULT_OUTPUT = "out.sarif";
 
@@ -78,7 +78,7 @@ export class AmarnaDocker {
         this.cairoPathBindings(binds, dockerArgs);
 
         // Fixes docker volume host path in case it's running in DinD container
-        const volumeHostPathFilter = getVolumeHostPathFilter();
+        const volumeHostPathFilter = getDindVolumeHostPathFilter();
 
         Object.keys(binds).forEach((k) => {
             dockerArgs.push("-v");

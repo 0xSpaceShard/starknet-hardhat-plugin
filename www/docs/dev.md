@@ -49,17 +49,17 @@ If you are adding a new docker container with volumes please refer to the next s
 
 ### Adding docker volumes
 
-For volume mounts, Use `getVolumeHostPathFilter` function from `./external-server/external-server` to get the filter function to prepare paths for DinD if required.
+For volume mounts, Use `getDindVolumeHostPathFilter` function from `src/utils` to get the filter function to prepare paths for DinD if required.
 
 Here's an example,
 
 ```js
 // import ...
-import { getVolumeHostPathFilter } from "./external-server/external-server";
+import { getDindVolumeHostPathFilter } from "./external-server/external-server";
 
 // A bunch of code...
 
-const volumeHostPathFilter = getVolumeHostPathFilter();
+const volumeHostPathFilter = getDindVolumeHostPathFilter();
 // Docker volume mounting args
 const volumes = [
     "-v",
@@ -71,7 +71,7 @@ const volumes = [
 // Other bunch of code...
 ```
 
-We get the filter function from `getVolumeHostPathFilter()`. Then `host` parts for every volume are passed filtered with `volumeHostPathFilter` function.
+We get the filter function from `getDindVolumeHostPathFilter()`. Then `host` parts for every volume are passed filtered with `volumeHostPathFilter` function.
 
 ## Testing
 
