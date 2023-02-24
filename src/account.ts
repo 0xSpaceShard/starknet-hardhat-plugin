@@ -434,6 +434,7 @@ export abstract class Account {
 
         const signature = this.getSignatures(messageHash);
         return contractFactory.declare({
+            nonce,
             signature,
             token: options.token,
             sender: this.address,
