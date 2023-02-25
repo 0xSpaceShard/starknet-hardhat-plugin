@@ -5,31 +5,13 @@ trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
-./scripts/ensure-python.sh
-
-# setup example repo
-rm -rf starknet-hardhat-example
-EXAMPLE_REPO_BRANCH="plugin"
-if [[ "${CIRCLE_BRANCH:=}" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
-    echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
-    exit 1
+if [[ "${STARKNET_HARDHAT_TEST_SKIP_SETUP:-}" ]]; then
+	echo "Skipping setup.";
+else
+	./scripts/test-setup.sh;
 fi
 
-git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch https://github.com/Shard-Labs/starknet-hardhat-example.git
-cd starknet-hardhat-example
-git log -n 1
-npm ci
-npm install ../ # install plugin from source (parent dir)
-
-# if docker is available on the system pull docker image
-CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG=$(node -e "console.log(require('../dist/src/constants.js').CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG)")
-
-if docker --version >/dev/null 2>&1; then
-    docker pull "$CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG"
-fi
-
-# used by some cases
-../scripts/setup-venv.sh
+cd starknet-hardhat-example;
 
 total=0
 success=0
@@ -98,14 +80,12 @@ function iterate_dir() {
 # perform tests on Alpha-goerli testnet only on master branch and in a linux environment
 # skip testing on testnet if [skip testnet] included in commit message
 latest_commit_msg=$(git log -1 --pretty=%B)
-if [[ "$CIRCLE_BRANCH" == "master" ]] &&
+if [[ "${CIRCLE_BRANCH:=}" == "master" ]] &&
     [[ "$OSTYPE" == "linux-gnu"* ]] &&
     [[ "$latest_commit_msg" != *"[skip testnet]"* ]]; then
     source ../scripts/set-alpha-vars.sh
     iterate_dir alpha
 fi
-
-../scripts/install-devnet.sh
 
 # test integrated devnet
 source ../scripts/set-devnet-vars.sh
