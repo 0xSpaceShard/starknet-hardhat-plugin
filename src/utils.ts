@@ -79,6 +79,23 @@ export function adaptUrl(url: string): string {
 }
 
 /**
+ * Filter host address for docker containers running inside DinD.
+ * Uses environment variable STARKNET_HARDHAT_RUNNING_DIND
+ * The variable is set when running from inside DinD container
+ * DinD = Docker in Docker
+ * @returns {function} Callback to fix docker volume host path
+ */
+export function dindHostAddressFilter(address?: string): string {
+    const { STARKNET_HARDHAT_RUNNING_DIND } = process.env;
+    if (STARKNET_HARDHAT_RUNNING_DIND) {
+        for (const host of ["localhost", "127.0.0.1"]) {
+            address = address.replace(host, "host.docker.internal");
+        }
+    }
+    return address;
+}
+
+/**
  * Returns function to filter host path for docker volumes.
  * Uses environment variable STARKNET_HARDHAT_DIND_HOST_PATH
  * The variable is set when running from inside DinD container

@@ -18,9 +18,12 @@ export class DockerDevnet extends DockerServer {
     }
 
     protected async getDockerArgs(): Promise<string[]> {
+        // Hostname might be host.docker.internal, but still docker needs 127.0.0.1 for ports
+        const hostname = this.host.replace("host.docker.internal", "127.0.0.1");
+
         return [
             "-p",
-            `${this.host}:${this.port}:${this.port}`,
+            `${hostname}:${this.port}:${this.port}`,
             "-e",
             `STARKNET_DEVNET_CAIRO_VM=${this.vmLang}`
         ];

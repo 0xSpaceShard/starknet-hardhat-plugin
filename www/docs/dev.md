@@ -36,28 +36,28 @@ $ npm link @shardlabs/starknet-hardhat-plugin
 
 If your IDE is reporting Typescript issues after compiling the plugin, you may want to restart the Typescript language server (e.g. in VS Code on Linux: Ctrl+Shift+P)
 
-## Dockerized testing environment
+## Dockerized testing environment [DinD]
 
 We have added a Docker in Docker, called DinD, setup to run the tests that need to use Docker from within a Docker container.
 This allows running tests easily without changing your development environment. Read about running tests in [Executing tests in docker](#executing-tests-in-docker) section. If you are not adding **Docker container volumes** you can skip this section.
 
 Running tests inside DinD requires some additional setup/parsing when adding new Docker container volumes to map container paths.
 
-### Adding new docker container
+### Adding new docker container [DinD]
 
-If you are adding a new docker container with volumes please refer to the next section, [Adding docker volumes](#adding-docker-volumes), to properly parse host paths for Docker in Docker to work.
+If you are adding a new docker container please refer to next sections,
 
-### Adding docker volumes
+-   [Adding docker volumes](#adding-docker-volumes-dind), to properly parse host paths for Docker in Docker to work.
+-   [Exposing container ports](#exposing-container-ports-dind), to map `localhost:$PORT`/`127.0.0.1:$PORT` to `host.docker.internal`.
 
-For volume mounts, Use `getDindVolumeHostPathFilter` function from `src/utils` to get the filter function to prepare paths for DinD if required.
+### Adding docker volumes [DinD]
+
+For volume mounts, Use `getDindVolumeHostPathFilter` function from `./utils` in `src` to get the filter function to prepare paths for DinD if required.
 
 Here's an example,
 
-```js
-// import ...
-import { getDindVolumeHostPathFilter } from "./external-server/external-server";
-
-// A bunch of code...
+```ts
+import { getDindVolumeHostPathFilter } from "./utils";
 
 const volumeHostPathFilter = getDindVolumeHostPathFilter();
 // Docker volume mounting args
@@ -67,11 +67,20 @@ const volumes = [
     "-v",
     `${volumeHostPathFilter(pathInHost2)}:${pathInContainer2}`
 ];
-
-// Other bunch of code...
 ```
 
 We get the filter function from `getDindVolumeHostPathFilter()`. Then `host` parts for every volume are passed filtered with `volumeHostPathFilter` function.
+
+### Exposing container ports [DinD]
+
+When your container exposes ports, you need to use `dindHostAddressFilter()` from `./utils` in `src`. This will change `localhost:$PORT/...`/`127.0.0.1:$PORT/...` to equivalent `host.docker.internal:$PORT/...` addresses when running inside DinD.
+
+Here's an example,
+
+```ts
+import { dindHostAddressFilter } from "./utils";
+const url = dindHostAddressFilter("localhost:7050");
+```
 
 ## Testing
 
@@ -104,7 +113,7 @@ $ npm run test-general-tests -- declare-test
 
 ### Executing tests in docker
 
-You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment) section.
+You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment-dind) section.
 
 ```
 npm run docker-tester

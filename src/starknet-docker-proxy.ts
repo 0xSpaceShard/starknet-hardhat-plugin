@@ -2,7 +2,7 @@ import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
 import { getFreePort } from "./external-server/external-server";
-import { getDindVolumeHostPathFilter } from "./utils";
+import { dindHostAddressFilter, getDindVolumeHostPathFilter } from "./utils";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -25,7 +25,7 @@ export class StarknetDockerProxy extends DockerServer {
         private accountPaths: string[],
         private cairoPaths: string[]
     ) {
-        super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
+        super(image, dindHostAddressFilter("127.0.0.1"), null, "", "starknet-docker-proxy");
     }
 
     protected async getDockerArgs(): Promise<string[]> {
@@ -48,7 +48,7 @@ export class StarknetDockerProxy extends DockerServer {
         const dockerArgs = [...volumes];
         // Check host os
         const isDarwin = process.platform === "darwin";
-        if (isDarwin) {
+        if (isDarwin || process.env.STARKNET_HARDHAT_RUNNING_DIND) {
             this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
