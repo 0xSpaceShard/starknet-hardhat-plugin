@@ -5,7 +5,7 @@ trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 
-if [[ "${STARKNET_HARDHAT_TEST_SKIP_SETUP:-}" ]]; then
+if [[ -n "${STARKNET_HARDHAT_TEST_SKIP_SETUP:-}" ]]; then
 	echo "Skipping setup.";
 else
 	./scripts/test-setup.sh;
@@ -23,56 +23,62 @@ if [ ! -d "$test_dir" ]; then
     exit -1
 fi
 
+function run_test() {
+    test_case="$1"
+ 	network="$2"
+ 	test_name=$(basename $test_case)
+
+    network_file="$test_case/network.json"
+
+    if [[ ! -f "$network_file" ]]; then
+        echo "Test failed! Error: No network file provided!"
+        total=$((total + 1))
+        continue
+    fi
+
+    # Skip if the network file doesn't specify to run the test on the current network
+    if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+        echo "Skipping $network test for $test_name"
+        continue
+    fi
+
+    total=$((total + 1))
+    echo "Test $total) $test_name"
+
+    config_file_path="$test_case/$CONFIG_FILE_NAME"
+    if [ ! -f "$config_file_path" ]; then
+        echo "Test failed! Error: No config file provided!"
+        continue
+    fi
+
+    # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
+    /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
+
+    [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
+
+    # check if test_case/check.ts exists
+    if [ -f "$test_case/check.ts" ]; then
+        # run the test
+        NETWORK="$network" npx ts-node "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
+    else
+        echo "Error: $test_case/check.ts not found"
+    fi
+
+    rm -rf starknet-artifacts
+    git checkout --force
+    git clean -fd
+    # specifying signal for pkill fails on mac
+    [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
+
+    echo "----------------------------------------------"
+    echo
+}
+
 function iterate_dir() {
     network="$1"
     echo "Starting tests on $network"
     for test_case in "$test_dir"/*; do
-        test_name=$(basename $test_case)
-
-        network_file="$test_case/network.json"
-
-        if [[ ! -f "$network_file" ]]; then
-            echo "Test failed! Error: No network file provided!"
-            total=$((total + 1))
-            continue
-        fi
-
-        # Skip if the network file doesn't specify to run the test on the current network
-        if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
-            echo "Skipping $network test for $test_name"
-            continue
-        fi
-
-        total=$((total + 1))
-        echo "Test $total) $test_name"
-
-        config_file_path="$test_case/$CONFIG_FILE_NAME"
-        if [ ! -f "$config_file_path" ]; then
-            echo "Test failed! Error: No config file provided!"
-            continue
-        fi
-
-        # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
-        /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
-
-        [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
-
-        # check if test_case/check.ts exists
-        if [ -f "$test_case/check.ts" ]; then
-            # run the test
-            NETWORK="$network" npx ts-node "$test_case/check.ts" && success=$((success + 1)) || echo "Test failed!"
-        else
-            echo "Error: $test_case/check.ts not found"
-        fi
-
-        rm -rf starknet-artifacts
-        git checkout --force
-        git clean -fd
-        # specifying signal for pkill fails on mac
-        [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
-
-        echo "----------------------------------------------"
-        echo
+		run_test $test_case $network
     done
     echo "Finished tests on $network"
 }
