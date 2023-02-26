@@ -63,10 +63,9 @@ function run_test() {
         echo "Error: $test_case/check.ts not found"
     fi
 
-    rm -rf starknet-artifacts
+    # rm -rf starknet-artifacts
     git checkout --force
     git clean -fd
-    # specifying signal for pkill fails on mac
 
     echo "----------------------------------------------"
     echo
@@ -92,7 +91,8 @@ function iterate_dir() {
 		done
 	fi
 
-    [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
+    # specifying signal for pkill fails on mac
+    [ "$network" == "devnet" ] && ../scripts/stop-devnet.sh && sleep 5
 
     echo "Finished tests on $network"
 }
