@@ -15,6 +15,7 @@ cd starknet-hardhat-example;
 
 total=0
 success=0
+test_name_specified=${1:-}
 
 test_dir="../test/$TEST_SUBDIR"
 
@@ -77,9 +78,20 @@ function run_test() {
 function iterate_dir() {
     network="$1"
     echo "Starting tests on $network"
-    for test_case in "$test_dir"/*; do
-		run_test $test_case $network
-    done
+
+	if [[ -n $test_name_specified ]]; then
+		test_case_dir="$test_dir/$test_name_specified"
+		if [ ! -d "$test_case_dir" ]; then
+			echo "Invalid directory $test_case_dir for test case $test_name_specified"
+			exit -1
+		fi
+
+		run_test $test_case_dir $network
+	else
+		for test_case in "$test_dir"/*; do
+			run_test $test_case $network
+		done
+	fi
     echo "Finished tests on $network"
 }
 

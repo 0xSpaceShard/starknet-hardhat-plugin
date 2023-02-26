@@ -93,6 +93,15 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 
 To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 
+### Executing individual tests
+
+To run a specific test case in the test group you can pass in the name of directory inside test group. E.g. to run `declare-test` test case in `general-tests` test group, you can use the script
+`test-general-tests` and pass in the name of the test after a `--` like this,
+
+```sh
+$ npm run test-general-tests -- declare-test
+```
+
 ### Executing tests in docker
 
 You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment) section.
