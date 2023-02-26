@@ -34,13 +34,13 @@ function run_test() {
     if [[ ! -f "$network_file" ]]; then
         echo "Test failed! Error: No network file provided!"
         total=$((total + 1))
-        continue
+        return 0
     fi
 
     # Skip if the network file doesn't specify to run the test on the current network
     if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
         echo "Skipping $network test for $test_name"
-        continue
+        return 0
     fi
 
     total=$((total + 1))
@@ -49,13 +49,11 @@ function run_test() {
     config_file_path="$test_case/$CONFIG_FILE_NAME"
     if [ ! -f "$config_file_path" ]; then
         echo "Test failed! Error: No config file provided!"
-        continue
+        return 0
     fi
 
     # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
     /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
-
-    [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
 
     # check if test_case/check.ts exists
     if [ -f "$test_case/check.ts" ]; then
@@ -69,7 +67,6 @@ function run_test() {
     git checkout --force
     git clean -fd
     # specifying signal for pkill fails on mac
-    [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
 
     echo "----------------------------------------------"
     echo
@@ -78,6 +75,8 @@ function run_test() {
 function iterate_dir() {
     network="$1"
     echo "Starting tests on $network"
+
+    [ "$network" == "devnet" ] && ../scripts/run-devnet.sh
 
 	if [[ -n $test_name_specified ]]; then
 		test_case_dir="$test_dir/$test_name_specified"
@@ -92,6 +91,9 @@ function iterate_dir() {
 			run_test $test_case $network
 		done
 	fi
+
+    [ "$network" == "devnet" ] && pkill -f starknet-devnet && sleep 5
+
     echo "Finished tests on $network"
 }
 
