@@ -131,7 +131,8 @@ export abstract class Account {
                 calldata: adaptedArgs
             },
             {
-                maxFee: options?.maxFee
+                maxFee: options?.maxFee,
+                nonce: options?.nonce
             }
         );
 
@@ -434,6 +435,7 @@ export abstract class Account {
 
         const signature = this.getSignatures(messageHash);
         return contractFactory.declare({
+            nonce,
             signature,
             token: options.token,
             sender: this.address,
