@@ -37,6 +37,7 @@ export abstract class DockerServer extends ExternalServer {
         await this.pullImage();
 
         const formattedImage = `${this.image.repository}:${this.image.tag}`;
+
         const args = [
             "run",
             "--rm",
@@ -46,7 +47,13 @@ export abstract class DockerServer extends ExternalServer {
             formattedImage,
             ...(await this.getContainerArgs())
         ];
+
         return spawn("docker", args);
+    }
+
+    public isDockerDesktop(): boolean {
+        const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
+        return res.stdout.includes("Operating System: Docker Desktop");
     }
 
     /**

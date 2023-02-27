@@ -434,6 +434,7 @@ function getFullImageName(image: Image): string {
 type String2String = { [path: string]: string };
 
 export class DockerWrapper extends StarknetWrapper {
+    private isDockerDesktop: boolean;
     constructor(
         image: Image,
         rootPath: string,
@@ -441,14 +442,17 @@ export class DockerWrapper extends StarknetWrapper {
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
     ) {
-        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths), hre);
+        const externalServer = new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths);
+        super(externalServer, hre);
+        this.isDockerDesktop = externalServer.isDockerDesktop();
+
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
     }
 
     protected override get gatewayUrl(): string {
-        return adaptUrl(this.hre.starknet.networkConfig.url);
+        return adaptUrl(this.hre.starknet.networkConfig.url, this.isDockerDesktop);
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {

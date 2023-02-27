@@ -53,14 +53,13 @@ export function adaptLog(msg: string): string {
 }
 
 const DOCKER_HOST = "host.docker.internal";
-const MACOS_PLATFORM = "darwin";
 /**
- * Adapts `url` by replacing localhost and 127.0.0.1 with `host.internal.docker`
+ * Adapts `url` by replacing localhost and 127.0.0.1 with `host.docker.internal`
  * @param url string representing the url to be adapted
  * @returns adapted url
  */
-export function adaptUrl(url: string): string {
-    if (process.platform === MACOS_PLATFORM) {
+export function adaptUrl(url: string, isDockerDesktop: boolean): string {
+    if (isDockerDesktop) {
         for (const protocol of ["http://", "https://", ""]) {
             for (const host of ["localhost", "127.0.0.1"]) {
                 if (url === `${protocol}${host}`) {

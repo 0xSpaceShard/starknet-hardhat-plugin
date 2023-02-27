@@ -149,6 +149,7 @@ export abstract class ExternalServer {
     }
 
     private async isServerAlive() {
+        if (this.port === null) return false;
         try {
             await axios.get(`${this.url}/${this.isAliveURL}`);
             return true;
