@@ -48,7 +48,7 @@ export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
     private lastError: string = null;
-    private _isDockerDesktop: boolean;
+    private _isDockerDesktop: boolean = null;
 
     constructor(
         protected host: string,
@@ -59,10 +59,12 @@ export abstract class ExternalServer {
         protected stderr?: string
     ) {
         ExternalServer.cleanupFns.push(this.cleanup.bind(this));
-        this._isDockerDesktop = isDockerDesktop();
     }
 
     public get isDockerDesktop(): boolean {
+        if (this._isDockerDesktop === null) {
+            this._isDockerDesktop = isDockerDesktop();
+        }
         return this._isDockerDesktop;
     }
 

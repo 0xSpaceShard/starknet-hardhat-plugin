@@ -451,7 +451,6 @@ export class DockerWrapper extends StarknetWrapper {
     ) {
         const externalServer = new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths);
         super(externalServer, hre);
-        this.externalServer = externalServer;
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
