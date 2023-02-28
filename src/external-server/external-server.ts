@@ -5,6 +5,7 @@ import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { isDockerDesktop } from "../utils";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -47,6 +48,7 @@ export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
     private lastError: string = null;
+    private _isDockerDesktop: boolean;
 
     constructor(
         protected host: string,
@@ -57,6 +59,11 @@ export abstract class ExternalServer {
         protected stderr?: string
     ) {
         ExternalServer.cleanupFns.push(this.cleanup.bind(this));
+        this._isDockerDesktop = isDockerDesktop();
+    }
+
+    public get isDockerDesktop(): boolean {
+        return this._isDockerDesktop;
     }
 
     public get url() {

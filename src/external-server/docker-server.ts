@@ -51,11 +51,6 @@ export abstract class DockerServer extends ExternalServer {
         return spawn("docker", args);
     }
 
-    public isDockerDesktop(): boolean {
-        const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
-        return res.stdout.includes("Operating System: Docker Desktop");
-    }
-
     /**
      * CLI arguments passed to the `docker` command.
      */

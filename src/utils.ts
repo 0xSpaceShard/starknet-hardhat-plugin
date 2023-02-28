@@ -33,6 +33,7 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
+import { spawnSync } from "child_process";
 
 const globPromise = promisify(glob);
 /**
@@ -75,6 +76,13 @@ export function adaptUrl(url: string, isDockerDesktop: boolean): string {
     }
 
     return url;
+}
+/**
+ * Check if docker is Docker Desktop
+ */
+export function isDockerDesktop(): boolean {
+    const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
+    return res.stdout.includes("Operating System: Docker Desktop");
 }
 
 export function getDefaultHttpNetworkConfig(

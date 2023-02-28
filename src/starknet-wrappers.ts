@@ -81,7 +81,10 @@ interface MigrateContractWrapperOptions {
 }
 
 export abstract class StarknetWrapper {
-    constructor(private externalServer: ExternalServer, protected hre: HardhatRuntimeEnvironment) {
+    constructor(
+        protected externalServer: ExternalServer,
+        protected hre: HardhatRuntimeEnvironment
+    ) {
         // this is dangerous since hre get set here, before being fully initialized (e.g. active network not yet set)
         // it's dangerous because in getters (e.g. get gatewayUrl) we rely on it being initialized
     }
@@ -439,7 +442,6 @@ function getFullImageName(image: Image): string {
 type String2String = { [path: string]: string };
 
 export class DockerWrapper extends StarknetWrapper {
-    private isDockerDesktop: boolean;
     constructor(
         image: Image,
         rootPath: string,
@@ -449,15 +451,14 @@ export class DockerWrapper extends StarknetWrapper {
     ) {
         const externalServer = new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths);
         super(externalServer, hre);
-        this.isDockerDesktop = externalServer.isDockerDesktop();
-
+        this.externalServer = externalServer;
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
     }
 
     protected override get gatewayUrl(): string {
-        return adaptUrl(this.hre.starknet.networkConfig.url, this.isDockerDesktop);
+        return adaptUrl(this.hre.starknet.networkConfig.url, this.externalServer.isDockerDesktop);
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {

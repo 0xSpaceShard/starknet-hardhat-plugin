@@ -42,8 +42,7 @@ export class StarknetDockerProxy extends DockerServer {
         const dockerArgs = [...volumes];
 
         // Check if Docker Desktop
-        const isDockerDesktop = this.isDockerDesktop();
-        if (isDockerDesktop) {
+        if (this.isDockerDesktop) {
             this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
