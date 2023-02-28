@@ -82,7 +82,7 @@ export function adaptUrl(url: string, isDockerDesktop: boolean): string {
  */
 export function isDockerDesktop(): boolean {
     const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
-    return res.stdout.includes("Operating System: Docker Desktop");
+    return res?.stdout?.includes("Operating System: Docker Desktop");
 }
 
 export function getDefaultHttpNetworkConfig(
