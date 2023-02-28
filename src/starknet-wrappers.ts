@@ -1,9 +1,8 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { PLUGIN_NAME, StarknetChainId } from "./constants";
+import { PLUGIN_NAME, StarknetChainId, DOCKER_HOST } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
-import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -89,7 +88,24 @@ export abstract class StarknetWrapper {
         // it's dangerous because in getters (e.g. get gatewayUrl) we rely on it being initialized
     }
 
-    protected abstract get gatewayUrl(): string;
+    protected get gatewayUrl(): string {
+        const url = this.hre.starknet.networkConfig.url;
+        if (this.externalServer.isDockerDesktop) {
+            for (const protocol of ["http://", "https://", ""]) {
+                for (const host of ["localhost", "127.0.0.1"]) {
+                    if (url === `${protocol}${host}`) {
+                        return `${protocol}${DOCKER_HOST}`;
+                    }
+
+                    const prefix = `${protocol}${host}:`;
+                    if (url.startsWith(prefix)) {
+                        return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
+                    }
+                }
+            }
+        }
+        return url;
+    }
 
     private get chainID(): StarknetChainId {
         return this.hre.starknet.networkConfig.starknetChainId;
@@ -456,10 +472,6 @@ export class DockerWrapper extends StarknetWrapper {
         );
     }
 
-    protected override get gatewayUrl(): string {
-        return adaptUrl(this.hre.starknet.networkConfig.url, this.externalServer.isDockerDesktop);
-    }
-
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const binds: String2String = {
             [options.abi]: options.abi
@@ -488,10 +500,6 @@ export class VenvWrapper extends StarknetWrapper {
         }
 
         super(new StarknetVenvProxy(pythonPath), hre);
-    }
-
-    protected override get gatewayUrl(): string {
-        return this.hre.starknet.networkConfig.url;
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {

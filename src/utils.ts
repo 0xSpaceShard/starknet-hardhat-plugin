@@ -33,7 +33,6 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
-import { spawnSync } from "child_process";
 
 const globPromise = promisify(glob);
 /**
@@ -51,38 +50,6 @@ export function adaptLog(msg: string): string {
         .replace("the 'new_account' command", "'hardhat starknet-new-account'")
         .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
-}
-
-const DOCKER_HOST = "host.docker.internal";
-/**
- * Adapts `url` by replacing localhost and 127.0.0.1 with `host.docker.internal`
- * @param url string representing the url to be adapted
- * @returns adapted url
- */
-export function adaptUrl(url: string, isDockerDesktop: boolean): string {
-    if (isDockerDesktop) {
-        for (const protocol of ["http://", "https://", ""]) {
-            for (const host of ["localhost", "127.0.0.1"]) {
-                if (url === `${protocol}${host}`) {
-                    return `${protocol}${DOCKER_HOST}`;
-                }
-
-                const prefix = `${protocol}${host}:`;
-                if (url.startsWith(prefix)) {
-                    return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
-                }
-            }
-        }
-    }
-
-    return url;
-}
-/**
- * Check if docker is Docker Desktop
- */
-export function isDockerDesktop(): boolean {
-    const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
-    return res?.stdout?.includes("Operating System: Docker Desktop");
 }
 
 export function getDefaultHttpNetworkConfig(

@@ -1,11 +1,10 @@
 import axios from "axios";
 import net from "net";
-import { ChildProcess } from "child_process";
+import { ChildProcess, spawnSync } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { isDockerDesktop } from "../utils";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -63,9 +62,17 @@ export abstract class ExternalServer {
 
     public get isDockerDesktop(): boolean {
         if (this._isDockerDesktop === null) {
-            this._isDockerDesktop = isDockerDesktop();
+            this._isDockerDesktop = this.getIsDockerDesktop();
         }
         return this._isDockerDesktop;
+    }
+
+    /**
+     * Check if docker is Docker Desktop
+     */
+    private getIsDockerDesktop(): boolean {
+        const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
+        return res?.stdout?.includes("Operating System: Docker Desktop");
     }
 
     public get url() {
