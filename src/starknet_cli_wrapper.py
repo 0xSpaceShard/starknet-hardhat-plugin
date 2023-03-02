@@ -11,8 +11,8 @@ import sys
 try:
     from starkware.starknet.cli.starknet_cli import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
-    from starkware.starknet.core.os.class_hash import compute_class_hash
-    from starkware.starknet.services.api.contract_class import ContractClass
+    from starkware.starknet.core.os.contract_class.deprecated_class_hash import compute_deprecated_class_hash
+    from starkware.starknet.services.api.contract_class.contract_class import DeprecatedCompiledClass
     from starkware.cairo.lang.migrators.migrator import main as cairo_migrate_main
 except ImportError:
     sys.exit("Make sure the environment you configured has starknet (cairo-lang) installed!")
@@ -35,8 +35,8 @@ async def get_class_hash(args):
     with open(path, encoding="utf-8") as file:
         raw_class = json.load(file)
 
-    loaded_class = ContractClass.load(raw_class)
-    class_hash = compute_class_hash(loaded_class)
+    loaded_class = DeprecatedCompiledClass.load(raw_class)
+    class_hash = compute_deprecated_class_hash(loaded_class)
     print(hex(class_hash))
     return 0
 
