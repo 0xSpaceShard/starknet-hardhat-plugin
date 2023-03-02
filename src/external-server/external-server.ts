@@ -72,7 +72,7 @@ export abstract class ExternalServer {
      */
     private getIsDockerDesktop(): boolean {
         const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
-        console.log(res);
+        //stdout is null when docker command doesn't exists
         return res.stdout?.includes("Operating System: Docker Desktop");
     }
 
