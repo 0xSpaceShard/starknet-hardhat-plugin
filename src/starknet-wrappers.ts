@@ -502,6 +502,10 @@ export class VenvWrapper extends StarknetWrapper {
         super(new StarknetVenvProxy(pythonPath), hre);
     }
 
+    protected override get gatewayUrl(): string {
+        return this.hre.starknet.networkConfig.url;
+    }
+
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareInteractOptions(options);
         const executed = await this.execute("starknet", preparedOptions);

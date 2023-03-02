@@ -72,7 +72,8 @@ export abstract class ExternalServer {
      */
     private getIsDockerDesktop(): boolean {
         const res = spawnSync("docker", ["system", "info"], { encoding: "utf8" });
-        return res?.stdout?.includes("Operating System: Docker Desktop");
+        console.log(res);
+        return res.stdout?.includes("Operating System: Docker Desktop");
     }
 
     public get url() {
