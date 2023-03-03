@@ -29,7 +29,6 @@ export class StarknetDockerProxy extends DockerServer {
 
     protected async getDockerArgs(): Promise<string[]> {
         // To access the files on host machine from inside the container, proper mounting has to be done.
-
         const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
         volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
 
@@ -38,9 +37,9 @@ export class StarknetDockerProxy extends DockerServer {
         }
 
         const dockerArgs = [...volumes];
-        // Check host os
-        const isDarwin = process.platform === "darwin";
-        if (isDarwin) {
+
+        // Check if Docker Desktop
+        if (this.isDockerDesktop) {
             this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
