@@ -195,10 +195,12 @@ export async function sendEstimateFeeTx(data: unknown) {
         return this.toString();
     };
 
-    const resp = await axios.post(
-        `${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`,
-        data
-    );
+    const resp = await axios
+        .post(`${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`, data)
+        .catch((error: AxiosError) => {
+            const msg = `Estimating fees failed: ${error.response.data.message}`;
+            throw new StarknetPluginError(msg, error);
+        });
 
     const { gas_price, gas_usage, overall_fee, unit } = resp.data;
     return {
