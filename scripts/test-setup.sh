@@ -3,6 +3,7 @@
 # setup example repo
 rm -rf starknet-hardhat-example
 EXAMPLE_REPO_BRANCH="plugin"
+# Empty default for CIRCLE_BRANCH
 if [[ "${CIRCLE_BRANCH:=}" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
