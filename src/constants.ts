@@ -71,3 +71,6 @@ export const UDC_DEPLOY_FUNCTION_NAME = "deployContract";
 export const ETH_ADDRESS = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
 
 export const DOCKER_HOST = "host.docker.internal";
+
+// Same as above but different context
+export const DIND_HOST = "host.docker.internal";

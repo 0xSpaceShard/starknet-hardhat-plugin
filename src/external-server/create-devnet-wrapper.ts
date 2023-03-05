@@ -4,6 +4,7 @@ import { StarknetPluginError } from "../starknet-plugin-error";
 import {
     DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
     DEVNET_DOCKER_REPOSITORY,
+    DIND_HOST,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_URL
 } from "../constants";
@@ -20,7 +21,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
     );
     const { hostname, port } = new URL(devnetNetwork.url || INTEGRATED_DEVNET_URL);
 
-    if (hostname !== "localhost" && hostname !== "127.0.0.1") {
+    if ([DIND_HOST, "localhost", "127.0.0.1"].indexOf(hostname) === -1) {
         throw new StarknetPluginError("Integrated devnet works only with localhost and 127.0.0.1");
     }
 

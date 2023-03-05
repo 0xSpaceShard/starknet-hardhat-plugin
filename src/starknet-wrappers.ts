@@ -90,7 +90,7 @@ export abstract class StarknetWrapper {
 
     protected get gatewayUrl(): string {
         const url = this.hre.starknet.networkConfig.url;
-        if (this.externalServer.isDockerDesktop) {
+        if (this.externalServer.isDockerDesktop || process.env.STARKNET_HARDHAT_RUNNING_DIND) {
             for (const protocol of ["http://", "https://", ""]) {
                 for (const host of ["localhost", "127.0.0.1"]) {
                     if (url === `${protocol}${host}`) {

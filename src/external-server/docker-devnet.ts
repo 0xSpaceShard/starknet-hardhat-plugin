@@ -1,4 +1,5 @@
 import { Image } from "@nomiclabs/hardhat-docker";
+import { DIND_HOST } from "../constants";
 import { DockerServer } from "./docker-server";
 
 export class DockerDevnet extends DockerServer {
@@ -18,9 +19,12 @@ export class DockerDevnet extends DockerServer {
     }
 
     protected async getDockerArgs(): Promise<string[]> {
+        // Hostname might be host.docker.internal, but still docker needs 127.0.0.1 for ports
+        const host = this.host.replace(DIND_HOST, "127.0.0.1");
+
         return [
             "-p",
-            `${this.host}:${this.port}:${this.port}`,
+            `${host}:${this.port}:${this.port}`,
             "-e",
             `STARKNET_DEVNET_CAIRO_VM=${this.vmLang}`
         ];

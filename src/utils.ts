@@ -20,7 +20,8 @@ import {
     INTEGRATED_DEVNET_INTERNALLY,
     UDC_ADDRESS,
     StarknetChainId,
-    DEFAULT_DEVNET_CAIRO_VM
+    DEFAULT_DEVNET_CAIRO_VM,
+	DIND_HOST
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -50,6 +51,45 @@ export function adaptLog(msg: string): string {
         .replace("the 'new_account' command", "'hardhat starknet-new-account'")
         .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
+}
+
+/**
+ * Filter host address for docker containers running inside DinD.
+ * Uses environment variable STARKNET_HARDHAT_RUNNING_DIND
+ * The variable is set when running from inside DinD container
+ * DinD = Docker in Docker
+ * @returns {function} Callback to fix docker volume host path
+ */
+export function dindHostAddressFilter(address?: string): string {
+    const { STARKNET_HARDHAT_RUNNING_DIND } = process.env;
+    if (STARKNET_HARDHAT_RUNNING_DIND) {
+        for (const host of ["localhost", "127.0.0.1"]) {
+            address = address.replace(host, DIND_HOST);
+        }
+    }
+    return address;
+}
+
+/**
+ * Returns function to filter host path for docker volumes.
+ * Uses environment variable STARKNET_HARDHAT_DIND_HOST_PATH
+ * The variable is set when running from inside DinD container
+ * DinD = Docker in Docker
+ * @returns {function} Callback to fix docker volume host path
+ */
+export function getDindVolumeHostPathFilter(): (path: string) => string {
+    // If environment variable is set to replace docker host path
+    const { STARKNET_HARDHAT_DIND_HOST_PATH = "" } = process.env;
+
+    if (STARKNET_HARDHAT_DIND_HOST_PATH && STARKNET_HARDHAT_DIND_HOST_PATH.includes(":")) {
+        // We have paths to replace
+        const replacement = STARKNET_HARDHAT_DIND_HOST_PATH.split(":");
+        if (replacement[0] && replacement[1])
+            // Return volumeHostPathFilter function
+            return (path: string) => path.replace(replacement[0], replacement[1]);
+    }
+    // Returns a dummy function
+    return (path: string) => path;
 }
 
 export function getDefaultHttpNetworkConfig(

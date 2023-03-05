@@ -12,7 +12,8 @@ import {
     getAccountPath,
     isStarknetDevnet,
     warn,
-    adaptPath
+    adaptPath,
+    dindHostAddressFilter
 } from "./utils";
 import {
     HardhatNetworkConfig,
@@ -364,6 +365,10 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
 
     hre.starknet.network = networkName;
     hre.starknet.networkConfig = networkConfig;
+
+    // Networks that have local urls are replaced with host.docker.internal
+    // PS: In DinD devnet also runs in a container and hence requires host.docker.internal
+    hre.starknet.networkConfig.url = dindHostAddressFilter(hre.starknet.networkConfig.url);
 
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkConfig.url}`);
 }

@@ -2,6 +2,7 @@ import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
 import { getFreePort } from "./external-server/external-server";
+import { dindHostAddressFilter, getDindVolumeHostPathFilter } from "./utils";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -24,22 +25,29 @@ export class StarknetDockerProxy extends DockerServer {
         private accountPaths: string[],
         private cairoPaths: string[]
     ) {
-        super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
+        super(image, dindHostAddressFilter("127.0.0.1"), null, "", "starknet-docker-proxy");
     }
 
     protected async getDockerArgs(): Promise<string[]> {
+        // Fixes docker volume host path in case it's running from another container
+        const dindVolumePathFilter = getDindVolumeHostPathFilter();
         // To access the files on host machine from inside the container, proper mounting has to be done.
-        const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
-        volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
+        const volumes = [
+            "-v",
+            `${dindVolumePathFilter(PROXY_SERVER_HOST_PATH)}:${PROXY_SERVER_CONTAINER_PATH}`
+        ];
+        volumes.push(
+            "-v",
+            `${dindVolumePathFilter(LEGACY_CLI_HOST_PATH)}:${LEGACY_CLI_CONTAINER_PATH}`
+        );
 
         for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
-            volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
+            volumes.push("-v", `${dindVolumePathFilter(mirroredPath)}:${mirroredPath}`);
         }
 
         const dockerArgs = [...volumes];
-
         // Check if Docker Desktop
-        if (this.isDockerDesktop) {
+        if (this.isDockerDesktop || process.env.STARKNET_HARDHAT_RUNNING_DIND) {
             this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
