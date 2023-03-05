@@ -1,13 +1,16 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { PLUGIN_NAME, StarknetChainId } from "./constants";
+import { PLUGIN_NAME, StarknetChainId, DOCKER_HOST } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
-import { adaptUrl } from "./utils";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 import { ExternalServer } from "./external-server";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { FeeEstimation } from "./starknet-types";
+import { hash } from "starknet";
+import { toBN, toHex } from "starknet/utils/number";
+import axios from "axios";
 
 interface CompileWrapperOptions {
     file: string;
@@ -24,6 +27,7 @@ interface DeclareWrapperOptions {
     signature?: string[];
     token?: string;
     sender?: string;
+    nonce?: string;
 }
 
 interface InteractWrapperOptions {
@@ -76,12 +80,32 @@ interface MigrateContractWrapperOptions {
 }
 
 export abstract class StarknetWrapper {
-    constructor(private externalServer: ExternalServer, protected hre: HardhatRuntimeEnvironment) {
+    constructor(
+        protected externalServer: ExternalServer,
+        protected hre: HardhatRuntimeEnvironment
+    ) {
         // this is dangerous since hre get set here, before being fully initialized (e.g. active network not yet set)
         // it's dangerous because in getters (e.g. get gatewayUrl) we rely on it being initialized
     }
 
-    protected abstract get gatewayUrl(): string;
+    protected get gatewayUrl(): string {
+        const url = this.hre.starknet.networkConfig.url;
+        if (this.externalServer.isDockerDesktop) {
+            for (const protocol of ["http://", "https://", ""]) {
+                for (const host of ["localhost", "127.0.0.1"]) {
+                    if (url === `${protocol}${host}`) {
+                        return `${protocol}${DOCKER_HOST}`;
+                    }
+
+                    const prefix = `${protocol}${host}:`;
+                    if (url.startsWith(prefix)) {
+                        return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
+                    }
+                }
+            }
+        }
+        return url;
+    }
 
     private get chainID(): StarknetChainId {
         return this.hre.starknet.networkConfig.starknetChainId;
@@ -157,6 +181,10 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError("No maxFee provided for declare tx");
         }
         prepared.push("--max_fee", options.maxFee);
+
+        if (options.nonce) {
+            prepared.push("--nonce", options.nonce);
+        }
 
         return prepared;
     }
@@ -394,6 +422,33 @@ export abstract class StarknetWrapper {
         }
         return executed;
     }
+
+    public async estimateMessageFee(
+        functionName: string,
+        fromAddress: string,
+        toAddress: string,
+        inputs: string[]
+    ): Promise<FeeEstimation> {
+        const body = {
+            from_address: fromAddress,
+            to_address: toAddress,
+            entry_point_selector: hash.getSelectorFromName(functionName),
+            payload: inputs.map((item) => toHex(toBN(item)))
+        };
+
+        const response = await axios.post(
+            `${this.hre.starknet.networkConfig.url}/feeder_gateway/estimate_message_fee`,
+            body
+        );
+
+        const { gas_price, gas_usage, overall_fee, unit } = response.data;
+        return {
+            amount: BigInt(overall_fee),
+            unit,
+            gas_price: BigInt(gas_price),
+            gas_usage: BigInt(gas_usage)
+        };
+    }
 }
 
 function getFullImageName(image: Image): string {
@@ -410,14 +465,11 @@ export class DockerWrapper extends StarknetWrapper {
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
     ) {
-        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths), hre);
+        const externalServer = new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths);
+        super(externalServer, hre);
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
-    }
-
-    protected override get gatewayUrl(): string {
-        return adaptUrl(this.hre.starknet.networkConfig.url);
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {

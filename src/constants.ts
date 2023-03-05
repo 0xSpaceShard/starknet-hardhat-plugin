@@ -9,6 +9,7 @@ export const CAIRO_CLI_DOCKER_REPOSITORY = "shardlabs/cairo-cli";
 export const CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG = config["CAIRO_LANG"];
 export const DEVNET_DOCKER_REPOSITORY = "shardlabs/starknet-devnet";
 export const DEFAULT_DEVNET_DOCKER_IMAGE_TAG = config["STARKNET_DEVNET"];
+export const DEFAULT_DEVNET_CAIRO_VM = "python";
 export const AMARNA_DOCKER_REPOSITORY = "shramee/amarna";
 export const AMARNA_DOCKER_IMAGE_TAG = "latest";
 export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
@@ -39,7 +40,6 @@ export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
 
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
-export const REQUEST_TIMEOUT = 30000; // ms
 
 export const LEN_SUFFIX = "_len";
 
@@ -69,3 +69,5 @@ export const UDC_ADDRESS = "0x41A78E741E5AF2FEC34B695679BC6891742439F7AFB8484ECD
 export const UDC_DEPLOY_FUNCTION_NAME = "deployContract";
 
 export const ETH_ADDRESS = "0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7";
+
+export const DOCKER_HOST = "host.docker.internal";

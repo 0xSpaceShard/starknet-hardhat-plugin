@@ -4,7 +4,8 @@ import {
     HttpNetworkConfig,
     NetworkConfig,
     NetworksConfig,
-    ProjectPathsConfig
+    ProjectPathsConfig,
+    VmLang
 } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import {
@@ -18,7 +19,8 @@ import {
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
     UDC_ADDRESS,
-    StarknetChainId
+    StarknetChainId,
+    DEFAULT_DEVNET_CAIRO_VM
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
@@ -48,32 +50,6 @@ export function adaptLog(msg: string): string {
         .replace("the 'new_account' command", "'hardhat starknet-new-account'")
         .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
-}
-
-const DOCKER_HOST = "host.docker.internal";
-const MACOS_PLATFORM = "darwin";
-/**
- * Adapts `url` by replacing localhost and 127.0.0.1 with `host.internal.docker`
- * @param url string representing the url to be adapted
- * @returns adapted url
- */
-export function adaptUrl(url: string): string {
-    if (process.platform === MACOS_PLATFORM) {
-        for (const protocol of ["http://", "https://", ""]) {
-            for (const host of ["localhost", "127.0.0.1"]) {
-                if (url === `${protocol}${host}`) {
-                    return `${protocol}${DOCKER_HOST}`;
-                }
-
-                const prefix = `${protocol}${host}:`;
-                if (url.startsWith(prefix)) {
-                    return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
-                }
-            }
-        }
-    }
-
-    return url;
 }
 
 export function getDefaultHttpNetworkConfig(
@@ -134,8 +110,21 @@ export function getArtifactPath(sourcePath: string, paths: ProjectPathsConfig): 
     return path.join(paths.starknetArtifacts, suffix);
 }
 
+/**
+ * Adapts path relative to the root of the project and
+ * tilde will be resolved to homedir
+ * @param root string representing the root path set on hre or config
+ * @param newPath string representing the path provided by the user
+ * @returns adapted path
+ */
 export function adaptPath(root: string, newPath: string): string {
-    return path.normalize(path.join(root, newPath));
+    let adaptedPath = newPath;
+    if (newPath[0] === "~") {
+        adaptedPath = path.normalize(path.join(process.env.HOME, newPath.slice(1)));
+    } else if (!path.isAbsolute(newPath)) {
+        adaptedPath = path.normalize(path.join(root, newPath));
+    }
+    return adaptedPath;
 }
 
 export function checkArtifactExists(artifactsPath: string): void {
@@ -179,6 +168,8 @@ export function getNetwork<N extends NetworkConfig>(
         throw new StarknetPluginError(`Cannot use network ${networkName}. No "url" specified.`);
     }
     network.starknetChainId ||= StarknetChainId.TESTNET;
+    network.vmLang ||= DEFAULT_DEVNET_CAIRO_VM as VmLang;
+
     return network;
 }
 
