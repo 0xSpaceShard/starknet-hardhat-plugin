@@ -63,7 +63,7 @@ function run_test() {
         echo "Error: $test_case/check.ts not found"
     fi
 
-    # rm -rf starknet-artifacts
+    rm -rf starknet-artifacts
     git checkout --force
     git clean -fd
 
