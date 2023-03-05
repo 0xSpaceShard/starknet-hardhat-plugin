@@ -15,7 +15,6 @@ cd starknet-hardhat-example;
 
 total=0
 success=0
-failed_tests=""
 test_name_specified=${1:-}
 
 test_dir="../test/$TEST_SUBDIR"
@@ -63,7 +62,6 @@ function run_test() {
     else
         echo "Error: $test_case/check.ts not found"
     fi
-	failed_tests="$failed_tests\n$test_case"
 
     rm -rf starknet-artifacts
     git checkout --force
@@ -114,10 +112,6 @@ source ../scripts/set-devnet-vars.sh
 iterate_dir integrated-devnet
 
 iterate_dir devnet
-
-if [[ -n $failed_tests ]]; then
-	echo "Tests failed: $failed_tests"
-fi
 
 echo "Tests passing: $success / $total"
 exit $((total - success))
