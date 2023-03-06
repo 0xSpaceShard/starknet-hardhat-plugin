@@ -102,6 +102,21 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 
 To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 
+### Executing tests in docker
+
+You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment-dind) section.
+
+```
+npm run docker-tester
+```
+
+This is take you in the container shell. Once in the container, you can use the `test-` scripts defined in `package.json` in an isolated environment. This can be combined with [Executing individual tests](#executing-individual-tests) and [Skipping test setup](#skipping-test-setup) for running tests.
+
+```sh
+root@7121822e393c:/home/circleci/project# # Inside docker test container
+root@7121822e393c:/home/circleci/project# STARKNET_HARDHAT_TEST_SKIP_SETUP=1 npm run test-general-tests -- declare-test
+```
+
 ### Executing individual tests
 
 To run a specific test case in the test group you can pass in the name of directory inside test group. E.g. to run `declare-test` test case in `general-tests` test group, you can use the script
@@ -111,15 +126,13 @@ To run a specific test case in the test group you can pass in the name of direct
 $ npm run test-general-tests -- declare-test
 ```
 
-### Executing tests in docker
+### Skipping test setup
 
-You can use docker tester image. The image includes testing environment set up with everything required to run the tests. The spawned container has access to docker daemon so it can also run the tests that require spawning Devnet/Cairo CLI etc containers. Read more in [Dockerized testing environment](#dockerized-testing-environment-dind) section.
+After running your first test via one of `test-*` scripts, you can skip setup/environment checks for subsequent tests by setting `STARKNET_HARDHAT_TEST_SKIP_SETUP=1` environment variable. This makes the tests run right away skipping environment setup and checks. Example,
 
+```sh
+STARKNET_HARDHAT_TEST_SKIP_SETUP=1 npm run test-general-tests
 ```
-npm run docker-tester
-```
-
-This is take you in the container shell. Once in the container, you can use the `test-` scripts defined in `package.json` in an isolated environment.
 
 ### Executing tests on CircleCI
 
