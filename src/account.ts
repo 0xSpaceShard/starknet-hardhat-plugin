@@ -397,7 +397,7 @@ export abstract class Account {
      * Declare the contract class corresponding to the `contractFactory`
      * @param contractFactory
      * @param options
-     * @returns the hash of the declared class
+     * @returns transaction hash
      */
     public async declare(
         contractFactory: StarknetContractFactory,
