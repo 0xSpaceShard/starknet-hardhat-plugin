@@ -21,7 +21,7 @@ import {
     UDC_ADDRESS,
     StarknetChainId,
     DEFAULT_DEVNET_CAIRO_VM,
-	DIND_HOST
+    DIND_HOST
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";

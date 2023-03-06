@@ -46,6 +46,9 @@ export abstract class DockerServer extends ExternalServer {
             formattedImage,
             ...(await this.getContainerArgs())
         ];
+        console.log("DOCKER RUN ----------------------");
+        console.log("docker", args.join(" "));
+        console.log("---------------------------------");
         return spawn("docker", args);
     }
 

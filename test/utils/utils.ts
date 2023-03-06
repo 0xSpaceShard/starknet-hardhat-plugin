@@ -27,7 +27,18 @@ export function extractAddress(source: string, pattern: string) {
     return res;
 }
 
+export function dindHostAddressFilter(address: string): string {
+    if (process.env.STARKNET_HARDHAT_RUNNING_DIND) {
+        for (const host of ["localhost", "127.0.0.1"]) {
+            address = address.replace(host, "host.docker.internal");
+        }
+    }
+    return address;
+}
+
 export async function checkDevnetIsNotRunning(url = DEVNET_URL): Promise<void> {
+    url = dindHostAddressFilter(url);
+
     try {
         const res = await axios.get(`${url}/is_alive`);
         throw new AssertionError({
