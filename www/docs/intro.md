@@ -218,10 +218,11 @@ describe("My Test", function () {
     // not compatible with accounts deployed with Starknet CLI
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
-    const classHash = await account.declare(contractFactory);  // class declaration
+    const txHash = await account.declare(contractFactory);  // class declaration
 
-    // two ways to obtain the class hash
-    expect(classHash).to.equal(await contractFactory.getClassHash());
+    // ensure that tx has been successful
+    const txReceipt = await starknet.getTransactionReceipt(txHash);
+    expect(txReceipt.status).to.equal("ACCEPTED_ON_L2" || "ACCEPTED_ON_L1");
 
     const constructorArgs = { initial_balance: 0 };
     const options = { maxFee: ... };
@@ -307,8 +308,13 @@ it("should estimate fee", async function () {
 it("should forward to the implementation contract", async function () {
     const implementationFactory = await starknet.getContractFactory("contract");
     const account = ...;
-    const implementationClassHash = await account.declare(implementationFactory);
+    const txHash = await account.declare(implementationFactory);
 
+    // ensure that tx has been successful
+    const txReceipt = await starknet.getTransactionReceipt(txHash);
+    expect(txReceipt.status).to.equal("ACCEPTED_ON_L2" || "ACCEPTED_ON_L1");
+
+    const implementationClassHash = await contractFactory.getClassHash()
     const proxyFactory = await starknet.getContractFactory("delegate_proxy");
     await account.declare(proxyFactory);
     const proxy = await account.deploy(proxyFactory, {
