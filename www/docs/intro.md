@@ -219,10 +219,7 @@ describe("My Test", function () {
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
     const txHash = await account.declare(contractFactory);  // class declaration
-
-    // ensure that tx has been successful
-    const txReceipt = await starknet.getTransactionReceipt(txHash);
-    expect(txReceipt.status).to.equal("ACCEPTED_ON_L2" || "ACCEPTED_ON_L1");
+    const classHash = await contractFactory.getClassHash();
 
     const constructorArgs = { initial_balance: 0 };
     const options = { maxFee: ... };
@@ -309,12 +306,8 @@ it("should forward to the implementation contract", async function () {
     const implementationFactory = await starknet.getContractFactory("contract");
     const account = ...;
     const txHash = await account.declare(implementationFactory);
-
-    // ensure that tx has been successful
-    const txReceipt = await starknet.getTransactionReceipt(txHash);
-    expect(txReceipt.status).to.equal("ACCEPTED_ON_L2" || "ACCEPTED_ON_L1");
-
-    const implementationClassHash = await contractFactory.getClassHash()
+    const implementationClassHash = await implementationFactory.getClassHash();
+    
     const proxyFactory = await starknet.getContractFactory("delegate_proxy");
     await account.declare(proxyFactory);
     const proxy = await account.deploy(proxyFactory, {
