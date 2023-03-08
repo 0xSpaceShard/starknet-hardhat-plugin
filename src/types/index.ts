@@ -384,7 +384,16 @@ export class StarknetContractFactory {
         const executedOutput = executed.stdout.toString();
         const txHash = extractTxHash(executedOutput);
 
-        return txHash;
+        return new Promise((resolve, reject) => {
+            iterativelyCheckStatus(
+                txHash,
+                this.hre.starknetWrapper,
+                () => resolve(txHash),
+                (error) => {
+                    reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
+                }
+            );
+        });
     }
 
     handleConstructorArguments(constructorArguments: StringMap): string[] {
