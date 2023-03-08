@@ -31,6 +31,8 @@ function run_test() {
 
     network_file="$test_case/network.json"
 
+    [ "$network" == "devnet" ] && ../scripts/devnet-restart.sh
+
     if [[ ! -f "$network_file" ]]; then
         echo "Test failed! Error: No network file provided!"
         total=$((total + 1))
