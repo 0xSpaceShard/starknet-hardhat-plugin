@@ -270,14 +270,6 @@ function adaptComplexInput(
         return;
     }
 
-    if (isNamedTuple(type)) {
-        const memberSpec = parseNamedTuple(type);
-        const nestedInput = input[memberSpec.name];
-        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-
-        return;
-    }
-
     // otherwise a struct
     adaptStructInput(input, inputSpec, abi, adaptedArray);
 }
