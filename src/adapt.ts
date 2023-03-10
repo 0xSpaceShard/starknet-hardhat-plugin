@@ -230,12 +230,7 @@ function adaptComplexInput(
                 }, got ${inputLen}.`;
                 throw new StarknetPluginError(msg);
             }
-
-            for (let i = 0; i < inputLen; i++) {
-                const memberSpec = parseNamedTuple(memberTypes[i]);
-                const nestedInput = input[memberSpec.name];
-                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-            }
+            loopInput(input, inputSpec, abi, adaptedArray);
         } else {
             if (!Array.isArray(input)) {
                 const msg = `Expected ${inputSpec.name} to be a tuple`;
@@ -248,14 +243,8 @@ function adaptComplexInput(
                 }, got ${input.length}.`;
                 throw new StarknetPluginError(msg);
             }
-
-            for (let i = 0; i < input.length; ++i) {
-                const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
-                const nestedInput = input[i];
-                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-            }
+            loopInput(input, inputSpec, abi, adaptedArray);
         }
-
         return;
     }
 
@@ -287,11 +276,41 @@ function adaptStructInput(
         }, got ${inputLen}.`;
         throw new StarknetPluginError(msg);
     }
+    loopInput(input, inputSpec, abi, adaptedArray);
+}
 
-    for (let i = 0; i < struct.members.length; ++i) {
-        const memberSpec = struct.members[i];
-        const nestedInput = input[memberSpec.name];
-        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+function loopInput(
+    input: any,
+    inputSpec: starknet.Argument,
+    abi: starknet.Abi,
+    adaptedArray: string[]
+) {
+    const type = inputSpec.type;
+
+    if (isTuple(type)) {
+        const memberTypes = extractMemberTypes(type.slice(1, -1));
+
+        if (isNamedTuple(type)) {
+            const inputLen = Object.keys(input || {}).length;
+            for (let i = 0; i < inputLen; i++) {
+                const memberSpec = parseNamedTuple(memberTypes[i]);
+                const nestedInput = input[memberSpec.name];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
+        } else {
+            for (let i = 0; i < input.length; ++i) {
+                const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
+                const nestedInput = input[i];
+                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+            }
+        }
+    } else {
+        const struct = <starknet.Struct>abi[type];
+        for (let i = 0; i < struct.members.length; ++i) {
+            const memberSpec = struct.members[i];
+            const nestedInput = input[memberSpec.name];
+            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+        }
     }
 }
 
