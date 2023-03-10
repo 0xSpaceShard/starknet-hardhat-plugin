@@ -154,18 +154,7 @@ export function adaptInputUtil(
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
-                const nextSpec = inputSpecs[i + 1];
-                const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
-                if (
-                    nextSpec &&
-                    nextSpec.name === arrayName &&
-                    nextSpec.type.endsWith("*") &&
-                    arrayName in input
-                ) {
-                    // will add array length in next iteration
-                } else {
-                    throw new StarknetPluginError(errorMsg);
-                }
+                // Prevent throwing error message
             } else {
                 throw new StarknetPluginError(errorMsg);
             }
