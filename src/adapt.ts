@@ -271,12 +271,12 @@ function loopInput(
 }
 
 function assertLengthMatch(input: any, inputSpec: any, abi: starknet.Abi, functionName?: string) {
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length;
     if (Array.isArray(inputSpec) && functionName) {
         // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
         const countArrays = inputSpec.filter((i: any) => i.type.endsWith("*")).length;
         const expectedInputCount = inputSpec.length - countArrays;
-        // Initialize an array with the user input
-        const inputLen = Object.keys(input || {}).length;
         if (expectedInputCount != inputLen) {
             const msg = `${functionName}: Expected ${expectedInputCount} argument${
                 expectedInputCount === 1 ? "" : "s"
@@ -288,8 +288,6 @@ function assertLengthMatch(input: any, inputSpec: any, abi: starknet.Abi, functi
         if (isTuple(type)) {
             const memberTypes = extractMemberTypes(type.slice(1, -1));
             if (isNamedTuple(type)) {
-                // Initialize an array with the user input
-                const inputLen = Object.keys(input || {}).length;
                 if (inputLen !== memberTypes.length) {
                     const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
                         memberTypes.length === 1 ? "" : "s"
@@ -308,7 +306,6 @@ function assertLengthMatch(input: any, inputSpec: any, abi: starknet.Abi, functi
             const struct = <starknet.Struct>abi[type];
             const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
             const expectedInputCount = struct.members.length - countArrays;
-            const inputLen = Object.keys(input || {}).length;
             if (expectedInputCount != inputLen) {
                 const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
                     expectedInputCount === 1 ? "" : "s"
