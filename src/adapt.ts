@@ -130,7 +130,7 @@ export function adaptInputUtil(
 ): string[] {
     const adapted: string[] = [];
 
-    assertLengthMatch(functionName, input, inputSpecs, abi);
+    assertLengthMatch(input, inputSpecs, abi, functionName);
 
     let lastSpec: starknet.Argument = { type: null, name: null };
 
@@ -210,7 +210,7 @@ function adaptComplexInput(
 
     if (isTuple(type)) {
         if (isNamedTuple(type)) {
-            assertLengthMatch("", input, inputSpec, abi);
+            assertLengthMatch(input, inputSpec, abi);
             loopInput(input, inputSpec, abi, adaptedArray);
         } else {
             if (!Array.isArray(input)) {
@@ -218,7 +218,7 @@ function adaptComplexInput(
                 throw new StarknetPluginError(msg);
             }
 
-            assertLengthMatch("", input, inputSpec, abi);
+            assertLengthMatch(input, inputSpec, abi);
             loopInput(input, inputSpec, abi, adaptedArray);
         }
         return;
@@ -239,7 +239,7 @@ function adaptStructInput(
         throw new StarknetPluginError(`Type ${type} not present in ABI.`);
     }
 
-    assertLengthMatch("", input, inputSpec, abi);
+    assertLengthMatch(input, inputSpec, abi);
     loopInput(input, inputSpec, abi, adaptedArray);
 }
 
@@ -276,8 +276,8 @@ function loopInput(
     }
 }
 
-function assertLengthMatch(functionName: any, input: any, inputSpec: any, abi: starknet.Abi) {
-    if (Array.isArray(inputSpec) && functionName != "") {
+function assertLengthMatch(input: any, inputSpec: any, abi: starknet.Abi, functionName?: string) {
+    if (Array.isArray(inputSpec) && functionName) {
         // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
         const countArrays = inputSpec.filter((i: any) => i.type.endsWith("*")).length;
         const expectedInputCount = inputSpec.length - countArrays;
