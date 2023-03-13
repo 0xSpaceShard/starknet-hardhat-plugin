@@ -6,4 +6,6 @@ if [[ -n "${STARKNET_HARDHAT_RUNNING_DIND:-}" ]]; then
 	HOST=host.docker.internal
 fi
 
-curl -X POST "http://$HOST:$PORT/restart"/
+echo "Restarting Devnet: $HOST:$PORT"
+
+curl -X POST "http://$HOST:$PORT/restart"
