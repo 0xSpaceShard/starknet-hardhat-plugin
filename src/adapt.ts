@@ -128,42 +128,39 @@ export function adaptInputUtil(
     inputSpecs: starknet.Argument[],
     abi: starknet.Abi
 ): string[] {
-    const adapted: string[] = [];
-
     assertLengthMatch(input, inputSpecs, abi, functionName);
 
+    const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
 
     inputSpecs.forEach((inputSpec) => {
         const currentValue = input[inputSpec.name];
         if (inputSpec.type === "felt") {
-            const errorMsg =
-                `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
-                `got: ${typeof currentValue}`;
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
                 // Prevent throwing error message
             } else {
+                const errorMsg =
+                `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
+                `got: ${typeof currentValue}`;
                 throw new StarknetPluginError(errorMsg);
             }
         } else if (inputSpec.type.endsWith("*")) {
             if (!Array.isArray(currentValue)) {
-                const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
-                throw new StarknetPluginError(msg);
+                const errorMsg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
+                throw new StarknetPluginError(errorMsg);
             }
-
             const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
-                const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
-                throw new StarknetPluginError(msg);
+                const errorMsg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
+                throw new StarknetPluginError(errorMsg);
             }
             // Remove the * from the spec type
             const inputSpecArrayElement = {
                 name: inputSpec.name,
                 type: inputSpec.type.slice(0, -1)
             };
-
             adapted.push(currentValue.length.toString());
             for (const element of currentValue) {
                 adaptComplexInput(element, inputSpecArrayElement, abi, adapted);
@@ -172,7 +169,6 @@ export function adaptInputUtil(
             const nestedInput = input[inputSpec.name];
             adaptComplexInput(nestedInput, inputSpec, abi, adapted);
         }
-
         lastSpec = inputSpec;
     });
     return adapted;
