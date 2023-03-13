@@ -110,7 +110,7 @@ You can use docker tester image. The image includes testing environment set up w
 npm run docker-tester
 ```
 
-This is take you in the container shell. Once in the container, you can use the `test-` scripts defined in `package.json` in an isolated environment. This can be combined with [Executing individual tests](#executing-individual-tests) and [Skipping test setup](#skipping-test-setup) for running tests.
+This takes you into the container shell. Once inside the container, you can use the `test-` scripts defined in `package.json` in the isolated (containerized) environment. This can be combined with [executing individual tests](#executing-individual-tests) and [skipping test setup](#skipping-test-setup) for running specific tests quickly.
 
 ```sh
 root@7121822e393c:/home/circleci/project# # Inside docker test container
