@@ -200,27 +200,21 @@ function adaptComplexInput(
     }
 
     if (type === "felt") {
-        if (isNumeric(input)) {
-            adaptedArray.push(toNumericString(input));
-            return;
+        if (!isNumeric(input)) {
+            const msg = `Expected ${inputSpec.name} to be a felt`;
+            throw new StarknetPluginError(msg);
         }
-        const msg = `Expected ${inputSpec.name} to be a felt`;
-        throw new StarknetPluginError(msg);
+        adaptedArray.push(toNumericString(input));
+        return;
     }
 
     if (isTuple(type)) {
-        if (isNamedTuple(type)) {
-            assertLengthMatch(input, inputSpec, abi);
-            loopInput(input, inputSpec, abi, adaptedArray);
-        } else {
-            if (!Array.isArray(input)) {
-                const msg = `Expected ${inputSpec.name} to be a tuple`;
-                throw new StarknetPluginError(msg);
-            }
-
-            assertLengthMatch(input, inputSpec, abi);
-            loopInput(input, inputSpec, abi, adaptedArray);
+        if (!isNamedTuple(type) && !Array.isArray(input)) {
+            const msg = `Expected ${inputSpec.name} to be a tuple`;
+            throw new StarknetPluginError(msg);
         }
+        assertLengthMatch(input, inputSpec, abi);
+        loopInput(input, inputSpec, abi, adaptedArray);
         return;
     }
 
