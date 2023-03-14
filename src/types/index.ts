@@ -365,7 +365,7 @@ export class StarknetContractFactory {
     /**
      * Declare a contract class.
      * @param options optional arguments to class declaration
-     * @returns the class hash as a hex string
+     * @returns transaction hash as a hex string
      */
     async declare(options: DeclareOptions = {}): Promise<string> {
         const executed = await this.hre.starknetWrapper.declare({
@@ -382,14 +382,13 @@ export class StarknetContractFactory {
         }
 
         const executedOutput = executed.stdout.toString();
-        const classHash = extractClassHash(executedOutput);
         const txHash = extractTxHash(executedOutput);
 
         return new Promise((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
                 this.hre.starknetWrapper,
-                () => resolve(classHash),
+                () => resolve(txHash),
                 (error) => {
                     reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
                 }
