@@ -52,32 +52,6 @@ export function adaptLog(msg: string): string {
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
 }
 
-const DOCKER_HOST = "host.docker.internal";
-const MACOS_PLATFORM = "darwin";
-/**
- * Adapts `url` by replacing localhost and 127.0.0.1 with `host.internal.docker`
- * @param url string representing the url to be adapted
- * @returns adapted url
- */
-export function adaptUrl(url: string): string {
-    if (process.platform === MACOS_PLATFORM) {
-        for (const protocol of ["http://", "https://", ""]) {
-            for (const host of ["localhost", "127.0.0.1"]) {
-                if (url === `${protocol}${host}`) {
-                    return `${protocol}${DOCKER_HOST}`;
-                }
-
-                const prefix = `${protocol}${host}:`;
-                if (url.startsWith(prefix)) {
-                    return url.replace(prefix, `${protocol}${DOCKER_HOST}:`);
-                }
-            }
-        }
-    }
-
-    return url;
-}
-
 export function getDefaultHttpNetworkConfig(
     url: string,
     verificationUrl: string,
