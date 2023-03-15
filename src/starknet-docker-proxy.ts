@@ -36,7 +36,7 @@ export class StarknetDockerProxy extends DockerServer {
         for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
         }
-        volumes.push("-v", `${this.manifestPath}:${this.manifestPath}`);
+        if (this.manifestPath) volumes.push("-v", `${this.manifestPath}:${this.manifestPath}`);
 
         const dockerArgs = [...volumes];
 
