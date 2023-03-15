@@ -16,8 +16,10 @@ import axios from "axios";
 interface CompileWrapperOptions {
     file: string;
     output: string;
-    abi: string;
+    abi?: string;
     cairoPath: string;
+    sierraOutput?: string;
+    manifestPath?: string;
     accountContract: boolean;
     disableHintValidation: boolean;
 }
@@ -97,7 +99,7 @@ export abstract class StarknetWrapper {
     }
 
     public async execute(
-        command: "starknet" | "starknet-compile" | "get_class_hash" | "cairo-migrate",
+        command: "starknet" | "starknet-compile" | "get_class_hash" | "cairo-migrate" | "cargo",
         args: string[]
     ): Promise<ProcessResult> {
         return await this.externalServer.post<ProcessResult>({
@@ -131,6 +133,41 @@ export abstract class StarknetWrapper {
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
         const executed = await this.execute("starknet-compile", preparedOptions);
+        return executed;
+    }
+
+    private getCargoRunCommand(bin: string, manifestPath: string, args: string[]): string[] {
+        return [
+            "cargo",
+            "run",
+            "--bin",
+            bin,
+            "--manifest-path",
+            manifestPath,
+            "--",
+            args.join(" "),
+            "--allowed-libfuncs-list-name",
+            "experimental_v0.1.0"
+        ];
+    }
+
+    protected preparedCairoOneCompileOptions(options: CompileWrapperOptions): string[] {
+        const cairoCompile = this.getCargoRunCommand("starknet-compile", options.manifestPath, [
+            options.file,
+            options.output
+        ]);
+        const sierraCompile = this.getCargoRunCommand(
+            "starknet-sierra-compile",
+            options.manifestPath,
+            [options.output, options.sierraOutput]
+        );
+        const ret = [...cairoCompile, "&&", ...sierraCompile];
+        return ret;
+    }
+
+    public async cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.preparedCairoOneCompileOptions(options);
+        const executed = await this.execute("cargo", preparedOptions);
         return executed;
     }
 

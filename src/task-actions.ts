@@ -3,7 +3,13 @@ import * as fs from "fs";
 import axios from "axios";
 import FormData = require("form-data");
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { ABI_SUFFIX, ALPHA_TESTNET, DEFAULT_STARKNET_NETWORK } from "./constants";
+import {
+    ABI_SUFFIX,
+    ALPHA_TESTNET,
+    CARGO_FILE,
+    DEFAULT_STARKNET_NETWORK,
+    SIERRA_SUFFIX
+} from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
     adaptLog,
@@ -72,6 +78,89 @@ function initializeFile(filePath: string) {
 
 function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
+}
+
+export async function starknetCompileCairo1Action(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    const manifestPath = hre.config.starknet.manifestPath || args?.manifestPath;
+    if (!manifestPath) {
+        const msg =
+            "Could not find manifest-path\n" +
+            "The argument '—-manifest-path path/to/Cargo.toml' or manifestPath on hardhat.config.ts should be set.";
+        throw new StarknetPluginError(msg);
+    }
+
+    if (path.basename(manifestPath) !== CARGO_FILE) {
+        const msg = "The manifest-path must be a path to a Cargo.toml file";
+        throw new StarknetPluginError(msg);
+    }
+
+    const root = hre.config.paths.root;
+    const rootRegex = new RegExp("^" + root);
+
+    const defaultSourcesPath = hre.config.paths.starknetSources;
+    const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
+    const artifactsPath = hre.config.paths.starknetArtifacts;
+
+    const cairoPaths = [defaultSourcesPath, root];
+    if (args.cairoPath) {
+        args.cairoPath.split(":").forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    if (hre.config.paths.cairoPaths) {
+        hre.config.paths.cairoPaths.forEach((path: string) => {
+            cairoPaths.push(path);
+        });
+    }
+    for (let i = 0; i < cairoPaths.length; i++) {
+        if (!path.isAbsolute(cairoPaths[i])) {
+            cairoPaths[i] = adaptPath(root, cairoPaths[i]);
+        }
+    }
+
+    const cairoPath = cairoPaths.join(":");
+    let statusCode = 0;
+    for (let sourcesPath of sourcesPaths) {
+        sourcesPath = adaptPath(root, sourcesPath);
+        checkSourceExists(sourcesPath);
+        const files = await traverseFiles(sourcesPath, "*.cairo");
+        const recompiler = new Recompiler(hre);
+        for (const file of files) {
+            console.log("Compiling", file);
+            const suffix = file.replace(rootRegex, "");
+            const fileName = getFileName(suffix);
+            const dirPath = path.join(artifactsPath, suffix);
+            const outputPath = path.join(dirPath, `${fileName}.json`);
+            const sierraOutput = path.join(dirPath, `${fileName}${SIERRA_SUFFIX}`);
+
+            fs.mkdirSync(dirPath, { recursive: true });
+            initializeFile(outputPath);
+            initializeFile(sierraOutput);
+
+            const executed = await hre.starknetWrapper.cairo1Compile({
+                file,
+                output: outputPath,
+                cairoPath,
+                sierraOutput,
+                manifestPath,
+                accountContract: args.accountContract,
+                disableHintValidation: args.disableHintValidation
+            });
+
+            // Update cache after compilation
+            await recompiler.updateCache(args, file, outputPath, sierraOutput, cairoPath);
+            statusCode += processExecuted(executed, true);
+        }
+        await recompiler.saveCache();
+    }
+
+    if (statusCode) {
+        const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
+        throw new StarknetPluginError(msg);
+    }
 }
 
 export async function starknetCompileAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {

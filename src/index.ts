@@ -50,7 +50,8 @@ import {
     starknetPluginVersionAction,
     starknetMigrateAction,
     starknetNewAccountAction,
-    starknetDeployAccountAction
+    starknetDeployAccountAction,
+    starknetCompileCairo1Action
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -238,6 +239,25 @@ task("starknet-compile", "Compiles Starknet contracts")
     .addFlag("accountContract", "Allows compiling an account contract.")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
+
+task("starknet-compile-cairo1", "Compiles Starknet cairo1 contracts")
+    .addOptionalVariadicPositionalParam(
+        "paths",
+        "The paths to be used for deployment.\n" +
+            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "If no paths are provided, the default contracts directory is traversed."
+    )
+    .addOptionalParam(
+        "manifestPath",
+        "Allows to specify locally installed cairo1 compiler path.\n" +
+            "e.g. --manifest-path 'path/to/Cargo.toml' or can also be set on hardhat.config.ts file."
+    )
+    .addOptionalParam(
+        "cairoPath",
+        "Allows specifying the locations of imported files, if necessary.\n" +
+            "Separate them with a colon (:), e.g. --cairo-path='path/to/lib1:path/to/lib2'"
+    )
+    .setAction(starknetCompileCairo1Action);
 
 extendEnvironment((hre) => {
     hre.starknet = {

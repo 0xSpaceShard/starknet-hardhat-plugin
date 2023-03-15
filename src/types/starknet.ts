@@ -98,6 +98,7 @@ export type StarknetConfig = {
     networkUrl?: string;
     networkConfig?: NetworkConfig;
     recompile?: boolean;
+    manifestPath?: string;
     requestTimeout?: number;
 };
 

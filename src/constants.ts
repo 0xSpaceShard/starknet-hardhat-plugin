@@ -2,6 +2,8 @@ import config from "../config.json";
 
 export const PLUGIN_NAME = "Starknet";
 export const ABI_SUFFIX = "_abi.json";
+export const SIERRA_SUFFIX = ".casm";
+export const CARGO_FILE = "Cargo.toml";
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
 export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";
 export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
