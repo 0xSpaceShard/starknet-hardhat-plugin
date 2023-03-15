@@ -12,6 +12,7 @@ import { FeeEstimation } from "./starknet-types";
 import { hash } from "starknet";
 import { toBN, toHex } from "starknet/utils/number";
 import axios from "axios";
+import path from "path";
 
 interface CompileWrapperOptions {
     file: string;
@@ -483,7 +484,16 @@ export class DockerWrapper extends StarknetWrapper {
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
     ) {
-        super(new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths), hre);
+        super(
+            new StarknetDockerProxy(
+                image,
+                rootPath,
+                accountPaths,
+                cairoPaths,
+                path.dirname(hre.config.starknet.manifestPath)
+            ),
+            hre
+        );
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`
         );
