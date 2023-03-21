@@ -128,7 +128,7 @@ export function adaptInputUtil(
     inputSpecs: starknet.Argument[],
     abi: starknet.Abi
 ): string[] {
-    assertLengthMatch(input, inputSpecs, abi, functionName);
+    assertLenArray(input, inputSpecs, functionName);
 
     const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
@@ -139,7 +139,7 @@ export function adaptInputUtil(
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
             } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
-                // Prevent throwing error message
+                // If "_len" suffix, do nothing
             } else {
                 const errorMsg =
                 `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
@@ -209,8 +209,8 @@ function adaptComplexInput(
             const msg = `Expected ${inputSpec.name} to be a tuple`;
             throw new StarknetPluginError(msg);
         }
-        assertLengthMatch(input, inputSpec, abi);
-        loopInput(input, inputSpec, abi, adaptedArray);
+        assertLenTuple(input, inputSpec);
+        loopTuple(input, inputSpec, abi, adaptedArray);
         return;
     }
 
@@ -229,86 +229,94 @@ function adaptStructInput(
         throw new StarknetPluginError(`Type ${type} not present in ABI.`);
     }
 
-    assertLengthMatch(input, inputSpec, abi);
-    loopInput(input, inputSpec, abi, adaptedArray);
+    assertLenStruct(input, inputSpec, abi);
+    loopStruct(input, inputSpec, abi, adaptedArray);
 }
 
-function loopInput(
+function loopTuple(
     input: any,
     inputSpec: starknet.Argument,
     abi: starknet.Abi,
     adaptedArray: string[]
 ) {
     const type = inputSpec.type;
-
-    if (isTuple(type)) {
-        const memberTypes = extractMemberTypes(type.slice(1, -1));
-
-        if (isNamedTuple(type)) {
-            memberTypes.forEach((memberType) => {
-                const memberSpec = parseNamedTuple(memberType);
-                const nestedInput = input[memberSpec.name];
-                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-            });
-        } else {
-            for (let i = 0; i < input.length; ++i) {
-                const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
-                const nestedInput = input[i];
-                adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-            }
-        }
-    } else {
-        const struct = <starknet.Struct>abi[type];
-        struct.members.forEach((memberSpec) => {
+    const memberTypes = extractMemberTypes(type.slice(1, -1));
+    if (isNamedTuple(type)) {
+        memberTypes.forEach((memberType) => {
+            const memberSpec = parseNamedTuple(memberType);
             const nestedInput = input[memberSpec.name];
             adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
         });
+    } else {
+        for (let i = 0; i < input.length; ++i) {
+            const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
+            const nestedInput = input[i];
+            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+        }
     }
 }
 
-function assertLengthMatch(input: any, inputSpec: any, abi: starknet.Abi, functionName?: string) {
+function loopStruct(
+    input: any,
+    inputSpec: starknet.Argument,
+    abi: starknet.Abi,
+    adaptedArray: string[]
+) {
+    const type = inputSpec.type;
+    const struct = <starknet.Struct>abi[type];
+    struct.members.forEach((memberSpec) => {
+        const nestedInput = input[memberSpec.name];
+        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+    });
+}
+
+function assertLenArray(input: any, inputSpec: any, functionName: string) {
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
-    if (Array.isArray(inputSpec) && functionName) {
-        // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-        const countArrays = inputSpec.filter((i: any) => i.type.endsWith("*")).length;
-        const expectedInputCount = inputSpec.length - countArrays;
-        if (expectedInputCount != inputLen) {
-            const msg = `${functionName}: Expected ${expectedInputCount} argument${
-                expectedInputCount === 1 ? "" : "s"
+    const countArrays = inputSpec.filter((i: any) => i.type.endsWith("*")).length;
+    const expectedInputCount = inputSpec.length - countArrays;
+    if (expectedInputCount != inputLen) {
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${
+            expectedInputCount === 1 ? "" : "s"
+        }, got ${inputLen}.`;
+        throw new StarknetPluginError(msg);
+    }
+}
+
+function assertLenTuple(input: any, inputSpec: any) {
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length;
+    const type = inputSpec.type;
+    const memberTypes = extractMemberTypes(type.slice(1, -1));
+    if (isNamedTuple(type)) {
+        if (inputLen !== memberTypes.length) {
+            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                memberTypes.length === 1 ? "" : "s"
             }, got ${inputLen}.`;
             throw new StarknetPluginError(msg);
         }
     } else {
-        const type = inputSpec.type;
-        if (isTuple(type)) {
-            const memberTypes = extractMemberTypes(type.slice(1, -1));
-            if (isNamedTuple(type)) {
-                if (inputLen !== memberTypes.length) {
-                    const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                        memberTypes.length === 1 ? "" : "s"
-                    }, got ${inputLen}.`;
-                    throw new StarknetPluginError(msg);
-                }
-            } else {
-                if (input.length != memberTypes.length) {
-                    const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                        memberTypes.length === 1 ? "" : "s"
-                    }, got ${input.length}.`;
-                    throw new StarknetPluginError(msg);
-                }
-            }
-        } else {
-            const struct = <starknet.Struct>abi[type];
-            const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
-            const expectedInputCount = struct.members.length - countArrays;
-            if (expectedInputCount != inputLen) {
-                const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
-                    expectedInputCount === 1 ? "" : "s"
-                }, got ${inputLen}.`;
-                throw new StarknetPluginError(msg);
-            }
+        if (input.length != memberTypes.length) {
+            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+                memberTypes.length === 1 ? "" : "s"
+            }, got ${input.length}.`;
+            throw new StarknetPluginError(msg);
         }
+    }
+}
+
+function assertLenStruct(input: any, inputSpec: any, abi: starknet.Abi) {
+    // Initialize an array with the user input
+    const inputLen = Object.keys(input || {}).length;
+    const type = inputSpec.type;
+    const struct = <starknet.Struct>abi[type];
+    const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
+    const expectedInputCount = struct.members.length - countArrays;
+    if (expectedInputCount != inputLen) {
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
+            expectedInputCount === 1 ? "" : "s"
+        }, got ${inputLen}.`;
+        throw new StarknetPluginError(msg);
     }
 }
 
