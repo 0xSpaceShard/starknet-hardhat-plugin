@@ -333,12 +333,7 @@ export function adaptOutputUtil(
     outputSpecs: starknet.Argument[],
     abi: starknet.Abi
 ): StringMap {
-    const splitStr = rawResult.split(" ");
-    const result: bigint[] = [];
-    for (const num of splitStr) {
-        const parsed = num[0] === "-" ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
-        result.push(parsed);
-    }
+    let result = parseResult(rawResult);
     let resultIndex = 0;
     let lastSpec: starknet.Argument = { type: null, name: null };
     const adapted: StringMap = {};
@@ -385,6 +380,16 @@ export function adaptOutputUtil(
         lastSpec = outputSpec;
     }
     return adapted;
+}
+
+function parseResult(rawResult: string) {
+    const splitStr = rawResult.split(" ");
+    const result: bigint[] = [];
+    for (const num of splitStr) {
+        const parsed = num[0] === "-" ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
+        result.push(parsed);
+    }
+    return result
 }
 
 /**
