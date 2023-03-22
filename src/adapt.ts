@@ -133,7 +133,7 @@ export function adaptInputUtil(
     const adapted: string[] = [];
     let lastSpec: starknet.Argument = { type: null, name: null };
 
-    inputSpecs.forEach((inputSpec) => {
+    for (const inputSpec of inputSpecs) {
         const currentValue = input[inputSpec.name];
         if (inputSpec.type === "felt") {
             if (isNumeric(currentValue)) {
@@ -170,7 +170,7 @@ export function adaptInputUtil(
             adaptComplexInput(nestedInput, inputSpec, abi, adapted);
         }
         lastSpec = inputSpec;
-    });
+    };
     return adapted;
 }
 
@@ -242,11 +242,11 @@ function loopTuple(
     const type = inputSpec.type;
     const memberTypes = extractMemberTypes(type.slice(1, -1));
     if (isNamedTuple(type)) {
-        memberTypes.forEach((memberType) => {
+        for (const memberType of memberTypes) {
             const memberSpec = parseNamedTuple(memberType);
             const nestedInput = input[memberSpec.name];
             adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-        });
+        };
     } else {
         for (let i = 0; i < input.length; ++i) {
             const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
@@ -264,10 +264,10 @@ function loopStruct(
 ) {
     const type = inputSpec.type;
     const struct = <starknet.Struct>abi[type];
-    struct.members.forEach((memberSpec) => {
+    for (const memberSpec of struct.members) {
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-    });
+    };
 }
 
 function assertLenArray(input: any, inputSpec: any, functionName: string) {
