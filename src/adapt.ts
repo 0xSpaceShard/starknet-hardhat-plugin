@@ -403,39 +403,50 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
             newRawIndex: rawIndex + 1
         };
     }
-
-    let generatedComplex: any = null;
     if (isTuple(type)) {
-        const members = extractMemberTypes(type.slice(1, -1));
-        if (isNamedTuple(type)) {
-            generatedComplex = {};
-            for (const member of members) {
-                const memberSpec = parseNamedTuple(member);
-                const ret = generateComplexOutput(raw, rawIndex, memberSpec.type, abi);
-                generatedComplex[memberSpec.name] = ret.generatedComplex;
-                rawIndex = ret.newRawIndex;
-            }
-        } else {
-            generatedComplex = [];
-            for (const member of members) {
-                const ret = generateComplexOutput(raw, rawIndex, member, abi);
-                generatedComplex.push(ret.generatedComplex);
-                rawIndex = ret.newRawIndex;
-            }
-        }
+        return generateTupleOutput(raw, rawIndex, type, abi);
     } else {
-        // struct
-        if (!(type in abi)) {
-            throw new StarknetPluginError(`Type ${type} not present in ABI.`);
-        }
+        return generateStructOutput(raw, rawIndex, type, abi);
+    }
+}
 
+function generateTupleOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
+    let generatedComplex: any = null;
+    const members = extractMemberTypes(type.slice(1, -1));
+    if (isNamedTuple(type)) {
         generatedComplex = {};
-        const struct = <starknet.Struct>abi[type];
-        for (const member of struct.members) {
-            const ret = generateComplexOutput(raw, rawIndex, member.type, abi);
-            generatedComplex[member.name] = ret.generatedComplex;
+        for (const member of members) {
+            const memberSpec = parseNamedTuple(member);
+            const ret = generateComplexOutput(raw, rawIndex, memberSpec.type, abi);
+            generatedComplex[memberSpec.name] = ret.generatedComplex;
             rawIndex = ret.newRawIndex;
         }
+    } else {
+        generatedComplex = [];
+        for (const member of members) {
+            const ret = generateComplexOutput(raw, rawIndex, member, abi);
+            generatedComplex.push(ret.generatedComplex);
+            rawIndex = ret.newRawIndex;
+        }
+    }
+
+    return {
+        generatedComplex,
+        newRawIndex: rawIndex
+    };
+}
+
+function generateStructOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
+    let generatedComplex: any = null;
+    if (!(type in abi)) {
+        throw new StarknetPluginError(`Type ${type} not present in ABI.`);
+    }
+    generatedComplex = {};
+    const struct = <starknet.Struct>abi[type];
+    for (const member of struct.members) {
+        const ret = generateComplexOutput(raw, rawIndex, member.type, abi);
+        generatedComplex[member.name] = ret.generatedComplex;
+        rawIndex = ret.newRawIndex;
     }
 
     return {
