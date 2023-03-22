@@ -350,27 +350,10 @@ export function adaptOutputUtil(
                 throw new StarknetPluginError(msg);
             }
 
-            // Remove * from the spec type
-            const outputSpecArrayElementType = outputSpec.type.slice(0, -1);
-            const arrLength = parseInt(adapted[lastSpec.name]);
-
-            const structArray = [];
-
-            // Iterate over the struct array, starting at index, starting at `resultIndex`
-            for (let i = 0; i < arrLength; i++) {
-                // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(
-                    result,
-                    resultIndex,
-                    outputSpecArrayElementType,
-                    abi
-                );
-                structArray.push(ret.generatedComplex);
-                // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
-                resultIndex = ret.newRawIndex;
-            }
+            let generated = generateArray(result, outputSpec, lastSpec, adapted, resultIndex, abi);
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputSpec.name] = structArray;
+            adapted[outputSpec.name] = generated.structArray;
+            resultIndex = generated.resultIndex;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
             adapted[outputSpec.name] = ret.generatedComplex;
@@ -390,6 +373,36 @@ function parseResult(rawResult: string) {
         result.push(parsed);
     }
     return result
+}
+
+function generateArray(
+    result: bigint[],
+    outputSpec: starknet.Argument,
+    lastSpec: starknet.Argument,
+    adapted: StringMap,
+    resultIndex: number,
+    abi: starknet.Abi
+) {
+    // Remove * from the spec type
+    const outputSpecArrayElementType = outputSpec.type.slice(0, -1);
+    const arrLength = parseInt(adapted[lastSpec.name]);
+
+    const structArray = [];
+
+    // Iterate over the struct array, starting at index, starting at `resultIndex`
+    for (let i = 0; i < arrLength; i++) {
+        // Generate a struct with each element of the array and push it to `structArray`
+        const ret = generateComplexOutput(
+            result,
+            resultIndex,
+            outputSpecArrayElementType,
+            abi
+        );
+        structArray.push(ret.generatedComplex);
+        // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
+        resultIndex = ret.newRawIndex;
+    }
+    return { structArray, resultIndex }
 }
 
 /**
