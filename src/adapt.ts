@@ -238,19 +238,26 @@ function loopTuple(
     adaptedArray: string[]
 ) {
     const type = inputSpec.type;
-    const memberTypes = extractMemberTypes(type.slice(1, -1));
     if (isNamedTuple(type)) {
-        for (const memberType of memberTypes) {
-            const memberSpec = parseNamedTuple(memberType);
-            const nestedInput = input[memberSpec.name];
-            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-        };
+        input = filterTupleObject(input);
+    }
+    for (const element of input) {
+        const memberSpec = { name: `[${element}]`, type: "felt" };
+        const nestedInput = element;
+        adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
+    }
+}
+
+function filterTupleObject(input: any): number[] {
+    let values = Object.values(input);
+    if (values.length == 1) {
+        return filterTupleObject(values[0]);
     } else {
-        for (let i = 0; i < input.length; ++i) {
-            const memberSpec = { name: `${inputSpec.name}[${i}]`, type: memberTypes[i] };
-            const nestedInput = input[i];
-            adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-        }
+        let output: number[] = []
+        values.forEach((value) => {
+            output.push(Number(value));
+        })
+        return output
     }
 }
 
