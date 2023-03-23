@@ -138,9 +138,7 @@ export function adaptInputUtil(
         if (inputSpec.type === "felt") {
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
-            } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
-                // If "_len" suffix, do nothing
-            } else {
+            } else if (!inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const errorMsg =
                 `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
                 `got: ${typeof currentValue}`;
@@ -288,20 +286,11 @@ function assertLenTuple(input: any, inputSpec: any) {
     const inputLen = Object.keys(input || {}).length;
     const type = inputSpec.type;
     const memberTypes = extractMemberTypes(type.slice(1, -1));
-    if (isNamedTuple(type)) {
-        if (inputLen !== memberTypes.length) {
-            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                memberTypes.length === 1 ? "" : "s"
-            }, got ${inputLen}.`;
-            throw new StarknetPluginError(msg);
-        }
-    } else {
-        if (input.length != memberTypes.length) {
-            const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                memberTypes.length === 1 ? "" : "s"
-            }, got ${input.length}.`;
-            throw new StarknetPluginError(msg);
-        }
+    if ((isNamedTuple(type) && inputLen !== memberTypes.length) || (!isNamedTuple(type) && input.length != memberTypes.length)) {
+        const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
+            memberTypes.length === 1 ? "" : "s"
+        }, got ${isNamedTuple(type) ? inputLen : input.length}.`;
+        throw new StarknetPluginError(msg);
     }
 }
 
