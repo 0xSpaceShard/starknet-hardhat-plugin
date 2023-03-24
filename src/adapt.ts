@@ -140,8 +140,8 @@ export function adaptInputUtil(
                 adapted.push(toNumericString(currentValue));
             } else if (!inputSpec.name.endsWith(LEN_SUFFIX)) {
                 const errorMsg =
-                `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
-                `got: ${typeof currentValue}`;
+                    `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
+                    `got: ${typeof currentValue}`;
                 throw new StarknetPluginError(errorMsg);
             }
         } else if (inputSpec.type.endsWith("*")) {
@@ -168,7 +168,7 @@ export function adaptInputUtil(
             adaptComplexInput(nestedInput, inputSpec, abi, adapted);
         }
         lastSpec = inputSpec;
-    };
+    }
     return adapted;
 }
 
@@ -249,15 +249,15 @@ function loopTuple(
 }
 
 function filterTupleObject(input: any): number[] {
-    let values = Object.values(input);
+    const values = Object.values(input);
     if (values.length == 1) {
         return filterTupleObject(values[0]);
     } else {
-        let output: number[] = []
+        const output: number[] = [];
         values.forEach((value) => {
             output.push(Number(value));
-        })
-        return output
+        });
+        return output;
     }
 }
 
@@ -272,13 +272,13 @@ function loopStruct(
     for (const memberSpec of struct.members) {
         const nestedInput = input[memberSpec.name];
         adaptComplexInput(nestedInput, memberSpec, abi, adaptedArray);
-    };
+    }
 }
 
-function assertLenArray(input: any, inputSpec: any, functionName: string) {
+function assertLenArray(input: any, inputSpec: starknet.Argument[], functionName: string) {
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
-    const countArrays = inputSpec.filter((i: any) => i.type.endsWith("*")).length;
+    const countArrays = inputSpec.filter((i) => i.type.endsWith("*")).length;
     const expectedInputCount = inputSpec.length - countArrays;
     if (expectedInputCount != inputLen) {
         const msg = `${functionName}: Expected ${expectedInputCount} argument${
@@ -288,12 +288,15 @@ function assertLenArray(input: any, inputSpec: any, functionName: string) {
     }
 }
 
-function assertLenTuple(input: any, inputSpec: any) {
+function assertLenTuple(input: any, inputSpec: starknet.Argument) {
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
     const type = inputSpec.type;
     const memberTypes = extractMemberTypes(type.slice(1, -1));
-    if ((isNamedTuple(type) && inputLen !== memberTypes.length) || (!isNamedTuple(type) && input.length != memberTypes.length)) {
+    if (
+        (isNamedTuple(type) && inputLen !== memberTypes.length) ||
+        (!isNamedTuple(type) && input.length != memberTypes.length)
+    ) {
         const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
             memberTypes.length === 1 ? "" : "s"
         }, got ${isNamedTuple(type) ? inputLen : input.length}.`;
@@ -301,7 +304,7 @@ function assertLenTuple(input: any, inputSpec: any) {
     }
 }
 
-function assertLenStruct(input: any, inputSpec: any, abi: starknet.Abi) {
+function assertLenStruct(input: any, inputSpec: starknet.Argument, abi: starknet.Abi) {
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
     const type = inputSpec.type;
@@ -329,7 +332,7 @@ export function adaptOutputUtil(
     outputSpecs: starknet.Argument[],
     abi: starknet.Abi
 ): StringMap {
-    let result = parseResult(rawResult);
+    const result = parseResult(rawResult);
     let resultIndex = 0;
     let lastSpec: starknet.Argument = { type: null, name: null };
     const adapted: StringMap = {};
@@ -346,7 +349,14 @@ export function adaptOutputUtil(
                 throw new StarknetPluginError(msg);
             }
 
-            let generated = generateArray(result, outputSpec, lastSpec, adapted, resultIndex, abi);
+            const generated = generateArray(
+                result,
+                outputSpec,
+                lastSpec,
+                adapted,
+                resultIndex,
+                abi
+            );
             // New resultIndex is the raw index generated from the last struct
             adapted[outputSpec.name] = generated.structArray;
             resultIndex = generated.resultIndex;
@@ -368,7 +378,7 @@ function parseResult(rawResult: string) {
         const parsed = num[0] === "-" ? BigInt(num.substring(1)) * BigInt(-1) : BigInt(num);
         result.push(parsed);
     }
-    return result
+    return result;
 }
 
 function generateArray(
@@ -388,17 +398,12 @@ function generateArray(
     // Iterate over the struct array, starting at index, starting at `resultIndex`
     for (let i = 0; i < arrLength; i++) {
         // Generate a struct with each element of the array and push it to `structArray`
-        const ret = generateComplexOutput(
-            result,
-            resultIndex,
-            outputSpecArrayElementType,
-            abi
-        );
+        const ret = generateComplexOutput(result, resultIndex, outputSpecArrayElementType, abi);
         structArray.push(ret.generatedComplex);
         // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
         resultIndex = ret.newRawIndex;
     }
-    return { structArray, resultIndex }
+    return { structArray, resultIndex };
 }
 
 /**
@@ -451,11 +456,10 @@ function generateTupleOutput(raw: bigint[], rawIndex: number, type: string, abi:
 }
 
 function generateStructOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
-    let generatedComplex: any = null;
     if (!(type in abi)) {
         throw new StarknetPluginError(`Type ${type} not present in ABI.`);
     }
-    generatedComplex = {};
+    const generatedComplex: any = {};
     const struct = <starknet.Struct>abi[type];
     for (const member of struct.members) {
         const ret = generateComplexOutput(raw, rawIndex, member.type, abi);
