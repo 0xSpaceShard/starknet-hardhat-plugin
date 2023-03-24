@@ -250,15 +250,15 @@ function loopTuple(
 
 function filterTupleObject(input: any): number[] {
     const values = Object.values(input);
-    if (values.length == 1) {
+    // Case: nested tuple
+    if (typeof values[0] === "object") {
         return filterTupleObject(values[0]);
-    } else {
-        const output: number[] = [];
-        values.forEach((value) => {
-            output.push(Number(value));
-        });
-        return output;
     }
+    const output: number[] = [];
+    values.forEach((value) => {
+        output.push(Number(value));
+    });
+    return output;
 }
 
 function loopStruct(
@@ -424,9 +424,8 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     }
     if (isTuple(type)) {
         return generateTupleOutput(raw, rawIndex, type, abi);
-    } else {
-        return generateStructOutput(raw, rawIndex, type, abi);
     }
+    return generateStructOutput(raw, rawIndex, type, abi);
 }
 
 function generateTupleOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
