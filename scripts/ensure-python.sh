@@ -4,7 +4,7 @@
 
 set -eu
 
-PY_VERSION=3.8.9
+PY_VERSION=3.9.0
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     which "/opt/circleci/.pyenv/versions/$PY_VERSION/bin/python" || pyenv install "$PY_VERSION"

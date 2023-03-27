@@ -7,7 +7,7 @@ GIT_VERSION="v$VERSION"
 
 # create a venv
 rm -rf tmp-venv
-python3.8 -m venv tmp-venv
+python3.9 -m venv tmp-venv
 source tmp-venv/bin/activate
 
 # create a tmp OZ repo
