@@ -1,14 +1,18 @@
-import { StarknetPluginError } from "./starknet-plugin-error";
 import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
-import * as path from "path";
+import path from "path";
+import { uint256 } from "starknet";
 
-import { ABI_SUFFIX, CAIRO1_ASSEMBLY_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
+import { handleInternalContractArtifacts } from "./account-utils";
+import {
+    ABI_SUFFIX,
+    CAIRO1_ASSEMBLY_SUFFIX,
+    ETH_ADDRESS,
+    SHORT_STRING_MAX_CHARACTERS
+} from "./constants";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
-import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
-import { handleInternalContractArtifacts } from "./account-utils";
-import { ETH_ADDRESS } from "./constants";
-import { uint256ToBN } from "starknet/dist/utils/uint256";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -201,7 +205,7 @@ export async function getBalanceUtil(
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
     const result = await ethContract.call("balanceOf", { account: address });
-    const convertedBalance = uint256ToBN(result.balance).toString();
+    const convertedBalance = uint256.uint256ToBN(result.balance).toString();
 
     return BigInt(convertedBalance);
 }

@@ -1,3 +1,5 @@
+import fs from "fs";
+import { glob } from "glob";
 import {
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
@@ -7,35 +9,30 @@ import {
     ProjectPathsConfig,
     VmLang
 } from "hardhat/types";
-import { StarknetPluginError } from "./starknet-plugin-error";
+import path from "path";
+import { json, stark, CompiledContract } from "starknet";
+import { promisify } from "util";
+
+import { handleInternalContractArtifacts } from "./account-utils";
 import {
+    ABI_SUFFIX,
     ALPHA_MAINNET,
     ALPHA_MAINNET_INTERNALLY,
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     ALPHA_TESTNET_2,
     ALPHA_TESTNET_2_INTERNALLY,
+    DEFAULT_DEVNET_CAIRO_VM,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
-    UDC_ADDRESS,
     StarknetChainId,
-    DEFAULT_DEVNET_CAIRO_VM,
-    ABI_SUFFIX
+    UDC_ADDRESS
 } from "./constants";
-import * as path from "path";
-import * as fs from "fs";
-import { glob } from "glob";
-import { promisify } from "util";
-import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
-import { stark } from "starknet";
-import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
-import { compressProgram } from "starknet/utils/stark";
-import { CompiledContract } from "starknet";
-import JsonBigint from "json-bigint";
-import { Abi, AbiEntry } from "./starknet-types";
-import * as starknet from "./starknet-types";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { Abi, AbiEntry, CairoFunction } from "./starknet-types";
+import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 
 const globPromise = promisify(glob);
 /**
@@ -301,19 +298,17 @@ export class UDC {
 }
 
 export function readContract(contractPath: string) {
-    const { parse } = handleJsonWithBigInt(false);
-    const parsedContract = parse(
+    const parsedContract = json.parse(
         fs.readFileSync(contractPath).toString("ascii")
     ) as CompiledContract;
     return {
         ...parsedContract,
-        program: compressProgram(parsedContract.program)
+        program: stark.compressProgram(parsedContract.program)
     };
 }
 
 export function readCairo1Contract(contractPath: string) {
-    const { parse } = handleJsonWithBigInt(false);
-    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii"));
+    const parsedContract = json.parse(fs.readFileSync(contractPath).toString("ascii"));
     const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
 
     const contract = new Cairo1ContractClass({
@@ -321,7 +316,7 @@ export function readCairo1Contract(contractPath: string) {
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`
         ),
-        sierraProgram: compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        sierraProgram: stark.compressProgram(formatSpaces(JSON.stringify(sierra_program))),
         entryPointsByType: entry_points_by_type,
         contractClassVersion: contract_class_version
     } as ContractClassConfig);
@@ -351,15 +346,6 @@ export function formatSpaces(json: string): string {
     return newString;
 }
 
-export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
-    return JsonBigint({
-        alwaysParseAsBig,
-        useNativeBigInt: true,
-        protoAction: "preserve",
-        constructorAction: "preserve"
-    });
-}
-
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {
     return rawCalldata.map((x) => x.toString(10));
 }
@@ -369,14 +355,11 @@ export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     return (amount * BigInt(overhead)) / BigInt(100);
 }
 
-export function findConstructor(
-    abi: Abi,
-    predicate: (entry: AbiEntry) => boolean
-): starknet.CairoFunction {
+export function findConstructor(abi: Abi, predicate: (entry: AbiEntry) => boolean): CairoFunction {
     for (const abiEntryName in abi) {
         const abiEntry = abi[abiEntryName];
         if (predicate(abiEntry)) {
-            return <starknet.CairoFunction>abiEntry;
+            return <CairoFunction>abiEntry;
         }
     }
 

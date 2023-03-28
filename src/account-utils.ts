@@ -1,16 +1,11 @@
-import {
-    Cairo1ContractClass,
-    iterativelyCheckStatus,
-    Numeric,
-    StarknetContract,
-    StringMap
-} from "./types";
-import { toBN, toHex } from "starknet/utils/number";
-import * as ellipticCurve from "starknet/utils/ellipticCurve";
+import axios, { AxiosError } from "axios";
+import crypto from "crypto";
 import { ec } from "elliptic";
+import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import * as fs from "fs";
 import path from "path";
+import { ec as ellipticCurve, hash, number } from "starknet";
+
 import {
     ABI_SUFFIX,
     INTERNAL_ARTIFACTS_DIR,
@@ -19,12 +14,16 @@ import {
     StarknetChainId,
     DECLARE_VERSION
 } from "./constants";
-import { numericToHexString } from "./utils";
-import * as crypto from "crypto";
-import { hash } from "starknet";
-import axios, { AxiosError } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as starknet from "./starknet-types";
+import {
+    Cairo1ContractClass,
+    iterativelyCheckStatus,
+    Numeric,
+    StarknetContract,
+    StringMap
+} from "./types";
+import { numericToHexString } from "./utils";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -48,7 +47,7 @@ export function generateRandomStarkPrivateKey(length = 63) {
     for (let i = 0; i < length; ++i) {
         result += characters.charAt(crypto.randomInt(characters.length));
     }
-    return toBN(result, "hex");
+    return number.toBN(result, "hex");
 }
 
 export function signMultiCall(
@@ -129,7 +128,7 @@ function ensureArtifact(fileName: string, artifactsTargetPath: string, artifactS
  */
 export function generateKeys(providedPrivateKey?: string): KeysType {
     const starkPrivateKey = providedPrivateKey
-        ? toBN(providedPrivateKey.replace(/^0x/, ""), 16)
+        ? number.toBN(providedPrivateKey.replace(/^0x/, ""), 16)
         : generateRandomStarkPrivateKey();
     const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
     const publicKey = ellipticCurve.getStarkKey(keyPair);
@@ -230,7 +229,7 @@ export async function sendDeclareV2Tx(
             contract_class: contractClass.getCompiledClass(),
             signature: signatures,
             sender_address: senderAddress,
-            compiled_class_hash: toHex(toBN(classHash)),
+            compiled_class_hash: number.toHex(number.toBN(classHash)),
             version: numericToHexString(version),
             nonce: numericToHexString(nonce),
             max_fee: numericToHexString(maxFee)
