@@ -40,6 +40,7 @@ export type TxStatus =
 export type InvokeResponse = string;
 
 export type StarknetContractFactoryConfig = StarknetContractConfig & {
+    casmPath?: string;
     metadataPath: string;
     hre: HardhatRuntimeEnvironment;
 };
@@ -285,6 +286,7 @@ export interface DeclareOptions {
     nonce?: Numeric;
     maxFee?: Numeric;
     overhead?: number;
+    version?: number;
 }
 
 export interface DeployOptions {
@@ -337,6 +339,24 @@ export interface BlockIdentifier {
     blockHash?: string;
 }
 
+export type ContractClass = {
+    sierra_program: string;
+    contract_class_version: string;
+    entry_points_by_type: SieraEntryPointsByType;
+    abi: string;
+};
+
+export type SieraEntryPointsByType = {
+    CONSTRUCTOR: SieraContractEntryPointFields[];
+    EXTERNAL: SieraContractEntryPointFields[];
+    L1_HANDLER: SieraContractEntryPointFields[];
+};
+
+export type SieraContractEntryPointFields = {
+    selector: string;
+    function_idx: number;
+};
+
 export type NonceQueryOptions = BlockIdentifier;
 
 export class StarknetContractFactory {
@@ -345,6 +365,7 @@ export class StarknetContractFactory {
     public abiPath: string;
     private constructorAbi: starknet.CairoFunction;
     public metadataPath: string;
+    public casmPath: string;
     private classHash: string;
 
     constructor(config: StarknetContractFactoryConfig) {
@@ -352,6 +373,7 @@ export class StarknetContractFactory {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.metadataPath = config.metadataPath;
+        if (config.casmPath)this.casmPath = config.casmPath;
 
         // find constructor
         for (const abiEntryName in this.abi) {
@@ -440,10 +462,14 @@ export class StarknetContractFactory {
         return this.abiPath;
     }
 
+    private isCairo1() {
+        return !!this.casmPath;
+    }
+
     async getClassHash() {
-        if (!this.classHash) {
-            this.classHash = await this.hre.starknetWrapper.getClassHash(this.metadataPath);
-        }
+        const method = this.isCairo1() ? "getSierraContractClassHash" : "getClassHash";
+        this.classHash =
+            this.classHash ?? (await this.hre.starknetWrapper[method](this.metadataPath));
         return this.classHash;
     }
 }

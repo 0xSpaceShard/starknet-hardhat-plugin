@@ -26,7 +26,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { Numeric, StarknetContract } from "./types";
+import { ContractClass, Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
@@ -306,6 +306,34 @@ export function readContract(contractPath: string) {
         ...parsedContract,
         program: compressProgram(parsedContract.program)
     };
+}
+
+export function readCairo1Contract(contractPath: string) {
+    const { parse, stringify } = handleJsonWithBigInt(false);
+    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii")) as ContractClass;
+    return {
+        contract_class_version: parsedContract.contract_class_version,
+        entry_points_by_type: parsedContract.entry_points_by_type,
+        abi: formatSpaces(stringify(parsedContract.abi)),
+        sierra_program: compressProgram(formatSpaces(stringify(parsedContract.sierra_program)))
+    };
+}
+
+export function formatSpaces(json: string) {
+    let insideQuotes = false;
+    let newString = "";
+    for (const char of json) {
+        // eslint-disable-next-line
+        if (char === '"' && newString.endsWith("\\") === false) {
+            insideQuotes = !insideQuotes;
+        }
+        if (insideQuotes) {
+            newString += char;
+        } else {
+            newString += char === ":" ? ": " : char === "," ? ", " : char;
+        }
+    }
+    return newString;
 }
 
 export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {

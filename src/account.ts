@@ -19,6 +19,7 @@ import {
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
+    TRANSACTION_VERSION_TWO,
     UDC_DEPLOY_FUNCTION_NAME
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -26,10 +27,12 @@ import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
+    calculateDeclareV2TxHash,
     calculateDeployAccountHash,
     CallParameters,
     generateKeys,
     handleInternalContractArtifacts,
+    sendDeclareV2Tx,
     sendDeployAccountTx,
     sendEstimateFeeTx,
     signMultiCall
@@ -41,7 +44,8 @@ import {
     UDC,
     readContract,
     bnToDecimalStringArray,
-    estimatedFeeToMaxFee
+    estimatedFeeToMaxFee,
+    readCairo1Contract
 } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
@@ -441,6 +445,49 @@ export abstract class Account {
             sender: this.address,
             maxFee: BigInt(maxFee)
         });
+    }
+
+    public async declareV2(
+        contractFactory: StarknetContractFactory,
+        options: DeclareOptions = {}
+    ): Promise<string> {
+        const maxFee = options?.maxFee || 1e18; // Hardcoded valud
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
+            throw new StarknetPluginError(msg);
+        }
+
+        const version = TRANSACTION_VERSION_TWO;
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const hre = await import("hardhat");
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const compiledClassHash = await hre.starknetWrapper.getCompiledClassHash(
+            contractFactory.casmPath
+        );
+        const classHash = await hre.starknetWrapper.getSierraContractClassHash(
+            contractFactory.metadataPath
+        );
+
+        const calldata = [classHash];
+        const messageHash = calculateDeclareV2TxHash(
+            this.address,
+            calldata,
+            maxFee.toString(),
+            chainId,
+            [nonce.toString(), compiledClassHash]
+        );
+
+        const signatures = this.getSignatures(messageHash);
+        return sendDeclareV2Tx(
+            bnToDecimalStringArray(signatures),
+            compiledClassHash,
+            maxFee,
+            this.address,
+            version,
+            nonce,
+            readCairo1Contract(contractFactory.metadataPath)
+        );
     }
 }
 

@@ -6,9 +6,9 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import {
     ABI_SUFFIX,
     ALPHA_TESTNET,
+    CAIRO_ASSEMBLY_SUFFIX,
     CARGO_FILE,
-    DEFAULT_STARKNET_NETWORK,
-    SIERRA_SUFFIX
+    DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -84,15 +84,16 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    const venvPath = hre.config.starknet.venv;
     const manifestPath = hre.config.starknet.manifestPath || args?.manifestPath;
-    if (!manifestPath) {
+    if (venvPath && !manifestPath) {
         const msg =
             "Could not find manifest-path\n" +
             "The argument '—-manifest-path path/to/Cargo.toml' or manifestPath on hardhat.config.ts should be set.";
         throw new StarknetPluginError(msg);
     }
 
-    if (path.basename(manifestPath) !== CARGO_FILE) {
+    if (venvPath && path.basename(manifestPath) !== CARGO_FILE && venvPath) {
         const msg = "The manifest-path must be a path to a Cargo.toml file";
         throw new StarknetPluginError(msg);
     }
@@ -134,24 +135,28 @@ export async function starknetCompileCairo1Action(
             const fileName = getFileName(suffix);
             const dirPath = path.join(artifactsPath, suffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
-            const sierraOutput = path.join(dirPath, `${fileName}${SIERRA_SUFFIX}`);
+            const casmOutput = path.join(dirPath, `${fileName}${CAIRO_ASSEMBLY_SUFFIX}`);
+            const abiOutput = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
-            initializeFile(sierraOutput);
+            initializeFile(casmOutput);
+            initializeFile(abiOutput);
 
             const executed = await hre.starknetWrapper.cairo1Compile({
                 file,
                 output: outputPath,
                 cairoPath,
-                sierraOutput,
+                casmOutput,
                 manifestPath,
                 accountContract: args.accountContract,
                 disableHintValidation: args.disableHintValidation
             });
-
+            // Copy abi array from output to abiOutput
+            const _outputPath = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
+            fs.writeFileSync(abiOutput, JSON.stringify(_outputPath.abi) + "\n");
             // Update cache after compilation
-            await recompiler.updateCache(args, file, outputPath, sierraOutput, cairoPath);
+            await recompiler.updateCache(args, file, outputPath, abiOutput, cairoPath);
             statusCode += processExecuted(executed, true);
         }
         await recompiler.saveCache();

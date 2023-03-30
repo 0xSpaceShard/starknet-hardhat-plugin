@@ -22,8 +22,7 @@ export class StarknetDockerProxy extends DockerServer {
         image: Image,
         private rootPath: string,
         private accountPaths: string[],
-        private cairoPaths: string[],
-        private manifestPath?: string
+        private cairoPaths: string[]
     ) {
         super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
@@ -36,7 +35,6 @@ export class StarknetDockerProxy extends DockerServer {
         for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
         }
-        if (this.manifestPath) volumes.push("-v", `${this.manifestPath}:${this.manifestPath}`);
 
         const dockerArgs = [...volumes];
 

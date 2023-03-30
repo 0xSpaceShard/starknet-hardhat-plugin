@@ -2,8 +2,9 @@ import config from "../config.json";
 
 export const PLUGIN_NAME = "Starknet";
 export const ABI_SUFFIX = "_abi.json";
-export const SIERRA_SUFFIX = ".casm";
+export const CAIRO_ASSEMBLY_SUFFIX = ".casm";
 export const CARGO_FILE = "Cargo.toml";
+export const DOCKER_HOST_BIN_PATH = "/usr/local/bin/target/release";
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
 export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";
 export const DEFAULT_STARKNET_ACCOUNT_PATH = "~/.starknet_accounts";
@@ -63,6 +64,7 @@ export enum StarknetChainId {
 export const PREFIX_TRANSACTION = "Starknet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
+export const TRANSACTION_VERSION_TWO = BigInt(2);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
 
 export const HEXADECIMAL_REGEX = /^0x[0-9a-fA-F]+?$/;
