@@ -1,7 +1,6 @@
 """Wrapper of Starknet CLI"""
 
 import asyncio
-import subprocess
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import io
@@ -53,19 +52,6 @@ def get_contract_class(metadata_path):
     """Returns contract class"""
     return load_sierra(metadata_path)
 
-async def cargo_run(args):
-    sys.argv = [sys.argv[0], *args]
-    try:
-        args_split = " ".join(args).split("&&")
-        starknet_compile = args_split[0]
-        starknet_sierra_compile = args_split[1]
-        subprocess.run(starknet_compile, shell=True)
-        subprocess.run(starknet_sierra_compile, shell=True)
-        return 0
-    except Exception as err:
-        print(err, file=sys.stderr)
-        return 1
-
 async def get_class_hash(args):
     path ,= args
     with open(path, encoding="utf-8") as file:
@@ -93,7 +79,6 @@ async def cairo_migrate_main_wrapper(args):
 MAIN_MAP = {
     "starknet": starknet_main_wrapper,
     "starknet-compile": starknet_compile_main_wrapper,
-    "cargo": cargo_run,
     "get_class_hash": get_class_hash,
     "get_contract_class_hash": get_contract_class_hash,
     "get_compiled_class_hash": get_compiled_class_hash,
