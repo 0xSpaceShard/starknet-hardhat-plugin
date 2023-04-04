@@ -243,7 +243,7 @@ task("starknet-compile", "Compiles Starknet contracts")
 task("starknet-compile-cairo1", "Compiles Starknet cairo1 contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
-        "The paths to be used for deployment.\n" +
+        "The paths to be used for sources.\n" +
             "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
             "If no paths are provided, the default contracts directory is traversed."
     )
