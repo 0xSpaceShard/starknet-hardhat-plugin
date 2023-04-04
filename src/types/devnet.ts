@@ -6,9 +6,10 @@ import {
     SetTimeResponse,
     PredeployedAccount,
     L1ToL2MockTxResponse,
-    L2ToL1MockTxResponse
+    L2ToL1MockTxResponse,
+    NewBlockResponse
 } from "../devnet-utils";
-import { Block, MintResponse } from "../starknet-types";
+import { MintResponse } from "../starknet-types";
 
 export interface Devnet {
     /**
@@ -44,6 +45,7 @@ export interface Devnet {
      * @param {string} l1ContractAddress - Address of the L1 contract.
      * @param {Array<string>} payload - Payload to send to the L2 network.
      * @param {string} nonce - Nonce value
+     * @param {string} paidFeeOnL1 - Paid fee on L1
      * @returns Transaction hash
      */
     sendMessageToL2: (
@@ -51,7 +53,8 @@ export interface Devnet {
         functionName: string,
         l1ContractAddress: string,
         payload: Array<Numeric>,
-        nonce: Numeric
+        nonce: Numeric,
+        paidFeeOnL1: Numeric
     ) => Promise<L1ToL2MockTxResponse>;
 
     /**
@@ -103,9 +106,9 @@ export interface Devnet {
 
     /**
      * Creates an empty block
-     * @returns the empty block
+     * @returns NewBlockResponse with block hash
      */
-    createBlock: () => Promise<Block>;
+    createBlock: () => Promise<NewBlockResponse>;
 
     /**
      * Assumes there is a /mint endpoint on the current starknet network
