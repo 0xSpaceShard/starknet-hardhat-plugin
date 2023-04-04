@@ -18,7 +18,8 @@ import {
     getAccountPath,
     isStarknetDevnet,
     warn,
-    adaptPath
+    adaptPath,
+    isSourceCairo1
 } from "./utils";
 import {
     HardhatNetworkConfig,
@@ -105,24 +106,6 @@ export async function starknetCompileCairo1Action(
     const sourcesPaths: string[] = args.paths || [defaultSourcesPath];
     const artifactsPath = hre.config.paths.starknetArtifacts;
 
-    const cairoPaths = [defaultSourcesPath, root];
-    if (args.cairoPath) {
-        args.cairoPath.split(":").forEach((path: string) => {
-            cairoPaths.push(path);
-        });
-    }
-    if (hre.config.paths.cairoPaths) {
-        hre.config.paths.cairoPaths.forEach((path: string) => {
-            cairoPaths.push(path);
-        });
-    }
-    for (let i = 0; i < cairoPaths.length; i++) {
-        if (!path.isAbsolute(cairoPaths[i])) {
-            cairoPaths[i] = adaptPath(root, cairoPaths[i]);
-        }
-    }
-
-    const cairoPath = cairoPaths.join(":");
     let statusCode = 0;
     for (let sourcesPath of sourcesPaths) {
         sourcesPath = adaptPath(root, sourcesPath);
@@ -146,7 +129,7 @@ export async function starknetCompileCairo1Action(
             const executed = await hre.starknetWrapper.cairo1Compile({
                 file,
                 output: outputPath,
-                cairoPath,
+                cairoPath: "",
                 casmOutput,
                 manifestPath,
                 accountContract: args.accountContract,
@@ -157,7 +140,7 @@ export async function starknetCompileCairo1Action(
             const _outputPath = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
             fs.writeFileSync(abiOutput, JSON.stringify(_outputPath.abi) + "\n");
             // Update cache after compilation
-            await recompiler.updateCache(args, file, outputPath, abiOutput, cairoPath);
+            await recompiler.updateCache(args, file, outputPath, abiOutput);
         }
         await recompiler.saveCache();
     }
@@ -201,6 +184,10 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
         const files = await traverseFiles(sourcesPath, "*.cairo");
         const recompiler = new Recompiler(hre);
         for (const file of files) {
+            if (isSourceCairo1(file)) {
+                console.log("Skipping cairo1 contract", file);
+                continue;
+            }
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
             const fileName = getFileName(suffix);

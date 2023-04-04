@@ -336,6 +336,23 @@ export function formatSpaces(json: string) {
     return newString;
 }
 
+export function isSourceCairo1(cairoFile: string): boolean {
+    const file = fs.readFileSync(cairoFile).toString();
+    const lines = file.split("\n");
+    for (let line of lines) {
+        line = line.trim();
+        if (line.startsWith("//")) {
+            // Ignore ingle-line comment.
+            continue;
+        } else if (line.includes("#[constructor]")) {
+            // This line contains #[constructor] and is not in a comment.
+            return true;
+        }
+    }
+    // #[constructor] not found was not in a comment.
+    return false;
+}
+
 export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
     return JsonBigint({
         alwaysParseAsBig,
