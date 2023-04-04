@@ -3,6 +3,7 @@ import shell from "shelljs";
 import { Image } from "@nomiclabs/hardhat-docker";
 import { DockerServer } from "./external-server/docker-server";
 import { getFreePort } from "./external-server/external-server";
+import { CommonSpawnOptions } from "child_process";
 
 export const exec = (args: string) => {
     const result = shell.exec(args);
@@ -61,5 +62,39 @@ export class DockerCairo1Compiler extends DockerServer {
             this.port = await getFreePort();
         }
         return this.port;
+    }
+
+    async compileCairo1(options?: CommonSpawnOptions): Promise<ProcessResult> {
+        const res = await this.spawnChildProcess(options);
+        const stdout: string[] = [];
+        const stderr: string[] = [];
+        let statusCode;
+
+        res.stdout.on("data", (chunk) => {
+            stdout.push(chunk);
+            console.log(chunk.toString());
+        });
+
+        res.stderr.on("data", (chunk) => {
+            stderr.push(chunk);
+            console.log(chunk.toString());
+        });
+
+        await new Promise((resolve, reject) => {
+            res.on("close", (code) => {
+                statusCode = code;
+                resolve(code);
+            });
+
+            res.on("error", (error) => {
+                reject(error);
+            });
+        });
+
+        return {
+            statusCode,
+            stdout: Buffer.from(stdout.toString()),
+            stderr: Buffer.from(stderr.toString(), "utf-8")
+        } as ProcessResult;
     }
 }

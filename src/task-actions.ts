@@ -152,12 +152,12 @@ export async function starknetCompileCairo1Action(
                 accountContract: args.accountContract,
                 disableHintValidation: args.disableHintValidation
             });
+            statusCode += processExecuted(executed, true);
             // Copy abi array from output to abiOutput
             const _outputPath = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
             fs.writeFileSync(abiOutput, JSON.stringify(_outputPath.abi) + "\n");
             // Update cache after compilation
             await recompiler.updateCache(args, file, outputPath, abiOutput, cairoPath);
-            statusCode += processExecuted(executed, true);
         }
         await recompiler.saveCache();
     }

@@ -451,7 +451,7 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
-        const maxFee = options?.maxFee || 1e18; // Hardcoded valud
+        const maxFee = options?.maxFee || 1e18; // Hardcoded value need to change
         if (maxFee && options?.overhead) {
             const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);

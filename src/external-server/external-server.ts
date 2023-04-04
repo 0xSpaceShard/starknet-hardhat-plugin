@@ -1,6 +1,6 @@
 import axios from "axios";
 import net from "net";
-import { ChildProcess, spawnSync } from "child_process";
+import { ChildProcess, spawnSync, CommonSpawnOptions } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
@@ -86,17 +86,17 @@ export abstract class ExternalServer {
         this.cleanupFns.forEach((fn) => fn());
     }
 
-    protected abstract spawnChildProcess(): Promise<ChildProcess>;
+    protected abstract spawnChildProcess(options?: CommonSpawnOptions): Promise<ChildProcess>;
 
     protected abstract cleanup(): void;
 
-    public async start(): Promise<void> {
+    public async start(options?: CommonSpawnOptions): Promise<void> {
         if (await this.isServerAlive()) {
             const msg = `Cannot spawn ${this.processName}: ${this.url} already occupied.`;
             throw new StarknetPluginError(msg);
         }
 
-        this.childProcess = await this.spawnChildProcess();
+        this.childProcess = await this.spawnChildProcess(options);
         const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
         this.childProcess.stdout.on("data", async (chunk) => {
             chunk = chunk.toString();

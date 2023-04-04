@@ -378,7 +378,7 @@ export class StarknetContractFactory {
         // find constructor
         for (const abiEntryName in this.abi) {
             const abiEntry = this.abi[abiEntryName];
-            if (abiEntry.type === "constructor") {
+            if (abiEntry.type === "constructor" || abiEntry.name === "constructor") {
                 this.constructorAbi = <starknet.CairoFunction>abiEntry;
             }
         }
@@ -462,7 +462,7 @@ export class StarknetContractFactory {
         return this.abiPath;
     }
 
-    private isCairo1() {
+    isCairo1() {
         return !!this.casmPath;
     }
 

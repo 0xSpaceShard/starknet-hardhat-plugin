@@ -11,7 +11,7 @@ import { FeeEstimation } from "./starknet-types";
 import { hash } from "starknet";
 import { toBN, toHex } from "starknet/utils/number";
 import axios from "axios";
-import { exec } from "./cairo1-compiler";
+import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 
 interface CompileWrapperOptions {
     file: string;
@@ -127,8 +127,7 @@ export abstract class StarknetWrapper {
             | "cairo-migrate"
             | "get_contract_class"
             | "get_contract_class_hash"
-            | "get_compiled_class_hash"
-            | "cargo",
+            | "get_compiled_class_hash",
         args: string[]
     ): Promise<ProcessResult> {
         return await this.externalServer.post<ProcessResult>({
@@ -493,8 +492,8 @@ type String2String = { [path: string]: string };
 
 export class DockerWrapper extends StarknetWrapper {
     constructor(
-        image: Image,
-        rootPath: string,
+        private image: Image,
+        private rootPath: string,
         accountPaths: string[],
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
@@ -510,17 +509,19 @@ export class DockerWrapper extends StarknetWrapper {
         return [`${DOCKER_HOST_BIN_PATH}/${bin}`, ...args];
     }
 
-    protected preparedCairoOneCompileOptions(options: CompileWrapperOptions): string[] {
+    protected preparedCairo1CompileOptions(options: CompileWrapperOptions): string[] {
         const cairoCompile = this.getCompileCairo1Command("starknet-cairo1-compile", [
             options.file,
             options.output,
-            "--allowed-libfuncs-list-name experimental_v0.1.0"
+            "--allowed-libfuncs-list-name",
+            "experimental_v0.1.0"
         ]);
 
         const sierraCompile = this.getCompileCairo1Command("starknet-sierra-compile", [
             options.output,
             options.casmOutput,
-            "--allowed-libfuncs-list-name experimental_v0.1.0",
+            "--allowed-libfuncs-list-name",
+            "experimental_v0.1.0",
             "--add-pythonic-hints"
         ]);
 
@@ -529,9 +530,16 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.preparedCairoOneCompileOptions(options);
-        const executed = this.execute("cargo", preparedOptions);
-        return executed;
+        const preparedOptions = this.preparedCairo1CompileOptions(options);
+        const externalServer = new DockerCairo1Compiler(
+            this.image,
+            [this.rootPath],
+            preparedOptions
+        );
+
+        return await externalServer.compileCairo1({
+            shell: true
+        });
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
@@ -583,7 +591,7 @@ export class VenvWrapper extends StarknetWrapper {
         ];
     }
 
-    protected preparedCairoOneCompileOptions(options: CompileWrapperOptions): string[] {
+    protected preparedCairo1CompileOptions(options: CompileWrapperOptions): string[] {
         const cairoCompile = this.getCargoRunCommand("starknet-compile", options.manifestPath, [
             options.file,
             options.output
@@ -600,7 +608,7 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.preparedCairoOneCompileOptions(options);
+        const preparedOptions = this.preparedCairo1CompileOptions(options);
         const executed = exec(preparedOptions.join(" "));
         return executed;
     }
