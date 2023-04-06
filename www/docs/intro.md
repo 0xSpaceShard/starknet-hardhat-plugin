@@ -70,6 +70,14 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 `--disable-hint-validation` allows compiling a contract without hint validation (any python code is allowed in hints, ex: print ...).
 
+### `starknet-compile-cairo1`
+
+```
+$ npx hardhat starknet-compile-cairo1 [PATH...] 
+```
+
+All Starknet cairo1 contracts in the default contracts directory are compiled. Paths can be files and directories.
+
 ### `starknet-verify`
 
 ```
@@ -218,6 +226,7 @@ describe("My Test", function () {
     // not compatible with accounts deployed with Starknet CLI
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
+    // account.declarev2() should be used for cairo1 contracts
     const txHash = await account.declare(contractFactory);  // class declaration
     const classHash = await contractFactory.getClassHash();
 
