@@ -94,7 +94,7 @@ export class DockerCairo1Compiler extends DockerServer {
         return {
             statusCode,
             stdout: Buffer.from(stdout.toString()),
-            stderr: Buffer.from(stderr.toString(), "utf-8")
+            stderr: Buffer.from(stderr.toString())
         } as ProcessResult;
     }
 }
