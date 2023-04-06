@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, ProjectPathsConfig, TaskArguments } from "hardhat/types";
-import { starknetCompileAction, starknetCompileCairo1Action } from "./task-actions";
-import { getArtifactPath, isSourceCairo1, traverseFiles } from "./utils";
+import { starknetCompileAction } from "./task-actions";
+import { getArtifactPath, traverseFiles } from "./utils";
 import { ABI_SUFFIX } from "./constants";
 
 interface ContractData {
@@ -204,11 +204,8 @@ export class Recompiler {
                 accountContract: entry?.accountContract,
                 carioPath: entry?.cairoPath
             };
-            if (isSourceCairo1(changedContract)) {
-                await starknetCompileCairo1Action(compileArguments, this.hre);
-            } else {
-                await starknetCompileAction(compileArguments, this.hre);
-            }
+
+            await starknetCompileAction(compileArguments, this.hre);
         }
     }
 
