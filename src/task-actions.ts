@@ -113,6 +113,10 @@ export async function starknetCompileCairo1Action(
         const files = await traverseFiles(sourcesPath, "*.cairo");
         const recompiler = new Recompiler(hre);
         for (const file of files) {
+            if (!isSourceCairo1(file)) {
+                console.log("Skipping non-cairo1 contract", file);
+                continue;
+            }
             console.log("Compiling", file);
             const suffix = file.replace(rootRegex, "");
             const fileName = getFileName(suffix);
