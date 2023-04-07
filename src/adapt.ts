@@ -9,6 +9,10 @@ const COMMON_TYPES = [
     "felt",
     "core::felt252",
     "core::integer::u8",
+    "core::integer::u16",
+    "core::integer::u38",
+    "core::integer::u64",
+    "core::integer::u128",
     "core::integer::u256",
     "core::starknet::contract_address::ContractAddress"
 ];
