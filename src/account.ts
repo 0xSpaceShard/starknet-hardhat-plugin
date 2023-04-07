@@ -407,6 +407,10 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
+        if (contractFactory.isCairo1()) {
+            return await this.declareV2(contractFactory, options);
+        }
+
         let maxFee = options?.maxFee;
         if (maxFee && options?.overhead) {
             const msg = "maxFee and overhead cannot be specified together";
@@ -447,7 +451,7 @@ export abstract class Account {
         });
     }
 
-    public async declareV2(
+    private async declareV2(
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
