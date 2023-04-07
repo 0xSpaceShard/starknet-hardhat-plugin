@@ -17,7 +17,7 @@ import {
     TransactionHashPrefix,
     TRANSACTION_VERSION,
     StarknetChainId,
-    TRANSACTION_VERSION_TWO
+    DECLARE_VERSION
 } from "./constants";
 import { numericToHexString } from "./utils";
 import * as crypto from "crypto";
@@ -204,7 +204,7 @@ export function calculateDeclareV2TxHash(
     const calldataHash = hash.computeHashOnElements(callData);
     return hash.computeHashOnElements([
         TransactionHashPrefix.DECLARE,
-        numericToHexString(TRANSACTION_VERSION_TWO),
+        numericToHexString(DECLARE_VERSION),
         accountAddress,
         0, // entrypoint selector is implied
         calldataHash,

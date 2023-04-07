@@ -64,7 +64,7 @@ export enum StarknetChainId {
 export const PREFIX_TRANSACTION = "Starknet Transaction";
 
 export const TRANSACTION_VERSION = BigInt(1);
-export const TRANSACTION_VERSION_TWO = BigInt(2);
+export const DECLARE_VERSION = BigInt(2);
 export const QUERY_VERSION = BigInt(2) ** BigInt(128) + TRANSACTION_VERSION;
 
 export const HEXADECIMAL_REGEX = /^0x[0-9a-fA-F]+?$/;

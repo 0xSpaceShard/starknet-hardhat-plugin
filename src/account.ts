@@ -19,7 +19,7 @@ import {
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    TRANSACTION_VERSION_TWO,
+    DECLARE_VERSION,
     UDC_DEPLOY_FUNCTION_NAME
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -457,7 +457,7 @@ export abstract class Account {
             throw new StarknetPluginError(msg);
         }
 
-        const version = TRANSACTION_VERSION_TWO;
+        const version = DECLARE_VERSION;
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         const hre = await import("hardhat");
         const chainId = hre.starknet.networkConfig.starknetChainId;
