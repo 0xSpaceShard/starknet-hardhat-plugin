@@ -319,7 +319,12 @@ export function readCairo1Contract(contractPath: string) {
     };
 }
 
-export function formatSpaces(json: string) {
+/**
+ * Json string is transformed into a formatted string without newlines.
+ * @param json string
+ * @returns string
+ */
+export function formatSpaces(json: string): string {
     let insideQuotes = false;
     let newString = "";
     for (const char of json) {
