@@ -128,11 +128,9 @@ export async function starknetCompileCairo1Action(
             const executed = await hre.starknetWrapper.cairo1Compile({
                 file,
                 output: outputPath,
-                cairoPath: "",
+                abi: abiOutput,
                 casmOutput,
-                manifestPath,
-                accountContract: args.accountContract,
-                disableHintValidation: args.disableHintValidation
+                manifestPath
             });
             statusCode += processExecuted(executed, true);
             // Copy abi array from output to abiOutput

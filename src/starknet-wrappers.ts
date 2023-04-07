@@ -16,12 +16,18 @@ import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 interface CompileWrapperOptions {
     file: string;
     output: string;
-    abi?: string;
+    abi: string;
     cairoPath: string;
-    casmOutput?: string;
-    manifestPath?: string;
     accountContract: boolean;
     disableHintValidation: boolean;
+}
+
+interface Cairo1CompilerOptions {
+    file: string;
+    output: string;
+    abi: string;
+    casmOutput: string;
+    manifestPath?: string;
 }
 
 interface DeclareWrapperOptions {
@@ -164,7 +170,7 @@ export abstract class StarknetWrapper {
         return executed;
     }
 
-    public abstract cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult>;
+    public abstract cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult>;
 
     public prepareDeclareOptions(options: DeclareWrapperOptions): string[] {
         const prepared = [
@@ -509,7 +515,7 @@ export class DockerWrapper extends StarknetWrapper {
         return [`${DOCKER_HOST_BIN_PATH}/${bin}`, ...args];
     }
 
-    protected preparedCairo1CompileOptions(options: CompileWrapperOptions): string[] {
+    protected preparedCairo1CompileOptions(options: Cairo1CompilerOptions): string[] {
         const cairoCompile = this.getCompileCairo1Command("starknet-cairo1-compile", [
             options.file,
             options.output,
@@ -529,7 +535,7 @@ export class DockerWrapper extends StarknetWrapper {
         return ret;
     }
 
-    public async cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult> {
+    public async cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult> {
         const preparedOptions = this.preparedCairo1CompileOptions(options);
         const externalServer = new DockerCairo1Compiler(
             this.image,
@@ -591,7 +597,7 @@ export class VenvWrapper extends StarknetWrapper {
         ];
     }
 
-    protected preparedCairo1CompileOptions(options: CompileWrapperOptions): string[] {
+    protected preparedCairo1CompileOptions(options: Cairo1CompilerOptions): string[] {
         const cairoCompile = this.getCargoRunCommand("starknet-compile", options.manifestPath, [
             options.file,
             options.output
@@ -607,7 +613,7 @@ export class VenvWrapper extends StarknetWrapper {
         return ret;
     }
 
-    public async cairo1Compile(options: CompileWrapperOptions): Promise<ProcessResult> {
+    public async cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult> {
         const preparedOptions = this.preparedCairo1CompileOptions(options);
         const executed = exec(preparedOptions.join(" "));
         return executed;
