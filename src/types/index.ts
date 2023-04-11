@@ -8,7 +8,7 @@ import {
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
 } from "../constants";
-import { adaptLog, copyWithBigint, formatSpaces, sleep, warn } from "../utils";
+import { adaptLog, copyWithBigint, formatSpaces, isEntryAContructor, sleep, warn } from "../utils";
 import { adaptInputUtil, adaptOutputUtil } from "../adapt";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
@@ -366,12 +366,14 @@ export class StarknetContractFactory {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.metadataPath = config.metadataPath;
-        if (config.casmPath)this.casmPath = config.casmPath;
+        if (config.casmPath) {
+            this.casmPath = config.casmPath;
+        }
 
         // find constructor
         for (const abiEntryName in this.abi) {
             const abiEntry = this.abi[abiEntryName];
-            if (abiEntry.type === "constructor" || abiEntry.name === "constructor") {
+            if (isEntryAContructor(abiEntry, config.hre.config.paths, config.casmPath)) {
                 this.constructorAbi = <starknet.CairoFunction>abiEntry;
             }
         }

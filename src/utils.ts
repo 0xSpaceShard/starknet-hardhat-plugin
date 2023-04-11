@@ -34,6 +34,7 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
+import { AbiEntry } from "./starknet-types";
 
 const globPromise = promisify(glob);
 /**
@@ -365,4 +366,47 @@ export function bnToDecimalStringArray(rawCalldata: bigint[]) {
 export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     overhead = Math.round((1 + overhead) * 100);
     return (amount * BigInt(overhead)) / BigInt(100);
+}
+
+/**
+ * Checks if abi entry is a constructor or not
+ * @param entryType Abi entry to get name and type of
+ * @param paths Starknet project paths config
+ * @param casmPath Source artifact of a cairo1 contract
+ * @returns boolean
+ */
+export function isEntryAContructor(
+    entryType: AbiEntry,
+    paths: ProjectPathsConfig,
+    casmPath?: string
+): boolean {
+    if (entryType.type === "constructor") return true;
+
+    if (casmPath) {
+        const { root, starknetArtifacts } = paths;
+        const dirPath = casmPath.replace(starknetArtifacts, "");
+        const sourcePath = path.dirname(path.join(root, dirPath));
+        // Check if path exists
+        if (!fs.existsSync(sourcePath)) return false;
+        // Check if contract contains constructor with the name
+        const file = fs.readFileSync(sourcePath).toString();
+        const lines = file.split("\n");
+
+        let index = 0;
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith("//")) {
+                // Ignore single-line comment.
+                continue;
+            } else if (line.includes("#[constructor]")) {
+                // Check if next line is contains entry type name
+                const nextLine = lines[index + 1];
+                if (nextLine && nextLine.includes(entryType.name)) {
+                    return true;
+                }
+            }
+            index++;
+        }
+    }
+    return false;
 }
