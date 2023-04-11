@@ -20,13 +20,14 @@ import {
     INTEGRATED_DEVNET_INTERNALLY,
     UDC_ADDRESS,
     StarknetChainId,
-    DEFAULT_DEVNET_CAIRO_VM
+    DEFAULT_DEVNET_CAIRO_VM,
+    ABI_SUFFIX
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { ContractClass, Numeric, StarknetContract } from "./types";
+import { ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
@@ -309,14 +310,21 @@ export function readContract(contractPath: string) {
 }
 
 export function readCairo1Contract(contractPath: string) {
-    const { parse, stringify } = handleJsonWithBigInt(false);
-    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii")) as ContractClass;
-    return {
-        contract_class_version: parsedContract.contract_class_version,
-        entry_points_by_type: parsedContract.entry_points_by_type,
-        abi: formatSpaces(stringify(parsedContract.abi)),
-        sierra_program: compressProgram(formatSpaces(stringify(parsedContract.sierra_program)))
-    };
+    const { parse } = handleJsonWithBigInt(false);
+    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii"));
+    const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
+
+    const contract = new ContractClass({
+        abiPath: path.join(
+            path.dirname(contractPath),
+            `${path.parse(contractPath).name}${ABI_SUFFIX}`
+        ),
+        sierraProgram: compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        entryPointsByType: entry_points_by_type,
+        contractClassVersion: contract_class_version
+    } as ContractClassConfig);
+
+    return contract;
 }
 
 /**

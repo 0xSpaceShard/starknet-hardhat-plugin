@@ -227,7 +227,7 @@ export async function sendDeclareV2Tx(
     const resp = await axios
         .post(`${hre.starknet.networkConfig.url}/gateway/add_transaction`, {
             type: "DECLARE",
-            contract_class: contractClass,
+            contract_class: contractClass.getCompiledClass(),
             signature: signatures,
             sender_address: senderAddress,
             compiled_class_hash: toHex(toBN(classHash)),

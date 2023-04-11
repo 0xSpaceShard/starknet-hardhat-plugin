@@ -8,7 +8,7 @@ import {
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
 } from "../constants";
-import { adaptLog, copyWithBigint, sleep, warn } from "../utils";
+import { adaptLog, copyWithBigint, formatSpaces, sleep, warn } from "../utils";
 import { adaptInputUtil, adaptOutputUtil } from "../adapt";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
@@ -338,13 +338,6 @@ export interface BlockIdentifier {
     blockNumber?: BlockNumber;
     blockHash?: string;
 }
-
-export type ContractClass = {
-    sierra_program: string;
-    contract_class_version: string;
-    entry_points_by_type: SieraEntryPointsByType;
-    abi: string;
-};
 
 export type SieraEntryPointsByType = {
     CONSTRUCTOR: SieraContractEntryPointFields[];
@@ -736,5 +729,44 @@ export class StarknetContract {
             throw new StarknetPluginError(msg);
         }
         return decodedEvents;
+    }
+}
+
+export interface ContractClassConfig extends StarknetContractConfig {
+    sierraProgram: string;
+    contractClassVersion: string;
+    entryPointsByType: SieraEntryPointsByType;
+}
+
+export class ContractClass extends StarknetContract {
+    protected sierraProgram: string;
+    protected contractClassVersion: string;
+    protected entryPointsByType: SieraEntryPointsByType;
+    protected abix: string;
+
+    constructor(config: ContractClassConfig) {
+        super(config);
+
+        this.sierraProgram = config.sierraProgram;
+        this.contractClassVersion = config.contractClassVersion;
+        this.entryPointsByType = config.entryPointsByType;
+    }
+
+    /**
+     * Returns the compiled class.
+     * @returns object of a compiled contract class
+     */
+    getCompiledClass() {
+        return {
+            sierra_program: this.sierraProgram,
+            entry_points_by_type: this.entryPointsByType,
+            contract_class_version: this.contractClassVersion,
+            abi: this.getFormattedAbi()
+        };
+    }
+
+    getFormattedAbi() {
+        const abiArr = Object.values(this.getAbi());
+        return formatSpaces(JSON.stringify(abiArr));
     }
 }
