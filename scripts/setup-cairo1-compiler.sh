@@ -3,8 +3,7 @@
 set -eu
 
 if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
-    CONFIG_PATH="./config.json"
-    CAIRO_1_COMPILER_TARGET_TAG=$(jq ".CAIRO_COMPILER" "$CONFIG_PATH")
+    CAIRO_1_COMPILER_TARGET_TAG="v1.0.0-alpha.6"
 
     echo "Installing cairo compiler $CAIRO_1_COMPILER_TARGET_TAG"
     # need rust to install cairo-rs-py
