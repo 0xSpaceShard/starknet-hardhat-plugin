@@ -37,7 +37,6 @@ interface DeclareWrapperOptions {
     token?: string;
     sender?: string;
     nonce?: string;
-    version?: number;
 }
 
 interface InteractWrapperOptions {
