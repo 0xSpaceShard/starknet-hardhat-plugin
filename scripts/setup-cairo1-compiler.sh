@@ -14,14 +14,14 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
         source ~/.cargo/env
     fi
 
-    # setup cairo1 compiler
-    mkdir cairo-compiler
-    git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
-        --branch $CAIRO_1_COMPILER_TARGET_TAG \
-        --single-branch
-    CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
+    if [ -z "${CAIRO_1_COMPILER_MANIFEST+x}" ]; then
+        # setup cairo1 compiler
+        mkdir cairo-compiler
+        git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
+            --branch $CAIRO_1_COMPILER_TARGET_TAG \
+            --single-branch
+        CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
 
-    if [ -n "$CIRCLE_BRANCH" ]; then
         # needed by further testing steps
         echo "export CAIRO_1_COMPILER_MANIFEST=$CAIRO_1_COMPILER_MANIFEST" >>"$BASH_ENV"
         echo "source ~/.cargo/env" >>"$BASH_ENV"
