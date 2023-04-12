@@ -21,11 +21,9 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
             --branch $CAIRO_1_COMPILER_TARGET_TAG \
             --single-branch
         CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
-        pwd
-        ls cairo-compiler
+
         # needed by further testing steps
         echo "export CAIRO_1_COMPILER_MANIFEST=$CAIRO_1_COMPILER_MANIFEST" >>"$BASH_ENV"
         echo "source ~/.cargo/env" >>"$BASH_ENV"
     fi
-    echo "Manifest path $CAIRO_1_COMPILER_MANIFEST"
 fi
