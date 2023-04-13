@@ -21,7 +21,7 @@
         "url": "https://github.com/Shard-Labs/starknet-hardhat-plugin.git"
     },
     "scripts": {
-        "test-configuration-tests": "TEST_SUBDIR=configuration-tests source ./scripts/setup-cairo1-compiler.sh && ./scripts/test.sh",
+        "test-configuration-tests": "TEST_SUBDIR=configuration-tests ./scripts/setup-cairo1-compiler.sh && ./scripts/test.sh",
         "test-general-tests": "TEST_SUBDIR=general-tests ./scripts/test.sh",
         "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
         "test-integrated-devnet-tests": "TEST_SUBDIR=integrated-devnet-tests ./scripts/test.sh",
