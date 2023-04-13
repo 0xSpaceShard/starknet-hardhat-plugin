@@ -4,7 +4,7 @@ module.exports = {
     starknet: {
         venv: "active",
         network: process.env.NETWORK,
-        manifestPath: "cairo-compiler/Cargo.toml"
+        manifestPath: process.env.CAIRO_1_COMPILER_MANIFEST
     },
     networks: {
         devnet: {
