@@ -178,7 +178,7 @@ export async function sendDeployAccountTx(
             version: numericToHexString(TRANSACTION_VERSION),
             type: "DEPLOY_ACCOUNT"
         })
-        .catch((error: AxiosError) => {
+        .catch((error: AxiosError<starknet.StarkError>) => {
             const msg = `Deploying account failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
@@ -234,7 +234,7 @@ export async function sendDeclareV2Tx(
             nonce: numericToHexString(nonce),
             max_fee: numericToHexString(maxFee)
         })
-        .catch((error: AxiosError) => {
+        .catch((error: AxiosError<starknet.StarkError>) => {
             const msg = `Declaring contract failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
@@ -259,7 +259,7 @@ export async function sendEstimateFeeTx(data: unknown) {
 
     const resp = await axios
         .post(`${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`, data)
-        .catch((error: AxiosError) => {
+        .catch((error: AxiosError<starknet.StarkError>) => {
             const msg = `Estimating fees failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });

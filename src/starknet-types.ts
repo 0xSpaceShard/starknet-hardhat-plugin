@@ -162,3 +162,8 @@ export type FeeEstimation = {
     gas_price: bigint;
     gas_usage: bigint;
 };
+
+export type StarkError = {
+    code: string;
+    message: string;
+};

@@ -11,7 +11,6 @@ import {
 } from "hardhat/types";
 import path from "path";
 import { json, stark, CompiledContract } from "starknet";
-import { promisify } from "util";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -34,7 +33,6 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { Abi, AbiEntry, CairoFunction } from "./starknet-types";
 import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 
-const globPromise = promisify(glob);
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
  *
@@ -96,7 +94,7 @@ export function getDefaultHardhatNetworkConfig(url: string): HardhatNetworkConfi
 export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
-        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+        paths = await glob(path.join(traversable, "**", fileCriteria));
     } else {
         paths.push(traversable);
     }
