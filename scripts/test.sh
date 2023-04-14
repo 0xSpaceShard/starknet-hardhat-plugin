@@ -30,6 +30,7 @@ fi
 
 # used by some cases
 ../scripts/setup-venv.sh
+source  ./scripts/setup-cairo1-compiler.sh
 
 total=0
 success=0
