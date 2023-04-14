@@ -7,6 +7,7 @@ const NAMED_TUPLE_DELIMITER = ": ";
 const ARGUMENTS_DELIMITER = ", ";
 const COMMON_TYPES = [
     "felt",
+    "core::bool",
     "core::felt252",
     "core::integer::u8",
     "core::integer::u16",
