@@ -76,7 +76,7 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 $ npx hardhat starknet-compile-cairo1 [PATH...] 
 ```
 
-All Starknet cairo1 contracts in the default contracts directory are compiled. Paths can be files and directories.
+Compiles Starknet cairo1 contracts in the provided contracts directory. Paths can be files and directories.
 
 ### `starknet-verify`
 
