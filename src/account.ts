@@ -457,7 +457,9 @@ export abstract class Account {
     ): Promise<string> {
         const maxFee = options?.maxFee;
         if (!maxFee) {
-            const msg = "maxFee should be supplied to send declare transactions.";
+            const msg =
+                "maxFee must be provided to send declare transactions.\n" +
+                "A value of '0' for 'maxFee' is not supported.";
             throw new StarknetPluginError(msg);
         }
 
