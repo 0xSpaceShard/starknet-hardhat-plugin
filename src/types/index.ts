@@ -366,14 +366,12 @@ export class StarknetContractFactory {
         this.abiPath = config.abiPath;
         this.abi = readAbi(this.abiPath);
         this.metadataPath = config.metadataPath;
-        if (config.casmPath) {
-            this.casmPath = config.casmPath;
-        }
+        this.casmPath = config.casmPath;
 
         // find constructor
         for (const abiEntryName in this.abi) {
             const abiEntry = this.abi[abiEntryName];
-            if (isEntryAContructor(abiEntry, config.hre.config.paths, config.casmPath)) {
+            if (isEntryAContructor(abiEntry, config.hre.config.paths, this.casmPath)) {
                 this.constructorAbi = <starknet.CairoFunction>abiEntry;
             }
         }
