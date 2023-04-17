@@ -93,7 +93,7 @@ export async function starknetCompileCairo1Action(
         throw new StarknetPluginError(msg);
     }
 
-    if (venvPath && path.basename(manifestPath) !== CARGO_FILE && venvPath) {
+    if (venvPath && path.basename(manifestPath) !== CARGO_FILE) {
         const msg = "The manifest-path must be a path to a Cargo.toml file";
         throw new StarknetPluginError(msg);
     }
