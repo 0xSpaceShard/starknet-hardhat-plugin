@@ -1,5 +1,5 @@
 import {
-    ContractClass,
+    Cairo1ContractClass,
     iterativelyCheckStatus,
     Numeric,
     StarknetContract,
@@ -221,7 +221,7 @@ export async function sendDeclareV2Tx(
     senderAddress: string,
     version: Numeric,
     nonce: Numeric,
-    contractClass: ContractClass
+    contractClass: Cairo1ContractClass
 ) {
     const hre = await import("hardhat");
     const resp = await axios

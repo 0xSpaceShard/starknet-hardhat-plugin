@@ -27,7 +27,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
+import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
@@ -315,7 +315,7 @@ export function readCairo1Contract(contractPath: string) {
     const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii"));
     const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
 
-    const contract = new ContractClass({
+    const contract = new Cairo1ContractClass({
         abiPath: path.join(
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`

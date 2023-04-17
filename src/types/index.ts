@@ -738,7 +738,7 @@ export interface ContractClassConfig extends StarknetContractConfig {
     entryPointsByType: SieraEntryPointsByType;
 }
 
-export class ContractClass extends StarknetContract {
+export class Cairo1ContractClass extends StarknetContract {
     protected sierraProgram: string;
     protected contractClassVersion: string;
     protected entryPointsByType: SieraEntryPointsByType;
