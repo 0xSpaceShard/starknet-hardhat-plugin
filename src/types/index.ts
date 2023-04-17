@@ -744,7 +744,6 @@ export class ContractClass extends StarknetContract {
     protected sierraProgram: string;
     protected contractClassVersion: string;
     protected entryPointsByType: SieraEntryPointsByType;
-    protected abix: string;
 
     constructor(config: ContractClassConfig) {
         super(config);
