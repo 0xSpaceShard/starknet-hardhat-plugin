@@ -226,7 +226,7 @@ describe("My Test", function () {
     // not compatible with accounts deployed with Starknet CLI
     const account = await starknet.OpenZeppelinAccount.getAccountFromAddress(...);
     const contractFactory = await starknet.getContractFactory("MyContract");
-    // account.declarev2() should be used for cairo1 contracts
+    // will call declare version 2 if contract is cairo 1
     const txHash = await account.declare(contractFactory);  // class declaration
     const classHash = await contractFactory.getClassHash();
 
