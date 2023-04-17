@@ -90,13 +90,13 @@ export abstract class ExternalServer {
 
     protected abstract cleanup(): void;
 
-    public async start(options?: CommonSpawnOptions): Promise<void> {
+    public async start(): Promise<void> {
         if (await this.isServerAlive()) {
             const msg = `Cannot spawn ${this.processName}: ${this.url} already occupied.`;
             throw new StarknetPluginError(msg);
         }
 
-        this.childProcess = await this.spawnChildProcess(options);
+        this.childProcess = await this.spawnChildProcess();
         const logger = new IntegratedDevnetLogger(this.stdout, this.stderr);
         this.childProcess.stdout.on("data", async (chunk) => {
             chunk = chunk.toString();
