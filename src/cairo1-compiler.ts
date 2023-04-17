@@ -6,7 +6,10 @@ import { getFreePort } from "./external-server/external-server";
 import { CommonSpawnOptions } from "child_process";
 
 export const exec = (args: string) => {
-    const result = shell.exec(args);
+    const result = shell.exec(args, {
+        silent: true
+    });
+
     return {
         statusCode: result.code,
         stdout: Buffer.from(result.stderr),
