@@ -19,6 +19,7 @@ import {
     StarknetChainId,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
+    DECLARE_VERSION,
     UDC_DEPLOY_FUNCTION_NAME
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -26,10 +27,12 @@ import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { BigNumberish, toBN } from "starknet/utils/number";
 import { ec } from "elliptic";
 import {
+    calculateDeclareV2TxHash,
     calculateDeployAccountHash,
     CallParameters,
     generateKeys,
     handleInternalContractArtifacts,
+    sendDeclareV2Tx,
     sendDeployAccountTx,
     sendEstimateFeeTx,
     signMultiCall
@@ -41,7 +44,8 @@ import {
     UDC,
     readContract,
     bnToDecimalStringArray,
-    estimatedFeeToMaxFee
+    estimatedFeeToMaxFee,
+    readCairo1Contract
 } from "./utils";
 import { Call, hash, RawCalldata } from "starknet";
 import { getTransactionReceiptUtil } from "./extend-utils";
@@ -403,6 +407,10 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
+        if (contractFactory.isCairo1()) {
+            return await this.declareV2(contractFactory, options);
+        }
+
         let maxFee = options?.maxFee;
         if (maxFee && options?.overhead) {
             const msg = "maxFee and overhead cannot be specified together";
@@ -441,6 +449,51 @@ export abstract class Account {
             sender: this.address,
             maxFee: BigInt(maxFee)
         });
+    }
+
+    private async declareV2(
+        contractFactory: StarknetContractFactory,
+        options: DeclareOptions = {}
+    ): Promise<string> {
+        const maxFee = options?.maxFee;
+        if (!maxFee) {
+            const msg =
+                "maxFee must be provided to send declare transactions.\n" +
+                "A value of '0' for 'maxFee' is not supported.";
+            throw new StarknetPluginError(msg);
+        }
+
+        const version = DECLARE_VERSION;
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        const hre = await import("hardhat");
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const compiledClassHash = await hre.starknetWrapper.getCompiledClassHash(
+            contractFactory.casmPath
+        );
+        const classHash = await hre.starknetWrapper.getSierraContractClassHash(
+            contractFactory.metadataPath
+        );
+
+        const calldata = [classHash];
+        const messageHash = calculateDeclareV2TxHash(
+            this.address,
+            calldata,
+            maxFee.toString(),
+            chainId,
+            [nonce.toString(), compiledClassHash]
+        );
+
+        const signatures = this.getSignatures(messageHash);
+        return sendDeclareV2Tx(
+            bnToDecimalStringArray(signatures),
+            compiledClassHash,
+            maxFee,
+            this.address,
+            version,
+            nonce,
+            readCairo1Contract(contractFactory.metadataPath)
+        );
     }
 }
 

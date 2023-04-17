@@ -11,9 +11,13 @@ import sys
 try:
     from starkware.starknet.cli.starknet_cli import main as starknet_main
     from starkware.starknet.compiler.compile import main as starknet_compile_main
-    from starkware.starknet.core.os.class_hash import compute_class_hash
-    from starkware.starknet.services.api.contract_class import ContractClass
+    from starkware.starknet.core.os.contract_class.deprecated_class_hash import compute_deprecated_class_hash
+    from starkware.starknet.services.api.contract_class.contract_class import DeprecatedCompiledClass
     from starkware.cairo.lang.migrators.migrator import main as cairo_migrate_main
+    from starkware.starknet.services.api.contract_class.contract_class import CompiledClass
+    from starkware.starknet.services.api.contract_class.contract_class_utils import load_sierra
+    from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
+    from starkware.starknet.core.os.contract_class.compiled_class_hash import compute_compiled_class_hash
 except ImportError:
     sys.exit("Make sure the environment you configured has starknet (cairo-lang) installed!")
 
@@ -30,14 +34,38 @@ async def starknet_compile_main_wrapper(args):
         print(err, file=sys.stderr)
         return 1
 
+async def get_compiled_class_hash(args):
+    """Returns compiled_class_hash"""
+    sys.argv = [sys.argv[0], *args]
+    try:
+        casm_path = args[0]
+        with open(casm_path, encoding="utf-8") as casm_file:
+            compiled_class = CompiledClass.loads(casm_file.read())
+        compiled_class_hash = compute_compiled_class_hash(compiled_class)
+        print(compiled_class_hash)
+        return 0
+    except Exception as err:
+        print(err, file=sys.stderr)
+        return 1
+
+def get_contract_class(metadata_path):
+    """Returns contract class"""
+    return load_sierra(metadata_path)
+
 async def get_class_hash(args):
     path ,= args
     with open(path, encoding="utf-8") as file:
         raw_class = json.load(file)
 
-    loaded_class = ContractClass.load(raw_class)
-    class_hash = compute_class_hash(loaded_class)
+    loaded_class = DeprecatedCompiledClass.load(raw_class)
+    class_hash = compute_deprecated_class_hash(loaded_class)
     print(hex(class_hash))
+    return 0
+
+async def get_contract_class_hash(args):
+    path , = args
+    contract_class = get_contract_class(path)
+    print(hex(compute_class_hash(contract_class)))
     return 0
 
 async def cairo_migrate_main_wrapper(args):
@@ -52,6 +80,8 @@ MAIN_MAP = {
     "starknet": starknet_main_wrapper,
     "starknet-compile": starknet_compile_main_wrapper,
     "get_class_hash": get_class_hash,
+    "get_contract_class_hash": get_contract_class_hash,
+    "get_compiled_class_hash": get_compiled_class_hash,
     "cairo-migrate": cairo_migrate_main_wrapper
 }
 

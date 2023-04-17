@@ -5,6 +5,17 @@ import { StringMap } from "./types";
 
 const NAMED_TUPLE_DELIMITER = ": ";
 const ARGUMENTS_DELIMITER = ", ";
+const COMMON_TYPES = [
+    "felt",
+    "core::felt252",
+    "core::integer::u8",
+    "core::integer::u16",
+    "core::integer::u38",
+    "core::integer::u64",
+    "core::integer::u128",
+    "core::integer::u256",
+    "core::starknet::contract_address::ContractAddress"
+];
 
 function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
@@ -147,7 +158,7 @@ export function adaptInputUtil(
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
-        if (inputSpec.type === "felt") {
+        if (COMMON_TYPES.includes(inputSpec.type)) {
             const errorMsg =
                 `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
                 `got: ${typeof currentValue}`;
@@ -220,8 +231,7 @@ function adaptComplexInput(
     if (input === undefined || input === null) {
         throw new StarknetPluginError(`${inputSpec.name} is ${input}`);
     }
-
-    if (type === "felt") {
+    if (COMMON_TYPES.includes(type)) {
         if (isNumeric(input)) {
             adaptedArray.push(toNumericString(input));
             return;
@@ -339,7 +349,8 @@ export function adaptOutputUtil(
 
     for (const outputSpec of outputSpecs) {
         const currentValue = result[resultIndex];
-        if (outputSpec.type === "felt") {
+        if (COMMON_TYPES.includes(outputSpec.type)) {
+            outputSpec.name = outputSpec.name ?? "response";
             adapted[outputSpec.name] = currentValue;
             resultIndex++;
         } else if (outputSpec.type.endsWith("*")) {
@@ -391,7 +402,7 @@ export function adaptOutputUtil(
  * @returns an object consisting of the next unused index and the generated tuple/struct itself
  */
 function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
-    if (type === "felt") {
+    if (COMMON_TYPES.includes(type)) {
         return {
             generatedComplex: raw[rawIndex],
             newRawIndex: rawIndex + 1

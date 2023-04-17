@@ -20,19 +20,21 @@ import {
     INTEGRATED_DEVNET_INTERNALLY,
     UDC_ADDRESS,
     StarknetChainId,
-    DEFAULT_DEVNET_CAIRO_VM
+    DEFAULT_DEVNET_CAIRO_VM,
+    ABI_SUFFIX
 } from "./constants";
 import * as path from "path";
 import * as fs from "fs";
 import { glob } from "glob";
 import { promisify } from "util";
-import { Numeric, StarknetContract } from "./types";
+import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 import { stark } from "starknet";
 import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
+import { AbiEntry } from "./starknet-types";
 
 const globPromise = promisify(glob);
 /**
@@ -308,6 +310,46 @@ export function readContract(contractPath: string) {
     };
 }
 
+export function readCairo1Contract(contractPath: string) {
+    const { parse } = handleJsonWithBigInt(false);
+    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii"));
+    const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
+
+    const contract = new Cairo1ContractClass({
+        abiPath: path.join(
+            path.dirname(contractPath),
+            `${path.parse(contractPath).name}${ABI_SUFFIX}`
+        ),
+        sierraProgram: compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        entryPointsByType: entry_points_by_type,
+        contractClassVersion: contract_class_version
+    } as ContractClassConfig);
+
+    return contract;
+}
+
+/**
+ * Json string is transformed into a formatted string without newlines.
+ * @param json string
+ * @returns string
+ */
+export function formatSpaces(json: string): string {
+    let insideQuotes = false;
+    let newString = "";
+    for (const char of json) {
+        // eslint-disable-next-line
+        if (char === '"' && newString.endsWith("\\") === false) {
+            insideQuotes = !insideQuotes;
+        }
+        if (insideQuotes) {
+            newString += char;
+        } else {
+            newString += char === ":" ? ": " : char === "," ? ", " : char;
+        }
+    }
+    return newString;
+}
+
 export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
     return JsonBigint({
         alwaysParseAsBig,
@@ -324,4 +366,47 @@ export function bnToDecimalStringArray(rawCalldata: bigint[]) {
 export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     overhead = Math.round((1 + overhead) * 100);
     return (amount * BigInt(overhead)) / BigInt(100);
+}
+
+/**
+ * Checks if abi entry is a constructor or not
+ * @param entryType Abi entry to get name and type of
+ * @param paths Starknet project paths config
+ * @param casmPath Source artifact of a cairo1 contract
+ * @returns boolean
+ */
+export function isEntryAContructor(
+    entryType: AbiEntry,
+    paths: ProjectPathsConfig,
+    casmPath?: string
+): boolean {
+    if (entryType.type === "constructor") return true;
+
+    if (casmPath) {
+        const { root, starknetArtifacts } = paths;
+        const dirPath = casmPath.replace(starknetArtifacts, "");
+        const sourcePath = path.dirname(path.join(root, dirPath));
+        // Check if path exists
+        if (!fs.existsSync(sourcePath)) return false;
+        // Check if contract contains constructor with the name
+        const file = fs.readFileSync(sourcePath).toString();
+        const lines = file.split("\n");
+
+        let index = 0;
+        for (let line of lines) {
+            line = line.trim();
+            if (line.startsWith("//")) {
+                // Ignore single-line comment.
+                continue;
+            } else if (line.includes("#[constructor]")) {
+                // Check if next line is contains entry type name
+                const nextLine = lines[index + 1];
+                if (nextLine && nextLine.includes(entryType.name)) {
+                    return true;
+                }
+            }
+            index++;
+        }
+    }
+    return false;
 }

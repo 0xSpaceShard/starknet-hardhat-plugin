@@ -85,7 +85,7 @@ export interface L2ToL1Message {
 
 export interface TransactionData {
     calldata: string[];
-    contract_address: string;
+    sender_address: string;
     entry_point_selector: string;
     entry_point_type: string;
     max_fee: string;

@@ -1,6 +1,6 @@
 import axios from "axios";
 import net from "net";
-import { ChildProcess, spawnSync } from "child_process";
+import { ChildProcess, spawnSync, CommonSpawnOptions } from "child_process";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
@@ -86,7 +86,7 @@ export abstract class ExternalServer {
         this.cleanupFns.forEach((fn) => fn());
     }
 
-    protected abstract spawnChildProcess(): Promise<ChildProcess>;
+    protected abstract spawnChildProcess(options?: CommonSpawnOptions): Promise<ChildProcess>;
 
     protected abstract cleanup(): void;
 

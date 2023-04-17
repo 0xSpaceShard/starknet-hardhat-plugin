@@ -2,7 +2,7 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
-import { ABI_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
+import { ABI_SUFFIX, CAIRO_ASSEMBLY_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
@@ -27,6 +27,11 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
             `Could not find JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
         );
     }
+    const casmSearchTarget = path.join(
+        `${contractPath}.cairo`,
+        `${path.basename(contractPath)}${CAIRO_ASSEMBLY_SUFFIX}`
+    );
+    const casmPath = await findPath(artifactsPath, casmSearchTarget);
 
     const abiSearchTarget = path.join(
         `${contractPath}.cairo`,
@@ -41,6 +46,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
 
     return new StarknetContractFactory({
         metadataPath,
+        casmPath,
         abiPath,
         hre
     });

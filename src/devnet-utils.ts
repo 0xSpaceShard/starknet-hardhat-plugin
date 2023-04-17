@@ -3,7 +3,7 @@ import axios, { AxiosResponse, Method } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { Block, MintResponse, L2ToL1Message } from "./starknet-types";
+import { MintResponse, L2ToL1Message } from "./starknet-types";
 import { hash } from "starknet";
 import { numericToHexString } from "./utils";
 import { Numeric } from "./types";
@@ -44,6 +44,7 @@ export interface L1ToL2MockTxRequest {
     entry_point_selector: string;
     payload: Array<number>;
     nonce: string;
+    paidFeeOnL1: string;
 }
 
 export interface L1ToL2MockTxResponse {
@@ -61,11 +62,16 @@ export interface L2ToL1MockTxResponse {
 }
 
 export interface SetTimeResponse {
-    next_block_timestamp: number;
+    block_timestamp: number;
+}
+
+export interface NewBlockResponse {
+    block_hash: string;
 }
 
 export interface IncreaseTimeResponse {
     timestamp_increased_by: number;
+    block_hash: string;
 }
 
 export interface PredeployedAccount {
@@ -137,14 +143,16 @@ Make sure you really want to interact with Devnet and that it is running and ava
         functionName: string,
         l1ContractAddress: string,
         payload: Numeric[],
-        nonce: Numeric
+        nonce: Numeric,
+        paidFeeOnL1: Numeric
     ) {
         const body = {
             l2_contract_address: l2ContractAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
             l1_contract_address: l1ContractAddress,
             payload: payload.map((item) => numericToHexString(item)),
-            nonce: numericToHexString(nonce)
+            nonce: numericToHexString(nonce),
+            paid_fee_on_l1: numericToHexString(paidFeeOnL1)
         };
 
         const response = await this.requestHandler<L1ToL2MockTxResponse>(
@@ -211,7 +219,7 @@ Make sure you really want to interact with Devnet and that it is running and ava
     }
 
     public async createBlock() {
-        const response = await this.requestHandler<Block>("/create_block", "POST");
+        const response = await this.requestHandler<NewBlockResponse>("/create_block", "POST");
         return response.data;
     }
 

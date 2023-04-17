@@ -1,5 +1,11 @@
-import { iterativelyCheckStatus, StarknetContract, StringMap } from "./types";
-import { toBN } from "starknet/utils/number";
+import {
+    Cairo1ContractClass,
+    iterativelyCheckStatus,
+    Numeric,
+    StarknetContract,
+    StringMap
+} from "./types";
+import { toBN, toHex } from "starknet/utils/number";
 import * as ellipticCurve from "starknet/utils/ellipticCurve";
 import { ec } from "elliptic";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -10,7 +16,8 @@ import {
     INTERNAL_ARTIFACTS_DIR,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    StarknetChainId
+    StarknetChainId,
+    DECLARE_VERSION
 } from "./constants";
 import { numericToHexString } from "./utils";
 import * as crypto from "crypto";
@@ -174,6 +181,62 @@ export async function sendDeployAccountTx(
         })
         .catch((error: AxiosError) => {
             const msg = `Deploying account failed: ${error.response.data.message}`;
+            throw new StarknetPluginError(msg, error);
+        });
+
+    return new Promise<string>((resolve, reject) => {
+        iterativelyCheckStatus(
+            resp.data.transaction_hash,
+            hre.starknetWrapper,
+            () => resolve(resp.data.transaction_hash),
+            reject
+        );
+    });
+}
+
+export function calculateDeclareV2TxHash(
+    accountAddress: string,
+    callData: string[],
+    maxFee: string,
+    chainId: StarknetChainId,
+    additionalData: string[]
+) {
+    const calldataHash = hash.computeHashOnElements(callData);
+    return hash.computeHashOnElements([
+        TransactionHashPrefix.DECLARE,
+        numericToHexString(DECLARE_VERSION),
+        accountAddress,
+        0, // entrypoint selector is implied
+        calldataHash,
+        maxFee,
+        chainId,
+        ...additionalData
+    ]);
+}
+
+export async function sendDeclareV2Tx(
+    signatures: string[],
+    classHash: string,
+    maxFee: Numeric,
+    senderAddress: string,
+    version: Numeric,
+    nonce: Numeric,
+    contractClass: Cairo1ContractClass
+) {
+    const hre = await import("hardhat");
+    const resp = await axios
+        .post(`${hre.starknet.networkConfig.url}/gateway/add_transaction`, {
+            type: "DECLARE",
+            contract_class: contractClass.getCompiledClass(),
+            signature: signatures,
+            sender_address: senderAddress,
+            compiled_class_hash: toHex(toBN(classHash)),
+            version: numericToHexString(version),
+            nonce: numericToHexString(nonce),
+            max_fee: numericToHexString(maxFee)
+        })
+        .catch((error: AxiosError) => {
+            const msg = `Declaring contract failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
 
