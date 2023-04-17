@@ -2,7 +2,6 @@ import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
 import { Image } from "@nomiclabs/hardhat-docker";
 import { DockerServer } from "./external-server/docker-server";
-import { getFreePort } from "./external-server/external-server";
 import { CommonSpawnOptions } from "child_process";
 
 export const exec = (args: string) => {
@@ -44,27 +43,11 @@ export class DockerCairo1Compiler extends DockerServer {
         }
 
         const dockerArgs = [...volumes];
-
-        if (this.isDockerDesktop) {
-            this.port = await this.getPort();
-            dockerArgs.push("-p", `${this.port}:${this.port}`);
-        } else {
-            dockerArgs.push("--network", "host");
-        }
-
         return dockerArgs;
     }
 
     protected async getContainerArgs(): Promise<string[]> {
-        this.port = await this.getPort();
         return ["/bin/sh", "-c", `"${this.cairo1CompilerArgs.join(" ")}"`];
-    }
-
-    protected async getPort(): Promise<string> {
-        if (!this.port) {
-            this.port = await getFreePort();
-        }
-        return this.port;
     }
 
     async compileCairo1(options?: CommonSpawnOptions): Promise<ProcessResult> {
