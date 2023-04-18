@@ -32,7 +32,7 @@ function HomepageHeader() {
 
                     <a
                         className="margin-horiz--md button button--secondary button--lg"
-                        href="https://github.com/Shard-Labs/starknet-hardhat-example"
+                        href="https://github.com/0xSpaceShard/starknet-hardhat-example"
                     >
                         Example repo
                     </a>

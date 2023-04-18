@@ -262,9 +262,9 @@ workflows:
                             test-name: test-integrated-devnet-tests
                           - platform: macos-node
                             test-name: test-recompilation-tests
-                  context: shardlabs
+                  context: spaceshard
             - npm_publish:
-                  context: shardlabs
+                  context: spaceshard
                   filters:
                       branches:
                           only:
