@@ -5,7 +5,7 @@
 ### Clone the repository
 
 ```
-$ git clone git@github.com:Shard-Labs/starknet-hardhat-plugin.git
+$ git clone git@github.com:0xSpaceShard/starknet-hardhat-plugin.git
 $ cd starknet-hardhat-plugin
 ```
 
@@ -24,7 +24,7 @@ $ npm run build
 ### Set up the example repository
 
 The `starknet-hardhat-example` repository is used to showcase and test this plugin's functionality.
-Set it up following [its readme](https://github.com/Shard-Labs/starknet-hardhat-example#get-started), but after installing it, link it to use your local plugin repository:
+Set it up following [its readme](https://github.com/0xSpaceShard/starknet-hardhat-example#get-started), but after installing it, link it to use your local plugin repository:
 
 ```
 $ cd <YOUR_PLUGIN_REPO_PATH>
@@ -58,15 +58,15 @@ To run all tests, you can use the `test-` scripts defined in `package.json`. For
 
 ### Executing tests on CircleCI
 
-If you're a member of the organization and you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/Shard-Labs/workflows/starknet-hardhat-plugin).
+If you're a member of the organization and you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/0xSpaceShard/workflows/starknet-hardhat-plugin).
 
 Sometimes the tests fail because of internal CircleCI or Starknet issues; in that case, you can try restarting the workflow.
 
-Bear in mind that each workflow consumes credits. Track the spending [here](https://app.circleci.com/settings/plan/github/Shard-Labs/overview).
+Bear in mind that each workflow consumes credits. Track the spending [here](https://app.circleci.com/settings/plan/github/0xSpaceShard/overview).
 
 The whole workflow is defined in `.circleci/config.yml` - you may find it somewhat chaotic as it uses dependency caching (we kind of sacrificed config clarity for performance).
 
-Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [shardlabs CircleCI context](https://app.circleci.com/settings/organization/github/Shard-Labs/contexts/f7f363c6-f101-4ac8-9193-343c88da5fb0?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
+Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [spaceshard CircleCI context](https://app.circleci.com/settings/organization/github/0xSpaceShard/contexts/c36fa213-2511-465b-b303-0d35d76b42eb?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
 
 To skip running tests on CircleCI, add `[skip ci]` in the first 250 characters of the commit message.
 
@@ -78,17 +78,17 @@ The script `test.sh` runs tests on Devnet and Testnet (alpha-goerli). To skip ru
 
 When adding new functionality to the plugin, you will probably also have to create a PR to the `plugin` branch of `starknet-hardhat-example`. You can then modify the `test.sh` script to use your branch instead of the `plugin` branch.
 
-If your reviewer makes an observation that requires a fix, after you push the commit with the fix, find the commit link on the PR conversation page, and reply to the reviewer by providing that link. In [this example](https://github.com/Shard-Labs/starknet-hardhat-plugin/pull/130#discussion_r913581807) the contributor even linked to the specific change of the commit - you don't have to do that if you made multiple smaller commits.
+If your reviewer makes an observation that requires a fix, after you push the commit with the fix, find the commit link on the PR conversation page, and reply to the reviewer by providing that link. In [this example](https://github.com/0xSpaceShard/starknet-hardhat-plugin/pull/130#discussion_r913581807) the contributor even linked to the specific change of the commit - you don't have to do that if you made multiple smaller commits.
 
 When the PR is ready to be merged, do `Squash and merge` and delete the branch.
 
 ## Adapting to a new Starknet / cairo-lang version
 
-Since the plugin relies on [Devnet](https://github.com/Shard-Labs/starknet-devnet) in its tests, first an adapted version of Devnet might need to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
+Since the plugin relies on [Devnet](https://github.com/0xSpaceShard/starknet-devnet) in its tests, first an adapted version of Devnet might need to be released. Current versions of Devnet and cairo-lang used in tests are specified in `config.json`.
 
 ### In cairo-cli repo
 
-When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation). This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/Shard-Labs/cairo-cli-docker#build-a-new-image).
+When a new Starknet / cairo-lang version is released, a new `cairo-cli` Docker image can be released (probably without any adaptation). This is done through the CI/CD pipeline of [the cairo-cli-docker repository](https://github.com/0xSpaceShard/cairo-cli-docker#build-a-new-image).
 
 Likely places where the old version has to be replaced with the new version are `README.md` and `constants.ts`.
 
@@ -102,7 +102,7 @@ Change the version in `hardhat.config.ts`. Recompile the contracts (only importa
 
 This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/Shard-Labs/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
+There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container
@@ -137,7 +137,7 @@ This will also update `package-lock.json`, create a new commit, and create a new
 
 If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
-Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases) with [git tags](https://github.com/Shard-Labs/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
+Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/0xSpaceShard/starknet-hardhat-plugin/releases) with [git tags](https://github.com/0xSpaceShard/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
 
 When the tag is pushed:
 
@@ -145,7 +145,7 @@ When the tag is pushed:
 $ git push origin <TAG_NAME>
 ```
 
-the release can be made public [on GitHub](https://github.com/Shard-Labs/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
+the release can be made public [on GitHub](https://github.com/0xSpaceShard/starknet-hardhat-plugin/releases/new). Automatic note generation can be used, augmented with usage and development changes (see past releases for reference).
 
 Users should be notified about the usage related changes. This can be done on Telegram, [Discord](https://discord.com/channels/793094838509764618/912735106899275856), [Shamans](https://community.starknet.io/t/starknet-hardhat-plugin/67) etc.
 

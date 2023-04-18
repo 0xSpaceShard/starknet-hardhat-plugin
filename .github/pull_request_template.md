@@ -21,7 +21,7 @@
 -   [ ] Documented the changes
 -   [ ] Updated the `test` directory (with a test case consisting of `network.json`, `hardhat.config.ts`, `check.ts`)
 -   [ ] Linked issues which this PR resolves
--   [ ] Created a PR to the `plugin` branch of [`starknet-hardhat-example`](https://github.com/Shard-Labs/starknet-hardhat-example):
+-   [ ] Created a PR to the `plugin` branch of [`starknet-hardhat-example`](https://github.com/0xSpaceShard/starknet-hardhat-example):
     -   < EXAMPLE_REPO_PR_URL > <!-- paste here if applicable -->
     -   [ ] Modified `test.sh` to use my example repo branch
     -   [ ] Restored `test.sh` to to use the original branch (after the example repo PR has been merged)
