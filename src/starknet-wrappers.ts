@@ -127,7 +127,7 @@ export abstract class StarknetWrapper {
     public async execute(
         command:
             | "starknet"
-            | "starknet-compile"
+            | "starknet-compile-deprecated"
             | "get_class_hash"
             | "cairo-migrate"
             | "get_contract_class"
@@ -165,7 +165,7 @@ export abstract class StarknetWrapper {
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
-        const executed = await this.execute("starknet-compile", preparedOptions);
+        const executed = await this.execute("starknet-compile-deprecated", preparedOptions);
         return executed;
     }
 
