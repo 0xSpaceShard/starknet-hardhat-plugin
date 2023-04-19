@@ -1,4 +1,4 @@
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
-hardhatStarknetCompile("contracts/contract.cairo".split(" "));
+hardhatStarknetCompileDeprecated("contracts/contract.cairo".split(" "));
 hardhatStarknetTest(["test/contract-factory-creation.test.ts", "--no-compile"]);

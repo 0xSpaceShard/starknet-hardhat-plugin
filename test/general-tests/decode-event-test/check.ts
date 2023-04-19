@@ -1,4 +1,4 @@
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
-hardhatStarknetCompile(["contracts/events.cairo"]);
+hardhatStarknetCompileDeprecated(["contracts/events.cairo"]);
 hardhatStarknetTest("--no-compile test/decode-events.test.ts".split(" "));

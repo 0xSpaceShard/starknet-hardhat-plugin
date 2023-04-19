@@ -1,9 +1,9 @@
 import { assertContains } from "../../utils/utils";
 import path from "path";
 import { readFileSync } from "fs";
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
-hardhatStarknetCompile(["contracts/contract.cairo"]);
+hardhatStarknetCompileDeprecated(["contracts/contract.cairo"]);
 
 const invalidNetwork = "foo";
 const expected = `Error in plugin Starknet: Invalid network provided in starknet.network in hardhat.config: ${invalidNetwork}.`;

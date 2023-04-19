@@ -1,5 +1,5 @@
 import { assertEqual, ensureEnvVar, exec } from "../../utils/utils";
-import { hardhatStarknetCompile, hardhatStarknetVerify } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetVerify } from "../../utils/cli-functions";
 import axios from "axios";
 
 console.log(
@@ -12,7 +12,7 @@ const network = ensureEnvVar("NETWORK");
 const mainContract = "contracts/contract.cairo";
 const utilContract = "contracts/util.cairo";
 
-hardhatStarknetCompile(`${mainContract} ${utilContract}`.split(" "));
+hardhatStarknetCompileDeprecated(`${mainContract} ${utilContract}`.split(" "));
 
 throw new Error("Missing code: Deploy with salt and extract address");
 const address = "";

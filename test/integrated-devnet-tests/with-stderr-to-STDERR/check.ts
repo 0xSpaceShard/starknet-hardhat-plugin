@@ -1,6 +1,6 @@
 import { readFileSync } from "fs";
 import { assertExistence, checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
     await checkDevnetIsNotRunning();
@@ -9,7 +9,7 @@ import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-fun
     const expectedWarning =
         "WARNING: Use these accounts and their keys ONLY for local testing. DO NOT use them on mainnet or other live networks because you will LOSE FUNDS.";
 
-    hardhatStarknetCompile(["contracts/contract.cairo"]);
+    hardhatStarknetCompileDeprecated(["contracts/contract.cairo"]);
     const execution = hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "));
     assertContains(execution.stderr, expectedWarning);
 

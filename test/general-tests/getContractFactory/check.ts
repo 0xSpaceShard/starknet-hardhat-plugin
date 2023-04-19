@@ -1,4 +1,4 @@
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
-hardhatStarknetCompile([]);
+hardhatStarknetCompileDeprecated([]);
 hardhatStarknetTest("--no-compile test/path-test.ts".split(" "));
