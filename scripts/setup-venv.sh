@@ -13,7 +13,7 @@ echo "python version: $(python --version)"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export HOMEBREW_NO_INSTALL_CLEANUP=1
     brew ls --versions gmp || brew install gmp
-    python3 -m pip install --no-binary :all: fastecdsa
+    python3 -m pip install --no-binary :all: --no-use-pep517 fastecdsa
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
