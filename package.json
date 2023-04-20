@@ -32,7 +32,7 @@
         "format": "prettier-eslint --list-different --write $(git ls-files '*.ts' '*.js')"
     },
     "author": "SpaceShard",
-    "license": "ISC",
+    "license": "MIT",
     "dependencies": {
         "@nomiclabs/hardhat-docker": "^2.0.2",
         "axios": "^0.24.0",
