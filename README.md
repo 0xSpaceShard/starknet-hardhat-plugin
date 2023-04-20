@@ -12,13 +12,13 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 
 On the following links you can find the documentation of:
 
--   [the latest official release](https://shard-labs.github.io/starknet-hardhat-plugin/)
--   [the latest master commit (not officially released)](https://github.com/Shard-Labs/starknet-hardhat-plugin/tree/master/www/docs/intro.md)
+-   [the latest official release](https://0xspaceshard.github.io/starknet-hardhat-plugin/)
+-   [the latest master commit (not officially released)](https://github.com/0xSpaceShard/starknet-hardhat-plugin/tree/master/www/docs/intro.md)
 
 ## ✏️ Contributing
 
 We ❤️ and encourage all contributions!
 
-[Click here](https://shard-labs.github.io/starknet-hardhat-plugin/docs/dev) for the development guide.
+[Click here](https://0xspaceshard.github.io/starknet-hardhat-plugin/docs/dev) for the development guide.
 
-Special thanks 🙌 to all the [contributors](https://github.com/Shard-Labs/starknet-hardhat-plugin/graphs/contributors)!
+Special thanks 🙌 to all the [contributors](https://github.com/0xSpaceShard/starknet-hardhat-plugin/graphs/contributors)!

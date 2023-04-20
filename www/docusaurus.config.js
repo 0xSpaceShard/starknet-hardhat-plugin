@@ -8,7 +8,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 const config = {
     title: "Starknet Hardhat Plugin",
     tagline: "A plugin for integrating Starknet tools into Hardhat projects",
-    url: "https://Shard-Labs.github.io",
+    url: "https://0xspaceshard.github.io",
     // baseUrl: "/",
     baseUrl: "/starknet-hardhat-plugin/",
     onBrokenLinks: "throw",
@@ -17,7 +17,7 @@ const config = {
     favicon: "img/logo.svg",
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
-    organizationName: "Shard-Labs", // Usually your GitHub org/user name.
+    organizationName: "SpaceShard", // Usually your GitHub org/user name.
     projectName: "starknet-hardhat-plugin", // Usually your repo name.
 
     // Even if you don't use internalization, you can use this field to set useful
@@ -36,14 +36,14 @@ const config = {
                 docs: {
                     sidebarPath: require.resolve("./sidebars.js"),
                     editUrl:
-                        "https://github.com/Shard-Labs/starknet-hardhat-plugin/tree/master/docs"
+                        "https://github.com/0xSpaceShard/starknet-hardhat-plugin/tree/master/docs"
                 },
                 blog: {
                     showReadingTime: true,
                     // Please change this to your repo.
                     // Remove this to remove the "edit this page" links.
                     editUrl:
-                        "https://github.com/Shard-Labs/starknet-hardhat-plugin/tree/master/docs"
+                        "https://github.com/0xSpaceShard/starknet-hardhat-plugin/tree/master/docs"
                 },
                 theme: {
                     customCss: require.resolve("./src/css/custom.css")
@@ -75,7 +75,7 @@ const config = {
                         label: "Dev"
                     },
                     {
-                        href: "https://github.com/Shard-Labs/starknet-hardhat-plugin",
+                        href: "https://github.com/0xSpaceShard/starknet-hardhat-plugin",
                         label: "GitHub",
                         position: "right"
                     }
@@ -93,7 +93,7 @@ const config = {
                             },
                             {
                                 label: "Starknet Hardhat example",
-                                href: "https://github.com/Shard-Labs/starknet-hardhat-example"
+                                href: "https://github.com/0xSpaceShard/starknet-hardhat-example"
                             }
                         ]
                     },
@@ -102,7 +102,7 @@ const config = {
                         items: [
                             {
                                 label: "Twitter",
-                                href: "https://twitter.com/shard_labs"
+                                href: "https://twitter.com/0xSpaceShard"
                             }
                         ]
                     },
@@ -111,12 +111,12 @@ const config = {
                         items: [
                             {
                                 label: "GitHub",
-                                href: "https://github.com/Shard-Labs/starknet-hardhat-plugin"
+                                href: "https://github.com/0xSpaceShard/starknet-hardhat-plugin"
                             }
                         ]
                     }
                 ],
-                copyright: `Copyright © ${new Date().getFullYear()} Shard Labs`
+                copyright: `Copyright © ${new Date().getFullYear()} SpaceShard`
             },
             prism: {
                 theme: lightCodeTheme,
