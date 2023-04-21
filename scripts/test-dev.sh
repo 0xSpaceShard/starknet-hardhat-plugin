@@ -1,12 +1,13 @@
 #!/bin/bash
 
 # TEST_SUBDIR="general-tests"
-# test_name="account-test"
-
-cd test
+# test_name="declare-v2-test"
 
 TEST_SUBDIR_PENDING="true"
 TEST_NAME_PENDING="true"
+export STARKNET_HARDHAT_DEV=1
+
+cd test
 
 while [[ -n $TEST_SUBDIR_PENDING ]]; do
 
@@ -52,10 +53,12 @@ test_name="${test_name%/}" # remove trailing slash
 RUN_SETUP="y"
 
 if [[ -d starknet-hardhat-example/ ]]; then
+	echo ""
 	read -e -p "Example repo found, y to force run setup." RUN_SETUP
 fi
 
 if [[ -n $RUN_SETUP ]]; then
+	echo ""
 	source  ./scripts/setup-cairo1-compiler.sh
 	rm -rf starknet-hardhat-example
 	git clone -b "${EXAMPLE_REPO_BRANCH:=plugin}" --single-branch https://github.com/0xSpaceShard/starknet-hardhat-example.git
@@ -67,9 +70,21 @@ else
 	echo "Skipped setup."
 fi
 
+pwd
+
+echo ""
+read -e -p "Press y + Return to run devnet. Return to skip: " RUN_DEVNET
+
+if [[ "y" == $RUN_DEVNET ]]; then
+	./scripts/devnet-run.sh
+fi
+
 while [[ "true" ]]; do
-	TEST_SUBDIR=$TEST_SUBDIR STARKNET_HARDHAT_DEV=1 ./scripts/test.sh $test_name
+	TEST_SUBDIR=$TEST_SUBDIR ./scripts/test.sh $test_name
 	echo "---------------------------------"
 	echo ""
 	read -e -p "Press Ctrl + C to terminate. Re-run test?" UNUSED_VARIABLE
+	if [[ "y" == $RUN_DEVNET ]]; then
+		./scripts/devnet-restart.sh
+	fi
 done
