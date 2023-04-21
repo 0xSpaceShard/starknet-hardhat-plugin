@@ -1,17 +1,17 @@
 #!/bin/bash
 set -eu
 
+CONFIG_FILE_NAME="hardhat.config.ts"
 if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
-	./scripts/test-setup.sh
-	./scripts/install-devnet.sh
+	source ./scripts/test-setup.sh
+	source ./scripts/install-devnet.sh
 fi
-
+source  ./scripts/setup-cairo1-compiler.sh
 cd ./starknet-hardhat-example
 
 total=0
 success=0
 
-CONFIG_FILE_NAME="hardhat.config.ts"
 test_dir="../test/$TEST_SUBDIR"
 test_name_specified=${1:-}
 
