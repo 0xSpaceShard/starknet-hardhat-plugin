@@ -1,52 +1,52 @@
 #!/bin/bash
 
-TEST_SUBDIR="general-tests" # remove trailing slash
-test_name="account-test" # remove trailing slash
+# TEST_SUBDIR="general-tests"
+# test_name="account-test"
 
-# cd test
+cd test
 
-# TEST_SUBDIR_PENDING="true"
-# TEST_NAME_PENDING="true"
+TEST_SUBDIR_PENDING="true"
+TEST_NAME_PENDING="true"
 
-# while [[ -n $TEST_SUBDIR_PENDING ]]; do
+while [[ -n $TEST_SUBDIR_PENDING ]]; do
 
-# 	echo "(Tab to autocomplete)"
-# 	read -e -p "Test suite:" TEST_SUBDIR
-# 	TEST_SUBDIR="${TEST_SUBDIR%/}"
+	echo "(Tab to autocomplete)"
+	read -e -p "Test suite:" TEST_SUBDIR
+	TEST_SUBDIR="${TEST_SUBDIR%/}"
 
-# 	if [[ -d $TEST_SUBDIR ]]; then
-# 		if [[ $TEST_SUBDIR != "${TEST_SUBDIR%-tests}" ]]; then
-# 			TEST_SUBDIR_PENDING=""
-# 		fi
-# 	else
-# 		echo ""
-# 		echo "Please pick from,"
-# 		ls | grep '\-tests' | awk '{print " - "$1}'
-# 		echo ""
-# 	fi
-# done
+	if [[ -d $TEST_SUBDIR ]]; then
+		if [[ $TEST_SUBDIR != "${TEST_SUBDIR%-tests}" ]]; then
+			TEST_SUBDIR_PENDING=""
+		fi
+	else
+		echo ""
+		echo "Please pick from,"
+		ls | grep '\-tests' | awk '{print " - "$1}'
+		echo ""
+	fi
+done
 
-# TEST_SUBDIR="${TEST_SUBDIR%/}" # remove trailing slash
+TEST_SUBDIR="${TEST_SUBDIR%/}" # remove trailing slash
 
-# cd $TEST_SUBDIR
+cd $TEST_SUBDIR
 
-# echo ""
-# while [[ -n $TEST_NAME_PENDING ]]; do
-# 	echo "(Tab to autocomplete)"
-# 	read -e -p "Test:" test_name
-# 	test_name="${test_name%/}"
+echo ""
+while [[ -n $TEST_NAME_PENDING ]]; do
+	echo "(Tab to autocomplete)"
+	read -e -p "Test:" test_name
+	test_name="${test_name%/}"
 
-# 	if [[ -d $test_name ]]; then
-# 		echo "Running test $test_name from $TEST_SUBDIR"
-# 		TEST_NAME_PENDING=""
-# 	else
-# 		echo "Please pick from,"
-# 		ls | awk '{print " - "$1}'
-# 		echo ""
-# 	fi
-# done
+	if [[ -d $test_name ]]; then
+		echo "Running test $test_name from $TEST_SUBDIR"
+		TEST_NAME_PENDING=""
+	else
+		echo "Please pick from,"
+		ls | awk '{print " - "$1}'
+		echo ""
+	fi
+done
 
-# cd ../..
+cd ../..
 
 test_name="${test_name%/}" # remove trailing slash
 RUN_SETUP="y"
