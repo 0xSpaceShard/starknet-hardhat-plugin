@@ -1,7 +1,5 @@
 trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
-CONFIG_FILE_NAME="hardhat.config.ts"
-
 ./scripts/ensure-python.sh
 
 # setup example repo
