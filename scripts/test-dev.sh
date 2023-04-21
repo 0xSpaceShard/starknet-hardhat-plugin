@@ -90,6 +90,11 @@ fi
 CONTINUE_TESTING="1"
 while [[ "q" != "$CONTINUE_TESTING" ]]; do
 	echo ""
+	echo "Updating starknet-hardhat-plugin,"
+	cd starknet-hardhat-example
+	npm install ../ # install plugin from source (parent dir)
+	cd ..
+	echo ""
 	TEST_SUBDIR=$TEST_SUBDIR ./scripts/test.sh $test_name
 	echo ""
 	echo "----------------------------------------------"
