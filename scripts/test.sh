@@ -7,7 +7,7 @@ if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
 	./scripts/install-devnet.sh
 fi
 cd ./starknet-hardhat-example
-source ./scripts/setup-cairo1-compiler.sh
+source  ../scripts/setup-cairo1-compiler.sh
 
 total=0
 success=0
@@ -22,7 +22,7 @@ fi
 
 function run_test() {
     test_case="$1"
- 	network="${2:-}"
+ 	network="$2"
  	test_name=$(basename $test_case)
 
     network_file="$test_case/network.json"
@@ -35,14 +35,11 @@ function run_test() {
         return 0
     fi
 
-	# If network is provided
-	if [[ -n $network ]]; then
-	    # Skip if the network file doesn't specify to run the test on the current network
-		if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
-			echo "Skipping $network test for $test_name"
-			return 0
-		fi
-    fi
+	# Skip if the network file doesn't specify to run the test on the current network
+	if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+		echo "Skipping $network test for $test_name"
+		return 0
+	fi
 
     total=$((total + 1))
     echo "Test $total) $test_name"
@@ -110,18 +107,20 @@ fi
 
 source ../scripts/set-devnet-vars.sh
 
-if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
-	# test integrated devnet
-	iterate_dir integrated-devnet
-
-	iterate_dir devnet
-else
+if [[ -n "${STARKNET_HARDHAT_DEV:-}" ]]; then
 	test_case_dir="$test_dir/$test_name_specified"
 	if [ ! -d "$test_case_dir" ]; then
 		echo "Invalid directory $test_case_dir for test case $test_name_specified"
 		exit -1
 	fi
-	run_test $test_case_dir
+
+	# Run test for all networks
+	run_test $test_case_dir $STARKNET_HARDHAT_DEV_NETWORK
+else
+	# test integrated devnet
+	iterate_dir integrated-devnet
+
+	iterate_dir devnet
 fi
 
 echo "Tests passing: $success / $total"

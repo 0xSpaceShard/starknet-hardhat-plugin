@@ -6,6 +6,7 @@
 TEST_SUBDIR_PENDING="true"
 TEST_NAME_PENDING="true"
 export STARKNET_HARDHAT_DEV=1
+export STARKNET_HARDHAT_DEV_NETWORK="integrated-devnet"
 
 cd test
 
@@ -77,6 +78,7 @@ echo "If your test needs devnet (and not integrated-devnet),"
 read -e -p "y to run devnet: " RUN_DEVNET
 
 if [[ "y" == $RUN_DEVNET ]]; then
+	export STARKNET_HARDHAT_DEV_NETWORK="devnet"
 	./scripts/devnet-run.sh
 	echo ""
 	echo "Devnet running, to stop devnet use,"
@@ -85,14 +87,14 @@ if [[ "y" == $RUN_DEVNET ]]; then
 	echo "+--------------------------------------+"
 fi
 
-while [[ "true" ]]; do
+CONTINUE_TESTING="1"
+while [[ "q" != "$CONTINUE_TESTING" ]]; do
 	echo ""
 	TEST_SUBDIR=$TEST_SUBDIR ./scripts/test.sh $test_name
 	echo ""
 	echo "----------------------------------------------"
 	echo ""
-	read -e -p "Press Ctrl + C to terminate. Re-run test?" UNUSED_VARIABLE
-	if [[ "y" == $RUN_DEVNET ]]; then
-		./scripts/devnet-restart.sh
-	fi
+	read -e -p "q to gracefully shutdown. Re-run test? " CONTINUE_TESTING	
 done
+
+docker rm -f starknet_hardhat_devnet
