@@ -22,7 +22,7 @@ fi
 
 function run_test() {
     test_case="$1"
- 	network="$2"
+ 	network="${2:-}"
  	test_name=$(basename $test_case)
 
     network_file="$test_case/network.json"
@@ -35,10 +35,13 @@ function run_test() {
         return 0
     fi
 
-    # Skip if the network file doesn't specify to run the test on the current network
-    if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
-        echo "Skipping $network test for $test_name"
-        return 0
+	# If network is provided
+	if [[ -n $network ]]; then
+	    # Skip if the network file doesn't specify to run the test on the current network
+		if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+			echo "Skipping $network test for $test_name"
+			return 0
+		fi
     fi
 
     total=$((total + 1))
@@ -61,9 +64,9 @@ function run_test() {
         echo "Error: $test_case/check.ts not found"
     fi
 
-    # rm -rf starknet-artifacts
-    # git checkout --force
-    # git clean -fd
+    rm -rf starknet-artifacts
+    git checkout --force
+    git clean -fd
 
     echo "----------------------------------------------"
     echo
@@ -105,11 +108,21 @@ if [[ "${CIRCLE_BRANCH:=}" == "master" ]] &&
     iterate_dir alpha
 fi
 
-# test integrated devnet
 source ../scripts/set-devnet-vars.sh
-iterate_dir integrated-devnet
 
-# iterate_dir devnet
+if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
+	# test integrated devnet
+	iterate_dir integrated-devnet
+
+	iterate_dir devnet
+else
+	test_case_dir="$test_dir/$test_name_specified"
+	if [ ! -d "$test_case_dir" ]; then
+		echo "Invalid directory $test_case_dir for test case $test_name_specified"
+		exit -1
+	fi
+	run_test $test_case_dir
+fi
 
 echo "Tests passing: $success / $total"
 exit $((total - success))
