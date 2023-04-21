@@ -26,6 +26,7 @@
         "test-venv-tests": "TEST_SUBDIR=venv-tests ./scripts/test.sh",
         "test-integrated-devnet-tests": "TEST_SUBDIR=integrated-devnet-tests ./scripts/test.sh",
         "test-recompilation-tests": "TEST_SUBDIR=recompilation-tests ./scripts/test.sh",
+        "test-dev": "./scripts/test-dev.sh",
         "build": "rm -rf dist && tsc && npm run copy-files",
         "copy-files": "cp src/*.py dist/src/",
         "lint": "eslint $(git ls-files '*.ts')",
