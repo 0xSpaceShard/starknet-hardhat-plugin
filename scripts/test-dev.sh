@@ -88,7 +88,8 @@ fi
 while [[ "true" ]]; do
 	echo ""
 	TEST_SUBDIR=$TEST_SUBDIR ./scripts/test.sh $test_name
-	echo "---------------------------------"
+	echo ""
+	echo "----------------------------------------------"
 	echo ""
 	read -e -p "Press Ctrl + C to terminate. Re-run test?" UNUSED_VARIABLE
 	if [[ "y" == $RUN_DEVNET ]]; then

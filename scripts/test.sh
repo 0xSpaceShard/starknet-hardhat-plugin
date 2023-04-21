@@ -3,8 +3,8 @@ set -eu
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
-	source ./scripts/test-setup.sh
-	source ./scripts/install-devnet.sh
+	./scripts/test-setup.sh
+	./scripts/install-devnet.sh
 fi
 source  ./scripts/setup-cairo1-compiler.sh
 cd ./starknet-hardhat-example
