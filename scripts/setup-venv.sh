@@ -13,7 +13,9 @@ echo "python version: $(python --version)"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     export HOMEBREW_NO_INSTALL_CLEANUP=1
     brew ls --versions gmp || brew install gmp
-    CFLAGS=-I`brew --prefix gmp`/include LDFLAGS=-L`brew --prefix gmp`/lib pip3 install fastecdsa
+    GMP_DIR=$(brew --prefix gmp)
+    echo "$GMP_DIR"
+    CFLAGS=-I$GMP_DIR LDFLAGS=-L$GMP_DIR pip install fastecdsa
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
