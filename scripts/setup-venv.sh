@@ -15,7 +15,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     brew ls --versions gmp || brew install gmp
     GMP_DIR=$(brew --prefix gmp)
     echo "$GMP_DIR"
-    CFLAGS=-I$GMP_DIR LDFLAGS=-L$GMP_DIR pip install fastecdsa
+    CFLAGS=-I$GMP_DIR/include LDFLAGS=-L$GMP_DIR/lib pip install fastecdsa
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
