@@ -106,58 +106,16 @@ function getCompilerPath(
     return cairo1Bin;
 }
 
-// consequetive run of starknet-compile & starknet-sierra-compile
-// or iteration through artifacts with starknet-sierra-compile?
-export async function starknetCairo1CompileSierraAction(
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
-) {
-    const cairo1Bin = getCompilerPath(hre.config.starknet, args, CAIRO1_SIERRA_COMPILE_BIN);
-
-    const root = hre.config.paths.root;
-    const rootRegex = new RegExp("^" + root);
-
-    let statusCode = 0;
-
-    const artifactsPath = adaptPath(root, hre.config.paths.starknetArtifacts);
-    checkSourceExists(artifactsPath);
-
-    const files = await traverseFiles(artifactsPath, `*.${CAIRO1_SIERRA_SUFFIX}`);
-    for (const file of files) {
-        console.log("Compiling", file);
-
-        const suffix = file.replace(rootRegex, "");
-        const fileName = getFileName(suffix);
-        const dirPath = path.join(artifactsPath, suffix);
-        const outputPath = path.join(dirPath, `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`);
-
-        fs.mkdirSync(dirPath, { recursive: true });
-        initializeFile(outputPath);
-
-        const executed = await hre.starknetWrapper.cairo1SierraCompile(
-            {
-                file: file,
-                output: outputPath,
-                addPythonicHints: args.addPythonicHints,
-                allowedLibfuncsListName: args.allowedLibfuncsListName,
-                allowedLibfuncsListFile: args.allowedLibfuncsListFile
-            },
-            cairo1Bin
-        );
-        statusCode += processExecuted(executed, true);
-    }
-
-    if (statusCode) {
-        const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
-        throw new StarknetPluginError(msg);
-    }
-}
-
 export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const cairo1Bin = getCompilerPath(hre.config.starknet, args, CAIRO1_COMPILE_BIN);
+    const starknetCompilePath = getCompilerPath(hre.config.starknet, args, CAIRO1_COMPILE_BIN);
+    const starknetSierraCompilePath = getCompilerPath(
+        hre.config.starknet,
+        args,
+        CAIRO1_SIERRA_COMPILE_BIN
+    );
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
@@ -184,17 +142,20 @@ export async function starknetCompileCairo1Action(
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
 
-            const executed = await hre.starknetWrapper.cairo1Compile(
-                {
-                    path: file,
-                    output: outputPath,
-                    replaceIds: args.replaceIds,
-                    allowedLibfuncsListName: args.allowedLibfuncsListName,
-                    allowedLibfuncsListFile: args.allowedLibfuncsListFile
-                },
-                cairo1Bin
-            );
-            statusCode += processExecuted(executed, true);
+            // Compile to sierra representation
+            {
+                const executed = await hre.starknetWrapper.cairo1Compile(
+                    {
+                        path: file,
+                        output: outputPath,
+                        replaceIds: args.replaceIds,
+                        allowedLibfuncsListName: args.allowedLibfuncsListName,
+                        allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                    },
+                    starknetCompilePath
+                );
+                statusCode += processExecuted(executed, true);
+            }
 
             // Copy abi array from output to abiOutput
             const abiOutput = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
@@ -202,6 +163,24 @@ export async function starknetCompileCairo1Action(
 
             const outputJson = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
             fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
+
+            const casmOutput = path.join(dirPath, `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`);
+            initializeFile(casmOutput);
+
+            // Compile sierra to casm representation
+            {
+                const executed = await hre.starknetWrapper.cairo1SierraCompile(
+                    {
+                        file: outputPath,
+                        output: casmOutput,
+                        addPythonicHints: args.addPythonicHints,
+                        allowedLibfuncsListName: args.allowedLibfuncsListName,
+                        allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                    },
+                    starknetSierraCompilePath
+                );
+                statusCode += processExecuted(executed, true);
+            }
 
             // Update cache after compilation
             await recompiler.updateCache(args, file, outputPath, abiOutput);
