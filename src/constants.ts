@@ -2,8 +2,10 @@ import config from "../config.json";
 
 export const PLUGIN_NAME = "Starknet";
 export const ABI_SUFFIX = "_abi.json";
-export const CAIRO_ASSEMBLY_SUFFIX = ".casm";
-export const CARGO_FILE = "Cargo.toml";
+export const CAIRO1_ASSEMBLY_SUFFIX = ".casm.json";
+export const CAIRO1_SIERRA_SUFFIX = ".sierra.json";
+export const CAIRO1_COMPILE_BIN = "starknet-compile";
+export const CAIRO1_SIERRA_COMPILE_BIN = "starknet-sierra-compile";
 export const DOCKER_HOST_BIN_PATH = "/usr/local/bin/target/release";
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
 export const DEFAULT_STARKNET_ARTIFACTS_PATH = "starknet-artifacts";

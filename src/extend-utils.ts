@@ -2,7 +2,7 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import * as path from "path";
 
-import { ABI_SUFFIX, CAIRO_ASSEMBLY_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
+import { ABI_SUFFIX, CAIRO1_ASSEMBLY_SUFFIX, SHORT_STRING_MAX_CHARACTERS } from "./constants";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath, getAccountPath } from "./utils";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
@@ -29,7 +29,7 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     }
     const casmSearchTarget = path.join(
         `${contractPath}.cairo`,
-        `${path.basename(contractPath)}${CAIRO_ASSEMBLY_SUFFIX}`
+        `${path.basename(contractPath)}${CAIRO1_ASSEMBLY_SUFFIX}`
     );
     const casmPath = await findPath(artifactsPath, casmSearchTarget);
 
@@ -83,7 +83,7 @@ export function shortStringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToShortStringUtil(convertableBigInt: BigInt) {
+export function bigIntToShortStringUtil(convertableBigInt: bigint) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
 }
 
@@ -195,7 +195,7 @@ export async function getNonceUtil(
 export async function getBalanceUtil(
     address: string,
     hre: HardhatRuntimeEnvironment
-): Promise<BigInt> {
+): Promise<bigint> {
     const contractPath = handleInternalContractArtifacts("Token", "ERC20", "", hre);
     const contractFactory = await hre.starknet.getContractFactory(contractPath);
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);

@@ -51,7 +51,8 @@ import {
     starknetMigrateAction,
     starknetNewAccountAction,
     starknetDeployAccountAction,
-    starknetCompileCairo1Action
+    starknetCompileCairo1Action,
+    starknetCairo1CompileSierraAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -240,7 +241,7 @@ task("starknet-compile", "Compiles Starknet contracts")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
 
-task("starknet-compile-cairo1", "Compiles Starknet cairo1 contracts")
+task("starknet-cairo1-compile", "Compiles Starknet cairo1 contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
@@ -248,11 +249,25 @@ task("starknet-compile-cairo1", "Compiles Starknet cairo1 contracts")
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
-        "manifestPath",
-        "Allows to specify locally installed cairo1 compiler path.\n" +
-            "e.g. --manifest-path 'path/to/Cargo.toml' or can also be set on hardhat.config.ts file."
+        "cairo1BinDir",
+        "Allows to specify locally installed cairo1 compiler directory.\n" +
+            "e.g. --cairo1-bin-dir 'path/to/binDir' or can also be set on hardhat.config.ts file."
     )
     .setAction(starknetCompileCairo1Action);
+
+task("starknet-cairo1-sierra-compile", "Compiles Starknet cairo1 contracts")
+    .addOptionalVariadicPositionalParam(
+        "paths",
+        "The paths are source files of contracts to be compiled.\n" +
+            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "If no paths are provided, the default contracts directory is traversed."
+    )
+    .addOptionalParam(
+        "cairo1BinDir",
+        "Allows to specify locally installed cairo1 compiler directory.\n" +
+            "e.g. --cairo1-bin-dir 'path/to/binDir' or can also be set on hardhat.config.ts file."
+    )
+    .setAction(starknetCairo1CompileSierraAction);
 
 extendEnvironment((hre) => {
     hre.starknet = {

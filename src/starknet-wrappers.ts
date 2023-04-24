@@ -23,11 +23,20 @@ interface CompileWrapperOptions {
 }
 
 interface Cairo1CompilerOptions {
+    path: string;
+    contractPath?: string;
+    output?: string;
+    replaceIds?: boolean;
+    allowedLibfuncsListName?: string;
+    allowedLibfuncsListFile?: string;
+}
+
+interface Cairo1SierraCompilerOptions {
     file: string;
-    output: string;
-    abi: string;
-    casmOutput: string;
-    manifestPath?: string;
+    output?: string;
+    allowedLibfuncsListName?: string;
+    allowedLibfuncsListFile?: string;
+    addPythonicHints: boolean;
 }
 
 interface DeclareWrapperOptions {
@@ -169,7 +178,14 @@ export abstract class StarknetWrapper {
         return executed;
     }
 
-    public abstract cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult>;
+    public abstract cairo1Compile(
+        options: Cairo1CompilerOptions,
+        binDir?: string
+    ): Promise<ProcessResult>;
+    public abstract cairo1SierraCompile(
+        options: Cairo1SierraCompilerOptions,
+        binDir?: string
+    ): Promise<ProcessResult>;
 
     public prepareDeclareOptions(options: DeclareWrapperOptions): string[] {
         const prepared = [
@@ -214,6 +230,60 @@ export abstract class StarknetWrapper {
         const preparedOptions = this.prepareDeclareOptions(options);
         const executed = await this.execute("starknet", preparedOptions);
         return executed;
+    }
+
+    protected prepareCairo1InteractOptions(options: Cairo1CompilerOptions): string[] {
+        const args = [];
+        if (options.contractPath) {
+            args.push("-c", options.contractPath);
+        }
+
+        if (options.replaceIds !== undefined && options.replaceIds === true) {
+            args.push("-r");
+        }
+
+        if (options.allowedLibfuncsListName) {
+            args.push("--allowed-libfuncs-list-name", options.allowedLibfuncsListName);
+        }
+
+        if (options.allowedLibfuncsListFile) {
+            args.push("--allowed-libfuncs-list-file", options.allowedLibfuncsListFile);
+        }
+
+        args.push(options.path);
+
+        if (options.output) {
+            args.push(options.output);
+        }
+
+        return args;
+    }
+
+    protected prepareCairo1SierraInteractOptions(options: Cairo1SierraCompilerOptions): string[] {
+        const args = [];
+        if (options.allowedLibfuncsListName) {
+            args.push("--allowed-libfuncs-list-name", options.allowedLibfuncsListName);
+        }
+
+        if (options.allowedLibfuncsListFile) {
+            args.push("--allowed-libfuncs-list-file", options.allowedLibfuncsListFile);
+        }
+
+        if (options.addPythonicHints !== undefined && options.addPythonicHints == true) {
+            args.push("--add-pythonic-hints");
+        }
+
+        args.push(options.file);
+
+        if (options.output) {
+            args.push(options.output);
+        }
+
+        return args;
+    }
+
+    protected getCairo1Command(binPath: string, args: string[]): string[] {
+        return [`${binPath}`, ...args];
     }
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
@@ -510,37 +580,29 @@ export class DockerWrapper extends StarknetWrapper {
         );
     }
 
-    private getCompileCairo1Command(bin: string, args: string[]): string[] {
-        return [`${DOCKER_HOST_BIN_PATH}/${bin}`, ...args];
-    }
-
-    protected prepareCairo1CompileOptions(options: Cairo1CompilerOptions): string[] {
-        const cairoCompile = this.getCompileCairo1Command("starknet-cairo1-compile", [
-            options.file,
-            options.output,
-            "--allowed-libfuncs-list-name",
-            "experimental_v0.1.0"
-        ]);
-
-        const sierraCompile = this.getCompileCairo1Command("starknet-sierra-compile", [
-            options.output,
-            options.casmOutput,
-            "--allowed-libfuncs-list-name",
-            "experimental_v0.1.0",
-            "--add-pythonic-hints"
-        ]);
-
-        const ret = [...cairoCompile, "&&", ...sierraCompile];
-        return ret;
-    }
-
-    public async cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareCairo1CompileOptions(options);
-        const externalServer = new DockerCairo1Compiler(
-            this.image,
-            [this.rootPath],
-            preparedOptions
+    public async cairo1Compile(options: Cairo1CompilerOptions, _?: string): Promise<ProcessResult> {
+        const args = this.prepareCairo1InteractOptions(options);
+        const command = this.getCairo1Command(
+            `${DOCKER_HOST_BIN_PATH}/starknet-cairo1-compile`,
+            args
         );
+        const externalServer = new DockerCairo1Compiler(this.image, [this.rootPath], command);
+
+        return await externalServer.compileCairo1({
+            shell: true
+        });
+    }
+
+    public async cairo1SierraCompile(
+        options: Cairo1SierraCompilerOptions,
+        _?: string
+    ): Promise<ProcessResult> {
+        const args = this.prepareCairo1SierraInteractOptions(options);
+        const command = this.getCairo1Command(
+            `${DOCKER_HOST_BIN_PATH}/starknet-sierra-compile`,
+            args
+        );
+        const externalServer = new DockerCairo1Compiler(this.image, [this.rootPath], command);
 
         return await externalServer.compileCairo1({
             shell: true
@@ -596,25 +658,25 @@ export class VenvWrapper extends StarknetWrapper {
         ];
     }
 
-    protected prepareCairo1CompileOptions(options: Cairo1CompilerOptions): string[] {
-        const cairoCompile = this.getCargoRunCommand("starknet-compile", options.manifestPath, [
-            options.file,
-            options.output
-        ]);
+    public async cairo1Compile(
+        options: Cairo1CompilerOptions,
+        binPath?: string
+    ): Promise<ProcessResult> {
+        const args = this.prepareCairo1InteractOptions(options);
+        const command = this.getCairo1Command(binPath, args);
 
-        const sierraCompile = this.getCargoRunCommand(
-            "starknet-sierra-compile",
-            options.manifestPath,
-            [options.output, options.casmOutput, "--add-pythonic-hints"]
-        );
-
-        const ret = [...cairoCompile, "&&", ...sierraCompile];
-        return ret;
+        const executed = exec(command.join(" "));
+        return executed;
     }
 
-    public async cairo1Compile(options: Cairo1CompilerOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareCairo1CompileOptions(options);
-        const executed = exec(preparedOptions.join(" "));
+    public async cairo1SierraCompile(
+        options: Cairo1SierraCompilerOptions,
+        binPath?: string
+    ): Promise<ProcessResult> {
+        const args = this.prepareCairo1SierraInteractOptions(options);
+        const command = this.getCairo1Command(binPath, args);
+
+        const executed = exec(command.join(" "));
         return executed;
     }
 

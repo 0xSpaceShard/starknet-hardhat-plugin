@@ -6,9 +6,11 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import {
     ABI_SUFFIX,
     ALPHA_TESTNET,
-    CAIRO_ASSEMBLY_SUFFIX,
-    CARGO_FILE,
-    DEFAULT_STARKNET_NETWORK
+    CAIRO1_COMPILE_BIN,
+    CAIRO1_SIERRA_SUFFIX,
+    CAIRO1_ASSEMBLY_SUFFIX,
+    DEFAULT_STARKNET_NETWORK,
+    CAIRO1_SIERRA_COMPILE_BIN
 } from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -31,6 +33,7 @@ import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
+import { StarknetConfig } from "./types/starknet";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -80,23 +83,81 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
+function getCompilerPath(
+    args: TaskArguments,
+    config: StarknetConfig,
+    compilerName: string
+): string {
+    const venvPath = config.venv;
+    const cairo1BinDir = config.cairo1BinDir || args?.cairo1BinDir;
+    if (venvPath && !cairo1BinDir) {
+        const msg =
+            "Could not find manifest-path\n" +
+            "The argument --cairo1-bin-dir 'path/to/binDir' or cairo1BinDir on hardhat.config.ts should be set.";
+        throw new StarknetPluginError(msg);
+    }
+
+    const cairo1Bin = path.join(cairo1BinDir, compilerName);
+    if (venvPath && fs.existsSync(cairo1Bin)) {
+        const msg = "The cairo1BinDir must be a path to the directory containing starknet-compile";
+        throw new StarknetPluginError(msg);
+    }
+
+    return cairo1Bin;
+}
+
+// consequetive run of starknet-compile & starknet-sierra-compile
+// or iteration through artifacts with starknet-sierra-compile?
+export async function starknetCairo1CompileSierraAction(
+    args: TaskArguments,
+    hre: HardhatRuntimeEnvironment
+) {
+    const cairo1Bin = getCompilerPath(hre.config.starknet, args, CAIRO1_SIERRA_COMPILE_BIN);
+
+    const root = hre.config.paths.root;
+    const rootRegex = new RegExp("^" + root);
+
+    let statusCode = 0;
+
+    const artifactsPath = adaptPath(root, hre.config.paths.starknetArtifacts);
+    checkSourceExists(artifactsPath);
+
+    const files = await traverseFiles(artifactsPath, `*.${CAIRO1_SIERRA_SUFFIX}`);
+    for (const file of files) {
+        console.log("Compiling", file);
+
+        const suffix = file.replace(rootRegex, "");
+        const fileName = getFileName(suffix);
+        const dirPath = path.join(artifactsPath, suffix);
+        const outputPath = path.join(dirPath, `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`);
+
+        fs.mkdirSync(dirPath, { recursive: true });
+        initializeFile(outputPath);
+
+        const executed = await hre.starknetWrapper.cairo1SierraCompile(
+            {
+                file: file,
+                output: outputPath,
+                addPythonicHints: args.addPythonicHints,
+                allowedLibfuncsListName: args.allowedLibfuncsListName,
+                allowedLibfuncsListFile: args.allowedLibfuncsListFile
+            },
+            cairo1Bin
+        );
+        statusCode += processExecuted(executed, true);
+    }
+
+    if (statusCode) {
+        const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
+        throw new StarknetPluginError(msg);
+    }
+}
+
 export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const venvPath = hre.config.starknet.venv;
-    const manifestPath = hre.config.starknet.manifestPath || args?.manifestPath;
-    if (venvPath && !manifestPath) {
-        const msg =
-            "Could not find manifest-path\n" +
-            "The argument '—-manifest-path path/to/Cargo.toml' or manifestPath on hardhat.config.ts should be set.";
-        throw new StarknetPluginError(msg);
-    }
-
-    if (venvPath && path.basename(manifestPath) !== CARGO_FILE) {
-        const msg = "The manifest-path must be a path to a Cargo.toml file";
-        throw new StarknetPluginError(msg);
-    }
+    const cairo1Bin = getCompilerPath(hre.config.starknet, args, CAIRO1_COMPILE_BIN);
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
@@ -109,33 +170,39 @@ export async function starknetCompileCairo1Action(
     for (let sourcesPath of sourcesPaths) {
         sourcesPath = adaptPath(root, sourcesPath);
         checkSourceExists(sourcesPath);
-        const files = await traverseFiles(sourcesPath, "*.cairo");
+
         const recompiler = new Recompiler(hre);
+        const files = await traverseFiles(sourcesPath, "*.cairo");
         for (const file of files) {
             console.log("Compiling", file);
+
             const suffix = file.replace(rootRegex, "");
             const fileName = getFileName(suffix);
             const dirPath = path.join(artifactsPath, suffix);
-            const outputPath = path.join(dirPath, `${fileName}.json`);
-            const casmOutput = path.join(dirPath, `${fileName}${CAIRO_ASSEMBLY_SUFFIX}`);
-            const abiOutput = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
+            const outputPath = path.join(dirPath, `${fileName}${CAIRO1_SIERRA_SUFFIX}`);
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
-            initializeFile(casmOutput);
+
+            const executed = await hre.starknetWrapper.cairo1Compile(
+                {
+                    path: file,
+                    output: outputPath,
+                    replaceIds: args.replaceIds,
+                    allowedLibfuncsListName: args.allowedLibfuncsListName,
+                    allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                },
+                cairo1Bin
+            );
+            statusCode += processExecuted(executed, true);
+
+            // Copy abi array from output to abiOutput
+            const abiOutput = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
             initializeFile(abiOutput);
 
-            const executed = await hre.starknetWrapper.cairo1Compile({
-                file,
-                output: outputPath,
-                abi: abiOutput,
-                casmOutput,
-                manifestPath
-            });
-            statusCode += processExecuted(executed, true);
-            // Copy abi array from output to abiOutput
-            const _outputPath = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
-            fs.writeFileSync(abiOutput, JSON.stringify(_outputPath.abi) + "\n");
+            const outputJson = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
+            fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
+
             // Update cache after compilation
             await recompiler.updateCache(args, file, outputPath, abiOutput);
         }

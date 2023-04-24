@@ -24,14 +24,14 @@ export interface Starknet {
      * @param input the input short string
      * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
      */
-    shortStringToBigInt: (convertableString: string) => BigInt;
+    shortStringToBigInt: (convertableString: string) => bigint;
 
     /**
      * Converts a BigInt to a string. The opposite of {@link shortStringToBigInt}.
      * @param input the input BigInt
      * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
      */
-    bigIntToShortString: (convertableBigInt: BigInt) => string;
+    bigIntToShortString: (convertableBigInt: bigint) => string;
 
     /**
      * The selected starknet-network name.
@@ -83,7 +83,7 @@ export interface Starknet {
      * @param address of target contract
      * @returns balance of target as BigInt
      */
-    getBalance: (address: string) => Promise<BigInt>;
+    getBalance: (address: string) => Promise<bigint>;
 
     OpenZeppelinAccount: typeof OpenZeppelinAccount;
 
@@ -98,7 +98,7 @@ export type StarknetConfig = {
     networkUrl?: string;
     networkConfig?: NetworkConfig;
     recompile?: boolean;
-    manifestPath?: string;
+    cairo1BinDir?: string;
     requestTimeout?: number;
 };
 

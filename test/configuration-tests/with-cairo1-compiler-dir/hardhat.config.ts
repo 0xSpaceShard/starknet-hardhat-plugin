@@ -4,7 +4,7 @@ module.exports = {
     starknet: {
         venv: "active",
         network: process.env.NETWORK,
-        manifestPath: process.env.CAIRO_1_COMPILER_MANIFEST
+        cairo1BinDir: process.env.CAIRO_1_COMPILER_DIR
     },
     networks: {
         devnet: {
