@@ -1,5 +1,11 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import { PLUGIN_NAME, StarknetChainId, DOCKER_HOST, DOCKER_HOST_BIN_PATH } from "./constants";
+import {
+    PLUGIN_NAME,
+    StarknetChainId,
+    DOCKER_HOST,
+    DOCKER_HOST_BIN_PATH,
+    CAIRO1_SIERRA_COMPILE_BIN
+} from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
@@ -180,11 +186,11 @@ export abstract class StarknetWrapper {
 
     public abstract cairo1Compile(
         options: Cairo1CompilerOptions,
-        binDir?: string
+        binPath?: string
     ): Promise<ProcessResult>;
     public abstract cairo1SierraCompile(
         options: Cairo1SierraCompilerOptions,
-        binDir?: string
+        binPath?: string
     ): Promise<ProcessResult>;
 
     public prepareDeclareOptions(options: DeclareWrapperOptions): string[] {
@@ -238,7 +244,7 @@ export abstract class StarknetWrapper {
             args.push("-c", options.contractPath);
         }
 
-        if (options.replaceIds !== undefined && options.replaceIds === true) {
+        if (options?.replaceIds === true) {
             args.push("-r");
         }
 
@@ -269,7 +275,7 @@ export abstract class StarknetWrapper {
             args.push("--allowed-libfuncs-list-file", options.allowedLibfuncsListFile);
         }
 
-        if (options.addPythonicHints !== undefined && options.addPythonicHints == true) {
+        if (options?.addPythonicHints === true) {
             args.push("--add-pythonic-hints");
         }
 
@@ -283,7 +289,7 @@ export abstract class StarknetWrapper {
     }
 
     protected getCairo1Command(binPath: string, args: string[]): string[] {
-        return [`${binPath}`, ...args];
+        return [binPath, ...args];
     }
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
@@ -599,7 +605,7 @@ export class DockerWrapper extends StarknetWrapper {
     ): Promise<ProcessResult> {
         const args = this.prepareCairo1SierraInteractOptions(options);
         const command = this.getCairo1Command(
-            `${DOCKER_HOST_BIN_PATH}/starknet-sierra-compile`,
+            `${DOCKER_HOST_BIN_PATH}/${CAIRO1_SIERRA_COMPILE_BIN}`,
             args
         );
         const externalServer = new DockerCairo1Compiler(this.image, [this.rootPath], command);
@@ -641,21 +647,6 @@ export class VenvWrapper extends StarknetWrapper {
 
     protected override get gatewayUrl(): string {
         return this.hre.starknet.networkConfig.url;
-    }
-
-    private getCargoRunCommand(bin: string, manifestPath: string, args: string[]): string[] {
-        return [
-            "cargo",
-            "run",
-            "--bin",
-            bin,
-            "--manifest-path",
-            manifestPath,
-            "--",
-            args.join(" "),
-            "--allowed-libfuncs-list-name",
-            "experimental_v0.1.0"
-        ];
     }
 
     public async cairo1Compile(
