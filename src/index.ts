@@ -240,7 +240,7 @@ task("starknet-compile", "Compiles Starknet contracts")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetCompileAction);
 
-task("starknet-cairo1-compile", "Compiles Starknet cairo1 contracts")
+task("starknet-compile-cairo1", "Compiles Starknet cairo1 contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
