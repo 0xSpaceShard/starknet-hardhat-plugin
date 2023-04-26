@@ -18,7 +18,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     GMP_VERSION=${GMP_VERSION[1]} # Take only the version
     GMP_DIR=$(brew --prefix gmp)/$GMP_VERSION
     echo "$GMP_DIR"
-    CFLAGS=-I$GMP_DIR/include LDFLAGS=-L$GMP_DIR/lib pip3 install fastecdsa
+    export LIBRARY_PATH='$LIBRARY_PATH':$GMP_DIR/lib
+    export INCLUDE_PATH='$INCLUDE_PATH':$GMP_DIR/include
+    pip3 install fastecdsa
 fi
 
 if [ "$TEST_SUBDIR" == "venv-tests" ]; then
