@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# TEST_SUBDIR="general-tests"
-# test_name="declare-v2-test"
-
 TEST_SUBDIR_PENDING="true"
 TEST_NAME_PENDING="true"
+
+# Flag: dev mode for testing (and not usual CI)
 export STARKNET_HARDHAT_DEV=1
 export STARKNET_HARDHAT_DEV_NETWORK="integrated-devnet"
 
 cd test
 
+# Loops until a suitable TEST_SUBDIR is provided
 while [[ -n $TEST_SUBDIR_PENDING ]]; do
 	echo "(Tab to autocomplete)"
 	read -e -p "Test suite:" TEST_SUBDIR
@@ -31,6 +31,7 @@ TEST_SUBDIR="${TEST_SUBDIR%/}" # remove trailing slash
 
 cd $TEST_SUBDIR
 
+# Loops until a suitable test_name is provided
 while [[ -n $TEST_NAME_PENDING ]]; do
 	echo ""
 	echo "(Tab to autocomplete)"
@@ -103,3 +104,4 @@ while [[ "q" != "$CONTINUE_TESTING" ]]; do
 done
 
 docker rm -f starknet_hardhat_devnet
+echo "Devnet stopped."
