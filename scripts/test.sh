@@ -3,8 +3,8 @@ set -eu
 
 CONFIG_FILE_NAME="hardhat.config.ts"
 if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
-	./scripts/test-setup.sh
-	./scripts/install-devnet.sh
+    ./scripts/test-setup.sh
+    ./scripts/install-devnet.sh
 fi
 cd ./starknet-hardhat-example
 source  ../scripts/setup-cairo1-compiler.sh
@@ -22,8 +22,8 @@ fi
 
 function run_test() {
     test_case="$1"
- 	network="$2"
- 	test_name=$(basename $test_case)
+     network="$2"
+     test_name=$(basename $test_case)
 
     network_file="$test_case/network.json"
 
@@ -35,11 +35,11 @@ function run_test() {
         return 0
     fi
 
-	# Skip if the network file doesn't specify to run the test on the current network
-	if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
-		echo "Skipping $network test for $test_name"
-		return 0
-	fi
+    # Skip if the network file doesn't specify to run the test on the current network
+    if [[ $(jq .[\""$network"\"] "$network_file") != true ]]; then
+        echo "Skipping $network test for $test_name"
+        return 0
+    fi
 
     total=$((total + 1))
     echo "Test $total) $test_name"
@@ -75,19 +75,19 @@ function iterate_dir() {
 
     [ "$network" == "devnet" ] && ../scripts/devnet-run.sh
 
-	if [[ -n $test_name_specified ]]; then
-		test_case_dir="$test_dir/$test_name_specified"
-		if [ ! -d "$test_case_dir" ]; then
-			echo "Invalid directory $test_case_dir for test case $test_name_specified"
-			exit -1
-		fi
+    if [[ -n $test_name_specified ]]; then
+        test_case_dir="$test_dir/$test_name_specified"
+        if [ ! -d "$test_case_dir" ]; then
+            echo "Invalid directory $test_case_dir for test case $test_name_specified"
+            exit -1
+        fi
 
-		run_test $test_case_dir $network
-	else
-		for test_case in "$test_dir"/*; do
-			run_test $test_case $network
-		done
-	fi
+        run_test $test_case_dir $network
+    else
+        for test_case in "$test_dir"/*; do
+            run_test $test_case $network
+        done
+    fi
 
     # specifying signal for pkill fails on mac
     [ "$network" == "devnet" ] && ../scripts/devnet-stop.sh && sleep 5
@@ -108,19 +108,19 @@ fi
 source ../scripts/set-devnet-vars.sh
 
 if [[ -n "${STARKNET_HARDHAT_DEV:-}" ]]; then
-	test_case_dir="$test_dir/$test_name_specified"
-	if [ ! -d "$test_case_dir" ]; then
-		echo "Invalid directory $test_case_dir for test case $test_name_specified"
-		exit -1
-	fi
+    test_case_dir="$test_dir/$test_name_specified"
+    if [ ! -d "$test_case_dir" ]; then
+        echo "Invalid directory $test_case_dir for test case $test_name_specified"
+        exit -1
+    fi
 
-	# Run test for all networks
-	run_test $test_case_dir $STARKNET_HARDHAT_DEV_NETWORK
+    # Run test for all networks
+    run_test $test_case_dir $STARKNET_HARDHAT_DEV_NETWORK
 else
-	# test integrated devnet
-	iterate_dir integrated-devnet
+    # test integrated devnet
+    iterate_dir integrated-devnet
 
-	iterate_dir devnet
+    iterate_dir devnet
 fi
 
 echo "Tests passing: $success / $total"
