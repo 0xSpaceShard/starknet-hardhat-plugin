@@ -6,7 +6,7 @@ executors:
             image: ubuntu-2004:2022.10.1
     macos-node:
         macos:
-            xcode: 12.5.1
+            xcode: 14.2.0
         resource_class: macos.m1.large.gen1
         environment:
             TERM: xterm-256color
