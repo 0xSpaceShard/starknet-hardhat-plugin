@@ -6,7 +6,7 @@ set -eu
 
 PY_VERSION=3.9.10
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+if [[ "$OSTYPE" == "linux-gnu"* || "$OSTYPE" == "darwin"* ]]; then
     which "/opt/circleci/.pyenv/versions/$PY_VERSION/bin/python" || pyenv install "$PY_VERSION"
     pyenv global "$PY_VERSION"
 fi
