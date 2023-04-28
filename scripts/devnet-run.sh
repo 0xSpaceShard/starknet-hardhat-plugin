@@ -29,6 +29,7 @@ else
     echo "Spawned devnet with PID $!"
 fi
 
+# Display the fact that devnet is loading by rotating a straight line |
 loading_chars=("|" "/" "-" "\\")
 total_loading_chars=${#loading_chars[@]}
 
