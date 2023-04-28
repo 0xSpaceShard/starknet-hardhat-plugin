@@ -28,4 +28,3 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
         -- \
         --version
 fi
-
