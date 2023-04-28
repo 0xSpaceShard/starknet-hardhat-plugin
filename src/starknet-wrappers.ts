@@ -127,7 +127,7 @@ export abstract class StarknetWrapper {
     public async execute(
         command:
             | "starknet"
-            | "starknet-compile"
+            | "starknet-compile-deprecated"
             | "get_class_hash"
             | "cairo-migrate"
             | "get_contract_class"
@@ -165,7 +165,7 @@ export abstract class StarknetWrapper {
 
     public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareCompileOptions(options);
-        const executed = await this.execute("starknet-compile", preparedOptions);
+        const executed = await this.execute("starknet-compile-deprecated", preparedOptions);
         return executed;
     }
 
@@ -515,7 +515,7 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     protected prepareCairo1CompileOptions(options: Cairo1CompilerOptions): string[] {
-        const cairoCompile = this.getCompileCairo1Command("starknet-cairo1-compile", [
+        const cairoCompile = this.getCompileCairo1Command("starknet-compile", [
             options.file,
             options.output,
             "--allowed-libfuncs-list-name",
@@ -542,9 +542,7 @@ export class DockerWrapper extends StarknetWrapper {
             preparedOptions
         );
 
-        return await externalServer.compileCairo1({
-            shell: true
-        });
+        return await externalServer.compileCairo1();
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {

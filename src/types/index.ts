@@ -373,6 +373,7 @@ export class StarknetContractFactory {
             const abiEntry = this.abi[abiEntryName];
             if (isEntryAContructor(abiEntry, config.hre.config.paths, this.casmPath)) {
                 this.constructorAbi = <starknet.CairoFunction>abiEntry;
+                break;
             }
         }
     }

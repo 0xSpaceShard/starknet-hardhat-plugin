@@ -1,3 +1,3 @@
-import { hardhatStarknetCompile } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated } from "../../utils/cli-functions";
 
-hardhatStarknetCompile("contracts/contract.cairo".split(" "));
+hardhatStarknetCompileDeprecated("contracts/contract.cairo".split(" "));

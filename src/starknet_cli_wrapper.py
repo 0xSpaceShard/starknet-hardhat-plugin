@@ -78,7 +78,7 @@ async def cairo_migrate_main_wrapper(args):
 
 MAIN_MAP = {
     "starknet": starknet_main_wrapper,
-    "starknet-compile": starknet_compile_main_wrapper,
+    "starknet-compile-deprecated": starknet_compile_main_wrapper,
     "get_class_hash": get_class_hash,
     "get_contract_class_hash": get_contract_class_hash,
     "get_compiled_class_hash": get_compiled_class_hash,
