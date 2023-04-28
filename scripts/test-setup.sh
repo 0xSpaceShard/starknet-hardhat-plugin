@@ -1,3 +1,5 @@
+#!/bin/bash
+
 trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 ./scripts/ensure-python.sh

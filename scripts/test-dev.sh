@@ -1,7 +1,12 @@
 #!/bin/bash
 
-TEST_SUBDIR_PENDING="true"
-TEST_NAME_PENDING="true"
+DEVNET_CONTAINER_NAME="starknet_hardhat_devnet"
+
+# shut down container on exit
+trap "
+    echo 'Stopping Devnet'
+    docker rm -f $DEVNET_CONTAINER_NAME
+" EXIT
 
 # Flag: dev mode for testing (and not usual CI)
 export STARKNET_HARDHAT_DEV=1
@@ -10,6 +15,7 @@ export STARKNET_HARDHAT_DEV_NETWORK="integrated-devnet"
 cd test
 
 # Loops until a suitable TEST_SUBDIR is provided
+TEST_SUBDIR_PENDING="true"
 while [[ -n $TEST_SUBDIR_PENDING ]]; do
     echo "(Tab to autocomplete)"
     read -e -p "Test suite: " TEST_SUBDIR
@@ -32,6 +38,7 @@ TEST_SUBDIR="${TEST_SUBDIR%/}" # remove trailing slash
 cd $TEST_SUBDIR
 
 # Loops until a suitable test_name is provided
+TEST_NAME_PENDING="true"
 while [[ -n $TEST_NAME_PENDING ]]; do
     echo ""
     echo "(Tab to autocomplete)"
@@ -61,7 +68,7 @@ fi
 
 if [[ "y" == "$RUN_SETUP" ]]; then
     echo ""
-    source  ./scripts/setup-cairo1-compiler.sh
+    source ./scripts/setup-cairo1-compiler.sh
     rm -rf starknet-hardhat-example
     git clone -b "${EXAMPLE_REPO_BRANCH:=plugin}" --single-branch https://github.com/0xSpaceShard/starknet-hardhat-example.git
     cd starknet-hardhat-example
@@ -82,26 +89,23 @@ if [[ "y" == "$RUN_DEVNET" ]]; then
     export STARKNET_HARDHAT_DEV_NETWORK="devnet"
     ./scripts/devnet-run.sh
     echo ""
-    echo "Devnet running, to stop devnet use,"
+    echo "Devnet running, to stop devnet use:"
     echo "+--------------------------------------+"
-    echo "| docker rm -f starknet_hardhat_devnet |"
+    echo "| docker rm -f $DEVNET_CONTAINER_NAME |"
     echo "+--------------------------------------+"
 fi
 
-CONTINUE_TESTING="1"
-while [[ "q" != "$CONTINUE_TESTING" ]]; do
+while [[ "y" = "${CONTINUE_TESTING:-y}" ]]; do
     echo ""
-    echo "Updating starknet-hardhat-plugin,"
+    echo "Loading your latest code changes"
     cd starknet-hardhat-example
     npm install ../ # install plugin from source (parent dir)
     cd ..
+
     echo ""
     TEST_SUBDIR=$TEST_SUBDIR ./scripts/test.sh $test_name
     echo ""
     echo "----------------------------------------------"
     echo ""
-    read -e -p "q to gracefully shutdown. Re-run test? " CONTINUE_TESTING
+    read -e -p "Re-run the test? (Y/n) " CONTINUE_TESTING
 done
-
-docker rm -f starknet_hardhat_devnet
-echo "Devnet stopped."
