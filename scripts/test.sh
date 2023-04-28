@@ -89,7 +89,6 @@ function iterate_dir() {
         done
     fi
 
-    # specifying signal for pkill fails on mac
     [ "$network" == "devnet" ] && ../scripts/devnet-stop.sh && sleep 5
 
     echo "Finished tests on $network"

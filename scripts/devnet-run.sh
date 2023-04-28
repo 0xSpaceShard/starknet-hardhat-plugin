@@ -11,6 +11,8 @@ PORT=5050
 if [[ -n "${STARKNET_HARDHAT_DEV:-}" ]]; then
     echo "Running dockerized Devnet..."
     # Get default from config.json file
+	# We may be inside example dir or main plugin dir
+	# This script needs to be generic and work in both cases
     if [[ -e "./config.json" ]]; then
         STARKNET_DEVNET_DEFAULT=$(node -e "console.log(require('./config.json').STARKNET_DEVNET)")
     else
@@ -28,9 +30,9 @@ else
 fi
 
 echo "Waiting for devnet... "
-sleep 5 # Wait 5 seconds to start with
+sleep 1
 for ((i = 0 ; i < 35 ; i++)); do
-    echo -n " $((i+1))"
+    echo -ne "\r $((i+1)) "
     
     if is_alive=$(curl -s -w "\n" "http://$HOST:$PORT/is_alive"); then
         echo "$is_alive"

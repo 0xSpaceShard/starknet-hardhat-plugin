@@ -12,7 +12,7 @@ cd test
 # Loops until a suitable TEST_SUBDIR is provided
 while [[ -n $TEST_SUBDIR_PENDING ]]; do
     echo "(Tab to autocomplete)"
-    read -e -p "Test suite:" TEST_SUBDIR
+    read -e -p "Test suite: " TEST_SUBDIR
     TEST_SUBDIR="${TEST_SUBDIR%/}"
 
     if [[ -d $TEST_SUBDIR ]]; then
@@ -35,7 +35,7 @@ cd $TEST_SUBDIR
 while [[ -n $TEST_NAME_PENDING ]]; do
     echo ""
     echo "(Tab to autocomplete)"
-    read -e -p "Test:" test_name
+    read -e -p "Test: " test_name
     test_name="${test_name%/}"
 
     if [[ -d $test_name ]]; then
@@ -59,7 +59,7 @@ if [[ -d starknet-hardhat-example/ ]]; then
     read -e -p "Example repo found, y to force run setup: " RUN_SETUP
 fi
 
-if [[ -n $RUN_SETUP ]]; then
+if [[ "y" == "$RUN_SETUP" ]]; then
     echo ""
     source  ./scripts/setup-cairo1-compiler.sh
     rm -rf starknet-hardhat-example
@@ -78,7 +78,7 @@ echo ""
 echo "If your test needs devnet (and not integrated-devnet),"
 read -e -p "y to run devnet: " RUN_DEVNET
 
-if [[ "y" == $RUN_DEVNET ]]; then
+if [[ "y" == "$RUN_DEVNET" ]]; then
     export STARKNET_HARDHAT_DEV_NETWORK="devnet"
     ./scripts/devnet-run.sh
     echo ""
@@ -100,7 +100,7 @@ while [[ "q" != "$CONTINUE_TESTING" ]]; do
     echo ""
     echo "----------------------------------------------"
     echo ""
-    read -e -p "q to gracefully shutdown. Re-run test? " CONTINUE_TESTING    
+    read -e -p "q to gracefully shutdown. Re-run test? " CONTINUE_TESTING
 done
 
 docker rm -f starknet_hardhat_devnet
