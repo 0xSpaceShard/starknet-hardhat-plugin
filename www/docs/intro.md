@@ -523,6 +523,18 @@ module.exports = {
 };
 ```
 
+### Manifest Path
+
+Allows to specify locally installed cairo1 compiler path. This can be set both on `hardhat.config.ts` file and throught the CLI.
+
+```typescript
+module.exports = {
+    starknet: {
+        manifestPath: "path/to/Cargo.toml"
+    }
+};
+```
+
 ### Request Timeout
 
 Default requestTimeout is 30s. It can be changed using the following configuration.
