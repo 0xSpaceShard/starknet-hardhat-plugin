@@ -397,7 +397,6 @@ export function isEntryAContructor(
             line = line.trim();
             if (line.startsWith("//")) {
                 // Ignore single-line comment.
-                continue;
             } else if (line.includes("#[constructor]")) {
                 // Check if next line is contains entry type name
                 const nextLine = lines[index + 1];
