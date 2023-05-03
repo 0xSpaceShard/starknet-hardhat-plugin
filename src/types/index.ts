@@ -101,7 +101,7 @@ export class InteractChoice {
          * The version of the transaction.
          */
         public transactionVersion: Numeric
-    ) { }
+    ) {}
 }
 
 export function extractClassHash(response: string) {
@@ -195,7 +195,7 @@ export async function iterativelyCheckStatus(
             return reject(
                 new Error(
                     "Transaction rejected. Error message:\n\n" +
-                    adaptLog(statusObject.tx_failure_reason.error_message)
+                        adaptLog(statusObject.tx_failure_reason.error_message)
                 )
             );
         }
@@ -513,12 +513,20 @@ export class StarknetContract {
             throw new StarknetPluginError("Contract not deployed");
         }
 
-        const adaptedInput = options.rawInput ? <string[]>args : this.adaptInput(functionName, args);
-        console.log("DEBUG adaptedInput", adaptedInput);
+        const adaptedInput = options.rawInput
+            ? <string[]>args
+            : this.adaptInput(functionName, args);
+        console.log("DEBUG adaptedInput", adaptedInput); // TODO
+
+        // omit cairo 1.0 ABIs as it's not supported by the cairo-lang parser.
+        const abi =
+            this.abiPath && !fs.readFileSync(this.abiPath, "utf8").includes("core::")
+                ? this.abiPath
+                : undefined;
         const executed = await this.hre.starknetWrapper.interact({
             choice,
             address: this.address,
-            abi: this.abiPath,
+            abi,
             functionName: functionName,
             inputs: adaptedInput,
             signature: handleSignature(options.signature),
@@ -685,7 +693,7 @@ export class StarknetContract {
             throw new StarknetPluginError(msg);
         }
 
-        console.log("DEBUG checking if array:", args);
+        console.log("DEBUG checking if array:", args); // TODO
         if (Array.isArray(args)) {
             throw new StarknetPluginError("Arguments should be passed in the form of an object.");
         }

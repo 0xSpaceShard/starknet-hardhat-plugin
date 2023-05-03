@@ -43,7 +43,7 @@ import {
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     amarnaAction,
-    starknetCompileAction,
+    starknetDeprecatedCompileAction,
     starknetVoyagerAction,
     starknetTestAction,
     starknetRunAction,
@@ -221,6 +221,13 @@ extendEnvironment((hre) => {
             hre.config.paths.cairoPaths || [],
             hre
         );
+
+        if (hre.config.starknet.cairo1BinDir) {
+            throw new StarknetPluginError(
+                `cairo1BinDir cannot be used with dockerized plugin.
+Remove cairo1BinDir to use the default dockerized cairo1 compiler OR specify a local venv.`
+            );
+        }
     }
 });
 
@@ -238,7 +245,7 @@ task("starknet-compile-deprecated", "Compiles Starknet contracts")
     )
     .addFlag("accountContract", "Allows compiling an account contract.")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
-    .setAction(starknetCompileAction);
+    .setAction(starknetDeprecatedCompileAction);
 
 task("starknet-compile", "Compiles Starknet cairo1 contracts")
     .addOptionalVariadicPositionalParam(
@@ -248,10 +255,17 @@ task("starknet-compile", "Compiles Starknet cairo1 contracts")
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
-        "manifestPath",
-        "Allows to specify locally installed cairo1 compiler path.\n" +
-            "e.g. --manifest-path 'path/to/Cargo.toml' or can also be set on hardhat.config.ts file."
+        "cairo1BinDir",
+        "Allows to specify locally installed cairo1 compiler directory.\n" +
+            "e.g. --cairo1-bin-dir 'path/to/binDir' or can also be set on hardhat.config.ts file."
     )
+    .addFlag("replaceIds", "Replaces sierra ids with human-readable ones.")
+    .addOptionalParam(
+        "allowedLibfuncsListName",
+        "The allowed libfuncs list to use (default: most recent audited list)."
+    )
+    .addOptionalParam("allowedLibfuncsListFile", "A file of the allowed libfuncs list to use.")
+    .addFlag("addPythonicHints", "Add pythonic hints.")
     .setAction(starknetCompileCairo1Action);
 
 extendEnvironment((hre) => {
