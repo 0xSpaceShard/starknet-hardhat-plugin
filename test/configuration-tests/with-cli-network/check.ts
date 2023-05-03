@@ -7,8 +7,14 @@ import { assertContains } from "../../utils/utils";
 // Only tests if --starknet-network is accepted, not if the correct network is targeted.
 
 // currently not supported for hardhat run
-const runWithCliNetwork = hardhatStarknetRun("--no-compile --starknet-network devnet scripts/compile-contract.ts".split(" "), true);
-assertContains(runWithCliNetwork.stderr, "\"--starknet-network\" with \"hardhat run\" currently does not have effect");
+const runWithCliNetwork = hardhatStarknetRun(
+    "--no-compile --starknet-network devnet scripts/compile-contract.ts".split(" "),
+    true
+);
+assertContains(
+    runWithCliNetwork.stderr,
+    "\"--starknet-network\" with \"hardhat run\" currently does not have effect"
+);
 
 // compile to have artifacts for hardhat test
 hardhatStarknetRun("--no-compile scripts/compile-contract.ts".split(" "));

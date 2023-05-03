@@ -287,7 +287,7 @@ export abstract class StarknetWrapper {
         if (!binDirPath) {
             const msg =
                 "No compiler bin directory specified\n" +
-                "Make sure to specify dockerizedVersion or cairo1BinDir in the hardhat config file OR --cairo1-bin-dir in the CLI";
+                "Specify one of {dockerizedVersion,cairo1BinDir} in the hardhat config file OR --cairo1-bin-dir in the CLI";
             throw new StarknetPluginError(msg);
         }
 

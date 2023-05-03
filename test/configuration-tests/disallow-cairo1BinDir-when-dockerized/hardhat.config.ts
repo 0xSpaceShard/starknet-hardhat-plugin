@@ -3,6 +3,8 @@ import "@shardlabs/starknet-hardhat-plugin";
 module.exports = {
     starknet: {
         // defaulting to dockerizedVenv
+
+        // supply any path to make it fail in combination with dockerized
         cairo1BinDir: "dummy/path"
     },
     networks: {

@@ -22,7 +22,7 @@ export class Cache {
     protected cache: Record<string, ContractData> = {};
     public fsPromises = fs.promises;
 
-    constructor(protected hre: HardhatRuntimeEnvironment) { }
+    constructor(protected hre: HardhatRuntimeEnvironment) {}
 
     // Returns the contract data from the cache
     public async getCache(): Promise<Record<string, ContractData>> {
