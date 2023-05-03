@@ -89,7 +89,7 @@ function getCompilerPath(
     compilerName: string
 ): string {
     const venvPath = config.venv;
-    const cairo1BinDir = config.cairo1BinDir || args?.cairo1BinDir;
+    const cairo1BinDir = args?.cairo1BinDir || config.cairo1BinDir;
     if (venvPath && !cairo1BinDir) {
         const msg =
             "Could not find manifest-path\n" +
@@ -144,7 +144,7 @@ export async function starknetCompileCairo1Action(
 
             // Compile to sierra representation
             {
-                const executed = await hre.starknetWrapper.cairo1Compile(
+                const executed = await hre.starknetWrapper.compileCairoToSierra(
                     {
                         path: file,
                         output: outputPath,
@@ -155,6 +155,10 @@ export async function starknetCompileCairo1Action(
                     starknetCompilePath
                 );
                 statusCode += processExecuted(executed, true);
+
+                if (executed) {
+                    continue;
+                }
             }
 
             // Copy abi array from output to abiOutput
@@ -169,7 +173,7 @@ export async function starknetCompileCairo1Action(
 
             // Compile sierra to casm representation
             {
-                const executed = await hre.starknetWrapper.cairo1SierraCompile(
+                const executed = await hre.starknetWrapper.compileSierraToCasm(
                     {
                         file: outputPath,
                         output: casmOutput,
