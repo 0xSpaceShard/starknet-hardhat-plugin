@@ -1,6 +1,6 @@
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
-hardhatStarknetCompile(
+hardhatStarknetCompileDeprecated(
     "contracts/contract.cairo contracts/simple_storage.cairo contracts/empty_constructor.cairo".split(
         " "
     )

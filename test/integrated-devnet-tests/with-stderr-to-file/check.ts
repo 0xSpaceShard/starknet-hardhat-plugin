@@ -1,10 +1,10 @@
 import { readFileSync } from "fs";
 import { assertExistence, checkDevnetIsNotRunning, assertContains } from "../../utils/utils";
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 
 (async () => {
     await checkDevnetIsNotRunning();
-    hardhatStarknetCompile(["contracts/contract.cairo"]);
+    hardhatStarknetCompileDeprecated(["contracts/contract.cairo"]);
 
     const expectedStdout = "Account #0";
     const expectedWarning =

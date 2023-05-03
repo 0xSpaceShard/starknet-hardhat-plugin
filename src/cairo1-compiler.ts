@@ -1,8 +1,6 @@
-import { ProcessResult } from "@nomiclabs/hardhat-docker";
+import { BindsMap, HardhatDocker, ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
 import { Image } from "@nomiclabs/hardhat-docker";
-import { DockerServer } from "./external-server/docker-server";
-import { CommonSpawnOptions } from "child_process";
 
 export const exec = (args: string) => {
     const result = shell.exec(args, {
@@ -16,66 +14,43 @@ export const exec = (args: string) => {
     } as ProcessResult;
 };
 
-export class DockerCairo1Compiler extends DockerServer {
-    constructor(
-        image: Image,
-        private sources: string[],
-        private cairo1CompilerArgs?: string[],
-        stdout?: string,
-        stderr?: string
-    ) {
-        super(
-            image,
-            "127.0.0.1",
-            null,
-            "",
-            "starknet-docker-cairo1-compiler",
-            cairo1CompilerArgs,
-            stdout,
-            stderr
-        );
+export class DockerCairo1Compiler {
+    image: Image;
+    sources: string[];
+    compilerArgs: string[];
+
+    constructor(image: Image, sources: string[], cairo1CompilerArgs?: string[]) {
+        this.image = image;
+        this.sources = sources;
+        this.compilerArgs = cairo1CompilerArgs;
     }
 
-    protected async getDockerArgs(): Promise<string[]> {
-        const volumes = [];
+    protected getDockerArgs(): BindsMap {
+        const binds: BindsMap = {};
         for (const source of this.sources) {
-            volumes.push("-v", `${source}:${source}`);
+            binds[source] = source;
         }
 
-        const dockerArgs = [...volumes];
-        return dockerArgs;
+        return binds;
     }
 
-    protected async getContainerArgs(): Promise<string[]> {
-        return ["/bin/sh", "-c", `"${this.cairo1CompilerArgs.join(" ")}"`];
+    protected getContainerArgs(): string[] {
+        return ["/bin/sh", "-c", this.compilerArgs.join(" ")];
     }
 
-    async compileCairo1(options?: CommonSpawnOptions): Promise<ProcessResult> {
-        const res = await this.spawnChildProcess(options);
-        const stdout: string[] = [];
-        const stderr: string[] = [];
-        let statusCode;
+    async compileCairo1(): Promise<ProcessResult> {
+        const docker = await HardhatDocker.create();
+        if (!(await docker.hasPulledImage(this.image))) {
+            await docker.pullImage(this.image);
+        }
 
-        res.stdout.on("data", (chunk) => {
-            stdout.push(chunk);
-            console.log(chunk.toString());
-        });
-
-        res.stderr.on("data", (chunk) => {
-            stderr.push(chunk);
-            console.log(chunk.toString());
-        });
-
-        await new Promise((resolve, reject) => {
-            res.on("close", (code) => {
-                statusCode = code;
-                resolve(code);
-            });
-
-            res.on("error", (error) => {
-                reject(error);
-            });
-        });
+        const { statusCode, stdout, stderr } = await docker.runContainer(
+            this.image,
+            this.getContainerArgs(),
+            {
+                binds: this.getDockerArgs()
+            }
+        );
 
         return {
             statusCode,

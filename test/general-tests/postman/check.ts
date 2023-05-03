@@ -1,9 +1,9 @@
 import { exec } from "../../utils/utils";
 import { spawn } from "child_process";
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 import { NODE_PORT } from "../../constants/constants";
 
-hardhatStarknetCompile(["contracts/l1l2.cairo"]);
+hardhatStarknetCompileDeprecated(["contracts/l1l2.cairo"]);
 
 spawn("npx", ["hardhat", "node", "--port", NODE_PORT], { detached: true });
 exec("sleep 1");

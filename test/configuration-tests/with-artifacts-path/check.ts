@@ -1,7 +1,7 @@
-import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
+import { hardhatStarknetCompileDeprecated, hardhatStarknetTest } from "../../utils/cli-functions";
 import { assertExistence, rmrfSync } from "../../utils/utils";
 
-hardhatStarknetCompile(["contracts/contract.cairo"]);
+hardhatStarknetCompileDeprecated(["contracts/contract.cairo"]);
 assertExistence("my-starknet-artifacts/contracts/contract.cairo/");
 assertExistence("starknet-artifacts", false);
 

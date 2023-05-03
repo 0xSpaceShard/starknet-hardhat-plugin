@@ -56,10 +56,10 @@ This plugin was tested with:
 
 This plugin defines the following Hardhat commands (also called tasks):
 
-### `starknet-compile`
+### `starknet-compile-deprecated`
 
 ```
-$ npx hardhat starknet-compile [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
+$ npx hardhat starknet-compile-deprecated [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
 If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
@@ -70,13 +70,13 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 
 `--disable-hint-validation` allows compiling a contract without hint validation (any python code is allowed in hints, ex: print ...).
 
-### `starknet-compile-cairo1`
+### `starknet-compile`
 
 ```
-$ npx hardhat starknet-compile-cairo1 [PATH...] 
+$ npx hardhat starknet-compile [PATH...] [--manifest-path <PATH>]
 ```
 
-Compiles Starknet cairo1 contracts in the provided contracts directory. Paths can be files and directories.
+Compiles Starknet cairo1 contracts in the provided path. Paths can be files and directories. You can use a custom compiler by providing the path of its `Cargo.toml` to `--manifest-path` or to the `manifestPath` option in your hardhat config file.
 
 ### `starknet-verify`
 
@@ -297,14 +297,11 @@ it("should estimate fee", async function () {
     await account.invoke(contract, "method", { arg1: 10n }); // computes max fee implicitly
 
     // computes message estimate fee
-    const estimatedMessageFee = await l2contract.estimateMessageFee(
-            "deposit",
-            {
-                from_address: L1_CONTRACT_ADDRESS,
-                amount: 123,
-                user: 1
-            }
-        );
+    const estimatedMessageFee = await l2contract.estimateMessageFee("deposit", {
+        from_address: L1_CONTRACT_ADDRESS,
+        amount: 123,
+        user: 1
+    });
 });
 ```
 
@@ -316,7 +313,7 @@ it("should forward to the implementation contract", async function () {
     const account = ...;
     const txHash = await account.declare(implementationFactory);
     const implementationClassHash = await implementationFactory.getClassHash();
-    
+
     const proxyFactory = await starknet.getContractFactory("delegate_proxy");
     await account.declare(proxyFactory);
     const proxy = await account.deploy(proxyFactory, {
@@ -367,10 +364,16 @@ Exchanging messages between L1 ([Ganache](https://www.npmjs.com/package/ganache)
 ```typescript
   it("should exchange messages with Devnet", async function() {
     await starknet.devnet.loadL1MessagingContract(...);
+
+    // Exact syntax may vary depending on your L1 contract interaction library
     const l1contract = ...;
     const l2contract = ...;
 
-    await l1contract.send(...); // depending on your L1 contract interaction library
+    // If the L1 function is expected to send a message to L2,
+    // it needs to be paid for by providing some value to the transaction
+    await l1contract.send(..., {
+        value: 1000 // pay for L1->L2 message
+    });
     await starknet.devnet.flush();
 
     const account = ...;
@@ -448,7 +451,7 @@ To debug Starknet contracts, you can use `print()` in cairo hints in your contra
 Compile with `--disable-hint-validation` flag to allow hints.
 
 ```
-hardhat starknet-compile --disable-hint-validation
+hardhat starknet-compile-deprecated --disable-hint-validation
 ```
 
 For example, when calling the following `increase_balance` with input `25`.
@@ -523,6 +526,31 @@ module.exports = {
 };
 ```
 
+
+### Manifest Path
+
+Allows to specify locally installed cairo1 compiler path. This can be set both on `hardhat.config.ts` file and throught the CLI.
+
+```typescript
+module.exports = {
+    starknet: {
+        manifestPath: "path/to/Cargo.toml"
+    }
+};
+```
+
+### Compiler version
+
+If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version. To specify locally installed cairo1 compiler path, this is how you can set it:
+
+```typescript
+module.exports = {
+    starknet: {
+        manifestPath: "path/to/my-compiler/Cargo.toml"
+    }
+};
+```
+
 ### Request Timeout
 
 Default requestTimeout is 30s. It can be changed using the following configuration.
@@ -531,7 +559,7 @@ You may need to increase the timeout value in some situation (declaring large sm
 ```typescript
 module.exports = {
     starknet: {
-        requestTimeout: 90_000, // 90s
+        requestTimeout: 90_000 // 90s
     }
 };
 ```
@@ -550,7 +578,7 @@ module.exports = {
     // Has to be different from the value set in `paths.artifacts` (which is used by core Hardhat and has a default value of `artifacts`).
     starknetArtifacts: "also-my-own-starknet-path",
 
-   // Same purpose as the `--cairo-path` argument of the `starknet-compile` command
+   // Same purpose as the `--cairo-path` argument of the `starknet-compile-deprecated` command
    // Allows specifying the locations of imported files, if necessary.
     cairoPaths: ["my/own/cairo-path1", "also/my/own/cairo-path2"]
   }
@@ -590,7 +618,6 @@ By defining/modifying `networks["integratedDevnet"]` in your hardhat config file
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
 -   CLI arguments to be used on Devnet startup: [options](https://0xspaceshard.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
--   
 
 ```javascript
 module.exports = {
@@ -607,7 +634,7 @@ module.exports = {
 
       // use python or rust vm implementation
       // vmLang: "python" <- use python vm (default value)
-      // vmLang: "rust" <- use rust vm 
+      // vmLang: "rust" <- use rust vm
       // (rust vm is available out of the box using dockerized integrated-devnet)
       // (rustc and cairo-rs-py required using installed devnet)
       // read more here : https://0xspaceshard.github.io/starknet-devnet/docs/guide/run/#run-with-the-rust-implementation-of-cairo-vm
@@ -696,7 +723,7 @@ The example package used is `https://github.com/OpenZeppelin/cairo-contracts` so
 1. Compile
 
 ```
-$ npx hardhat starknet-compile node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
+$ npx hardhat starknet-compile-deprecated node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20.cairo
 ```
 
 2. Get contract factory

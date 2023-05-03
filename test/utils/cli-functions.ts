@@ -13,12 +13,12 @@ export function exec(cmd: string, expectFailure = false) {
     return result;
 }
 
-export const hardhatStarknetCompile = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
+export const hardhatStarknetCompileDeprecated = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-compile-deprecated ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetCairo1Compile = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-compile-cairo1 ${args.join(" ")}`, expectFailure);
+export const hardhatStarknetCompile = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
 };
 
 export const hardhatStarknetNewAccount = (args: Array<string>, expectFailure = false) => {

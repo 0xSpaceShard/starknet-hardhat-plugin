@@ -10,3 +10,8 @@ if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     which "/opt/circleci/.pyenv/versions/$PY_VERSION/bin/python" || pyenv install "$PY_VERSION"
     pyenv global "$PY_VERSION"
 fi
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    which "/Users/distiller/.pyenv/versions/$PY_VERSION/bin/python" || pyenv install "$PY_VERSION"
+    pyenv global "$PY_VERSION"
+fi

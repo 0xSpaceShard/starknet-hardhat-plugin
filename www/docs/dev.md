@@ -56,6 +56,23 @@ When running tests locally, you probably don't want to run the whole `test.sh` s
 
 To run all tests, you can use the `test-` scripts defined in `package.json`. For the tests to work, you may need to set the values from `config.json` as environment variables. You should also have the [`jq` CLI tool](https://stedolan.github.io/jq/) installed.
 
+### Executing individual tests
+
+To run a specific test case in the test group you can pass in the name of directory inside test group. E.g. to run `declare-test` test case in `general-tests` test group, you can use the script
+`test-general-tests` and pass in the name of the test after a `--` like this,
+
+```sh
+$ npm run test-general-tests -- declare-test
+```
+
+### Running tests in dev mode
+
+To run tests locally with test-dev. This is designed to run same tests repeatedly while developing.
+
+```sh
+$ npm run test-dev
+```
+
 ### Executing tests on CircleCI
 
 If you're a member of the organization and you do a push to origin, you trigger CI/CD workflow on CircleCI. Track the progress on [the dashboard](https://circleci.com/gh/0xSpaceShard/workflows/starknet-hardhat-plugin).
@@ -100,9 +117,9 @@ Change the version in `hardhat.config.ts`. Recompile the contracts (only importa
 
 ### Wrapper
 
-This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
+This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile-deprecated` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
+There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile-deprecated` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container

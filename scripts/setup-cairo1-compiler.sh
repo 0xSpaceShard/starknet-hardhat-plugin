@@ -27,4 +27,3 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
 
     $CAIRO_1_COMPILER_DIR/starknet-compile --version
 fi
-
