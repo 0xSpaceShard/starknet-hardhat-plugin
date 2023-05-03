@@ -44,7 +44,7 @@ interface InteractWrapperOptions {
     nonce: string;
     choice: InteractChoice;
     address: string;
-    abi: string;
+    abi?: string;
     functionName: string;
     inputs?: string[];
     signature?: string[];
@@ -219,8 +219,6 @@ export abstract class StarknetWrapper {
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
         const prepared = [
             ...options.choice.cliCommand,
-            "--abi",
-            options.abi,
             "--feeder_gateway_url",
             this.gatewayUrl,
             "--gateway_url",
@@ -230,6 +228,10 @@ export abstract class StarknetWrapper {
             "--address",
             options.address
         ];
+
+        if (options.abi) {
+            prepared.push("--abi", options.abi);
+        }
 
         if (options.inputs && options.inputs.length) {
             prepared.push("--inputs", ...options.inputs);
@@ -546,9 +548,11 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {
-            [options.abi]: options.abi
-        };
+        const binds: String2String = {};
+
+        if (options.abi) {
+            binds[options.abi] = options.abi;
+        }
 
         if (options.accountDir) {
             binds[options.accountDir] = options.accountDir;
