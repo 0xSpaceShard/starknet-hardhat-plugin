@@ -21,7 +21,11 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
             --branch $CAIRO_1_COMPILER_TARGET_TAG \
             --single-branch
 
-        cargo build --all --release
+        cargo build \
+            --bin starknet-compile \
+            --bin starknet-sierra-compile \
+            --manifest-path cairo-compiler/Cargo.toml
+
         export CAIRO_1_COMPILER_DIR="cairo-compiler/target/release"
     fi
 
