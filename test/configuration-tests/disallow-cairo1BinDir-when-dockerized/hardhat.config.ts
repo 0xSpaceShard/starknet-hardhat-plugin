@@ -2,9 +2,10 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        venv: "active",
-        network: process.env.NETWORK,
-        manifestPath: process.env.CAIRO_1_COMPILER_MANIFEST
+        // defaulting to dockerizedVenv
+
+        // supply any path to make it fail in combination with dockerized
+        cairo1BinDir: "dummy/path"
     },
     networks: {
         devnet: {

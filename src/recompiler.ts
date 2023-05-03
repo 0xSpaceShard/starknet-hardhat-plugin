@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, ProjectPathsConfig, TaskArguments } from "hardhat/types";
-import { starknetCompileAction } from "./task-actions";
+import { starknetDeprecatedCompileAction } from "./task-actions";
 import { getArtifactPath, traverseFiles } from "./utils";
 import { ABI_SUFFIX } from "./constants";
 
@@ -205,7 +205,7 @@ export class Recompiler {
                 carioPath: entry?.cairoPath
             };
 
-            await starknetCompileAction(compileArguments, this.hre);
+            await starknetDeprecatedCompileAction(compileArguments, this.hre);
         }
     }
 

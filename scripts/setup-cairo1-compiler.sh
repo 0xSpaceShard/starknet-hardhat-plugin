@@ -14,17 +14,21 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
         source ~/.cargo/env
     fi
 
-    if [ -z "${CAIRO_1_COMPILER_MANIFEST+x}" ]; then
+    if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
         # setup cairo1 compiler
         mkdir cairo-compiler
         git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
             --branch $CAIRO_1_COMPILER_TARGET_TAG \
             --single-branch
-        export CAIRO_1_COMPILER_MANIFEST="cairo-compiler/Cargo.toml"
+
+        cargo build \
+            --bin starknet-compile \
+            --bin starknet-sierra-compile \
+            --manifest-path cairo-compiler/Cargo.toml \
+            --release
+
+        export CAIRO_1_COMPILER_DIR="cairo-compiler/target/release"
     fi
 
-    cargo run --bin starknet-compile \
-        --manifest-path "$CAIRO_1_COMPILER_MANIFEST" \
-        -- \
-        --version
+    $CAIRO_1_COMPILER_DIR/starknet-compile --version
 fi
