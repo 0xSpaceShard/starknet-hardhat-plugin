@@ -43,7 +43,7 @@ import {
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     amarnaAction,
-    starknetCompileAction,
+    starknetDeprecatedCompileAction,
     starknetVoyagerAction,
     starknetTestAction,
     starknetRunAction,
@@ -245,7 +245,7 @@ task("starknet-compile-deprecated", "Compiles Starknet contracts")
     )
     .addFlag("accountContract", "Allows compiling an account contract.")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
-    .setAction(starknetCompileAction);
+    .setAction(starknetDeprecatedCompileAction);
 
 task("starknet-compile", "Compiles Starknet cairo1 contracts")
     .addOptionalVariadicPositionalParam(

@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { createHash } from "crypto";
 import { HardhatRuntimeEnvironment, ProjectPathsConfig, TaskArguments } from "hardhat/types";
-import { starknetCompileAction } from "./task-actions";
+import { starknetDeprecatedCompileAction } from "./task-actions";
 import { getArtifactPath, traverseFiles } from "./utils";
 import { ABI_SUFFIX } from "./constants";
 
@@ -22,7 +22,7 @@ export class Cache {
     protected cache: Record<string, ContractData> = {};
     public fsPromises = fs.promises;
 
-    constructor(protected hre: HardhatRuntimeEnvironment) {}
+    constructor(protected hre: HardhatRuntimeEnvironment) { }
 
     // Returns the contract data from the cache
     public async getCache(): Promise<Record<string, ContractData>> {
@@ -205,7 +205,7 @@ export class Recompiler {
                 carioPath: entry?.cairoPath
             };
 
-            await starknetCompileAction(compileArguments, this.hre);
+            await starknetDeprecatedCompileAction(compileArguments, this.hre);
         }
     }
 
