@@ -221,6 +221,13 @@ extendEnvironment((hre) => {
             hre.config.paths.cairoPaths || [],
             hre
         );
+
+        if (hre.config.starknet.cairo1BinDir) {
+            throw new StarknetPluginError(
+                `cairo1BinDir cannot be used with dockerized plugin.
+Remove cairo1BinDir to use the default dockerized cairo1 compiler OR specify a local venv.`
+            );
+        }
     }
 });
 

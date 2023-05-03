@@ -4,7 +4,8 @@ import {
     StarknetChainId,
     DOCKER_HOST,
     DOCKER_HOST_BIN_PATH,
-    CAIRO1_SIERRA_COMPILE_BIN
+    CAIRO1_SIERRA_COMPILE_BIN,
+    CAIRO1_COMPILE_BIN
 } from "./constants";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
@@ -18,6 +19,7 @@ import { hash } from "starknet";
 import { toBN, toHex } from "starknet/utils/number";
 import axios from "axios";
 import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
+import * as path from "path";
 
 interface CompileWrapperOptions {
     file: string;
@@ -31,7 +33,7 @@ interface CompileWrapperOptions {
 interface CairoToSierraOptions {
     path: string;
     output: string;
-    binPath?: string;
+    binDirPath?: string;
     replaceIds?: boolean;
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
@@ -40,7 +42,7 @@ interface CairoToSierraOptions {
 interface SierraToCasmOptions {
     file: string;
     output: string;
-    binPath: string;
+    binDirPath?: string;
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
     addPythonicHints?: boolean;
@@ -157,7 +159,7 @@ export abstract class StarknetWrapper {
         });
     }
 
-    protected prepareCompileOptions(options: CompileWrapperOptions): string[] {
+    protected prepareDeprecatedCompileOptions(options: CompileWrapperOptions): string[] {
         const ret = [
             options.file,
             "--abi",
@@ -179,8 +181,8 @@ export abstract class StarknetWrapper {
         return ret;
     }
 
-    public async compile(options: CompileWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareCompileOptions(options);
+    public async deprecatedCompile(options: CompileWrapperOptions): Promise<ProcessResult> {
+        const preparedOptions = this.prepareDeprecatedCompileOptions(options);
         const executed = await this.execute("starknet-compile-deprecated", preparedOptions);
         return executed;
     }
@@ -234,7 +236,7 @@ export abstract class StarknetWrapper {
         return executed;
     }
 
-    protected prepareCairoToCasmOptions(options: CairoToSierraOptions): string[] {
+    protected prepareCairoToSierraOptions(options: CairoToSierraOptions): string[] {
         const args = [];
 
         if (options?.replaceIds === true) {
@@ -258,7 +260,7 @@ export abstract class StarknetWrapper {
         return args;
     }
 
-    protected prepareSierraToCasmInteractOptions(options: SierraToCasmOptions): string[] {
+    protected prepareSierraToCasmOptions(options: SierraToCasmOptions): string[] {
         const args = [];
         if (options.allowedLibfuncsListName) {
             args.push("--allowed-libfuncs-list-name", options.allowedLibfuncsListName);
@@ -281,8 +283,16 @@ export abstract class StarknetWrapper {
         return args;
     }
 
-    protected getCairo1Command(binPath: string, args: string[]): string[] {
-        return [binPath, ...args];
+    protected getCairo1Command(binDirPath: string, binCommand: string, args: string[]): string[] {
+        if (!binDirPath) {
+            const msg =
+                "No compiler bin directory specified\n" +
+                "Make sure to specify dockerizedVersion or cairo1BinDir in the hardhat config file OR --cairo1-bin-dir in the CLI";
+            throw new StarknetPluginError(msg);
+        }
+
+        const cairo1Bin = path.join(binDirPath, binCommand);
+        return [cairo1Bin, ...args];
     }
 
     protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
@@ -580,20 +590,18 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async compileCairoToSierra(options: CairoToSierraOptions): Promise<ProcessResult> {
-        const args = this.prepareCairoToCasmOptions(options);
-        const command = this.getCairo1Command(
-            `${DOCKER_HOST_BIN_PATH}/starknet-cairo1-compile`,
-            args
-        );
+        const args = this.prepareCairoToSierraOptions(options);
+        const command = this.getCairo1Command(DOCKER_HOST_BIN_PATH, CAIRO1_COMPILE_BIN, args);
         const externalServer = new DockerCairo1Compiler(this.image, [this.rootPath], command);
 
         return await externalServer.compileCairo1();
     }
 
     public async compileSierraToCasm(options: SierraToCasmOptions): Promise<ProcessResult> {
-        const args = this.prepareSierraToCasmInteractOptions(options);
+        const args = this.prepareSierraToCasmOptions(options);
         const command = this.getCairo1Command(
-            `${DOCKER_HOST_BIN_PATH}/${CAIRO1_SIERRA_COMPILE_BIN}`,
+            DOCKER_HOST_BIN_PATH,
+            CAIRO1_SIERRA_COMPILE_BIN,
             args
         );
         const externalServer = new DockerCairo1Compiler(this.image, [this.rootPath], command);
@@ -636,16 +644,16 @@ export class VenvWrapper extends StarknetWrapper {
     }
 
     public async compileCairoToSierra(options: CairoToSierraOptions): Promise<ProcessResult> {
-        const args = this.prepareCairoToCasmOptions(options);
-        const command = this.getCairo1Command(options.binPath, args);
+        const args = this.prepareCairoToSierraOptions(options);
+        const command = this.getCairo1Command(options.binDirPath, CAIRO1_COMPILE_BIN, args);
 
         const executed = exec(command.join(" "));
         return executed;
     }
 
     public async compileSierraToCasm(options: SierraToCasmOptions): Promise<ProcessResult> {
-        const args = this.prepareSierraToCasmInteractOptions(options);
-        const command = this.getCairo1Command(options.binPath, args);
+        const args = this.prepareSierraToCasmOptions(options);
+        const command = this.getCairo1Command(options.binDirPath, CAIRO1_SIERRA_COMPILE_BIN, args);
 
         const executed = exec(command.join(" "));
         return executed;

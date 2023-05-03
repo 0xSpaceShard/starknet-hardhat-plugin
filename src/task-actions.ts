@@ -6,11 +6,9 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import {
     ABI_SUFFIX,
     ALPHA_TESTNET,
-    CAIRO1_COMPILE_BIN,
     CAIRO1_SIERRA_SUFFIX,
     CAIRO1_ASSEMBLY_SUFFIX,
-    DEFAULT_STARKNET_NETWORK,
-    CAIRO1_SIERRA_COMPILE_BIN
+    DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import {
@@ -83,39 +81,16 @@ function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
 }
 
-function getCompilerPath(
-    args: TaskArguments,
-    config: StarknetConfig,
-    compilerName: string
-): string {
-    const venvPath = config.venv;
-    const cairo1BinDir = args?.cairo1BinDir || config.cairo1BinDir;
-    if (venvPath && !cairo1BinDir) {
-        const msg =
-            "Could not find compiler bin directory\n" +
-            "The argument --cairo1-bin-dir 'path/to/binDir' or cairo1BinDir on hardhat.config.ts should be set.";
-        throw new StarknetPluginError(msg);
-    }
-
-    const cairo1Bin = path.join(cairo1BinDir, compilerName);
-    if (venvPath && fs.existsSync(cairo1Bin)) {
-        const msg = "The cairo1BinDir must be a path to the directory containing starknet-compile";
-        throw new StarknetPluginError(msg);
-    }
-
-    return cairo1Bin;
+function getCompilerBinDir(args: TaskArguments, config: StarknetConfig): string {
+    // give precedence to CLI input over config file
+    return args?.cairo1BinDir || config.cairo1BinDir;
 }
 
 export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const starknetCompilePath = getCompilerPath(hre.config.starknet, args, CAIRO1_COMPILE_BIN);
-    const starknetSierraCompilePath = getCompilerPath(
-        hre.config.starknet,
-        args,
-        CAIRO1_SIERRA_COMPILE_BIN
-    );
+    const binDirPath = getCompilerBinDir(hre.config.starknet, args);
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
@@ -147,7 +122,7 @@ export async function starknetCompileCairo1Action(
                 const executed = await hre.starknetWrapper.compileCairoToSierra({
                     path: file,
                     output: outputPath,
-                    binPath: starknetCompilePath,
+                    binDirPath,
                     replaceIds: args.replaceIds,
                     allowedLibfuncsListName: args.allowedLibfuncsListName,
                     allowedLibfuncsListFile: args.allowedLibfuncsListFile
@@ -175,7 +150,7 @@ export async function starknetCompileCairo1Action(
                 const executed = await hre.starknetWrapper.compileSierraToCasm({
                     file: outputPath,
                     output: casmOutput,
-                    binPath: starknetSierraCompilePath,
+                    binDirPath,
                     addPythonicHints: args.addPythonicHints,
                     allowedLibfuncsListName: args.allowedLibfuncsListName,
                     allowedLibfuncsListFile: args.allowedLibfuncsListFile
@@ -239,7 +214,7 @@ export async function starknetCompileAction(args: TaskArguments, hre: HardhatRun
             initializeFile(outputPath);
             initializeFile(abiPath);
 
-            const executed = await hre.starknetWrapper.compile({
+            const executed = await hre.starknetWrapper.deprecatedCompile({
                 file,
                 output: outputPath,
                 abi: abiPath,
