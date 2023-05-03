@@ -101,7 +101,7 @@ export class InteractChoice {
          * The version of the transaction.
          */
         public transactionVersion: Numeric
-    ) {}
+    ) { }
 }
 
 export function extractClassHash(response: string) {
@@ -195,7 +195,7 @@ export async function iterativelyCheckStatus(
             return reject(
                 new Error(
                     "Transaction rejected. Error message:\n\n" +
-                        adaptLog(statusObject.tx_failure_reason.error_message)
+                    adaptLog(statusObject.tx_failure_reason.error_message)
                 )
             );
         }
@@ -306,6 +306,7 @@ export interface InvokeOptions {
     wallet?: Wallet;
     nonce?: Numeric;
     maxFee?: Numeric;
+    rawInput?: boolean;
     overhead?: number;
 }
 
@@ -315,6 +316,7 @@ export interface CallOptions {
     blockNumber?: BlockNumber;
     nonce?: Numeric;
     maxFee?: Numeric;
+    rawInput?: boolean;
     rawOutput?: boolean;
     token?: string;
     salt?: string;
@@ -511,7 +513,8 @@ export class StarknetContract {
             throw new StarknetPluginError("Contract not deployed");
         }
 
-        const adaptedInput = this.adaptInput(functionName, args);
+        const adaptedInput = options.rawInput ? <string[]>args : this.adaptInput(functionName, args);
+        console.log("DEBUG adaptedInput", adaptedInput);
         const executed = await this.hre.starknetWrapper.interact({
             choice,
             address: this.address,
@@ -682,6 +685,7 @@ export class StarknetContract {
             throw new StarknetPluginError(msg);
         }
 
+        console.log("DEBUG checking if array:", args);
         if (Array.isArray(args)) {
             throw new StarknetPluginError("Arguments should be passed in the form of an object.");
         }
