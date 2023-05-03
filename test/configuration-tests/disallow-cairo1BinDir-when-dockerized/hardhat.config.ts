@@ -2,7 +2,8 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        network: "alphaGoerli2"
+        // defaulting to dockerizedVenv
+        cairo1BinDir: "dummy/path"
     },
     networks: {
         devnet: {
