@@ -187,6 +187,7 @@ export abstract class StarknetWrapper {
         options: CairoToSierraOptions,
         binPath?: string
     ): Promise<ProcessResult>;
+
     public abstract compileSierraToCasm(
         options: SierraToCasmOptions,
         binPath?: string
