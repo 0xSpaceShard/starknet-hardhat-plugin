@@ -24,7 +24,8 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
         cargo build \
             --bin starknet-compile \
             --bin starknet-sierra-compile \
-            --manifest-path cairo-compiler/Cargo.toml
+            --manifest-path cairo-compiler/Cargo.toml \
+            --release
 
         export CAIRO_1_COMPILER_DIR="cairo-compiler/target/release"
     fi
