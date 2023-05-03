@@ -92,7 +92,7 @@ function getCompilerPath(
     const cairo1BinDir = args?.cairo1BinDir || config.cairo1BinDir;
     if (venvPath && !cairo1BinDir) {
         const msg =
-            "Could not find manifest-path\n" +
+            "Could not find compiler bin directory\n" +
             "The argument --cairo1-bin-dir 'path/to/binDir' or cairo1BinDir on hardhat.config.ts should be set.";
         throw new StarknetPluginError(msg);
     }
@@ -144,16 +144,14 @@ export async function starknetCompileCairo1Action(
 
             // Compile to sierra representation
             {
-                const executed = await hre.starknetWrapper.compileCairoToSierra(
-                    {
-                        path: file,
-                        output: outputPath,
-                        replaceIds: args.replaceIds,
-                        allowedLibfuncsListName: args.allowedLibfuncsListName,
-                        allowedLibfuncsListFile: args.allowedLibfuncsListFile
-                    },
-                    starknetCompilePath
-                );
+                const executed = await hre.starknetWrapper.compileCairoToSierra({
+                    path: file,
+                    output: outputPath,
+                    binPath: starknetCompilePath,
+                    replaceIds: args.replaceIds,
+                    allowedLibfuncsListName: args.allowedLibfuncsListName,
+                    allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                });
                 statusCode += processExecuted(executed, true);
 
                 if (executed.statusCode) {
@@ -174,16 +172,14 @@ export async function starknetCompileCairo1Action(
 
             // Compile sierra to casm representation
             {
-                const executed = await hre.starknetWrapper.compileSierraToCasm(
-                    {
-                        file: outputPath,
-                        output: casmOutput,
-                        addPythonicHints: args.addPythonicHints,
-                        allowedLibfuncsListName: args.allowedLibfuncsListName,
-                        allowedLibfuncsListFile: args.allowedLibfuncsListFile
-                    },
-                    starknetSierraCompilePath
-                );
+                const executed = await hre.starknetWrapper.compileSierraToCasm({
+                    file: outputPath,
+                    output: casmOutput,
+                    binPath: starknetSierraCompilePath,
+                    addPythonicHints: args.addPythonicHints,
+                    allowedLibfuncsListName: args.allowedLibfuncsListName,
+                    allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                });
                 statusCode += processExecuted(executed, true);
             }
 
