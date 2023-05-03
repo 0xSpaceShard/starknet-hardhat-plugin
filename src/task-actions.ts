@@ -156,7 +156,8 @@ export async function starknetCompileCairo1Action(
                 );
                 statusCode += processExecuted(executed, true);
 
-                if (executed) {
+                if (executed.statusCode) {
+                    // continue with compiling to casm only if compiling to sierra succeeded
                     continue;
                 }
             }
