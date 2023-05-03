@@ -512,10 +512,16 @@ export class StarknetContract {
         }
 
         const adaptedInput = this.adaptInput(functionName, args);
+
+        // omit cairo 1.0 ABIs as it's not supported by the cairo-lang parser.
+        const abi =
+            this.abiPath && !fs.readFileSync(this.abiPath, "utf8").includes("core::")
+                ? this.abiPath
+                : undefined;
         const executed = await this.hre.starknetWrapper.interact({
             choice,
             address: this.address,
-            abi: this.abiPath,
+            abi,
             functionName: functionName,
             inputs: adaptedInput,
             signature: handleSignature(options.signature),

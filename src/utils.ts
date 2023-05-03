@@ -390,21 +390,21 @@ export function isEntryAContructor(
         if (!fs.existsSync(sourcePath)) return false;
         // Check if contract contains constructor with the name
         const file = fs.readFileSync(sourcePath).toString();
-        const lines = file.split("\n");
+        const lines = file
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line && !line.startsWith("//"));
 
-        let index = 0;
-        for (let line of lines) {
-            line = line.trim();
-            if (line.startsWith("//")) {
-                // Ignore single-line comment.
-            } else if (line.includes("#[constructor]")) {
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (line.includes("#[constructor]")) {
                 // Check if next line is contains entry type name
-                const nextLine = lines[index + 1];
-                if (nextLine && nextLine.includes(entryType.name)) {
+                const nextLine = lines[i + 1];
+                const pattern = new RegExp(`\\bfn\\s+${entryType.name}\\b`);
+                if (nextLine && pattern.test(nextLine)) {
                     return true;
                 }
             }
-            index++;
         }
     }
     return false;
