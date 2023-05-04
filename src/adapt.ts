@@ -74,6 +74,10 @@ function convertOutputToBoolean(type: bigint): boolean {
     return type ? true : false;
 }
 
+function outputNameOrDefault(name?: string): string {
+    return name || "response";
+}
+
 // Can't use String.split since ':' also can be inside type
 // Ex: x : (y : felt, z: SomeStruct)
 function parseNamedTuple(namedTuple: string): starknet.Argument {
@@ -413,12 +417,10 @@ export function adaptOutputUtil(
     for (const outputSpec of outputSpecs) {
         const currentValue = result[resultIndex];
         if (COMMON_NUMERIC_TYPES.includes(outputSpec.type)) {
-            outputSpec.name = outputSpec.name ?? "response";
-            adapted[outputSpec.name] = currentValue;
+            adapted[outputNameOrDefault(outputSpec.name)] = currentValue;
             resultIndex++;
         } else if (isBool(outputSpec.type)) {
-            outputSpec.name = outputSpec.name ?? "response";
-            adapted[outputSpec.name] = convertOutputToBoolean(currentValue);
+            adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToBoolean(currentValue);
             resultIndex++;
         } else if (isArrayDeprecated(outputSpec.type)) {
             // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
@@ -447,7 +449,7 @@ export function adaptOutputUtil(
                 resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputSpec.name ?? "response"] = structArray;
+            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
         } else if (isArray(outputSpec.type)) {
             const outputSpecArrayElementType = outputSpec.type.slice(
                 ARRAY_TYPE_PREFIX.length,
@@ -472,10 +474,10 @@ export function adaptOutputUtil(
                 resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputSpec.name ?? "response"] = structArray;
+            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
-            adapted[outputSpec.name ?? "response"] = ret.generatedComplex;
+            adapted[outputNameOrDefault(outputSpec.name)] = ret.generatedComplex;
             resultIndex = ret.newRawIndex;
         }
 
