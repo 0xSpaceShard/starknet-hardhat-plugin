@@ -34,7 +34,8 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
-import { AbiEntry } from "./starknet-types";
+import { Abi, AbiEntry } from "./starknet-types";
+import * as starknet from "./starknet-types";
 
 const globPromise = promisify(glob);
 /**
@@ -368,44 +369,16 @@ export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     return (amount * BigInt(overhead)) / BigInt(100);
 }
 
-/**
- * Checks if abi entry is a constructor or not
- * @param entryType Abi entry to get name and type of
- * @param paths Starknet project paths config
- * @param casmPath Source artifact of a cairo1 contract
- * @returns boolean
- */
-export function isEntryAContructor(
-    entryType: AbiEntry,
-    paths: ProjectPathsConfig,
-    casmPath?: string
-): boolean {
-    if (entryType.type === "constructor") return true;
-
-    if (casmPath) {
-        const { root, starknetArtifacts } = paths;
-        const dirPath = casmPath.replace(starknetArtifacts, "");
-        const sourcePath = path.dirname(path.join(root, dirPath));
-        // Check if path exists
-        if (!fs.existsSync(sourcePath)) return false;
-        // Check if contract contains constructor with the name
-        const file = fs.readFileSync(sourcePath).toString();
-        const lines = file
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line && !line.startsWith("//"));
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line.includes("#[constructor]")) {
-                // Check if next line is contains entry type name
-                const nextLine = lines[i + 1];
-                const pattern = new RegExp(`\\bfn\\s+${entryType.name}\\b`);
-                if (nextLine && pattern.test(nextLine)) {
-                    return true;
-                }
-            }
+export function findConstructor(
+    abi: Abi,
+    predicate: (entry: AbiEntry) => boolean
+): starknet.CairoFunction {
+    for (const abiEntryName in abi) {
+        const abiEntry = abi[abiEntryName];
+        if (predicate(abiEntry)) {
+            return <starknet.CairoFunction>abiEntry;
         }
     }
-    return false;
+
+    return undefined;
 }
