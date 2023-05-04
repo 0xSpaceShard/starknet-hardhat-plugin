@@ -16,7 +16,7 @@ export interface Struct {
 }
 
 export interface Argument {
-    name: string;
+    name?: string;
     type: string;
 }
 
