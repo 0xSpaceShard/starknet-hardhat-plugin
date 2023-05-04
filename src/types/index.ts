@@ -386,7 +386,7 @@ export class StarknetContractFactory {
         }
 
         if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
-            const msg = "Invalid .CASM structure";
+            const msg = "Invalid .CASM structure: No CONSTRUCTOR in entry_points_by_type";
             throw new StarknetPluginError(msg);
         }
 
