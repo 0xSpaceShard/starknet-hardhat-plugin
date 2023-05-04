@@ -547,7 +547,6 @@ export class StarknetContract {
         const adaptedInput = options.rawInput
             ? <string[]>args
             : this.adaptInput(functionName, args);
-        console.log("DEBUG adaptedInput", adaptedInput); // TODO
 
         // omit cairo 1.0 ABIs as it's not supported by the cairo-lang parser.
         const abi =
@@ -724,7 +723,6 @@ export class StarknetContract {
             throw new StarknetPluginError(msg);
         }
 
-        console.log("DEBUG checking if array:", args); // TODO
         if (Array.isArray(args)) {
             throw new StarknetPluginError("Arguments should be passed in the form of an object.");
         }
