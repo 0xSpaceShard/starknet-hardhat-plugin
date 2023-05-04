@@ -382,30 +382,20 @@ export function isEntryAContructor(
 ): boolean {
     if (entryType.type === "constructor") return true;
 
-    if (casmPath) {
-        const { root, starknetArtifacts } = paths;
-        const dirPath = casmPath.replace(starknetArtifacts, "");
-        const sourcePath = path.dirname(path.join(root, dirPath));
-        // Check if path exists
-        if (!fs.existsSync(sourcePath)) return false;
-        // Check if contract contains constructor with the name
-        const file = fs.readFileSync(sourcePath).toString();
-        const lines = file
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line && !line.startsWith("//"));
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line.includes("#[constructor]")) {
-                // Check if next line is contains entry type name
-                const nextLine = lines[i + 1];
-                const pattern = new RegExp(`\\bfn\\s+${entryType.name}\\b`);
-                if (nextLine && pattern.test(nextLine)) {
-                    return true;
-                }
-            }
+    if (casmPath && fs.existsSync(casmPath)) {
+        const casmJson = JSON.parse(fs.readFileSync(casmPath, "utf-8"));
+        if (casmJson?.compiler_version.split(".")[0] !== "1") {
+            const msg = ".CASM json has to contain compiler_version '1.*.*'";
+            throw new StarknetPluginError(msg);
         }
+
+        if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
+            const msg = ".CASM json has to contain constructor entry point";
+            throw new StarknetPluginError(msg);
+        }
+
+        return casmJson.entry_points_by_type.CONSTRUCTOR.len() > 0;
     }
+
     return false;
 }
