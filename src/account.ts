@@ -290,7 +290,8 @@ export abstract class Account {
             nonce,
             options.maxFee,
             choice.transactionVersion,
-            hre.starknet.networkConfig.starknetChainId
+            hre.starknet.networkConfig.starknetChainId,
+            options.rawInput
         );
 
         if (options.signature) {
@@ -298,8 +299,11 @@ export abstract class Account {
                 "Custom signature cannot be specified when using Account (it is calculated automatically)";
             throw new StarknetPluginError(msg);
         }
-        const signatures = this.getSignatures(messageHash);
-        const contractInteractOptions = { signature: signatures, ...options };
+        const contractInteractOptions = {
+            signature: this.getSignatures(messageHash),
+            ...options,
+            rawInput: false // rawInput shouldn't affect validating args of __execute__
+        };
 
         const contractInteractor = (<ContractInteractionFunction>(
             this.starknetContract[choice.internalCommand]
@@ -316,6 +320,8 @@ export abstract class Account {
      * @param nonce current nonce
      * @param maxFee the maximum fee amount set for the contract interaction
      * @param version the transaction version
+     * @param chainId the ID of the chain
+     * @param rawInput if `true`, interprets calldata as already adapted into an array
      * @returns the message hash for the multicall and the arguments to execute it with
      */
     private handleMultiInteract(
@@ -324,16 +330,20 @@ export abstract class Account {
         nonce: Numeric,
         maxFee: Numeric,
         version: Numeric,
-        chainId: StarknetChainId
+        chainId: StarknetChainId,
+        rawInput: boolean
     ) {
         const callArray: Call[] = callParameters.map((callParameters) => {
+            const calldata = rawInput
+                ? <string[]>callParameters.calldata
+                : callParameters.toContract.adaptInput(
+                      callParameters.functionName,
+                      callParameters.calldata
+                  );
             return {
                 contractAddress: callParameters.toContract.address,
                 entrypoint: callParameters.functionName,
-                calldata: callParameters.toContract.adaptInput(
-                    callParameters.functionName,
-                    callParameters.calldata
-                )
+                calldata
             };
         });
 

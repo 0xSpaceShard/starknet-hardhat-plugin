@@ -527,7 +527,6 @@ module.exports = {
 };
 ```
 
-
 ### Manifest Path
 
 Allows to specify locally installed cairo1 compiler path. This can be set both on `hardhat.config.ts` file and throught the CLI.
@@ -884,6 +883,14 @@ If you don't specify a `maxFee`, one will be calculated for you by applying an o
 ```typescript
 // maxFee will be 40% of estimated fee; if overhead not provided, the default value is used.
 await account.invoke(contract, "foo", { arg1: ... }, { overhead: 0.4 });
+```
+
+Set the `rawInput` option to `true` to suppress validation of the args passed to the contract function:
+
+```typescript
+// pass a direct array
+await account.invoke(contract, "foo", ["10", "20"], { rawInput: true });
+await contract.call("bar", ["30", "40"], { rawInput: true });
 ```
 
 ### Multicalls

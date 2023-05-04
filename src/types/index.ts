@@ -308,6 +308,7 @@ export interface InvokeOptions {
     wallet?: Wallet;
     nonce?: Numeric;
     maxFee?: Numeric;
+    rawInput?: boolean;
     overhead?: number;
 }
 
@@ -317,6 +318,7 @@ export interface CallOptions {
     blockNumber?: BlockNumber;
     nonce?: Numeric;
     maxFee?: Numeric;
+    rawInput?: boolean;
     rawOutput?: boolean;
     token?: string;
     salt?: string;
@@ -542,7 +544,9 @@ export class StarknetContract {
             throw new StarknetPluginError("Contract not deployed");
         }
 
-        const adaptedInput = this.adaptInput(functionName, args);
+        const adaptedInput = options.rawInput
+            ? <string[]>args
+            : this.adaptInput(functionName, args);
 
         // omit cairo 1.0 ABIs as it's not supported by the cairo-lang parser.
         const abi =
