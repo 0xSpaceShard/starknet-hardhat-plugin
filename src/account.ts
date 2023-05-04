@@ -302,7 +302,7 @@ export abstract class Account {
         const contractInteractOptions = {
             signature: this.getSignatures(messageHash),
             ...options,
-            rawInput: false // rawInput shouldn't have effect when adapting __execute__
+            rawInput: false // rawInput shouldn't affect validating args of __execute__
         };
 
         const contractInteractor = (<ContractInteractionFunction>(
