@@ -34,7 +34,8 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { compressProgram } from "starknet/utils/stark";
 import { CompiledContract } from "starknet";
 import JsonBigint from "json-bigint";
-import { AbiEntry } from "./starknet-types";
+import { Abi, AbiEntry } from "./starknet-types";
+import * as starknet from "./starknet-types";
 
 const globPromise = promisify(glob);
 /**
@@ -368,34 +369,16 @@ export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     return (amount * BigInt(overhead)) / BigInt(100);
 }
 
-/**
- * Checks if abi entry is a constructor or not
- * @param entryType Abi entry to get name and type of
- * @param paths Starknet project paths config
- * @param casmPath Source artifact of a cairo1 contract
- * @returns boolean
- */
-export function isEntryAContructor(
-    entryType: AbiEntry,
-    paths: ProjectPathsConfig,
-    casmPath?: string
-): boolean {
-    if (entryType.type === "constructor") return true;
-
-    if (casmPath && fs.existsSync(casmPath)) {
-        const casmJson = JSON.parse(fs.readFileSync(casmPath, "utf-8"));
-        if (casmJson?.compiler_version.split(".")[0] !== "1") {
-            const msg = ".CASM json has to contain compiler_version '1.*.*'";
-            throw new StarknetPluginError(msg);
+export function findConstructor(
+    abi: Abi,
+    predicate: (entry: AbiEntry) => boolean
+): starknet.CairoFunction {
+    for (const abiEntryName in abi) {
+        const abiEntry = abi[abiEntryName];
+        if (predicate(abiEntry)) {
+            return <starknet.CairoFunction>abiEntry;
         }
-
-        if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
-            const msg = ".CASM json has to contain constructor entry point";
-            throw new StarknetPluginError(msg);
-        }
-
-        return casmJson.entry_points_by_type.CONSTRUCTOR.len() > 0;
     }
 
-    return false;
+    return undefined;
 }
