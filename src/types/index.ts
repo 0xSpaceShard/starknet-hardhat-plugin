@@ -391,7 +391,7 @@ export class StarknetContractFactory {
         }
 
         // Can be removed after new cairo release.
-        if (casmJson.entry_points_by_type.CONSTRUCTOR.len() > 1) {
+        if (casmJson.entry_points_by_type.CONSTRUCTOR.length > 1) {
             const msg = "There can be at most 1 constructor.";
             throw new StarknetPluginError(msg);
         }
