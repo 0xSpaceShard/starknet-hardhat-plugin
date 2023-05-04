@@ -390,6 +390,8 @@ export class StarknetContractFactory {
             throw new StarknetPluginError(msg);
         }
 
+        // Con be simplified once starkware fixes miltiple constructor issue.
+        // Precomputed selector can be used if only 'constructor' name allowed
         const selector = casmJson.entry_points_by_type.CONSTRUCTOR[0].selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
             return hash.getSelectorFromName(abiEntry.name) === selector;
