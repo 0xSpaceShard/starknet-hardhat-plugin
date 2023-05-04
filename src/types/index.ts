@@ -386,11 +386,17 @@ export class StarknetContractFactory {
         }
 
         if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
-            const msg = ".CASM json has to contain constructor entry point";
+            const msg = "Invalid .CASM structure";
             throw new StarknetPluginError(msg);
         }
 
-        // Con be simplified once starkware fixes miltiple constructor issue.
+        // Can be removed after new cairo release.
+        if (casmJson.entry_points_by_type.CONSTRUCTOR.len() > 1) {
+            const msg = "There can be at most 1 constructor.";
+            throw new StarknetPluginError(msg);
+        }
+
+        // Can be simplified once starkware fixes multiple constructor issue.
         // Precomputed selector can be used if only 'constructor' name allowed
         const selector = casmJson.entry_points_by_type.CONSTRUCTOR[0].selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
