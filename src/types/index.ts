@@ -8,7 +8,7 @@ import {
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
 } from "../constants";
-import { adaptLog, copyWithBigint, formatSpaces, isEntryAContructor, sleep, warn } from "../utils";
+import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
 import { adaptInputUtil, adaptOutputUtil } from "../adapt";
 import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
 import { hash } from "starknet";
@@ -370,16 +370,41 @@ export class StarknetContractFactory {
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
 
-        // find constructor
-        for (const abiEntryName in this.abi) {
-            const abiEntry = this.abi[abiEntryName];
-            if (isEntryAContructor(abiEntry, config.hre.config.paths, this.casmPath)) {
-                this.constructorAbi = <starknet.CairoFunction>abiEntry;
-                break;
-            }
-        }
+        const constructorPredicate = this.resolveContructorPredicate();
+        this.constructorAbi = findConstructor(this.abi, constructorPredicate);
     }
 
+    private resolveContructorPredicate(): (abiEntry: starknet.AbiEntry) => boolean {
+        if (!this.isCairo1()) {
+            return (abiEntry: starknet.AbiEntry): boolean => {
+                return abiEntry.type === "constructor";
+            };
+        }
+
+        const casmJson = JSON.parse(fs.readFileSync(this.casmPath, "utf-8"));
+        if (casmJson?.compiler_version.split(".")[0] !== "1") {
+            const msg = ".CASM json has to contain compiler_version '1.*.*'";
+            throw new StarknetPluginError(msg);
+        }
+
+        if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
+            const msg = "Invalid .CASM structure: No CONSTRUCTOR in entry_points_by_type";
+            throw new StarknetPluginError(msg);
+        }
+
+        // Can be removed after new cairo release.
+        if (casmJson.entry_points_by_type.CONSTRUCTOR.length > 1) {
+            const msg = "There can be at most 1 constructor.";
+            throw new StarknetPluginError(msg);
+        }
+
+        // Can be simplified once starkware fixes multiple constructor issue.
+        // Precomputed selector can be used if only 'constructor' name allowed
+        const selector = casmJson.entry_points_by_type.CONSTRUCTOR[0].selector;
+        return (abiEntry: starknet.AbiEntry): boolean => {
+            return hash.getSelectorFromName(abiEntry.name) === selector;
+        };
+    }
     /**
      * Declare a contract class.
      * @param options optional arguments to class declaration

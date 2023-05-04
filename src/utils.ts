@@ -1,3 +1,5 @@
+import fs from "fs";
+import { glob } from "glob";
 import {
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
@@ -7,36 +9,30 @@ import {
     ProjectPathsConfig,
     VmLang
 } from "hardhat/types";
-import { StarknetPluginError } from "./starknet-plugin-error";
+import path from "path";
+import { json, stark, CompiledContract } from "starknet";
+
+import { handleInternalContractArtifacts } from "./account-utils";
 import {
+    ABI_SUFFIX,
     ALPHA_MAINNET,
     ALPHA_MAINNET_INTERNALLY,
     ALPHA_TESTNET,
     ALPHA_TESTNET_INTERNALLY,
     ALPHA_TESTNET_2,
     ALPHA_TESTNET_2_INTERNALLY,
+    DEFAULT_DEVNET_CAIRO_VM,
     DEFAULT_STARKNET_ACCOUNT_PATH,
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
-    UDC_ADDRESS,
     StarknetChainId,
-    DEFAULT_DEVNET_CAIRO_VM,
-    ABI_SUFFIX
+    UDC_ADDRESS
 } from "./constants";
-import * as path from "path";
-import * as fs from "fs";
-import { glob } from "glob";
-import { promisify } from "util";
-import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
-import { stark } from "starknet";
-import { handleInternalContractArtifacts } from "./account-utils";
 import { getContractFactoryUtil } from "./extend-utils";
-import { compressProgram } from "starknet/utils/stark";
-import { CompiledContract } from "starknet";
-import JsonBigint from "json-bigint";
-import { AbiEntry } from "./starknet-types";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { Abi, AbiEntry, CairoFunction } from "./starknet-types";
+import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
 
-const globPromise = promisify(glob);
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
  *
@@ -98,7 +94,7 @@ export function getDefaultHardhatNetworkConfig(url: string): HardhatNetworkConfi
 export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
-        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+        paths = await glob(path.join(traversable, "**", fileCriteria));
     } else {
         paths.push(traversable);
     }
@@ -300,19 +296,17 @@ export class UDC {
 }
 
 export function readContract(contractPath: string) {
-    const { parse } = handleJsonWithBigInt(false);
-    const parsedContract = parse(
+    const parsedContract = json.parse(
         fs.readFileSync(contractPath).toString("ascii")
     ) as CompiledContract;
     return {
         ...parsedContract,
-        program: compressProgram(parsedContract.program)
+        program: stark.compressProgram(parsedContract.program)
     };
 }
 
 export function readCairo1Contract(contractPath: string) {
-    const { parse } = handleJsonWithBigInt(false);
-    const parsedContract = parse(fs.readFileSync(contractPath).toString("ascii"));
+    const parsedContract = json.parse(fs.readFileSync(contractPath).toString("ascii"));
     const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
 
     const contract = new Cairo1ContractClass({
@@ -320,7 +314,7 @@ export function readCairo1Contract(contractPath: string) {
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`
         ),
-        sierraProgram: compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        sierraProgram: stark.compressProgram(formatSpaces(JSON.stringify(sierra_program))),
         entryPointsByType: entry_points_by_type,
         contractClassVersion: contract_class_version
     } as ContractClassConfig);
@@ -350,15 +344,6 @@ export function formatSpaces(json: string): string {
     return newString;
 }
 
-export function handleJsonWithBigInt(alwaysParseAsBig: boolean) {
-    return JsonBigint({
-        alwaysParseAsBig,
-        useNativeBigInt: true,
-        protoAction: "preserve",
-        constructorAction: "preserve"
-    });
-}
-
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {
     return rawCalldata.map((x) => x.toString(10));
 }
@@ -368,44 +353,13 @@ export function estimatedFeeToMaxFee(amount?: bigint, overhead = 0.5) {
     return (amount * BigInt(overhead)) / BigInt(100);
 }
 
-/**
- * Checks if abi entry is a constructor or not
- * @param entryType Abi entry to get name and type of
- * @param paths Starknet project paths config
- * @param casmPath Source artifact of a cairo1 contract
- * @returns boolean
- */
-export function isEntryAContructor(
-    entryType: AbiEntry,
-    paths: ProjectPathsConfig,
-    casmPath?: string
-): boolean {
-    if (entryType.type === "constructor") return true;
-
-    if (casmPath) {
-        const { root, starknetArtifacts } = paths;
-        const dirPath = casmPath.replace(starknetArtifacts, "");
-        const sourcePath = path.dirname(path.join(root, dirPath));
-        // Check if path exists
-        if (!fs.existsSync(sourcePath)) return false;
-        // Check if contract contains constructor with the name
-        const file = fs.readFileSync(sourcePath).toString();
-        const lines = file
-            .split("\n")
-            .map((line) => line.trim())
-            .filter((line) => line && !line.startsWith("//"));
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i];
-            if (line.includes("#[constructor]")) {
-                // Check if next line is contains entry type name
-                const nextLine = lines[i + 1];
-                const pattern = new RegExp(`\\bfn\\s+${entryType.name}\\b`);
-                if (nextLine && pattern.test(nextLine)) {
-                    return true;
-                }
-            }
+export function findConstructor(abi: Abi, predicate: (entry: AbiEntry) => boolean): CairoFunction {
+    for (const abiEntryName in abi) {
+        const abiEntry = abi[abiEntryName];
+        if (predicate(abiEntry)) {
+            return <CairoFunction>abiEntry;
         }
     }
-    return false;
+
+    return undefined;
 }

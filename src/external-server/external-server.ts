@@ -183,8 +183,7 @@ export abstract class ExternalServer {
 
         try {
             const response = await axios.post<T>(this.url, data, {
-                timeout: hre.config.starknet.requestTimeout,
-                timeoutErrorMessage: "Request timed out"
+                timeout: hre.config.starknet.requestTimeout
             });
             return response.data;
         } catch (error) {

@@ -1,3 +1,28 @@
+import { ec } from "elliptic";
+import { ec as ellipticCurve, hash, number, Call, RawCalldata } from "starknet";
+
+import {
+    calculateDeclareV2TxHash,
+    calculateDeployAccountHash,
+    CallParameters,
+    generateKeys,
+    handleInternalContractArtifacts,
+    sendDeclareV2Tx,
+    sendDeployAccountTx,
+    sendEstimateFeeTx,
+    signMultiCall
+} from "./account-utils";
+import {
+    DECLARE_VERSION,
+    QUERY_VERSION,
+    StarknetChainId,
+    TransactionHashPrefix,
+    TRANSACTION_VERSION,
+    UDC_DEPLOY_FUNCTION_NAME
+} from "./constants";
+import { getTransactionReceiptUtil } from "./extend-utils";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import * as starknet from "./starknet-types";
 import {
     ContractInteractionFunction,
     DeclareOptions,
@@ -13,30 +38,6 @@ import {
     StarknetContractFactory,
     StringMap
 } from "./types";
-import * as starknet from "./starknet-types";
-import {
-    QUERY_VERSION,
-    StarknetChainId,
-    TransactionHashPrefix,
-    TRANSACTION_VERSION,
-    DECLARE_VERSION,
-    UDC_DEPLOY_FUNCTION_NAME
-} from "./constants";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import * as ellipticCurve from "starknet/utils/ellipticCurve";
-import { BigNumberish, toBN } from "starknet/utils/number";
-import { ec } from "elliptic";
-import {
-    calculateDeclareV2TxHash,
-    calculateDeployAccountHash,
-    CallParameters,
-    generateKeys,
-    handleInternalContractArtifacts,
-    sendDeclareV2Tx,
-    sendDeployAccountTx,
-    sendEstimateFeeTx,
-    signMultiCall
-} from "./account-utils";
 import {
     numericToHexString,
     copyWithBigint,
@@ -47,12 +48,10 @@ import {
     estimatedFeeToMaxFee,
     readCairo1Contract
 } from "./utils";
-import { Call, hash, RawCalldata } from "starknet";
-import { getTransactionReceiptUtil } from "./extend-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
-    selector: BigNumberish;
+    selector: number.BigNumberish;
     data_offset: number;
     data_len: number;
 };
@@ -560,7 +559,7 @@ export class OpenZeppelinAccount extends Account {
         version: string,
         chainId: StarknetChainId
     ): string {
-        const hashable: Array<BigNumberish> = [callArray.length];
+        const hashable: Array<number.BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
         callArray.forEach((call) => {
             hashable.push(
@@ -680,7 +679,7 @@ export class OpenZeppelinAccount extends Account {
         const contract = contractFactory.getContractAt(address);
 
         const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
-        const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
+        const keyPair = ellipticCurve.getKeyPair(number.toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
         if (BigInt(publicKey) !== expectedPubKey) {
@@ -811,7 +810,7 @@ export class ArgentAccount extends Account {
         version: string,
         chainId: StarknetChainId
     ): string {
-        const hashable: Array<BigNumberish> = [callArray.length];
+        const hashable: Array<number.BigNumberish> = [callArray.length];
         const rawCalldata: RawCalldata = [];
         callArray.forEach((call) => {
             hashable.push(
@@ -962,7 +961,7 @@ export class ArgentAccount extends Account {
             guardianPublicKey = undefined;
         } else {
             guardianKeyPair = ellipticCurve.getKeyPair(
-                toBN(newGuardianPrivateKey.substring(2), "hex")
+                number.toBN(newGuardianPrivateKey.substring(2), "hex")
             );
             guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
         }
@@ -1005,7 +1004,7 @@ export class ArgentAccount extends Account {
         contract.setImplementation(implementationFactory);
 
         const { signer: expectedPubKey } = await contract.call("getSigner");
-        const keyPair = ellipticCurve.getKeyPair(toBN(privateKey.substring(2), "hex"));
+        const keyPair = ellipticCurve.getKeyPair(number.toBN(privateKey.substring(2), "hex"));
         const publicKey = ellipticCurve.getStarkKey(keyPair);
 
         if (expectedPubKey === BigInt(0)) {

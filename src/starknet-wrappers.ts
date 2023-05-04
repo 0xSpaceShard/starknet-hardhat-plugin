@@ -1,25 +1,25 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
+import axios from "axios";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import path from "path";
+import { hash, number } from "starknet";
+
+import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 import {
-    PLUGIN_NAME,
-    StarknetChainId,
-    DOCKER_HOST,
-    DOCKER_HOST_BIN_PATH,
+    CAIRO1_COMPILE_BIN,
     CAIRO1_SIERRA_COMPILE_BIN,
-    CAIRO1_COMPILE_BIN
+    DOCKER_HOST_BIN_PATH,
+    DOCKER_HOST,
+    PLUGIN_NAME,
+    StarknetChainId
 } from "./constants";
+import { ExternalServer } from "./external-server";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { FeeEstimation } from "./starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { BlockNumber, InteractChoice } from "./types";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
-import { ExternalServer } from "./external-server";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { FeeEstimation } from "./starknet-types";
-import { hash } from "starknet";
-import { toBN, toHex } from "starknet/utils/number";
-import axios from "axios";
-import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
-import * as path from "path";
 
 interface CompileWrapperOptions {
     file: string;
@@ -552,7 +552,7 @@ export abstract class StarknetWrapper {
             from_address: fromAddress,
             to_address: toAddress,
             entry_point_selector: hash.getSelectorFromName(functionName),
-            payload: inputs.map((item) => toHex(toBN(item)))
+            payload: inputs.map((item) => number.toHex(number.toBN(item)))
         };
 
         const response = await axios.post(
