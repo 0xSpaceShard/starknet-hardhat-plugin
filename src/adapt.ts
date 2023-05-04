@@ -1,11 +1,11 @@
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { HEXADECIMAL_REGEX, LEN_SUFFIX } from "./constants";
+import { HEXADECIMAL_REGEX, LEN_SUFFIX_DEPRECATED } from "./constants";
 import * as starknet from "./starknet-types";
 import { StringMap } from "./types";
 
 const NAMED_TUPLE_DELIMITER = ": ";
 const ARGUMENTS_DELIMITER = ", ";
-const COMMON_TYPES = [
+const COMMON_NUMERIC_TYPES = [
     "felt",
     "core::felt252",
     "core::integer::u8",
@@ -16,6 +16,9 @@ const COMMON_TYPES = [
     "core::integer::u256",
     "core::starknet::contract_address::ContractAddress"
 ];
+
+const ARRAY_TYPE_PREFIX = "core::array::Array::<";
+const ARRAY_TYPE_SUFFIX = ">";
 
 function isNumeric(value: { toString: () => string }) {
     if (value === undefined || value === null) {
@@ -35,12 +38,44 @@ function toNumericString(value: { toString: () => string }) {
     return nonNegativeNum.toString();
 }
 
-function isNamedTuple(type: string) {
+function isNamedTuple(type: string): boolean {
     return type.includes(NAMED_TUPLE_DELIMITER);
 }
 
-function isTuple(type: string) {
+function isTuple(type: string): boolean {
     return type[0] === "(" && type[type.length - 1] === ")";
+}
+
+function isArrayDeprecated(type: string): boolean {
+    return type.endsWith("*");
+}
+
+function isArray(type: string): boolean {
+    return type.startsWith(ARRAY_TYPE_PREFIX) && type.endsWith(ARRAY_TYPE_SUFFIX);
+}
+
+function isBool(type: string): boolean {
+    return type == "core::bool";
+}
+
+function validateAndConvertBooleanInput(value: any, errorMsg: string): string {
+    if (typeof value !== "boolean" && typeof value !== "number") {
+        throw new StarknetPluginError(errorMsg);
+    }
+
+    const numericValue = Number(value);
+    if (numericValue !== 0 && numericValue !== 1) {
+        throw new StarknetPluginError(errorMsg);
+    }
+    return toNumericString(numericValue);
+}
+
+function convertOutputToBoolean(type: bigint): boolean {
+    return type ? true : false;
+}
+
+function outputNameOrDefault(name?: string): string {
+    return name || "response";
 }
 
 // Can't use String.split since ':' also can be inside type
@@ -137,13 +172,16 @@ export function adaptInputUtil(
     functionName: string,
     input: any,
     inputSpecs: starknet.Argument[],
-    abi: starknet.Abi
+    abi: starknet.Abi,
+    isCairo1: boolean
 ): string[] {
     const adapted: string[] = [];
 
-    // User won't pass array length as an argument, so subtract the number of array elements to the expected amount of arguments
-    const countArrays = inputSpecs.filter((i) => i.type.endsWith("*")).length;
-    const expectedInputCount = inputSpecs.length - countArrays;
+    // User won't pass array length as an argument for Cairo 0.x, so subtract the number of array elements to the expected amount of arguments
+    const countDeprecatedArrays = isCairo1
+        ? 0
+        : inputSpecs.filter((i) => isArrayDeprecated(i.type)).length;
+    const expectedInputCount = inputSpecs.length - countDeprecatedArrays;
 
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
@@ -158,19 +196,19 @@ export function adaptInputUtil(
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
-        if (COMMON_TYPES.includes(inputSpec.type)) {
+        if (COMMON_NUMERIC_TYPES.includes(inputSpec.type)) {
             const errorMsg =
                 `${functionName}: Expected "${inputSpec.name}" to be a felt (Numeric); ` +
                 `got: ${typeof currentValue}`;
             if (isNumeric(currentValue)) {
                 adapted.push(toNumericString(currentValue));
-            } else if (inputSpec.name.endsWith(LEN_SUFFIX)) {
+            } else if (!isCairo1 && inputSpec.name.endsWith(LEN_SUFFIX_DEPRECATED)) {
                 const nextSpec = inputSpecs[i + 1];
-                const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX.length);
+                const arrayName = inputSpec.name.slice(0, -LEN_SUFFIX_DEPRECATED.length);
                 if (
                     nextSpec &&
                     nextSpec.name === arrayName &&
-                    nextSpec.type.endsWith("*") &&
+                    isArrayDeprecated(nextSpec.type) &&
                     arrayName in input
                 ) {
                     // will add array length in next iteration
@@ -180,13 +218,17 @@ export function adaptInputUtil(
             } else {
                 throw new StarknetPluginError(errorMsg);
             }
-        } else if (inputSpec.type.endsWith("*")) {
+        } else if (isBool(inputSpec.type)) {
+            const errorMsg = `${functionName}: Expected "${inputSpec.name}" to be a boolean, or 0/1; got ${currentValue}`;
+            const value = validateAndConvertBooleanInput(currentValue, errorMsg);
+            adapted.push(value);
+        } else if (isArrayDeprecated(inputSpec.type)) {
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
                 throw new StarknetPluginError(msg);
             }
 
-            const lenName = `${inputSpec.name}${LEN_SUFFIX}`;
+            const lenName = `${inputSpec.name}${LEN_SUFFIX_DEPRECATED}`;
             if (lastSpec.name !== lenName || lastSpec.type !== "felt") {
                 const msg = `${functionName}: Array size argument ${lenName} (felt) must appear right before ${inputSpec.name} (${inputSpec.type}).`;
                 throw new StarknetPluginError(msg);
@@ -195,6 +237,25 @@ export function adaptInputUtil(
             const inputSpecArrayElement = {
                 name: inputSpec.name,
                 type: inputSpec.type.slice(0, -1)
+            };
+
+            adapted.push(currentValue.length.toString());
+            for (const element of currentValue) {
+                adaptComplexInput(element, inputSpecArrayElement, abi, adapted);
+            }
+        } else if (isArray(inputSpec.type)) {
+            if (!Array.isArray(currentValue)) {
+                const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
+                throw new StarknetPluginError(msg);
+            }
+
+            // Strip the core::Array::array prefix and suffix
+            const inputSpecArrayElement = {
+                name: inputSpec.name,
+                type: inputSpec.type.slice(
+                    ARRAY_TYPE_PREFIX.length,
+                    inputSpec.type.length - ARRAY_TYPE_SUFFIX.length
+                )
             };
 
             adapted.push(currentValue.length.toString());
@@ -231,13 +292,19 @@ function adaptComplexInput(
     if (input === undefined || input === null) {
         throw new StarknetPluginError(`${inputSpec.name} is ${input}`);
     }
-    if (COMMON_TYPES.includes(type)) {
+    if (COMMON_NUMERIC_TYPES.includes(type)) {
         if (isNumeric(input)) {
             adaptedArray.push(toNumericString(input));
             return;
         }
         const msg = `Expected ${inputSpec.name} to be a felt`;
         throw new StarknetPluginError(msg);
+    }
+    if (isBool(type)) {
+        const msg = `Expected ${inputSpec.name} to be a boolean or 0/1; got ${input}`;
+        const value = validateAndConvertBooleanInput(input, msg);
+        adaptedArray.push(value);
+        return;
     }
 
     if (isTuple(type)) {
@@ -304,7 +371,7 @@ function adaptStructInput(
     }
 
     const struct = <starknet.Struct>abi[type];
-    const countArrays = struct.members.filter((i) => i.type.endsWith("*")).length;
+    const countArrays = struct.members.filter((i) => isArrayDeprecated(i.type)).length;
     const expectedInputCount = struct.members.length - countArrays;
 
     // Initialize an array with the user input
@@ -349,11 +416,13 @@ export function adaptOutputUtil(
 
     for (const outputSpec of outputSpecs) {
         const currentValue = result[resultIndex];
-        if (COMMON_TYPES.includes(outputSpec.type)) {
-            outputSpec.name = outputSpec.name ?? "response";
-            adapted[outputSpec.name] = currentValue;
+        if (COMMON_NUMERIC_TYPES.includes(outputSpec.type)) {
+            adapted[outputNameOrDefault(outputSpec.name)] = currentValue;
             resultIndex++;
-        } else if (outputSpec.type.endsWith("*")) {
+        } else if (isBool(outputSpec.type)) {
+            adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToBoolean(currentValue);
+            resultIndex++;
+        } else if (isArrayDeprecated(outputSpec.type)) {
             // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
             if (lastSpec.type !== "felt") {
                 const msg = `Array size argument (felt) must appear right before ${outputSpec.name} (${outputSpec.type}).`;
@@ -366,7 +435,7 @@ export function adaptOutputUtil(
 
             const structArray = [];
 
-            // Iterate over the struct array, starting at index, starting at `resultIndex`
+            // Iterate over the struct array, starting with results at `resultIndex`
             for (let i = 0; i < arrLength; i++) {
                 // Generate a struct with each element of the array and push it to `structArray`
                 const ret = generateComplexOutput(
@@ -380,10 +449,35 @@ export function adaptOutputUtil(
                 resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputSpec.name] = structArray;
+            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
+        } else if (isArray(outputSpec.type)) {
+            const outputSpecArrayElementType = outputSpec.type.slice(
+                ARRAY_TYPE_PREFIX.length,
+                outputSpec.type.length - ARRAY_TYPE_SUFFIX.length
+            );
+            const arrLength = Number(currentValue);
+            resultIndex++;
+
+            const structArray = [];
+
+            // Iterate over the struct array, starting with results at `resultIndex`
+            for (let i = 0; i < arrLength; i++) {
+                // Generate a struct with each element of the array and push it to `structArray`
+                const ret = generateComplexOutput(
+                    result,
+                    resultIndex,
+                    outputSpecArrayElementType,
+                    abi
+                );
+                structArray.push(ret.generatedComplex);
+                // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
+                resultIndex = ret.newRawIndex;
+            }
+            // New resultIndex is the raw index generated from the last struct
+            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
-            adapted[outputSpec.name] = ret.generatedComplex;
+            adapted[outputNameOrDefault(outputSpec.name)] = ret.generatedComplex;
             resultIndex = ret.newRawIndex;
         }
 
@@ -402,9 +496,16 @@ export function adaptOutputUtil(
  * @returns an object consisting of the next unused index and the generated tuple/struct itself
  */
 function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
-    if (COMMON_TYPES.includes(type)) {
+    if (COMMON_NUMERIC_TYPES.includes(type)) {
         return {
             generatedComplex: raw[rawIndex],
+            newRawIndex: rawIndex + 1
+        };
+    }
+
+    if (isBool(type)) {
+        return {
+            generatedComplex: convertOutputToBoolean(raw[rawIndex]),
             newRawIndex: rawIndex + 1
         };
     }

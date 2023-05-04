@@ -39,7 +39,8 @@ export type TxStatus =
 
 export type InvokeResponse = string;
 
-export type StarknetContractFactoryConfig = StarknetContractConfig & {
+export type StarknetContractFactoryConfig = {
+    abiPath: string;
     casmPath?: string;
     metadataPath: string;
     hre: HardhatRuntimeEnvironment;
@@ -48,6 +49,7 @@ export type StarknetContractFactoryConfig = StarknetContractConfig & {
 export interface StarknetContractConfig {
     abiPath: string;
     hre: HardhatRuntimeEnvironment;
+    isCairo1: boolean;
 }
 
 export type Numeric = number | bigint;
@@ -452,7 +454,8 @@ export class StarknetContractFactory {
             this.constructorAbi.name,
             constructorArguments,
             this.constructorAbi.inputs,
-            this.abi
+            this.abi,
+            this.isCairo1()
         );
     }
 
@@ -473,7 +476,8 @@ export class StarknetContractFactory {
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
-            hre: this.hre
+            hre: this.hre,
+            isCairo1: this.isCairo1()
         });
         contract.address = address;
         return contract;
@@ -498,6 +502,7 @@ export class StarknetContractFactory {
 export class StarknetContract {
     private hre: HardhatRuntimeEnvironment;
     private abi: starknet.Abi;
+    private isCairo1: boolean;
     private eventsSpecifications: starknet.EventAbi;
     private abiPath: string;
     private _address: string;
@@ -506,6 +511,7 @@ export class StarknetContract {
     constructor(config: StarknetContractConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
+        this.isCairo1 = config.isCairo1;
         this.abi = readAbi(this.abiPath);
         this.eventsSpecifications = extractEventSpecifications(this.abi);
     }
@@ -723,7 +729,7 @@ export class StarknetContract {
             throw new StarknetPluginError("Arguments should be passed in the form of an object.");
         }
 
-        return adaptInputUtil(functionName, args, func.inputs, this.abi);
+        return adaptInputUtil(functionName, args, func.inputs, this.abi, this.isCairo1);
     }
 
     /**
