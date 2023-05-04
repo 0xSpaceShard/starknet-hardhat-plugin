@@ -49,7 +49,7 @@ export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
 
-export const LEN_SUFFIX = "_len";
+export const LEN_SUFFIX_DEPRECATED = "_len";
 
 export const SHORT_STRING_MAX_CHARACTERS = 31;
 

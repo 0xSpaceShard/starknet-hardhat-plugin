@@ -191,6 +191,7 @@ These examples are inspired by the official [Starknet Python tutorial](https://w
     -   the extension can be omitted:
         -   `getContractFactory("subdir/MyContract")`
         -   `getContractFactory("MyContract")`
+-   Nested arrays are currently not supported (eg. `core::array::Array::<core::array::Array<felt252>>`)
 
 ### Test examples
 
