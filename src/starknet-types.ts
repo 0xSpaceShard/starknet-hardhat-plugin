@@ -29,7 +29,8 @@ export interface CairoFunction {
 }
 
 export interface EventSpecification {
-    data: Argument[];
+    data?: Argument[];
+    inputs?: Argument[];
     keys: string[];
     name: string;
     type: "event";

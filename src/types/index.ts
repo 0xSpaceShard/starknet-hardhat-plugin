@@ -762,7 +762,8 @@ export class StarknetContract {
                 throw new StarknetPluginError(msg);
             }
 
-            const adapted = adaptOutputUtil(rawEventData, eventSpecification.data, this.abi);
+            const inputSpecs = this.isCairo1 ? eventSpecification.inputs : eventSpecification.data;
+            const adapted = adaptOutputUtil(rawEventData, inputSpecs, this.abi);
             decodedEvents.push({ name: eventSpecification.name, data: adapted });
         }
 
