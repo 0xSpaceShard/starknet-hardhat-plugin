@@ -13,7 +13,6 @@ const COMMON_NUMERIC_TYPES = [
     "core::integer::u32",
     "core::integer::u64",
     "core::integer::u128",
-    "core::integer::u256",
     "core::starknet::contract_address::ContractAddress"
 ];
 
@@ -58,6 +57,10 @@ function isBool(type: string): boolean {
     return type == "core::bool";
 }
 
+function isU256(type: string): boolean {
+    return type == "core::integer::u256";
+}
+
 function validateAndConvertBooleanInput(value: any, errorMsg: string): string {
     if (typeof value !== "boolean" && typeof value !== "number") {
         throw new StarknetPluginError(errorMsg);
@@ -70,8 +73,27 @@ function validateAndConvertBooleanInput(value: any, errorMsg: string): string {
     return toNumericString(numericValue);
 }
 
+const U128_MAX = (BigInt(1) << BigInt(128)) - BigInt(1);
+
+function validateAndConvertU256Input(value: any, errorMsg: string): string[] {
+    if (typeof value !== "number" && typeof value !== "bigint") {
+        throw new StarknetPluginError(errorMsg);
+    }
+
+    value = BigInt(value);
+
+    const lo = value & U128_MAX;
+    const hi = value >> BigInt(128);
+
+    return [toNumericString(lo), toNumericString(hi)];
+}
+
 function convertOutputToBoolean(type: bigint): boolean {
     return type ? true : false;
+}
+
+function convertOutputToU256(lo: bigint, hi: bigint): bigint {
+    return (BigInt(hi) << BigInt(128)) | BigInt(lo);
 }
 
 function outputNameOrDefault(name?: string): string {
@@ -222,6 +244,10 @@ export function adaptInputUtil(
             const errorMsg = `${functionName}: Expected "${inputSpec.name}" to be a boolean, or 0/1; got ${currentValue}`;
             const value = validateAndConvertBooleanInput(currentValue, errorMsg);
             adapted.push(value);
+        } else if (isU256(inputSpec.type)) {
+            const errorMsg = `${functionName}: Expected "${inputSpec.name}" to be numeric, got ${currentValue}`;
+            const values = validateAndConvertU256Input(currentValue, errorMsg);
+            adapted.push(...values);
         } else if (isArrayDeprecated(inputSpec.type)) {
             if (!Array.isArray(currentValue)) {
                 const msg = `${functionName}: Expected ${inputSpec.name} to be a ${inputSpec.type}`;
@@ -304,6 +330,13 @@ function adaptComplexInput(
         const msg = `Expected ${inputSpec.name} to be a boolean or 0/1; got ${input}`;
         const value = validateAndConvertBooleanInput(input, msg);
         adaptedArray.push(value);
+        return;
+    }
+
+    if (isU256(type)) {
+        const msg = `Expected ${inputSpec.name} to be numeric; got ${input}`;
+        const values = validateAndConvertU256Input(input, msg);
+        adaptedArray.push(...values);
         return;
     }
 
@@ -422,6 +455,11 @@ export function adaptOutputUtil(
         } else if (isBool(outputSpec.type)) {
             adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToBoolean(currentValue);
             resultIndex++;
+        } else if (isU256(outputSpec.type)) {
+            const lo = currentValue;
+            const hi = result[++resultIndex];
+            adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToU256(lo, hi);
+            resultIndex++;
         } else if (isArrayDeprecated(outputSpec.type)) {
             // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
             if (lastSpec.type !== "felt") {
@@ -507,6 +545,13 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
         return {
             generatedComplex: convertOutputToBoolean(raw[rawIndex]),
             newRawIndex: rawIndex + 1
+        };
+    }
+
+    if (isU256(type)) {
+        return {
+            generatedComplex: convertOutputToU256(raw[rawIndex], raw[rawIndex + 1]),
+            newRawIndex: rawIndex + 2
         };
     }
 
