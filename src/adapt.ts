@@ -10,7 +10,7 @@ const COMMON_NUMERIC_TYPES = [
     "core::felt252",
     "core::integer::u8",
     "core::integer::u16",
-    "core::integer::u38",
+    "core::integer::u32",
     "core::integer::u64",
     "core::integer::u128",
     "core::integer::u256",
