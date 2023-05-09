@@ -574,8 +574,6 @@ function getFullImageName(image: Image): string {
     return `${image.repository}:${image.tag}`;
 }
 
-type String2String = { [path: string]: string };
-
 export class DockerWrapper extends StarknetWrapper {
     constructor(
         private image: Image,
@@ -612,16 +610,6 @@ export class DockerWrapper extends StarknetWrapper {
     }
 
     public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
-        const binds: String2String = {};
-
-        if (options.abi) {
-            binds[options.abi] = options.abi;
-        }
-
-        if (options.accountDir) {
-            binds[options.accountDir] = options.accountDir;
-        }
-
         const preparedOptions = this.prepareInteractOptions(options);
         const executed = this.execute("starknet", preparedOptions);
         return executed;
