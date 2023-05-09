@@ -13,7 +13,8 @@ const COMMON_NUMERIC_TYPES = [
     "core::integer::u32",
     "core::integer::u64",
     "core::integer::u128",
-    "core::starknet::contract_address::ContractAddress"
+    "core::starknet::contract_address::ContractAddress",
+    "core::starknet::class_hash::ClassHash"
 ];
 
 const ARRAY_TYPE_PREFIX = "core::array::Array::<";
