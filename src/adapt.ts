@@ -14,7 +14,8 @@ const COMMON_NUMERIC_TYPES = [
     "core::integer::u64",
     "core::integer::u128",
     "core::starknet::contract_address::ContractAddress",
-    "core::starknet::class_hash::ClassHash"
+    "core::starknet::class_hash::ClassHash",
+    "core::starknet::eth_address::EthAddress"
 ];
 
 const ARRAY_TYPE_PREFIX = "core::array::Array::<";
@@ -209,9 +210,8 @@ export function adaptInputUtil(
     // Initialize an array with the user input
     const inputLen = Object.keys(input || {}).length;
     if (expectedInputCount != inputLen) {
-        const msg = `${functionName}: Expected ${expectedInputCount} argument${
-            expectedInputCount === 1 ? "" : "s"
-        }, got ${inputLen}.`;
+        const msg = `${functionName}: Expected ${expectedInputCount} argument${expectedInputCount === 1 ? "" : "s"
+            }, got ${inputLen}.`;
         throw new StarknetPluginError(msg);
     }
 
@@ -347,9 +347,8 @@ function adaptComplexInput(
             // Initialize an array with the user input
             const inputLen = Object.keys(input || {}).length;
             if (inputLen !== memberTypes.length) {
-                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                    memberTypes.length === 1 ? "" : "s"
-                }, got ${inputLen}.`;
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${memberTypes.length === 1 ? "" : "s"
+                    }, got ${inputLen}.`;
                 throw new StarknetPluginError(msg);
             }
 
@@ -365,9 +364,8 @@ function adaptComplexInput(
             }
 
             if (input.length != memberTypes.length) {
-                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${
-                    memberTypes.length === 1 ? "" : "s"
-                }, got ${input.length}.`;
+                const msg = `"${inputSpec.name}": Expected ${memberTypes.length} member${memberTypes.length === 1 ? "" : "s"
+                    }, got ${input.length}.`;
                 throw new StarknetPluginError(msg);
             }
 
@@ -412,9 +410,8 @@ function adaptStructInput(
     const inputLen = Object.keys(input || {}).length;
 
     if (expectedInputCount != inputLen) {
-        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${
-            expectedInputCount === 1 ? "" : "s"
-        }, got ${inputLen}.`;
+        const msg = `"${inputSpec.name}": Expected ${expectedInputCount} member${expectedInputCount === 1 ? "" : "s"
+            }, got ${inputLen}.`;
         throw new StarknetPluginError(msg);
     }
 
