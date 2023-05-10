@@ -180,10 +180,56 @@ export abstract class Account {
         );
     }
 
+    private async estimateDeclareV2Fee(
+        contractFactory: StarknetContractFactory,
+        options: EstimateFeeOptions = {}
+    ): Promise<starknet.FeeEstimation> {
+        const maxFee = (options.maxFee || 0).toString();
+        const version = DECLARE_VERSION;
+        const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+
+        const hre = await import("hardhat");
+        const chainId = hre.starknet.networkConfig.starknetChainId;
+
+        const compiledClassHash = await hre.starknetWrapper.getCompiledClassHash(
+            contractFactory.casmPath
+        );
+
+        const classHash = await hre.starknetWrapper.getSierraContractClassHash(
+            contractFactory.metadataPath
+        );
+
+        const calldata = [classHash];
+        const messageHash = calculateDeclareV2TxHash(
+            this.address,
+            calldata,
+            maxFee.toString(),
+            chainId,
+            [nonce.toString(), compiledClassHash]
+        );
+
+        const signatures = this.getSignatures(messageHash);
+        const data = {
+            type: "DECLARE",
+            sender_address: this.address,
+            compiled_class_hash: compiledClassHash,
+            contract_class: readCairo1Contract(contractFactory.metadataPath).getCompiledClass(),
+            signature: bnToDecimalStringArray(signatures || []),
+            version: numericToHexString(version),
+            nonce: numericToHexString(nonce)
+        };
+
+        return await sendEstimateFeeTx(data);
+    }
+
     async estimateDeclareFee(
         contractFactory: StarknetContractFactory,
         options: EstimateFeeOptions = {}
     ): Promise<starknet.FeeEstimation> {
+        if (contractFactory.isCairo1()) {
+            return await this.estimateDeclareV2Fee(contractFactory, options);
+        }
+
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
         const maxFee = (options.maxFee || 0).toString();
 
@@ -464,16 +510,19 @@ export abstract class Account {
         contractFactory: StarknetContractFactory,
         options: DeclareOptions = {}
     ): Promise<string> {
-        const maxFee = options?.maxFee;
-        if (!maxFee) {
-            const msg =
-                "maxFee must be provided to send declare transactions.\n" +
-                "A value of '0' for 'maxFee' is not supported.";
+        let maxFee = options?.maxFee;
+        if (maxFee && options?.overhead) {
+            const msg = "maxFee and overhead cannot be specified together";
             throw new StarknetPluginError(msg);
         }
 
-        const version = DECLARE_VERSION;
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
+        if (maxFee === undefined || maxFee === null) {
+            const estimatedDeclareFee = await this.estimateDeclareV2Fee(contractFactory, options);
+            maxFee = estimatedFeeToMaxFee(estimatedDeclareFee.amount, options?.overhead);
+        }
+
+        const version = DECLARE_VERSION;
         const hre = await import("hardhat");
         const chainId = hre.starknet.networkConfig.starknetChainId;
 
