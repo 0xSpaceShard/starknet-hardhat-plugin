@@ -191,10 +191,10 @@ export abstract class Account {
         const hre = await import("hardhat");
         const chainId = hre.starknet.networkConfig.starknetChainId;
 
-        let compiledClassHash = await hre.starknetWrapper.getCompiledClassHash(
+        const compiledClassHash = await hre.starknetWrapper.getCompiledClassHash(
             contractFactory.casmPath
         );
-        compiledClassHash = numericToHexString(BigInt(compiledClassHash));
+
         const classHash = await hre.starknetWrapper.getSierraContractClassHash(
             contractFactory.metadataPath
         );

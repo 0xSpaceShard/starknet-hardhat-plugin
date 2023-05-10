@@ -215,7 +215,7 @@ export function calculateDeclareV2TxHash(
 
 export async function sendDeclareV2Tx(
     signatures: string[],
-    classHash: string,
+    compiledClassHash: string,
     maxFee: Numeric,
     senderAddress: string,
     version: Numeric,
@@ -229,7 +229,7 @@ export async function sendDeclareV2Tx(
             contract_class: contractClass.getCompiledClass(),
             signature: signatures,
             sender_address: senderAddress,
-            compiled_class_hash: number.toHex(number.toBN(classHash)),
+            compiled_class_hash: compiledClassHash,
             version: numericToHexString(version),
             nonce: numericToHexString(nonce),
             max_fee: numericToHexString(maxFee)

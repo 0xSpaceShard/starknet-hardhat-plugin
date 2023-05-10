@@ -42,7 +42,7 @@ async def get_compiled_class_hash(args):
         with open(casm_path, encoding="utf-8") as casm_file:
             compiled_class = CompiledClass.loads(casm_file.read())
         compiled_class_hash = compute_compiled_class_hash(compiled_class)
-        print(compiled_class_hash)
+        print(hex(compiled_class_hash))
         return 0
     except Exception as err:
         print(err, file=sys.stderr)
