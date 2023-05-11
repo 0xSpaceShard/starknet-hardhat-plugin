@@ -17,7 +17,7 @@ const config = {
     favicon: "img/logo.svg",
     // GitHub pages deployment config.
     // If you aren't using GitHub pages, you don't need these.
-    organizationName: "SpaceShard", // Usually your GitHub org/user name.
+    organizationName: "0xSpaceShard", // Usually your GitHub org/user name.
     projectName: "starknet-hardhat-plugin", // Usually your repo name.
 
     // Even if you don't use internalization, you can use this field to set useful
