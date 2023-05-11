@@ -83,7 +83,7 @@ Bear in mind that each workflow consumes credits. Track the spending [here](http
 
 The whole workflow is defined in `.circleci/config.yml` - you may find it somewhat chaotic as it uses dependency caching (we kind of sacrificed config clarity for performance).
 
-Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [spaceshard CircleCI context](https://app.circleci.com/settings/organization/github/0xSpaceShard/contexts/c36fa213-2511-465b-b303-0d35d76b42eb?return-to=https%3A%2F%2Fapp.circleci.com%2Fpipelines%2Fgithub%2FShard-Labs%2Fstarknet-hardhat-plugin). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
+Script `scripts/set-alpha-vars.sh` expects account information to be set through environment variables. These variables are defined in [spaceshard CircleCI context](https://app.circleci.com/settings/organization/github/0xSpaceShard/contexts/c36fa213-2511-465b-b303-0d35d76b42eb). If you upload a new account (with new keys), you cannot modify existing variables but have to delete old ones and create new ones.
 
 To skip running tests on CircleCI, add `[skip ci]` in the first 250 characters of the commit message.
 
