@@ -62,7 +62,7 @@ This plugin defines the following Hardhat commands (also called tasks):
 $ npx hardhat starknet-compile-deprecated [PATH...] [--cairo-path "<LIB_PATH1>:<LIB_PATH2>:..."] [--account-contract] [--disable-hint-validation]
 ```
 
-If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
+Compiles Starknet Cairo 0 contracts. If no paths are provided, all Starknet contracts in the default contracts directory are compiled. Paths can be files and directories.
 
 `--cairo-path` allows specifying the locations of imported files, if necessary. Separate them with a colon (:), e.g. `--cairo-path='path/to/lib1:path/to/lib2'`
 
@@ -73,10 +73,10 @@ If no paths are provided, all Starknet contracts in the default contracts direct
 ### `starknet-compile`
 
 ```
-$ npx hardhat starknet-compile [PATH...] [--manifest-path <PATH>]
+$ npx hardhat starknet-compile [PATH...] [--cairo1-bin-dir <PATH>]
 ```
 
-Compiles Starknet cairo1 contracts in the provided path. Paths can be files and directories. You can use a custom compiler by providing the path of its `Cargo.toml` to `--manifest-path` or to the `manifestPath` option in your hardhat config file.
+Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. You can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your hardhat config file.
 
 ### `starknet-verify`
 
@@ -527,26 +527,15 @@ module.exports = {
 };
 ```
 
-### Manifest Path
+### Custom Cairo 1 compilation
 
-Allows to specify locally installed cairo1 compiler path. This can be set both on `hardhat.config.ts` file and throught the CLI.
-
-```typescript
-module.exports = {
-    starknet: {
-        manifestPath: "path/to/Cargo.toml"
-    }
-};
-```
-
-### Compiler version
-
-If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version. To specify locally installed cairo1 compiler path, this is how you can set it:
+If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version (currently alpha.6). To specify your custom Cairo 1 compiler, you need to provide the path to the directory with its binary executables (likely a subdirectory of the target directory of your compiler repo). This can be configured in `hardhat.config.ts` or in [the CLI](#starknet-compile).
 
 ```typescript
 module.exports = {
     starknet: {
-        manifestPath: "path/to/my-compiler/Cargo.toml"
+        // if you build with `cargo build --bin starknet-compile --bin starknet-sierra-compile --release`
+        cairo1BinDir: "path/to/compiler/target/release/"
     }
 };
 ```

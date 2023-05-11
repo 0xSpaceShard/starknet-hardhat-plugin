@@ -231,10 +231,10 @@ Remove cairo1BinDir to use the default dockerized cairo1 compiler OR specify a l
     }
 });
 
-task("starknet-compile-deprecated", "Compiles Starknet contracts")
+task("starknet-compile-deprecated", "Compiles Starknet (Cairo 0) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
-        "The paths to be used for deployment.\n" +
+        "The paths to be used for compilation.\n" +
             "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
             "If no paths are provided, the default contracts directory is traversed."
     )
@@ -247,7 +247,7 @@ task("starknet-compile-deprecated", "Compiles Starknet contracts")
     .addFlag("disableHintValidation", "Allows compiling a contract with any python code in hints.")
     .setAction(starknetDeprecatedCompileAction);
 
-task("starknet-compile", "Compiles Starknet cairo1 contracts")
+task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
