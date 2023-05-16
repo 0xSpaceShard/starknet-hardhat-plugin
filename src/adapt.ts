@@ -98,10 +98,6 @@ function convertOutputToU256(lo: bigint, hi: bigint): bigint {
     return (BigInt(hi) << BigInt(128)) | BigInt(lo);
 }
 
-function outputNameOrDefault(name?: string): string {
-    return name || "response";
-}
-
 // Can't use String.split since ':' also can be inside type
 // Ex: x : (y : felt, z: SomeStruct)
 function parseNamedTuple(namedTuple: string): starknet.Argument {
@@ -438,7 +434,7 @@ export function adaptOutputUtil(
     rawResult: string,
     outputSpecs: starknet.Argument[],
     abi: starknet.Abi
-): StringMap {
+): unknown {
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
@@ -452,15 +448,15 @@ export function adaptOutputUtil(
     for (const outputSpec of outputSpecs) {
         const currentValue = result[resultIndex];
         if (COMMON_NUMERIC_TYPES.includes(outputSpec.type)) {
-            adapted[outputNameOrDefault(outputSpec.name)] = currentValue;
+            adapted[outputSpec.name] = currentValue;
             resultIndex++;
         } else if (isBool(outputSpec.type)) {
-            adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToBoolean(currentValue);
+            adapted[outputSpec.name] = convertOutputToBoolean(currentValue);
             resultIndex++;
         } else if (isU256(outputSpec.type)) {
             const lo = currentValue;
             const hi = result[++resultIndex];
-            adapted[outputNameOrDefault(outputSpec.name)] = convertOutputToU256(lo, hi);
+            adapted[outputSpec.name] = convertOutputToU256(lo, hi);
             resultIndex++;
         } else if (isArrayDeprecated(outputSpec.type)) {
             // Assuming lastSpec refers to the array size argument; not checking its name - done during compilation
@@ -489,7 +485,7 @@ export function adaptOutputUtil(
                 resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
+            adapted[outputSpec.name] = structArray;
         } else if (isArray(outputSpec.type)) {
             const outputSpecArrayElementType = outputSpec.type.slice(
                 ARRAY_TYPE_PREFIX.length,
@@ -514,15 +510,21 @@ export function adaptOutputUtil(
                 resultIndex = ret.newRawIndex;
             }
             // New resultIndex is the raw index generated from the last struct
-            adapted[outputNameOrDefault(outputSpec.name)] = structArray;
+            adapted[outputSpec.name] = structArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
-            adapted[outputNameOrDefault(outputSpec.name)] = ret.generatedComplex;
+            adapted[outputSpec.name] = ret.generatedComplex;
             resultIndex = ret.newRawIndex;
         }
 
         lastSpec = outputSpec;
     }
+
+    // If adapted obj (StringMap) has undefined key then return only the value
+    if (outputSpecs.length === 1 && !outputSpecs[0].name) {
+        return adapted.undefined;
+    }
+
     return adapted;
 }
 
