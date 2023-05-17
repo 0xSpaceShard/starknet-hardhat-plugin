@@ -1,5 +1,5 @@
 {
-    "CAIRO_LANG": "0.11.0.2",
-    "STARKNET_DEVNET": "0.5.0",
-    "CAIRO_COMPILER": "v1.0.0-alpha.6"
+    "CAIRO_LANG": "0.11.1.1",
+    "STARKNET_DEVNET": "0.5.1",
+    "CAIRO_COMPILER": "v1.0.0-rc0"
 }
