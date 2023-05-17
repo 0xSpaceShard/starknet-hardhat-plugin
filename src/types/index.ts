@@ -389,24 +389,25 @@ export class StarknetContractFactory {
             throw new StarknetPluginError(msg);
         }
 
-        if (!casmJson?.entry_points_by_type?.CONSTRUCTOR) {
-            const msg = "Invalid .CASM structure: No CONSTRUCTOR in entry_points_by_type";
-            throw new StarknetPluginError(msg);
+        const constructors = casmJson?.entry_points_by_type?.CONSTRUCTOR;
+        if (!constructors || constructors.length === 0) {
+            return () => false;
         }
 
         // Can be removed after new cairo release.
-        if (casmJson.entry_points_by_type.CONSTRUCTOR.length > 1) {
+        if (constructors.length > 1) {
             const msg = "There can be at most 1 constructor.";
             throw new StarknetPluginError(msg);
         }
 
         // Can be simplified once starkware fixes multiple constructor issue.
         // Precomputed selector can be used if only 'constructor' name allowed
-        const selector = casmJson.entry_points_by_type.CONSTRUCTOR[0]?.selector;
+        const selector = constructors[0]?.selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
             return hash.getSelectorFromName(abiEntry.name) === selector;
         };
     }
+
     /**
      * Declare a contract class.
      * @param options optional arguments to class declaration
