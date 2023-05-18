@@ -434,7 +434,7 @@ export function adaptOutputUtil(
     rawResult: string,
     outputSpecs: starknet.Argument[],
     abi: starknet.Abi
-): unknown {
+): any {
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
     for (const num of splitStr) {
