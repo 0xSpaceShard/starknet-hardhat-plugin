@@ -165,7 +165,7 @@ Make sure you really want to interact with Devnet and that it is running and ava
     public async consumeMessageFromL2(
         l2ContractAddress: string,
         l1ContractAddress: string,
-        payload: number[]
+        payload: Numeric[]
     ) {
         const body = {
             l2_contract_address: l2ContractAddress,
