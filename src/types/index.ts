@@ -402,7 +402,7 @@ export class StarknetContractFactory {
 
         // Can be simplified once starkware fixes multiple constructor issue.
         // Precomputed selector can be used if only 'constructor' name allowed
-        const selector = constructors[0]?.selector;
+        const selector = constructors[0].selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
             return hash.getSelectorFromName(abiEntry.name) === selector;
         };
