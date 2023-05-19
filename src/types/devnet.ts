@@ -61,13 +61,13 @@ export interface Devnet {
      * Sends a mock message from L2 to L1
      * @param {string} l2ContractAddress - Address of the L2 contract.
      * @param {string} l1ContractAddress - Address of the L1 contract.
-     * @param {Array<number>} payload - Payload to send to the L1 network.
+     * @param {Array<Numeric>} payload - Payload to send to the L1 network.
      * @returns Message hash
      */
     consumeMessageFromL2: (
         l2ContractAddress: string,
         l1ContractAddress: string,
-        payload: Array<number>
+        payload: Array<Numeric>
     ) => Promise<L2ToL1MockTxResponse>;
 
     /**
