@@ -5,6 +5,7 @@ import { StarknetPluginError } from "../starknet-plugin-error";
 import { IntegratedDevnetLogger } from "./integrated-devnet-logger";
 import { StringMap } from "../types";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import axiosRetry from "axios-retry";
 
 function sleep(amountMillis: number): Promise<void> {
     return new Promise((resolve) => {
@@ -46,6 +47,7 @@ export async function getFreePort(): Promise<string> {
 export abstract class ExternalServer {
     protected childProcess: ChildProcess;
     private connected = false;
+    private connecting = false; // Flag indicating whether the proxy server is currently in the process of connecting
     private lastError: string = null;
     private _isDockerDesktop: boolean = null;
 
@@ -177,8 +179,10 @@ export abstract class ExternalServer {
     }
 
     public async post<T>(data: StringMap): Promise<T> {
+        await this.ensurePort();
         await this.ensureStarted();
 
+        axiosRetry(axios, { retryDelay: axiosRetry.exponentialDelay });
         const hre: HardhatRuntimeEnvironment = await import("hardhat");
 
         try {
@@ -193,10 +197,19 @@ export abstract class ExternalServer {
         }
     }
 
-    private async ensureStarted(): Promise<void> {
-        if (this.connected) {
+    private async ensurePort(): Promise<void> {
+        if (this.port) {
             return;
         }
+        this.port = await getFreePort();
+    }
+
+    private async ensureStarted(): Promise<void> {
+        if (this.connected || this.connecting) {
+            return;
+        }
+        this.connecting = true;
         await this.start();
+        this.connecting = false;
     }
 }
