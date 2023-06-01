@@ -6,7 +6,8 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
     CAIRO_1_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
 
     echo "Installing cairo compiler $CAIRO_1_COMPILER_TARGET_TAG"
-    # need rust to install cairo-rs-py
+    # need rust to install cairo-rs-py dependency of devnet
+    # need rust to install cairo compiler
     if rustc --version; then
         echo "rustc installed"
     else
@@ -27,7 +28,7 @@ if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
             --manifest-path cairo-compiler/Cargo.toml \
             --release
 
-        export CAIRO_1_COMPILER_DIR="cairo-compiler/target/release"
+        export CAIRO_1_COMPILER_DIR=$(realpath "cairo-compiler/target/release")
     fi
 
     $CAIRO_1_COMPILER_DIR/starknet-compile --version
