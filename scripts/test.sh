@@ -6,7 +6,7 @@ if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
     ./scripts/test-setup.sh
     ./scripts/install-devnet.sh
 fi
-source  ./scripts/setup-cairo1-compiler.sh
+source ./scripts/setup-cairo1-compiler.sh
 
 cd ./starknet-hardhat-example
 
@@ -23,8 +23,8 @@ fi
 
 function run_test() {
     test_case="$1"
-     network="$2"
-     test_name=$(basename $test_case)
+    network="$2"
+    test_name=$(basename $test_case)
 
     network_file="$test_case/network.json"
 
