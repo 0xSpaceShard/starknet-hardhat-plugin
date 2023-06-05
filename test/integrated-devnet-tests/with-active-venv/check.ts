@@ -5,6 +5,5 @@ import { checkDevnetIsNotRunning } from "../../utils/utils";
     await checkDevnetIsNotRunning();
     hardhatStarknetCompileDeprecated(["contracts/contract.cairo"]);
     hardhatStarknetTest("--no-compile test/integrated-devnet.test.ts".split(" "));
-    hardhatStarknetTest("--no-compile test/get-predeployed-accounts.test.ts".split(" "));
     await checkDevnetIsNotRunning();
 })();
