@@ -194,7 +194,5 @@ export async function getBalanceUtil(
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
     const result = await ethContract.call("balanceOf", { account: address });
-    const convertedBalance = uint256.uint256ToBN(result.balance).toString();
-
-    return BigInt(convertedBalance);
+    return uint256.uint256ToBN(result.balance);
 }

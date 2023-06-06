@@ -1,6 +1,8 @@
 import * as fs from "fs";
-import * as starknet from "../starknet-types";
-import { StarknetPluginError } from "../starknet-plugin-error";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { selector } from "starknet";
+
+import { adaptInputUtil, adaptOutputUtil } from "../adapt";
 import {
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
@@ -8,11 +10,10 @@ import {
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
 } from "../constants";
-import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
-import { adaptInputUtil, adaptOutputUtil } from "../adapt";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { hash } from "starknet";
+import { StarknetPluginError } from "../starknet-plugin-error";
+import * as starknet from "../starknet-types";
 import { StarknetWrapper } from "../starknet-wrappers";
+import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -246,7 +247,7 @@ function extractEventSpecifications(abi: starknet.Abi) {
     for (const abiEntryName in abi) {
         if (abi[abiEntryName].type === "event") {
             const event = <starknet.EventSpecification>abi[abiEntryName];
-            const encodedEventName = hash.getSelectorFromName(event.name);
+            const encodedEventName = selector.getSelectorFromName(event.name);
             events[encodedEventName] = event;
         }
     }
@@ -400,9 +401,9 @@ export class StarknetContractFactory {
 
         // Can be simplified once starkware fixes multiple constructor issue.
         // Precomputed selector can be used if only 'constructor' name allowed
-        const selector = constructors[0].selector;
+        const constructorSelector = constructors[0].selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
-            return hash.getSelectorFromName(abiEntry.name) === selector;
+            return selector.getSelectorFromName(abiEntry.name) === constructorSelector;
         };
     }
 

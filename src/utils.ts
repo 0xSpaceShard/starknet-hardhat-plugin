@@ -10,7 +10,7 @@ import {
     VmLang
 } from "hardhat/types";
 import path from "path";
-import { json, stark, CompiledContract } from "starknet";
+import { json, stark, LegacyCompiledContract } from "starknet";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -306,7 +306,7 @@ export class UDC {
 export function readContract(contractPath: string) {
     const parsedContract = json.parse(
         fs.readFileSync(contractPath).toString("ascii")
-    ) as CompiledContract;
+    ) as LegacyCompiledContract;
     return {
         ...parsedContract,
         program: stark.compressProgram(parsedContract.program)

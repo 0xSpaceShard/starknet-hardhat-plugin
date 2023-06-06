@@ -2,7 +2,8 @@ import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
 import axios from "axios";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import path from "path";
-import { hash, number } from "starknet";
+import { num, selector } from "starknet";
+
 import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 import {
     CAIRO1_COMPILE_BIN,
@@ -458,8 +459,8 @@ export abstract class StarknetWrapper {
         const body = {
             from_address: fromAddress,
             to_address: toAddress,
-            entry_point_selector: hash.getSelectorFromName(functionName),
-            payload: inputs.map((item) => number.toHex(number.toBN(item)))
+            entry_point_selector: selector.getSelectorFromName(functionName),
+            payload: inputs.map((item) => num.toHex(BigInt(item)))
         };
 
         const response = await axios.post(
