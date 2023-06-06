@@ -182,7 +182,7 @@ export abstract class ExternalServer {
         await this.ensurePort();
         await this.ensureStarted();
 
-        axiosRetry(axios, { retryDelay: axiosRetry.exponentialDelay });
+        axiosRetry(axios, { retries: 5, retryDelay: axiosRetry.exponentialDelay });
         const hre: HardhatRuntimeEnvironment = await import("hardhat");
 
         try {

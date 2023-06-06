@@ -1,6 +1,7 @@
 import { Image } from "@nomiclabs/hardhat-docker";
 import path from "path";
 import { DockerServer } from "./external-server/docker-server";
+import { getFreePort } from "./external-server/external-server";
 
 const PROXY_SERVER_FILE = "starknet_cli_wrapper.py";
 const PROXY_SERVER_HOST_PATH = path.join(__dirname, PROXY_SERVER_FILE);
@@ -39,6 +40,7 @@ export class StarknetDockerProxy extends DockerServer {
 
         // Check if Docker Desktop
         if (this.isDockerDesktop) {
+            this.port = await this.getPort();
             dockerArgs.push("-p", `${this.port}:${this.port}`);
         } else {
             dockerArgs.push("--network", "host");
@@ -48,6 +50,14 @@ export class StarknetDockerProxy extends DockerServer {
     }
 
     protected async getContainerArgs(): Promise<string[]> {
+        this.port = await this.getPort();
         return ["python3", PROXY_SERVER_CONTAINER_PATH, this.port];
+    }
+
+    protected async getPort(): Promise<string> {
+        if (!this.port) {
+            this.port = await getFreePort();
+        }
+        return this.port;
     }
 }
