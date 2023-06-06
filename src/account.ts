@@ -1,5 +1,4 @@
-import { ec } from "elliptic";
-import { ec as ellipticCurve, hash, number, Call, RawCalldata } from "starknet";
+import { ec, hash, selector, BigNumberish, Call, RawCalldata } from "starknet";
 
 import {
     calculateDeclareV2TxHash,
@@ -51,7 +50,7 @@ import {
 
 type ExecuteCallParameters = {
     to: bigint;
-    selector: number.BigNumberish;
+    selector: BigNumberish;
     data_offset: number;
     data_len: number;
 };
@@ -62,7 +61,6 @@ type ExecuteCallParameters = {
  */
 export abstract class Account {
     public publicKey: string;
-    public keyPair: ec.KeyPair;
 
     protected constructor(
         public starknetContract: StarknetContract,
@@ -70,9 +68,7 @@ export abstract class Account {
         public salt: string,
         protected deployed: boolean
     ) {
-        const signer = generateKeys(privateKey);
-        this.publicKey = signer.publicKey;
-        this.keyPair = signer.keyPair;
+        this.publicKey = ec.starkCurve.getStarkKey(privateKey);
     }
 
     /**
@@ -398,13 +394,14 @@ export abstract class Account {
 
         // Parse the Call array to create the objects which will be accepted by the contract
         callArray.forEach((call) => {
+            const calldata = call.calldata as BigNumberish[];
             executeCallArray.push({
                 to: BigInt(call.contractAddress),
-                selector: hash.starknetKeccak(call.entrypoint),
+                selector: selector.starknetKeccak(call.entrypoint),
                 data_offset: rawCalldata.length,
-                data_len: call.calldata.length
+                data_len: calldata.length
             });
-            rawCalldata.push(...call.calldata);
+            rawCalldata.push(...calldata);
         });
 
         const adaptedNonce = nonce.toString();
@@ -618,16 +615,17 @@ export class OpenZeppelinAccount extends Account {
         version: string,
         chainId: StarknetChainId
     ): string {
-        const hashable: Array<number.BigNumberish> = [callArray.length];
+        const hashable: BigNumberish[] = [callArray.length];
         const rawCalldata: RawCalldata = [];
         callArray.forEach((call) => {
+            const calldata = call.calldata as BigNumberish[];
             hashable.push(
                 call.contractAddress,
                 hash.starknetKeccak(call.entrypoint),
                 rawCalldata.length,
-                call.calldata.length
+                calldata.length
             );
-            rawCalldata.push(...call.calldata);
+            rawCalldata.push(...calldata);
         });
 
         hashable.push(rawCalldata.length, ...rawCalldata);
@@ -645,7 +643,7 @@ export class OpenZeppelinAccount extends Account {
     }
 
     protected override getSignatures(messageHash: string): bigint[] {
-        return signMultiCall(this.publicKey, this.keyPair, messageHash);
+        return signMultiCall(messageHash, this.privateKey);
     }
 
     public override async estimateDeployAccountFee(): Promise<starknet.FeeEstimation> {
@@ -738,8 +736,7 @@ export class OpenZeppelinAccount extends Account {
         const contract = contractFactory.getContractAt(address);
 
         const { publicKey: expectedPubKey } = await contract.call("getPublicKey");
-        const keyPair = ellipticCurve.getKeyPair(number.toBN(privateKey.substring(2), "hex"));
-        const publicKey = ellipticCurve.getStarkKey(keyPair);
+        const publicKey = ec.starkCurve.getStarkKey(privateKey);
 
         if (BigInt(publicKey) !== expectedPubKey) {
             throw new StarknetPluginError(
@@ -767,7 +764,6 @@ export class ArgentAccount extends Account {
 
     public guardianPublicKey: string;
     public guardianPrivateKey: string;
-    public guardianKeyPair: ec.KeyPair;
 
     protected constructor(
         starknetContract: StarknetContract,
@@ -780,7 +776,6 @@ export class ArgentAccount extends Account {
         this.guardianPrivateKey = guardianPrivateKey;
         if (this.guardianPrivateKey) {
             const guardianSigner = generateKeys(this.guardianPrivateKey);
-            this.guardianKeyPair = guardianSigner.keyPair;
             this.guardianPublicKey = guardianSigner.publicKey;
         }
     }
@@ -843,7 +838,7 @@ export class ArgentAccount extends Account {
         const salt = options.salt || generateRandomSalt();
         const constructorCalldata = [
             this.IMPLEMENTATION_CLASS_HASH,
-            hash.getSelectorFromName("initialize"),
+            selector.getSelectorFromName("initialize"),
             "2",
             signer.publicKey,
             guardianPublicKey
@@ -869,16 +864,17 @@ export class ArgentAccount extends Account {
         version: string,
         chainId: StarknetChainId
     ): string {
-        const hashable: Array<number.BigNumberish> = [callArray.length];
+        const hashable: BigNumberish[] = [callArray.length];
         const rawCalldata: RawCalldata = [];
         callArray.forEach((call) => {
+            const calldata = call.calldata as BigNumberish[];
             hashable.push(
                 call.contractAddress,
-                hash.starknetKeccak(call.entrypoint),
+                selector.starknetKeccak(call.entrypoint),
                 rawCalldata.length,
-                call.calldata.length
+                calldata.length
             );
-            rawCalldata.push(...call.calldata);
+            rawCalldata.push(...calldata);
         });
 
         hashable.push(rawCalldata.length, ...rawCalldata);
@@ -896,13 +892,9 @@ export class ArgentAccount extends Account {
     }
 
     protected override getSignatures(messageHash: string): bigint[] {
-        const signatures = signMultiCall(this.publicKey, this.keyPair, messageHash);
+        const signatures = signMultiCall(messageHash, this.privateKey);
         if (this.guardianPrivateKey) {
-            const guardianSignatures = signMultiCall(
-                this.guardianPublicKey,
-                this.guardianKeyPair,
-                messageHash
-            );
+            const guardianSignatures = signMultiCall(messageHash, this.guardianPrivateKey);
             signatures.push(...guardianSignatures);
         }
         return signatures;
@@ -917,7 +909,7 @@ export class ArgentAccount extends Account {
 
         const constructorCalldata: string[] = [
             ArgentAccount.IMPLEMENTATION_CLASS_HASH,
-            hash.getSelectorFromName("initialize"),
+            selector.getSelectorFromName("initialize"),
             "2",
             this.publicKey,
             ArgentAccount.generateGuardianPublicKey(this.guardianPrivateKey)
@@ -974,7 +966,7 @@ export class ArgentAccount extends Account {
 
         const constructorCalldata: string[] = [
             ArgentAccount.IMPLEMENTATION_CLASS_HASH,
-            hash.getSelectorFromName("initialize"),
+            selector.getSelectorFromName("initialize"),
             "2",
             this.publicKey,
             ArgentAccount.generateGuardianPublicKey(this.guardianPrivateKey)
@@ -1013,16 +1005,12 @@ export class ArgentAccount extends Account {
         newGuardianPrivateKey?: string,
         invokeOptions?: InvokeOptions
     ): Promise<string> {
-        let guardianKeyPair: ec.KeyPair;
         let guardianPublicKey: string;
         if (!BigInt(newGuardianPrivateKey || 0)) {
             newGuardianPrivateKey = undefined;
             guardianPublicKey = undefined;
         } else {
-            guardianKeyPair = ellipticCurve.getKeyPair(
-                number.toBN(newGuardianPrivateKey.substring(2), "hex")
-            );
-            guardianPublicKey = ellipticCurve.getStarkKey(guardianKeyPair);
+            guardianPublicKey = ec.starkCurve.getStarkKey(newGuardianPrivateKey);
         }
 
         const call: CallParameters = {
@@ -1036,7 +1024,6 @@ export class ArgentAccount extends Account {
         // set after signing
         this.guardianPrivateKey = newGuardianPrivateKey;
         this.guardianPublicKey = guardianPublicKey;
-        this.guardianKeyPair = guardianKeyPair;
 
         return txHash;
     }
@@ -1063,8 +1050,7 @@ export class ArgentAccount extends Account {
         contract.setImplementation(implementationFactory);
 
         const { signer: expectedPubKey } = await contract.call("getSigner");
-        const keyPair = ellipticCurve.getKeyPair(number.toBN(privateKey.substring(2), "hex"));
-        const publicKey = ellipticCurve.getStarkKey(keyPair);
+        const publicKey = ec.starkCurve.getStarkKey(privateKey);
 
         if (expectedPubKey === BigInt(0)) {
             // not yet initialized

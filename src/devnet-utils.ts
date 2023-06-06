@@ -1,12 +1,11 @@
 import axios, { AxiosResponse, Method } from "axios";
+import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
+import { selector } from "starknet";
 
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
-
 import { MintResponse, L2ToL1Message } from "./starknet-types";
-import { hash } from "starknet";
-import { numericToHexString } from "./utils";
 import { Numeric } from "./types";
+import { numericToHexString } from "./utils";
 
 interface L1ToL2Message {
     address: string;
@@ -147,7 +146,7 @@ Make sure you really want to interact with Devnet and that it is running and ava
     ) {
         const body = {
             l2_contract_address: l2ContractAddress,
-            entry_point_selector: hash.getSelectorFromName(functionName),
+            entry_point_selector: selector.getSelectorFromName(functionName),
             l1_contract_address: l1ContractAddress,
             payload: payload.map((item) => numericToHexString(item)),
             nonce: numericToHexString(nonce),
