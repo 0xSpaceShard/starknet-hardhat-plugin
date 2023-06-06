@@ -7,9 +7,7 @@ module.exports = {
     networks: {
         integratedDevnet: {
             venv: "active",
-            url: "http://127.0.0.1:5050",
-            stderr: "STDOUT",
-            stdout: "STDOUT"
+            url: "http://127.0.0.1:5050"
         }
     }
 };
