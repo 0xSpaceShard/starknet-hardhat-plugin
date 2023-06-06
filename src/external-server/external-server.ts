@@ -182,6 +182,7 @@ export abstract class ExternalServer {
         await this.ensurePort();
         await this.ensureStarted();
 
+        // The default value of retries, which is 3, does not work on CircleCI
         axiosRetry(axios, { retries: 5, retryDelay: axiosRetry.exponentialDelay });
         const hre: HardhatRuntimeEnvironment = await import("hardhat");
 
