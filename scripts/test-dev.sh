@@ -68,7 +68,7 @@ fi
 
 if [[ "y" == "$RUN_SETUP" ]]; then
     echo ""
-    source ./scripts/setup-cairo1-compiler.sh
+    source ./scripts/setup-config-test-dependencies.sh
     rm -rf starknet-hardhat-example
     git clone -b "${EXAMPLE_REPO_BRANCH:=plugin}" --single-branch https://github.com/0xSpaceShard/starknet-hardhat-example.git
     cd starknet-hardhat-example
