@@ -5,6 +5,7 @@ import {
     hardhatStarknetTest
 } from "../../utils/cli-functions";
 import { copyFileSync } from "fs";
+import { assertContains, rmrfSync } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
 const contract1 = "duplicate_constructor.cairo";
@@ -19,6 +20,11 @@ const contract3Path = path.join("cairo1-contracts", contract3);
 copyFileSync(path.join(prefix, contract1), contract1Path);
 copyFileSync(path.join(prefix, contract2), contract2Path);
 copyFileSync(path.join(prefix, contract3), contract3Path);
+
+const exptectedErrorMsg = "Error: Expected at most one constructor.";
+const execution = hardhatStarknetCompile([contract1Path], true);
+assertContains(execution.stderr, exptectedErrorMsg);
+rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
 hardhatStarknetCompile(["cairo1-contracts/", "--add-pythonic-hints"]);
