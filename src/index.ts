@@ -51,7 +51,8 @@ import {
     starknetMigrateAction,
     starknetNewAccountAction,
     starknetDeployAccountAction,
-    starknetCompileCairo1Action
+    starknetCompileCairo1Action,
+    starknetBuildAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -235,7 +236,7 @@ task("starknet-compile-deprecated", "Compiles Starknet (Cairo 0) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths to be used for compilation.\n" +
-            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "Each of the provided paths is recursively looked into while searching for source files.\n" +
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
@@ -251,7 +252,7 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
-            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "Each of the provided paths is recursively looked into while searching for source files.\n" +
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
@@ -267,6 +268,15 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addOptionalParam("allowedLibfuncsListFile", "A file of the allowed libfuncs list to use.")
     .addFlag("addPythonicHints", "Add pythonic hints.")
     .setAction(starknetCompileCairo1Action);
+
+task("starknet-build", "Builds Scarb projects under provided paths")
+    .addOptionalVariadicPositionalParam(
+        "paths",
+        "The paths are source files of contracts to be compiled.\n" +
+            "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
+            "If no paths are provided, the default contracts directory is traversed."
+    )
+    .setAction(starknetBuildAction);
 
 extendEnvironment((hre) => {
     hre.starknet = {

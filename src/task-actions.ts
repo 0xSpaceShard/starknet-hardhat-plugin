@@ -32,6 +32,8 @@ import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
 import { StarknetConfig } from "./types/starknet";
+import { spawnSync } from "child_process";
+import * as toml from "toml";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -109,9 +111,9 @@ export async function starknetCompileCairo1Action(
         for (const file of files) {
             console.log("Compiling", file);
 
-            const suffix = file.replace(rootRegex, "");
-            const fileName = getFileName(suffix);
-            const dirPath = path.join(artifactsPath, suffix);
+            const dirSuffix = file.replace(rootRegex, "");
+            const fileName = getFileName(dirSuffix);
+            const dirPath = path.join(artifactsPath, dirSuffix);
             const outputPath = path.join(dirPath, `${fileName}${CAIRO1_SIERRA_SUFFIX}`);
 
             fs.mkdirSync(dirPath, { recursive: true });
@@ -207,9 +209,9 @@ export async function starknetDeprecatedCompileAction(
         const recompiler = new Recompiler(hre);
         for (const file of files) {
             console.log("Compiling", file);
-            const suffix = file.replace(rootRegex, "");
-            const fileName = getFileName(suffix);
-            const dirPath = path.join(artifactsPath, suffix);
+            const dirSuffix = file.replace(rootRegex, "");
+            const fileName = getFileName(dirSuffix);
+            const dirPath = path.join(artifactsPath, dirSuffix);
             const outputPath = path.join(dirPath, `${fileName}.json`);
             const abiPath = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
 
@@ -235,6 +237,106 @@ export async function starknetDeprecatedCompileAction(
 
     if (statusCode) {
         const msg = `Failed compilation of ${statusCode} contract${statusCode === 1 ? "" : "s"}.`;
+        throw new StarknetPluginError(msg);
+    }
+}
+
+export async function starknetBuildAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    // TODO check if scarb exists
+    const root = hre.config.paths.root;
+    const rootRegex = new RegExp("^" + root);
+
+    const defaultSourcesPath = hre.config.paths.starknetSources;
+    const traversablePaths: string[] = args.paths || [defaultSourcesPath];
+    const artifactsPath = hre.config.paths.starknetArtifacts;
+
+    const configFileName = "Scarb.toml";
+
+    let statusCode = 0;
+    const packageConfigPaths = [];
+    for (let traversablePath of traversablePaths) {
+        traversablePath = adaptPath(root, traversablePath);
+        checkSourceExists(traversablePath);
+        packageConfigPaths.push(...(await traverseFiles(traversablePath, configFileName)));
+    }
+
+    for (const packageConfigPath of packageConfigPaths) {
+        const packageConfig = toml.parse(fs.readFileSync(packageConfigPath, "utf-8").toString());
+        const packageName = packageConfig.package.name;
+
+        // strip Scarb.toml from path end to get $hardhat_project_root/cairo_dir/
+        const packageDir = packageConfigPath.replace(new RegExp(configFileName + "$"), "");
+        console.log(`Building package ${packageName} in ${packageDir}`);
+        // TODO hre.starknetWrapper.scarbBuild
+        // TODO check if config valid; e.g. both sierra and casm specified
+
+        const dirSuffix = packageDir.replace(rootRegex, ""); // cairo_dir/
+        const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/cairo_dir/
+
+        const execution = spawnSync("scarb", [
+            ...["--manifest-path", packageConfigPath],
+            ...["--target-dir", artifactDirPath],
+            "build"
+        ]);
+        // TODO processExecuted(execution);
+        if (execution.status) {
+            statusCode += 1;
+            console.error(execution.stderr);
+            continue;
+        }
+
+        // by default (dev mode, unlike the release mode), scarb stores artifacts in subdir "dev"
+        const scarbArtifactDirPath = path.join(artifactDirPath, "dev");
+        // load scarb's main build artifact
+        const mainPackageArtifactPath = path.join(
+            scarbArtifactDirPath,
+            `${packageName}.starknet_artifacts.json`
+        );
+        if (!fs.existsSync(mainPackageArtifactPath)) {
+            throw new StarknetPluginError(
+                `Error in building ${packageName}, could not find ${mainPackageArtifactPath}`
+            );
+        }
+        const mainPackageArtifact = JSON.parse(
+            fs.readFileSync(mainPackageArtifactPath, "utf-8").toString()
+        );
+
+        for (const contractEntry of mainPackageArtifact.contracts) {
+            const scarbSierraPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.sierra);
+            const scarbCasmPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.casm);
+            // package_contract (underscore separation)
+            const fileName = `${contractEntry.package_name}_${contractEntry.contract_name}`;
+
+            // artifact dir created by us, not the one created by scarb
+            const ourArtifactDirPath = path.join(artifactDirPath, `${fileName}.cairo`);
+            fs.mkdirSync(ourArtifactDirPath, { recursive: true });
+
+            // create artifacts compatible with our contract loading mehacnims
+            // to achieve this: link to scarb artifacts
+            const ourSierraPath = path.join(
+                ourArtifactDirPath,
+                `${fileName}${CAIRO1_SIERRA_SUFFIX}`
+            );
+            fs.copyFileSync(scarbSierraPath, ourSierraPath);
+
+            const ourCasmPath = path.join(
+                ourArtifactDirPath,
+                `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`
+            );
+            fs.copyFileSync(scarbCasmPath, ourCasmPath);
+
+            // Copy abi array from output to abiOutput
+            const abiOutput = path.join(ourArtifactDirPath, `${fileName}${ABI_SUFFIX}`);
+            initializeFile(abiOutput);
+
+            const outputJson = JSON.parse(fs.readFileSync(scarbSierraPath, "utf-8"));
+            fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
+        }
+        console.log("\tSuccessfully built ✅");
+    }
+
+    if (statusCode) {
+        const msg = `Failed building of ${statusCode} project${statusCode === 1 ? "" : "s"}.`;
         throw new StarknetPluginError(msg);
     }
 }

@@ -98,7 +98,12 @@ export async function traverseFiles(traversable: string, fileCriteria = "*") {
     } else {
         paths.push(traversable);
     }
-    const files = paths.filter((file) => fs.lstatSync(file).isFile());
+    const files = paths
+        .map((file) => fs.realpathSync(file))
+        .filter((file) => {
+            const is_file = fs.lstatSync(file).isFile();
+            return is_file;
+        });
     return files;
 }
 
@@ -190,8 +195,11 @@ export function isStarknetDevnet(networkName: string): boolean {
 export async function findPath(traversable: string, pathSegment: string) {
     // Relative path to artifacts can be resolved now
     const resolvedPath = path.resolve(path.join(traversable, pathSegment));
-    if (fs.existsSync(resolvedPath) && fs.lstatSync(resolvedPath).isFile()) {
-        return resolvedPath;
+    if (fs.existsSync(resolvedPath)) {
+        const realPath = fs.realpathSync(resolvedPath);
+        if (fs.lstatSync(realPath).isFile()) {
+            return realPath;
+        }
     }
 
     let files = await traverseFiles(traversable);
