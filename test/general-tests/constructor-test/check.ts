@@ -1,7 +1,7 @@
 import path from "path";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { copyFileSync } from "fs";
-import { assertContains, rmrfSync } from "../../utils/utils";
+import { assertContains } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
 const sourcesPath = "cairo1-contracts";
@@ -31,7 +31,7 @@ const expectedErrorMsg = "Error: Expected at most one constructor.";
 const execution = hardhatStarknetCompile([contract1Path], true);
 console.log(execution);
 assertContains(execution.stderr, expectedErrorMsg);
-rmrfSync(contract1Path);
+// rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
 hardhatStarknetCompile([sourcesPath, "--add-pythonic-hints"]);
