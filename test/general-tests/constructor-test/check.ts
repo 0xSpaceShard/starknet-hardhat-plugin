@@ -1,7 +1,7 @@
 import path from "path";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { copyFileSync } from "fs";
-import { assertContains } from "../../utils/utils";
+import { assertContains, rmrfSync } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
 const sourcesPath = "cairo1-contracts";
@@ -22,16 +22,15 @@ const contractNames = [
 
 // Copy contracts to example repo to ensure files exists
 for (const contractName of contractNames) {
-    const contractPath = path.join(sourcesPath, muteConstructorContract);
+    const contractPath = path.join(sourcesPath, contractName);
     copyFileSync(path.join(prefix, contractName), contractPath);
 }
 
 const contract1Path = path.join(sourcesPath, duplicateConstructorContract);
 const expectedErrorMsg = "Error: Expected at most one constructor.";
 const execution = hardhatStarknetCompile([contract1Path], true);
-console.log(execution);
 assertContains(execution.stderr, expectedErrorMsg);
-// rmrfSync(contract1Path);
+rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
 hardhatStarknetCompile([sourcesPath, "--add-pythonic-hints"]);
