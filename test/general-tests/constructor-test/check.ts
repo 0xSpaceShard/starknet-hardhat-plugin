@@ -1,37 +1,38 @@
 import path from "path";
-import {
-    hardhatStarknetCompile,
-    hardhatStarknetCompileDeprecated,
-    hardhatStarknetTest
-} from "../../utils/cli-functions";
+import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { copyFileSync } from "fs";
 import { assertContains, rmrfSync } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
-const contract1 = "duplicate_constructor.cairo";
-const contract1Path = path.join("cairo1-contracts", contract1);
+const sourcesPath = "cairo1-contracts";
 
-const contract2 = "no_constructor.cairo";
-const contract2Path = path.join("cairo1-contracts", contract2);
+const duplicateConstructorContract = "duplicate_constructor.cairo";
+const contract1Path = path.join(sourcesPath, duplicateConstructorContract);
 
-const contract3 = "mute_constructor.cairo";
-const contract3Path = path.join("cairo1-contracts", contract3);
+const noConstructorContract = "no_constructor.cairo";
+const contract2Path = path.join(sourcesPath, noConstructorContract);
 
-copyFileSync(path.join(prefix, contract1), contract1Path);
-copyFileSync(path.join(prefix, contract2), contract2Path);
-copyFileSync(path.join(prefix, contract3), contract3Path);
+const muteConstructorContract = "mute_constructor.cairo";
+const contract3Path = path.join(sourcesPath, muteConstructorContract);
 
-const exptectedErrorMsg = "Error: Expected at most one constructor.";
+const commentedConstructorContract = "commented_constructor.cairo";
+const contract4Path = path.join(sourcesPath, commentedConstructorContract);
+
+const emptyLineConstructorContract = "empty_line_constructor.cairo";
+const contract5Path = path.join(sourcesPath, emptyLineConstructorContract);
+
+// Copy contracts to example repo to ensure files exists
+copyFileSync(path.join(prefix, duplicateConstructorContract), contract1Path);
+copyFileSync(path.join(prefix, noConstructorContract), contract2Path);
+copyFileSync(path.join(prefix, muteConstructorContract), contract3Path);
+copyFileSync(path.join(prefix, commentedConstructorContract), contract4Path);
+copyFileSync(path.join(prefix, emptyLineConstructorContract), contract5Path);
+
+const expectedErrorMsg = "Error: Expected at most one constructor.";
 const execution = hardhatStarknetCompile([contract1Path], true);
-assertContains(execution.stderr, exptectedErrorMsg);
+assertContains(execution.stderr, expectedErrorMsg);
 rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
 hardhatStarknetCompile(["cairo1-contracts/", "--add-pythonic-hints"]);
-
-hardhatStarknetCompileDeprecated(
-    "contracts/contract.cairo contracts/simple_storage.cairo contracts/empty_constructor.cairo".split(
-        " "
-    )
-);
 hardhatStarknetTest("--no-compile test/constructor.test.ts".split(" "));

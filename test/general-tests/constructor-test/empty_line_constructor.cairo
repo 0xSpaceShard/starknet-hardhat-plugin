@@ -1,7 +1,9 @@
 #[contract]
 mod Contract {
 
-    // #[constructor]
+    #[constructor]
+
+
     fn constructor() {
     }
 }
