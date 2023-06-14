@@ -32,8 +32,8 @@ import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
 import { StarknetConfig } from "./types/starknet";
-import { spawnSync } from "child_process";
 import * as toml from "toml";
+import { ScarbWrapper } from "./scarb-wrapper";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -61,7 +61,7 @@ function processExecuted(executed: ProcessResult, logStatus: boolean): number {
     }
 
     if (logStatus) {
-        const finalMsg = executed.statusCode ? "Failed" : "Succeeded";
+        const finalMsg = executed.statusCode ? "Failed" : "Succeeded ✅";
         console.log(`\t${finalMsg}\n`);
     }
     return executed.statusCode ? 1 : 0;
@@ -88,10 +88,29 @@ function getCompilerBinDir(args: TaskArguments, config: StarknetConfig): string 
     return args?.cairo1BinDir || config.cairo1BinDir;
 }
 
+function loadScarbTomlFromPath(tomlPath: string) {
+    return toml.parse(fs.readFileSync(tomlPath, "utf-8").toString());
+    // TODO validation of toml - ideally would continue with compiling other projects even if one fails
+    // TODO consider adding special return type instead of any
+}
+
+function loadScarbMainArtifact(scarbArtifactDirPath: string, packageName: string) {
+    const mainPackageArtifactPath = path.join(
+        scarbArtifactDirPath,
+        `${packageName}.starknet_artifacts.json`
+    );
+    if (!fs.existsSync(mainPackageArtifactPath)) {
+        const msg = `Error in building ${packageName}, could not find ${mainPackageArtifactPath}`;
+        throw new StarknetPluginError(msg);
+    }
+    return JSON.parse(fs.readFileSync(mainPackageArtifactPath, "utf-8").toString());
+}
+
 export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    // TODO wrong order of args
     const binDirPath = getCompilerBinDir(hre.config.starknet, args);
 
     const root = hre.config.paths.root;
@@ -242,7 +261,6 @@ export async function starknetDeprecatedCompileAction(
 }
 
 export async function starknetBuildAction(args: TaskArguments, hre: HardhatRuntimeEnvironment) {
-    // TODO check if scarb exists
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
 
@@ -252,7 +270,7 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
 
     const configFileName = "Scarb.toml";
 
-    let statusCode = 0;
+    // collect all package configs by traversing provided paths
     const packageConfigPaths = [];
     for (let traversablePath of traversablePaths) {
         traversablePath = adaptPath(root, traversablePath);
@@ -260,46 +278,32 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
         packageConfigPaths.push(...(await traverseFiles(traversablePath, configFileName)));
     }
 
+    const scarbWrapper = ScarbWrapper.getInstance(args, hre.config.starknet);
+
+    let statusCode = 0;
     for (const packageConfigPath of packageConfigPaths) {
-        const packageConfig = toml.parse(fs.readFileSync(packageConfigPath, "utf-8").toString());
+        const packageConfig = loadScarbTomlFromPath(packageConfigPath);
         const packageName = packageConfig.package.name;
 
-        // strip Scarb.toml from path end to get $hardhat_project_root/cairo_dir/
+        // strip "Scarb.toml" from path end to get $hardhat_project_root/cairo_dir/
         const packageDir = packageConfigPath.replace(new RegExp(configFileName + "$"), "");
         console.log(`Building package ${packageName} in ${packageDir}`);
-        // TODO hre.starknetWrapper.scarbBuild
-        // TODO check if config valid; e.g. both sierra and casm specified
 
         const dirSuffix = packageDir.replace(rootRegex, ""); // cairo_dir/
         const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/cairo_dir/
 
-        const execution = spawnSync("scarb", [
-            ...["--manifest-path", packageConfigPath],
-            ...["--target-dir", artifactDirPath],
-            "build"
-        ]);
-        // TODO processExecuted(execution);
-        if (execution.status) {
-            statusCode += 1;
-            console.error(execution.stderr);
+        const executed = scarbWrapper.build(packageConfigPath, artifactDirPath);
+        statusCode += processExecuted(executed, true);
+        if (executed.statusCode) {
+            // continue with compiling to casm only if compiling to sierra succeeded
             continue;
         }
 
         // by default (dev mode, unlike the release mode), scarb stores artifacts in subdir "dev"
         const scarbArtifactDirPath = path.join(artifactDirPath, "dev");
+
         // load scarb's main build artifact
-        const mainPackageArtifactPath = path.join(
-            scarbArtifactDirPath,
-            `${packageName}.starknet_artifacts.json`
-        );
-        if (!fs.existsSync(mainPackageArtifactPath)) {
-            throw new StarknetPluginError(
-                `Error in building ${packageName}, could not find ${mainPackageArtifactPath}`
-            );
-        }
-        const mainPackageArtifact = JSON.parse(
-            fs.readFileSync(mainPackageArtifactPath, "utf-8").toString()
-        );
+        const mainPackageArtifact = loadScarbMainArtifact(scarbArtifactDirPath, packageName);
 
         for (const contractEntry of mainPackageArtifact.contracts) {
             const scarbSierraPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.sierra);
@@ -332,7 +336,6 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
             const outputJson = JSON.parse(fs.readFileSync(scarbSierraPath, "utf-8"));
             fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
         }
-        console.log("\tSuccessfully built ✅");
     }
 
     if (statusCode) {

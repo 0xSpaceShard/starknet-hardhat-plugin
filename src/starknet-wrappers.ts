@@ -4,6 +4,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import path from "path";
 import { hash, number } from "starknet";
 
+// TODO remove these imports and move implementation to a dedicated cairo1 wrapper class/file
 import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 import {
     CAIRO1_COMPILE_BIN,

@@ -269,12 +269,16 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addFlag("addPythonicHints", "Add pythonic hints.")
     .setAction(starknetCompileCairo1Action);
 
-task("starknet-build", "Builds Scarb projects under provided paths")
+task("starknet-build", "Builds Scarb projects")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
             "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
             "If no paths are provided, the default contracts directory is traversed."
+    )
+    .addOptionalParam(
+        "scarbPath",
+        "Path to your custom local Scarb executable. Overrides the one set in the hardhat config file"
     )
     .setAction(starknetBuildAction);
 

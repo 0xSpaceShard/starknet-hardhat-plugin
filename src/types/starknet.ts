@@ -98,6 +98,7 @@ export type StarknetConfig = {
     networkUrl?: string;
     networkConfig?: NetworkConfig;
     recompile?: boolean;
+    scarbPath?: string;
     cairo1BinDir?: string;
     requestTimeout?: number;
 };
