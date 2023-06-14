@@ -73,10 +73,12 @@ Compiles Starknet Cairo 0 contracts. If no paths are provided, all Starknet cont
 ### `starknet-compile`
 
 ```
-$ npx hardhat starknet-compile [PATH...] [--cairo1-bin-dir <PATH>]
+$ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--replace-ids] [--allowed-libfuncs-list-file] [--allowed-libfuncs-list-name] [--cairo1-bin-dir <PATH>]
 ```
 
-Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. You can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your hardhat config file.
+Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. Currently, contracts importing other contracts are not supported (until this is supported, you may try to use [Scarb](https://github.com/software-mansion/scarb) and modifying its artifacts to be compatible with this plugin).
+
+You can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your hardhat config file. Other CLI options are the same as in the [native Cairo compiler](https://github.com/starkware-libs/cairo).
 
 ### `starknet-verify`
 
@@ -130,7 +132,9 @@ Prints the version of the plugin.
 $ npx hardhat migrate [PATH...] [--inplace]
 ```
 
-Converts old cairo code to the new (cairo-lang 0.10.0) syntax. The `--inplace` flag will change the contract file in place.
+**NOT APPLICABLE TO CAIRO 1**
+
+Converts old syntax to Cairo 0.10 syntax. The `--inplace` flag will change the contract file in place.
 
 ```
 $ npx hardhat migrate --inplace contract/contract.cairo
