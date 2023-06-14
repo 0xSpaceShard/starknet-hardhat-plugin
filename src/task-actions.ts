@@ -354,7 +354,7 @@ ${
             );
         });
 
-    console.log(`Contract has been successfuly verified at address ${args.address}`);
+    console.log(`Contract has been successfully verified at address ${args.address}`);
     console.log(`Check it out on Voyager: ${verifiedUrl}`);
 }
 

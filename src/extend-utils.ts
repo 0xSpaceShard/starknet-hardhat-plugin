@@ -56,19 +56,19 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
     });
 }
 
-export function shortStringToBigIntUtil(convertableString: string) {
-    if (!convertableString) {
+export function shortStringToBigIntUtil(convertibleString: string) {
+    if (!convertibleString) {
         throw new StarknetPluginError("A non-empty string must be provided");
     }
 
-    if (convertableString.length > SHORT_STRING_MAX_CHARACTERS) {
+    if (convertibleString.length > SHORT_STRING_MAX_CHARACTERS) {
         const msg = `Short strings must have a max of ${SHORT_STRING_MAX_CHARACTERS} characters.`;
         throw new StarknetPluginError(msg);
     }
 
     const invalidChars: { [key: string]: boolean } = {};
     const charArray = [];
-    for (const c of convertableString.split("")) {
+    for (const c of convertibleString.split("")) {
         const charCode = c.charCodeAt(0);
         if (charCode > 127) {
             invalidChars[c] = true;
@@ -87,8 +87,8 @@ export function shortStringToBigIntUtil(convertableString: string) {
     return BigInt("0x" + charArray.join(""));
 }
 
-export function bigIntToShortStringUtil(convertableBigInt: bigint) {
-    return Buffer.from(convertableBigInt.toString(16), "hex").toString();
+export function bigIntToShortStringUtil(convertibleBigInt: bigint) {
+    return Buffer.from(convertibleBigInt.toString(16), "hex").toString();
 }
 
 export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {

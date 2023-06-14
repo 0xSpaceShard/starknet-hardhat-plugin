@@ -29,7 +29,7 @@ export interface Devnet {
      * Deploys or loads the L1 messaging contract.
      * @param {string} networkUrl - L1 network url.
      * @param {string} [address] - Address of the contract to be loaded.
-     * @param {string} [networkId] - Determines if the ganache or tesnet should be used/
+     * @param {string} [networkId] - Determines if the ganache or testnet should be used/
      * @returns
      */
     loadL1MessagingContract: (
@@ -80,13 +80,13 @@ export interface Devnet {
     /**
      * Sets the timestamp of next block
      * @param seconds timestamp in seconds
-     * @returns an object containg next block timestamp
+     * @returns an object containing next block timestamp
      */
     setTime: (seconds: number) => Promise<SetTimeResponse>;
 
     /**
      * Fetch the predeployed accounts
-     * @returns an object containg array of account's metadata
+     * @returns an object containing array of account's metadata
      */
     getPredeployedAccounts: () => Promise<PredeployedAccount[]>;
 

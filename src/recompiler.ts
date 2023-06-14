@@ -47,10 +47,10 @@ export class Cache {
 
     // Loads the cache from the file
     public async loadCache(): Promise<void> {
-        const cacheDirpath = this.getCacheDirPath();
+        const cacheDirPath = this.getCacheDirPath();
         // Creates cache directory if it doesn't exist
-        if (!fs.existsSync(cacheDirpath)) {
-            fs.mkdirSync(cacheDirpath, { recursive: true });
+        if (!fs.existsSync(cacheDirPath)) {
+            fs.mkdirSync(cacheDirPath, { recursive: true });
         }
 
         const cacheFilePath = this.getCacheFilePath();
@@ -92,7 +92,7 @@ export class Recompiler {
         const artifactsDir = getArtifactPath(defaultSourcesPath, paths);
 
         const newCacheEntry: Record<string, ContractData> = {};
-        // Get soucrces from source path. Check only cairo file extensions
+        // Get sources from source path. Check only cairo file extensions
         const filesList = await traverseFiles(defaultSourcesPath, "*.cairo");
         // Select file name
         for (const cairoContract of filesList) {
@@ -202,7 +202,7 @@ export class Recompiler {
                 paths: [changedContract],
                 disableHintValidation: entry?.disableHintValidation,
                 accountContract: entry?.accountContract,
-                carioPath: entry?.cairoPath
+                cairoPath: entry?.cairoPath
             };
 
             await starknetDeprecatedCompileAction(compileArguments, this.hre);
@@ -222,7 +222,7 @@ export class Recompiler {
                 continue;
             }
 
-            // Add contracts that contiain a change in content
+            // Add contracts that contain a change in content
             if (newCacheEntry[contractName].contentHash !== cache[contractName].contentHash) {
                 changed.add(contractName);
             }

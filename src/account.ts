@@ -297,8 +297,8 @@ export abstract class Account {
     }
 
     /**
-     * Performes multiple invokes as a single transaction through this account
-     * @param callParameters an array with the paramaters for each invoke
+     * Performs multiple invokes as a single transaction through this account
+     * @param callParameters an array with the parameters for each invoke
      * @returns the transaction hash of the invoke
      */
     async multiInvoke(callParameters: CallParameters[], options?: InvokeOptions): Promise<string> {
@@ -307,7 +307,7 @@ export abstract class Account {
     }
 
     /**
-     * Etimate the fee of the multicall.
+     * Estimate the fee of the multicall.
      * @param callParameters an array with the parameters for each call
      * @returns the total estimated fee
      */
@@ -362,7 +362,7 @@ export abstract class Account {
      * Prepares the calldata and hashes the message for the multicall execution
      *
      * @param accountAddress address of the account contract
-     * @param callParameters array witht the call parameters
+     * @param callParameters array with the call parameters
      * @param nonce current nonce
      * @param maxFee the maximum fee amount set for the contract interaction
      * @param version the transaction version
@@ -1044,7 +1044,7 @@ export class ArgentAccount extends Account {
     /**
      * Returns an account previously deployed to `address`.
      * A check is performed if the public key stored in the account matches the provided `privateKey`.
-     * No check is done for the optoinal guardian private key.
+     * No check is done for the optional guardian private key.
      * @param address
      * @param privateKey
      * @param options

@@ -130,7 +130,7 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 
 ### Accessing HardhatRuntimeEnvironment (hre)
 
-Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting clases has become a possibility:
+Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting classes has become a possibility:
 
 ```typescript
 const hre = await import("hardhat");

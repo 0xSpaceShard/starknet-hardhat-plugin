@@ -62,7 +62,7 @@ export interface StringMap {
 }
 
 /**
- * Object holding the event name and have a proprety data of type StingMap.
+ * Object holding the event name and have a property data of type StingMap.
  */
 export interface DecodedEvent {
     name: string;
@@ -343,13 +343,13 @@ export interface BlockIdentifier {
     blockHash?: string;
 }
 
-export type SieraEntryPointsByType = {
-    CONSTRUCTOR: SieraContractEntryPointFields[];
-    EXTERNAL: SieraContractEntryPointFields[];
-    L1_HANDLER: SieraContractEntryPointFields[];
+export type SierraEntryPointsByType = {
+    CONSTRUCTOR: SierraContractEntryPointFields[];
+    EXTERNAL: SierraContractEntryPointFields[];
+    L1_HANDLER: SierraContractEntryPointFields[];
 };
 
-export type SieraContractEntryPointFields = {
+export type SierraContractEntryPointFields = {
     selector: string;
     function_idx: number;
 };
@@ -372,11 +372,11 @@ export class StarknetContractFactory {
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
 
-        const constructorPredicate = this.resolveContructorPredicate();
+        const constructorPredicate = this.resolveConstructorPredicate();
         this.constructorAbi = findConstructor(this.abi, constructorPredicate);
     }
 
-    private resolveContructorPredicate(): (abiEntry: starknet.AbiEntry) => boolean {
+    private resolveConstructorPredicate(): (abiEntry: starknet.AbiEntry) => boolean {
         if (!this.isCairo1()) {
             return (abiEntry: starknet.AbiEntry): boolean => {
                 return abiEntry.type === "constructor";
@@ -779,13 +779,13 @@ export class StarknetContract {
 export interface ContractClassConfig extends StarknetContractConfig {
     sierraProgram: string;
     contractClassVersion: string;
-    entryPointsByType: SieraEntryPointsByType;
+    entryPointsByType: SierraEntryPointsByType;
 }
 
 export class Cairo1ContractClass extends StarknetContract {
     protected sierraProgram: string;
     protected contractClassVersion: string;
-    protected entryPointsByType: SieraEntryPointsByType;
+    protected entryPointsByType: SierraEntryPointsByType;
 
     constructor(config: ContractClassConfig) {
         super(config);

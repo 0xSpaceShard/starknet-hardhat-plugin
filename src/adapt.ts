@@ -119,7 +119,7 @@ function extractMemberTypes(s: string): string[] {
     while (i < s.length) {
         if (s[i] === "(") {
             let counter = 1;
-            const openningBracket = i;
+            const openingBracket = i;
 
             // Move to next element after '('
             i++;
@@ -137,7 +137,7 @@ function extractMemberTypes(s: string): string[] {
                 i++;
             }
 
-            replacedSubStrings.push(s.substring(openningBracket, i));
+            replacedSubStrings.push(s.substring(openingBracket, i));
             // replace tuple with special symbol
             tmp += specialSymbol;
 
@@ -424,7 +424,7 @@ function adaptStructInput(
 
 /**
  * Adapts the string resulting from a Starknet CLI function call or server purpose of adapting event
- * This is done according to the actual output type specifed by the called function.
+ * This is done according to the actual output type specified by the called function.
  *
  * @param rawResult the actual result in the form of an unparsed string
  * @param outputSpecs array of starknet types in the expected function output
