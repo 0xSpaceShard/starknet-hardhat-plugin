@@ -12,7 +12,7 @@ if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]
     exit 1
 fi
 
-git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:0xSpaceShard/starknet-hardhat-example.git
+git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:notV4l/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
 npm ci
