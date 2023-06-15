@@ -65,6 +65,15 @@ To run a specific test case in the test group you can pass in the name of direct
 $ npm run test-general-tests -- declare-test
 ```
 
+### Executing individual tests with dockerized environnement
+
+If you only use dockerized environnement you don't need to install dependencies locally.
+If you used `npm link` to link starknet-hardhat-plugin to starknet-hardhat-example, to run `declare-test` test case in `general-tests` test group from `starknet-hardhat-example` directory with :
+
+```sh
+$ npx ts-node STARKNET_HARDHAT_PLUGIN_PATH/test/general-tests/declare-test/check.ts
+```
+
 ### Running tests in dev mode
 
 To run tests locally with test-dev. This is designed to run same tests repeatedly while developing.
