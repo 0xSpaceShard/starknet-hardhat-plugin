@@ -271,11 +271,19 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
     const configFileName = "Scarb.toml";
 
     // collect all package configs by traversing provided paths
-    const packageConfigPaths = [];
+    const packageConfigPaths: string[] = [];
     for (let traversablePath of traversablePaths) {
         traversablePath = adaptPath(root, traversablePath);
         checkSourceExists(traversablePath);
-        packageConfigPaths.push(...(await traverseFiles(traversablePath, configFileName)));
+        const traversionResult = await traverseFiles(traversablePath, configFileName);
+        packageConfigPaths.push(
+            ...traversionResult.filter((p) => path.basename(p) == configFileName)
+        );
+    }
+
+    if (!packageConfigPaths.length) {
+        const msg = `No projects to build. Could not find directories containing ${configFileName}`;
+        throw new StarknetPluginError(msg);
     }
 
     const scarbWrapper = ScarbWrapper.getInstance(args, hre.config.starknet);

@@ -34,6 +34,7 @@ export class CustomScarbWrapper extends ScarbWrapper {
     constructor(private scarbPath: string) {
         super();
 
+        // validate
         const execution = spawnSync(scarbPath, ["--version"]);
         if (execution.status) {
             throw new StarknetPluginError(
@@ -41,12 +42,13 @@ export class CustomScarbWrapper extends ScarbWrapper {
             );
         }
 
+        // log
         const versionString = execution.stdout.toString().trim().split("\n").join(", ");
         console.log(`${PLUGIN_NAME} plugin using custom Scarb (${versionString})`);
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
-        const execution = spawnSync("scarb", [
+        const execution = spawnSync(this.scarbPath, [
             ...["--manifest-path", packageConfigPath],
             ...["--target-dir", artifactDirPath],
             "build"
