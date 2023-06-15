@@ -32,7 +32,7 @@ import { getContractFactoryUtil } from "./extend-utils";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Abi, AbiEntry, CairoFunction } from "./starknet-types";
 import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
-import { promisify } from "util";
+
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.
  *
@@ -92,8 +92,7 @@ export function getDefaultHardhatNetworkConfig(url: string): HardhatNetworkConfi
 export async function traverseFiles(traversable: string, fileCriteria = "*") {
     let paths: string[] = [];
     if (fs.lstatSync(traversable).isDirectory()) {
-        const globPromise = promisify(glob);
-        paths = await globPromise(path.join(traversable, "**", fileCriteria));
+        paths = await glob(path.join(traversable, "**", fileCriteria));
     } else {
         paths.push(traversable);
     }
