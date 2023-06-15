@@ -3,7 +3,9 @@ import { spawnSync } from "child_process";
 import { TaskArguments } from "hardhat/types";
 import { StarknetConfig } from "./types/starknet";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { PLUGIN_NAME } from "./constants";
+import { CAIRO_CLI_DOCKER_REPOSITORY, PLUGIN_NAME } from "./constants";
+import { getImageTagByArch } from "./utils";
+import path from "path";
 
 export abstract class ScarbWrapper {
     private static instance: ScarbWrapper;
@@ -16,7 +18,7 @@ export abstract class ScarbWrapper {
         } else if (config.scarbPath) {
             this.instance = new CustomScarbWrapper(config.scarbPath);
         } else {
-            this.instance = new DockerizedScarbWrapper();
+            this.instance = new DockerizedScarbWrapper(config.dockerizedVersion);
         }
         return this.instance;
     }
@@ -25,8 +27,40 @@ export abstract class ScarbWrapper {
 }
 
 export class DockerizedScarbWrapper extends ScarbWrapper {
+    private formattedImage: string;
+
+    constructor(imageTag: string) {
+        super();
+
+        const repository = CAIRO_CLI_DOCKER_REPOSITORY;
+        const tag = getImageTagByArch(imageTag);
+        this.formattedImage = `${repository}:${tag}`;
+
+        // log
+        console.log(`${PLUGIN_NAME} plugin using dockerized Scarb`);
+    }
+
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
-        throw new Error("Method not implemented.");
+        // TODO this doesn't look stable and doesn't work if artifacts dir doesn't already exist
+        // easiest would be to mount the whole artifacts directory
+        const packageDir = path.dirname(packageConfigPath);
+        const execution = spawnSync("docker", [
+            "run",
+            "--rm",
+            ...["--mount", `type=bind,source=${packageDir},target=${packageDir}`],
+            ...["--mount", `type=bind,source=${artifactDirPath},target=${artifactDirPath}`],
+            this.formattedImage,
+            "scarb",
+            ...["--manifest-path", packageConfigPath],
+            ...["--target-dir", artifactDirPath],
+            "build"
+        ]);
+
+        return {
+            statusCode: execution.status,
+            stdout: execution.stdout,
+            stderr: execution.stderr
+        };
     }
 }
 

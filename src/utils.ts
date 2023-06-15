@@ -26,7 +26,8 @@ import {
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
     StarknetChainId,
-    UDC_ADDRESS
+    UDC_ADDRESS,
+    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
 } from "./constants";
 import { getContractFactoryUtil } from "./extend-utils";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -234,7 +235,7 @@ export function copyWithBigint<T>(object: unknown): T {
     );
 }
 
-export function getImageTagByArch(tag: string): string {
+export function getImageTagByArch(tag = CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG): string {
     // Check CPU architecture
     const arch = process.arch;
     if (arch === "arm64" && !tag.endsWith("-arm")) {

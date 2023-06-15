@@ -15,7 +15,6 @@ import "./type-extensions";
 import {
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
-    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
     AMARNA_DOCKER_REPOSITORY,
     AMARNA_DOCKER_IMAGE_TAG,
@@ -196,9 +195,7 @@ extendEnvironment((hre) => {
         setVenvWrapper(hre, venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = getImageTagByArch(
-            hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
-        );
+        const tag = getImageTagByArch(hre.config.starknet.dockerizedVersion);
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);

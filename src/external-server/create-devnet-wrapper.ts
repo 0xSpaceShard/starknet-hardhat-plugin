@@ -1,12 +1,7 @@
 import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
 import { StarknetPluginError } from "../starknet-plugin-error";
 
-import {
-    DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
-    DEVNET_DOCKER_REPOSITORY,
-    INTEGRATED_DEVNET,
-    INTEGRATED_DEVNET_URL
-} from "../constants";
+import { DEVNET_DOCKER_REPOSITORY, INTEGRATED_DEVNET, INTEGRATED_DEVNET_URL } from "../constants";
 import { getImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
@@ -42,9 +37,7 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
         );
     }
 
-    const tag = getImageTagByArch(
-        devnetNetwork.dockerizedVersion || DEFAULT_DEVNET_DOCKER_IMAGE_TAG
-    );
+    const tag = getImageTagByArch(devnetNetwork.dockerizedVersion);
     return new DockerDevnet(
         {
             repository: DEVNET_DOCKER_REPOSITORY,

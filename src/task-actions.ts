@@ -290,15 +290,17 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
 
     let statusCode = 0;
     for (const packageConfigPath of packageConfigPaths) {
+        // each config path is assumed to be of format $hardhat_project_root/<CAIRO_DIR>/Scarb.toml
         const packageConfig = loadScarbTomlFromPath(packageConfigPath);
         const packageName = packageConfig.package.name;
 
-        // strip "Scarb.toml" from path end to get $hardhat_project_root/cairo_dir/
-        const packageDir = packageConfigPath.replace(new RegExp(configFileName + "$"), "");
+        // strip "Scarb.toml" from path end to get $hardhat_project_root/<CAIRO_DIR>/
+        const packageDir = path.dirname(packageConfigPath);
         console.log(`Building package ${packageName} in ${packageDir}`);
 
-        const dirSuffix = packageDir.replace(rootRegex, ""); // cairo_dir/
-        const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/cairo_dir/
+        // not using path.basename(...) because it could be a more complex path than just the directory name
+        const dirSuffix = packageDir.replace(rootRegex, ""); // <CAIRO_DIR>/
+        const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/<CAIRO_DIR>/
 
         const executed = scarbWrapper.build(packageConfigPath, artifactDirPath);
         statusCode += processExecuted(executed, true);
