@@ -15,15 +15,9 @@ export class StarknetDockerProxy extends DockerServer {
     /**
      * @param image the Docker image to be used for running the container
      * @param rootPath the hardhat project root
-     * @param accountPaths the paths holding wallet information
      * @param cairoPaths the paths specified in hardhat config cairoPaths
      */
-    constructor(
-        image: Image,
-        private rootPath: string,
-        private accountPaths: string[],
-        private cairoPaths: string[]
-    ) {
+    constructor(image: Image, private rootPath: string, private cairoPaths: string[]) {
         super(image, "127.0.0.1", null, "", "starknet-docker-proxy");
     }
 
@@ -32,7 +26,7 @@ export class StarknetDockerProxy extends DockerServer {
         const volumes = ["-v", `${PROXY_SERVER_HOST_PATH}:${PROXY_SERVER_CONTAINER_PATH}`];
         volumes.push("-v", `${LEGACY_CLI_HOST_PATH}:${LEGACY_CLI_CONTAINER_PATH}`);
 
-        for (const mirroredPath of [this.rootPath, ...this.accountPaths, ...this.cairoPaths]) {
+        for (const mirroredPath of [this.rootPath, ...this.cairoPaths]) {
             volumes.push("-v", `${mirroredPath}:${mirroredPath}`);
         }
 

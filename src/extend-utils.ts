@@ -12,7 +12,7 @@ import {
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
-import { checkArtifactExists, findPath, getAccountPath } from "./utils";
+import { checkArtifactExists, findPath } from "./utils";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -89,17 +89,6 @@ export function shortStringToBigIntUtil(convertableString: string) {
 
 export function bigIntToShortStringUtil(convertableBigInt: bigint) {
     return Buffer.from(convertableBigInt.toString(16), "hex").toString();
-}
-
-export function getWalletUtil(name: string, hre: HardhatRuntimeEnvironment) {
-    const wallet = hre.config.starknet.wallets[name];
-    if (!wallet) {
-        const available = Object.keys(hre.config.starknet.wallets).join(", ");
-        const msg = `Invalid wallet name provided: ${name}.\nValid wallets: ${available}`;
-        throw new StarknetPluginError(msg);
-    }
-    wallet.accountPath = getAccountPath(wallet.accountPath, hre);
-    return wallet;
 }
 
 export async function getTransactionUtil(

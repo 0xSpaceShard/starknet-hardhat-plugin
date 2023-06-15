@@ -66,28 +66,11 @@ interface InteractWrapperOptions {
     functionName: string;
     inputs?: string[];
     signature?: string[];
-    wallet?: string;
-    account?: string;
-    accountDir?: string;
     blockNumber?: BlockNumber;
 }
 
 interface TxHashQueryWrapperOptions {
     hash: string;
-}
-
-interface DeployAccountWrapperOptions {
-    wallet: string;
-    accountName: string;
-    accountDir: string;
-    network: string;
-}
-
-interface NewAccountWrapperOptions {
-    wallet: string;
-    accountName: string;
-    accountDir: string;
-    network: string;
 }
 
 interface BlockQueryWrapperOptions {
@@ -305,7 +288,8 @@ export abstract class StarknetWrapper {
             "--function",
             options.functionName,
             "--address",
-            options.address
+            options.address,
+            "--no_wallet"
         ];
 
         if (options.abi) {
@@ -325,20 +309,6 @@ export abstract class StarknetWrapper {
         }
 
         prepared.push("--chain_id", this.chainID);
-
-        if (options.wallet) {
-            prepared.push("--wallet", options.wallet);
-            prepared.push("--network_id", this.networkID);
-
-            if (options.account) {
-                prepared.push("--account", options.account);
-            }
-            if (options.accountDir) {
-                prepared.push("--account_dir", options.accountDir);
-            }
-        } else {
-            prepared.push("--no_wallet");
-        }
 
         if (options.choice.allowsMaxFee && options.maxFee) {
             prepared.push("--max_fee", options.maxFee);
@@ -374,68 +344,6 @@ export abstract class StarknetWrapper {
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
         const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
         const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    protected prepareDeployAccountOptions(options: DeployAccountWrapperOptions): string[] {
-        const prepared = [
-            "deploy_account",
-            "--network_id",
-            options.network,
-            "--account",
-            options.accountName || "__default__",
-            "--gateway_url",
-            this.gatewayUrl,
-            "--feeder_gateway_url",
-            this.gatewayUrl
-        ];
-
-        if (options.wallet) {
-            prepared.push("--wallet", options.wallet);
-        }
-
-        if (options.accountDir) {
-            prepared.push("--account_dir", options.accountDir);
-        }
-
-        prepared.push("--chain_id", this.chainID);
-
-        return prepared;
-    }
-
-    public async deployAccount(options: DeployAccountWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeployAccountOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    protected prepareNewAccountOptions(options: NewAccountWrapperOptions): string[] {
-        const prepared = [
-            "new_account",
-            "--network_id",
-            options.network,
-            "--account",
-            options.accountName || "__default__",
-            "--gateway_url",
-            this.gatewayUrl,
-            "--feeder_gateway_url",
-            this.gatewayUrl
-        ];
-
-        if (options.wallet) {
-            prepared.push("--wallet", options.wallet);
-        }
-
-        if (options.accountDir) {
-            prepared.push("--account_dir", options.accountDir);
-        }
-
-        return prepared;
-    }
-
-    public async newAccount(options: NewAccountWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareNewAccountOptions(options);
-        const executed = this.execute("starknet", preparedOptions);
         return executed;
     }
 
@@ -578,11 +486,10 @@ export class DockerWrapper extends StarknetWrapper {
     constructor(
         private image: Image,
         private rootPath: string,
-        accountPaths: string[],
         cairoPaths: string[],
         hre: HardhatRuntimeEnvironment
     ) {
-        const externalServer = new StarknetDockerProxy(image, rootPath, accountPaths, cairoPaths);
+        const externalServer = new StarknetDockerProxy(image, rootPath, cairoPaths);
         super(externalServer, hre);
         console.log(
             `${PLUGIN_NAME} plugin using dockerized environment (${getFullImageName(image)})`

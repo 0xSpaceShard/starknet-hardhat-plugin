@@ -11,15 +11,7 @@ import {
     DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import {
-    adaptLog,
-    traverseFiles,
-    getNetwork,
-    getAccountPath,
-    isStarknetDevnet,
-    warn,
-    adaptPath
-} from "./utils";
+import { adaptLog, traverseFiles, getNetwork, isStarknetDevnet, adaptPath } from "./utils";
 import {
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
@@ -27,7 +19,6 @@ import {
     RunSuperFunction,
     TaskArguments
 } from "hardhat/types";
-import { getWalletUtil } from "./extend-utils";
 import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
@@ -376,66 +367,6 @@ function handleMultiPartContractVerification(
             contentType: "application/octet-stream"
         });
     });
-}
-
-export async function starknetNewAccountAction(
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
-) {
-    setRuntimeNetwork(args, hre);
-    const wallet = getWalletUtil(args.wallet, hre);
-    const accountDir = getAccountPath(wallet.accountPath, hre);
-
-    fs.mkdirSync(accountDir, { recursive: true });
-
-    warn(
-        "Warning! You are creating a modified version of OZ account which may not be compatible with the Account class."
-    );
-
-    const executed = await hre.starknetWrapper.newAccount({
-        accountDir: accountDir,
-        accountName: wallet.accountName,
-        network: args.starknetNetwork,
-        wallet: wallet.modulePath
-    });
-
-    const statusCode = processExecuted(executed, true);
-
-    if (statusCode) {
-        const msg = "Could not create a new account contract:\n" + executed.stderr.toString();
-        const replacedMsg = adaptLog(msg);
-        throw new StarknetPluginError(replacedMsg);
-    }
-}
-
-export async function starknetDeployAccountAction(
-    args: TaskArguments,
-    hre: HardhatRuntimeEnvironment
-) {
-    setRuntimeNetwork(args, hre);
-    const wallet = getWalletUtil(args.wallet, hre);
-    const accountDir = getAccountPath(wallet.accountPath, hre);
-
-    fs.mkdirSync(accountDir, { recursive: true });
-
-    warn(
-        "Warning! You are deploying a modified version of OZ account which may not be compatible with the Account class."
-    );
-
-    const executed = await hre.starknetWrapper.deployAccount({
-        accountDir: accountDir,
-        accountName: wallet.accountName,
-        network: args.starknetNetwork,
-        wallet: wallet.modulePath
-    });
-
-    const statusCode = processExecuted(executed, true);
-
-    if (statusCode) {
-        const msg = "Could not deploy account contract:\n" + executed.stderr.toString();
-        const replacedMsg = adaptLog(msg);
-        throw new StarknetPluginError(replacedMsg);
-    }
 }
 
 /**

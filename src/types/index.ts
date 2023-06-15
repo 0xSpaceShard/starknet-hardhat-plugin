@@ -10,7 +10,7 @@ import {
 } from "../constants";
 import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
 import { adaptInputUtil, adaptOutputUtil } from "../adapt";
-import { HardhatRuntimeEnvironment, Wallet } from "hardhat/types";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { hash } from "starknet";
 import { StarknetWrapper } from "../starknet-wrappers";
 
@@ -305,7 +305,6 @@ export interface DeployAccountOptions {
 
 export interface InvokeOptions {
     signature?: Array<Numeric>;
-    wallet?: Wallet;
     nonce?: Numeric;
     maxFee?: Numeric;
     rawInput?: boolean;
@@ -314,7 +313,6 @@ export interface InvokeOptions {
 
 export interface CallOptions {
     signature?: Array<Numeric>;
-    wallet?: Wallet;
     blockNumber?: BlockNumber;
     nonce?: Numeric;
     maxFee?: Numeric;
@@ -561,9 +559,6 @@ export class StarknetContract {
             functionName: functionName,
             inputs: adaptedInput,
             signature: handleSignature(options.signature),
-            wallet: options.wallet?.modulePath,
-            account: options.wallet?.accountName,
-            accountDir: options.wallet?.accountPath,
             blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
             maxFee: options.maxFee?.toString(),
             nonce: options.nonce?.toString()
