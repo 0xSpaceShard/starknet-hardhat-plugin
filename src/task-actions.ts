@@ -286,7 +286,7 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
         throw new StarknetPluginError(msg);
     }
 
-    const scarbWrapper = ScarbWrapper.getInstance(args, hre.config.starknet);
+    const scarbWrapper = ScarbWrapper.getInstance(args, hre);
 
     let statusCode = 0;
     for (const packageConfigPath of packageConfigPaths) {

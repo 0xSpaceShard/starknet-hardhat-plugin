@@ -1,24 +1,27 @@
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
-import { TaskArguments } from "hardhat/types";
-import { StarknetConfig } from "./types/starknet";
+import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { CAIRO_CLI_DOCKER_REPOSITORY, PLUGIN_NAME } from "./constants";
 import { getImageTagByArch } from "./utils";
 import path from "path";
+import os from "os";
 
 export abstract class ScarbWrapper {
     private static instance: ScarbWrapper;
 
-    static getInstance(cliArgs: TaskArguments, config: StarknetConfig): ScarbWrapper {
+    static getInstance(cliArgs: TaskArguments, hre: HardhatRuntimeEnvironment): ScarbWrapper {
         if (this.instance) {
             return this.instance;
         } else if (cliArgs.scarbPath) {
             this.instance = new CustomScarbWrapper(cliArgs.scarbPath);
-        } else if (config.scarbPath) {
-            this.instance = new CustomScarbWrapper(config.scarbPath);
+        } else if (hre.config.starknet.scarbPath) {
+            this.instance = new CustomScarbWrapper(hre.config.starknet.scarbPath);
         } else {
-            this.instance = new DockerizedScarbWrapper(config.dockerizedVersion);
+            this.instance = new DockerizedScarbWrapper(
+                hre.config.starknet.dockerizedVersion,
+                hre.config.paths.root
+            );
         }
         return this.instance;
     }
@@ -29,7 +32,7 @@ export abstract class ScarbWrapper {
 export class DockerizedScarbWrapper extends ScarbWrapper {
     private formattedImage: string;
 
-    constructor(imageTag: string) {
+    constructor(imageTag: string, private projectRootPath: string) {
         super();
 
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
@@ -41,18 +44,26 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
-        // TODO this doesn't look stable and doesn't work if artifacts dir doesn't already exist
-        // easiest would be to mount the whole artifacts directory
         const packageDir = path.dirname(packageConfigPath);
+
+        // the default path used by scarb, if not specified, inside the container it tries to write to /.cache
+        // which is not allowed for a non-root user
+        const globalCacheDir = path.join(os.homedir(), ".cache", "scarb");
         const execution = spawnSync("docker", [
             "run",
             "--rm",
-            ...["--mount", `type=bind,source=${packageDir},target=${packageDir}`],
-            ...["--mount", `type=bind,source=${artifactDirPath},target=${artifactDirPath}`],
+            ...["-v", `${packageDir}:${packageDir}`],
+            ...["-v", `${this.projectRootPath}:${this.projectRootPath}`],
+            ...["-v", `${globalCacheDir}:${globalCacheDir}`],
+
+            // https://unix.stackexchange.com/questions/627027/files-created-by-docker-container-are-owned-by-root
+            ...["-u", `${os.userInfo().uid}:${os.userInfo().gid}`],
+
             this.formattedImage,
             "scarb",
             ...["--manifest-path", packageConfigPath],
             ...["--target-dir", artifactDirPath],
+            ...["--global-cache-dir", globalCacheDir],
             "build"
         ]);
 
