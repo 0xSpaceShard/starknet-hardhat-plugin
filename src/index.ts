@@ -275,13 +275,13 @@ extendEnvironment((hre) => {
             return contractFactory;
         },
 
-        shortStringToBigInt: (convertableString) => {
-            const convertedString = shortStringToBigIntUtil(convertableString);
+        shortStringToBigInt: (convertibleString) => {
+            const convertedString = shortStringToBigIntUtil(convertibleString);
             return convertedString;
         },
 
-        bigIntToShortString: (convertableBigInt) => {
-            const convertedBigInt = bigIntToShortStringUtil(convertableBigInt);
+        bigIntToShortString: (convertibleBigInt) => {
+            const convertedBigInt = bigIntToShortStringUtil(convertibleBigInt);
             return convertedBigInt;
         },
 
@@ -336,7 +336,7 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
     .addParam("address", "The address where the contract is deployed")
     .addParam("compilerVersion", "The compiler version used to compile the cairo contract")
     .addFlag("accountContract", "The contract type which specifies it's an account contract.")
-    .addOptionalParam("license", "The licence of the contract (e.g No License (None))")
+    .addOptionalParam("license", "The license of the contract (e.g No License (None))")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths of the dependencies of the contract specified in --path\n" +
