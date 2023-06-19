@@ -39,15 +39,15 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
         const tag = getImageTagByArch(imageTag);
         this.formattedImage = `${repository}:${tag}`;
 
-        // log
         console.log(`${PLUGIN_NAME} plugin using dockerized Scarb (${this.formattedImage})`);
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
         const packageDir = path.dirname(packageConfigPath);
 
-        // the default path used by scarb, if not specified, inside the container it tries to write to /.cache
-        // which is not allowed for a non-root user
+        // If not specified, inside the container it tries to write cache to /.cache
+        // which is not allowed for a non-root user. So here we are setting it to the path used by Scarb
+        // in many non-docker environments
         const globalCacheDir = path.join(os.homedir(), ".cache", "scarb");
         const execution = spawnSync("docker", [
             "run",
