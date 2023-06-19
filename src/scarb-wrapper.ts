@@ -40,7 +40,7 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
         this.formattedImage = `${repository}:${tag}`;
 
         // log
-        console.log(`${PLUGIN_NAME} plugin using dockerized Scarb`);
+        console.log(`${PLUGIN_NAME} plugin using dockerized Scarb (${this.formattedImage})`);
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {

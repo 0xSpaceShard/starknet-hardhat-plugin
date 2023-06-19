@@ -277,6 +277,11 @@ task("starknet-build", "Builds Scarb projects")
         "scarbPath",
         "Path to your custom local Scarb executable. Overrides the one set in the hardhat config file"
     )
+    .addFlag(
+        "skipValidate",
+        "By default, your TOML config file will be validated to ensure it generates the artifacts required for later contract loading.\n" +
+            "Set this flag to skip the validation."
+    )
     .setAction(starknetBuildAction);
 
 extendEnvironment((hre) => {

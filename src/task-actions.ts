@@ -34,6 +34,7 @@ import { version } from "../package.json";
 import { StarknetConfig } from "./types/starknet";
 import * as toml from "toml";
 import { ScarbWrapper } from "./scarb-wrapper";
+import { ScarbConfig } from "./types";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -88,10 +89,46 @@ function getCompilerBinDir(args: TaskArguments, config: StarknetConfig): string 
     return args?.cairo1BinDir || config.cairo1BinDir;
 }
 
-function loadScarbTomlFromPath(tomlPath: string) {
-    return toml.parse(fs.readFileSync(tomlPath, "utf-8").toString());
-    // TODO validation of toml - ideally would continue with compiling other projects even if one fails
-    // TODO consider adding special return type instead of any
+class ScarbConfigError extends StarknetPluginError {
+    constructor(path: string, message: string, parent?: Error) {
+        super(
+            `Invalid config file ${path}: ${message}\n` +
+                "To skip this validation, use the --skip-validate flag in the CLI",
+            parent
+        );
+    }
+}
+
+function loadScarbTomlFromPath(tomlPath: string, validate: boolean): ScarbConfig {
+    const config: ScarbConfig = toml.parse(fs.readFileSync(tomlPath, "utf-8").toString());
+    const packageName = config.package.name;
+
+    if (validate) {
+        // it's an array of possible compilation configs
+        const contractTargetConfigs = config?.target["starknet-contract"] || [];
+        const configCandidates = contractTargetConfigs.filter(
+            (config) => !config.name || config.name === packageName
+        );
+
+        if (configCandidates.length === 0) {
+            throw new ScarbConfigError(
+                tomlPath,
+                "The name of [[target.starknet-contract]] must be left out or equal the [package] name"
+            );
+        } else if (configCandidates.length > 1) {
+            // this case is handled by Scarb
+        }
+
+        const contractTargetConfig = configCandidates[0]; // assume length = 1
+        if (!contractTargetConfig || !contractTargetConfig.sierra || !contractTargetConfig.casm) {
+            throw new ScarbConfigError(
+                tomlPath,
+                "To allow later loading of this projet's contracts, " +
+                    "your TOML file must set 'sierra' and 'casm' to `true` under [[target.starknet-contract]]"
+            );
+        }
+    }
+    return config;
 }
 
 function loadScarbMainArtifact(scarbArtifactDirPath: string, packageName: string) {
@@ -104,6 +141,30 @@ function loadScarbMainArtifact(scarbArtifactDirPath: string, packageName: string
         throw new StarknetPluginError(msg);
     }
     return JSON.parse(fs.readFileSync(mainPackageArtifactPath, "utf-8").toString());
+}
+
+async function findPackageConfigPaths(
+    traversablePaths: string[],
+    root: string,
+    configFileName = "Scarb.toml"
+) {
+    // collect all package configs by traversing provided paths
+    const packageConfigPaths: string[] = [];
+    for (let traversablePath of traversablePaths) {
+        traversablePath = adaptPath(root, traversablePath);
+        checkSourceExists(traversablePath);
+        const traversionResult = await traverseFiles(traversablePath, configFileName);
+        packageConfigPaths.push(
+            ...traversionResult.filter((p) => path.basename(p) == configFileName)
+        );
+    }
+
+    if (!packageConfigPaths.length) {
+        const msg = `No projects to build. Could not find directories containing ${configFileName}`;
+        throw new StarknetPluginError(msg);
+    }
+
+    return packageConfigPaths;
 }
 
 export async function starknetCompileCairo1Action(
@@ -266,42 +327,34 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
 
     const defaultSourcesPath = hre.config.paths.starknetSources;
     const traversablePaths: string[] = args.paths || [defaultSourcesPath];
+    const packageConfigPaths = await findPackageConfigPaths(traversablePaths, root);
+
     const artifactsPath = hre.config.paths.starknetArtifacts;
-
-    const configFileName = "Scarb.toml";
-
-    // collect all package configs by traversing provided paths
-    const packageConfigPaths: string[] = [];
-    for (let traversablePath of traversablePaths) {
-        traversablePath = adaptPath(root, traversablePath);
-        checkSourceExists(traversablePath);
-        const traversionResult = await traverseFiles(traversablePath, configFileName);
-        packageConfigPaths.push(
-            ...traversionResult.filter((p) => path.basename(p) == configFileName)
-        );
-    }
-
-    if (!packageConfigPaths.length) {
-        const msg = `No projects to build. Could not find directories containing ${configFileName}`;
-        throw new StarknetPluginError(msg);
-    }
 
     const scarbWrapper = ScarbWrapper.getInstance(args, hre);
 
     let statusCode = 0;
-    for (const packageConfigPath of packageConfigPaths) {
+    for await (const packageConfigPath of packageConfigPaths) {
         // each config path is assumed to be of format $hardhat_project_root/<CAIRO_DIR>/Scarb.toml
-        const packageConfig = loadScarbTomlFromPath(packageConfigPath);
+        let packageConfig = null;
+        try {
+            packageConfig = loadScarbTomlFromPath(packageConfigPath, !args.skipValidate);
+        } catch (error) {
+            console.error(error);
+            statusCode += 1;
+            continue;
+        }
         const packageName = packageConfig.package.name;
 
         // strip "Scarb.toml" from path end to get $hardhat_project_root/<CAIRO_DIR>/
         const packageDir = path.dirname(packageConfigPath);
-        console.log(`Building package ${packageName} in ${packageDir}`);
+        console.log(`Building package ${packageName} from ${packageDir}`);
 
         // not using path.basename(...) because it could be a more complex path than just the directory name
         const dirSuffix = packageDir.replace(rootRegex, ""); // <CAIRO_DIR>/
         const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/<CAIRO_DIR>/
 
+        // TODO refactor to include everything after this in scarbWrapper.build
         const executed = scarbWrapper.build(packageConfigPath, artifactDirPath);
         statusCode += processExecuted(executed, true);
         if (executed.statusCode) {

@@ -814,3 +814,21 @@ export class Cairo1ContractClass extends StarknetContract {
         return formatSpaces(JSON.stringify(abiArr));
     }
 }
+
+export interface ScarbConfig {
+    package: {
+        name: string;
+        version: string;
+    };
+    target: {
+        "starknet-contract": {
+            name?: string;
+            sierra?: boolean;
+            casm?: boolean;
+            "casm-add-pythonic-hints"?: boolean;
+            "allowed-libfuncs"?: boolean;
+            "allowed-libfuncs-deny"?: boolean;
+        }[];
+    };
+    dependencies: StringMap;
+}
