@@ -89,7 +89,7 @@ function getCompilerBinDir(args: TaskArguments, config: StarknetConfig): string 
     return args?.cairo1BinDir || config.cairo1BinDir;
 }
 
-class ScarbConfigError extends StarknetPluginError {
+class ScarbConfigValidationError extends StarknetPluginError {
     constructor(path: string, message: string, parent?: Error) {
         super(
             `Invalid config file ${path}: ${message}\n` +
@@ -111,9 +111,9 @@ function loadScarbTomlFromPath(tomlPath: string, validate: boolean): ScarbConfig
         );
 
         if (configCandidates.length === 0) {
-            throw new ScarbConfigError(
+            throw new ScarbConfigValidationError(
                 tomlPath,
-                "The name of [[target.starknet-contract]] must be left out or equal the [package] name"
+                "Property 'name' of [[target.starknet-contract]] must be left out or equal the [package] name"
             );
         } else if (configCandidates.length > 1) {
             // this case is handled by Scarb
@@ -121,7 +121,7 @@ function loadScarbTomlFromPath(tomlPath: string, validate: boolean): ScarbConfig
 
         const contractTargetConfig = configCandidates[0]; // assume length = 1
         if (!contractTargetConfig || !contractTargetConfig.sierra || !contractTargetConfig.casm) {
-            throw new ScarbConfigError(
+            throw new ScarbConfigValidationError(
                 tomlPath,
                 "To allow later loading of this projet's contracts, " +
                     "your TOML file must set 'sierra' and 'casm' to `true` under [[target.starknet-contract]]"
