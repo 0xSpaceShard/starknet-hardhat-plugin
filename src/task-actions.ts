@@ -171,7 +171,6 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    // TODO wrong order of args
     const binDirPath = getCompilerBinDir(hre.config.starknet, args);
 
     const root = hre.config.paths.root;
