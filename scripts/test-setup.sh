@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -eu
+set -o pipefail
+
 trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 ./scripts/ensure-python.sh
@@ -27,3 +30,7 @@ fi
 
 # used by some cases
 ../scripts/setup-venv.sh
+
+# install scarb
+SCARB_VERSION=$(jq -r ".SCARB_VERSION" config.json)
+curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | bash -s -- -v SCARB_VERSION
