@@ -6,13 +6,13 @@ trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 # setup example repo
 rm -rf starknet-hardhat-example
-EXAMPLE_REPO_BRANCH="cairo1-events"
+EXAMPLE_REPO_BRANCH="plugin"
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
 fi
 
-git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:notV4l/starknet-hardhat-example.git
+git clone -b "$EXAMPLE_REPO_BRANCH" --single-branch git@github.com:0xSpaceShard/starknet-hardhat-example.git
 cd starknet-hardhat-example
 git log -n 1
 npm ci
