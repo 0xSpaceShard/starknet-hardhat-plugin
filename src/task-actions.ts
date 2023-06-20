@@ -32,7 +32,7 @@ import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
 import { StarknetConfig } from "./types/starknet";
-import * as toml from "toml";
+import * as toml from "@iarna/toml";
 import { ScarbWrapper } from "./scarb-wrapper";
 import { ScarbConfig } from "./types";
 
@@ -100,7 +100,9 @@ class ScarbConfigValidationError extends StarknetPluginError {
 }
 
 function loadScarbTomlFromPath(tomlPath: string, validate: boolean): ScarbConfig {
-    const config: ScarbConfig = toml.parse(fs.readFileSync(tomlPath, "utf-8").toString());
+    const config = toml.parse(
+        fs.readFileSync(tomlPath, "utf-8").toString()
+    ) as unknown as ScarbConfig;
     const packageName = config.package.name;
 
     if (validate) {
