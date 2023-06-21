@@ -355,7 +355,6 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
         const dirSuffix = packageDir.replace(rootRegex, ""); // <CAIRO_DIR>/
         const artifactDirPath = path.join(artifactsPath, dirSuffix); // starknet-artifacts/<CAIRO_DIR>/
 
-        // TODO refactor to include everything after this in scarbWrapper.build
         const executed = scarbWrapper.build(packageConfigPath, artifactDirPath);
         statusCode += processExecuted(executed, true);
         if (executed.statusCode) {

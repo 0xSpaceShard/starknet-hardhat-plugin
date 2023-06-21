@@ -425,12 +425,7 @@ function adaptStructInput(
 /**
  * resultIndex initially expected to be at value indicating array length
  */
-function adaptArray(
-    result: bigint[],
-    resultIndex: number,
-    arrayType: string,
-    abi: starknet.Abi
-) {
+function adaptArray(result: bigint[], resultIndex: number, arrayType: string, abi: starknet.Abi) {
     const elementType = arrayType.slice(
         ARRAY_TYPE_PREFIX.length,
         arrayType.length - ARRAY_TYPE_SUFFIX.length
