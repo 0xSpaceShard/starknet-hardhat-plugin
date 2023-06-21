@@ -423,6 +423,38 @@ function adaptStructInput(
 }
 
 /**
+ * resultIndex initially expected to be at value indicating array length
+ */
+function adaptArray(
+    result: bigint[],
+    resultIndex: number,
+    arrayType: string,
+    abi: starknet.Abi
+) {
+    const elementType = arrayType.slice(
+        ARRAY_TYPE_PREFIX.length,
+        arrayType.length - ARRAY_TYPE_SUFFIX.length
+    );
+
+    const adaptedArray = [];
+
+    // Iterate over the result array, starting with current `resultIndex`
+    const expectedLength = Number(result[resultIndex++]);
+    for (let i = 0; i < expectedLength; i++) {
+        // Generate a struct with each element of the array and push it to `adaptedArray`
+        const ret = generateComplexOutput(result, resultIndex, elementType, abi);
+        adaptedArray.push(ret.generatedComplex);
+        // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
+        resultIndex = ret.newRawIndex;
+    }
+
+    return {
+        adaptedArray,
+        newResultIndex: resultIndex
+    };
+}
+
+/**
  * Adapts the string resulting from a Starknet CLI function call or server purpose of adapting event
  * This is done according to the actual output type specified by the called function.
  *
@@ -487,30 +519,9 @@ export function adaptOutputUtil(
             // New resultIndex is the raw index generated from the last struct
             adapted[outputSpec.name] = structArray;
         } else if (isArray(outputSpec.type)) {
-            const outputSpecArrayElementType = outputSpec.type.slice(
-                ARRAY_TYPE_PREFIX.length,
-                outputSpec.type.length - ARRAY_TYPE_SUFFIX.length
-            );
-            const arrLength = Number(currentValue);
-            resultIndex++;
-
-            const structArray = [];
-
-            // Iterate over the struct array, starting with results at `resultIndex`
-            for (let i = 0; i < arrLength; i++) {
-                // Generate a struct with each element of the array and push it to `structArray`
-                const ret = generateComplexOutput(
-                    result,
-                    resultIndex,
-                    outputSpecArrayElementType,
-                    abi
-                );
-                structArray.push(ret.generatedComplex);
-                // Next index is the proper raw index returned from generating the struct, which accounts for nested structs
-                resultIndex = ret.newRawIndex;
-            }
-            // New resultIndex is the raw index generated from the last struct
-            adapted[outputSpec.name] = structArray;
+            const ret = adaptArray(result, resultIndex, outputSpec.type, abi);
+            resultIndex = ret.newResultIndex;
+            adapted[outputSpec.name] = ret.adaptedArray;
         } else {
             const ret = generateComplexOutput(result, resultIndex, outputSpec.type, abi);
             adapted[outputSpec.name] = ret.generatedComplex;
@@ -578,10 +589,14 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
                 rawIndex = ret.newRawIndex;
             }
         }
+    } else if (isArray(type)) {
+        const ret = adaptArray(raw, rawIndex, type, abi);
+        generatedComplex = ret.adaptedArray;
+        rawIndex = ret.newResultIndex;
     } else {
         // struct
         if (!(type in abi)) {
-            throw new StarknetPluginError(`Type ${type} not present in ABI.`);
+            throw new StarknetPluginError(`Type ${type} not present in ABI.` + JSON.stringify(abi));
         }
 
         generatedComplex = {};
