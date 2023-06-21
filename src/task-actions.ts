@@ -370,8 +370,6 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
         const mainPackageArtifact = loadScarbMainArtifact(scarbArtifactDirPath, packageName);
 
         for (const contractEntry of mainPackageArtifact.contracts) {
-            const scarbSierraPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.sierra);
-            const scarbCasmPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.casm);
             // package_contract (underscore separation)
             const fileName = `${contractEntry.package_name}_${contractEntry.contract_name}`;
 
@@ -379,26 +377,38 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
             const ourArtifactDirPath = path.join(artifactDirPath, `${fileName}.cairo`);
             fs.mkdirSync(ourArtifactDirPath, { recursive: true });
 
-            // create artifacts compatible with our contract loading mehacnims
-            // to achieve this: link to scarb artifacts
-            const ourSierraPath = path.join(
-                ourArtifactDirPath,
-                `${fileName}${CAIRO1_SIERRA_SUFFIX}`
-            );
-            fs.copyFileSync(scarbSierraPath, ourSierraPath);
+            // We want to create artifacts compatible with our contract loading mehacnims.
+            // To achieve this, we will now copy scarb artifacts
 
-            const ourCasmPath = path.join(
-                ourArtifactDirPath,
-                `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`
-            );
-            fs.copyFileSync(scarbCasmPath, ourCasmPath);
+            // this is false if user skipped validation
+            if (contractEntry.artifacts.sierra) {
+                const scarbSierraPath = path.join(
+                    scarbArtifactDirPath,
+                    contractEntry.artifacts.sierra
+                );
+                const ourSierraPath = path.join(
+                    ourArtifactDirPath,
+                    `${fileName}${CAIRO1_SIERRA_SUFFIX}`
+                );
+                fs.copyFileSync(scarbSierraPath, ourSierraPath);
 
-            // Copy abi array from output to abiOutput
-            const abiOutput = path.join(ourArtifactDirPath, `${fileName}${ABI_SUFFIX}`);
-            initializeFile(abiOutput);
+                // Copy abi array from output to abiOutput
+                const abiOutput = path.join(ourArtifactDirPath, `${fileName}${ABI_SUFFIX}`);
+                initializeFile(abiOutput);
 
-            const outputJson = JSON.parse(fs.readFileSync(scarbSierraPath, "utf-8"));
-            fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
+                const outputJson = JSON.parse(fs.readFileSync(scarbSierraPath, "utf-8"));
+                fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
+            }
+
+            // this is false if user skipped validation
+            if (contractEntry.artifacts.casm) {
+                const scarbCasmPath = path.join(scarbArtifactDirPath, contractEntry.artifacts.casm);
+                const ourCasmPath = path.join(
+                    ourArtifactDirPath,
+                    `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`
+                );
+                fs.copyFileSync(scarbCasmPath, ourCasmPath);
+            }
         }
     }
 

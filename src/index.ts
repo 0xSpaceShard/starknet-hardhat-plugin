@@ -274,8 +274,8 @@ task("starknet-build", "Builds Scarb projects")
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
-        "scarbPath",
-        "Path to your custom local Scarb executable. Overrides the one set in the hardhat config file"
+        "scarbCommand",
+        "Your local Scarb command or path to the executable file. Overrides the one set in the hardhat config file"
     )
     .addFlag(
         "skipValidate",

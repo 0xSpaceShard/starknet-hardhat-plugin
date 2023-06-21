@@ -13,10 +13,10 @@ export abstract class ScarbWrapper {
     static getInstance(cliArgs: TaskArguments, hre: HardhatRuntimeEnvironment): ScarbWrapper {
         if (this.instance) {
             return this.instance;
-        } else if (cliArgs.scarbPath) {
-            this.instance = new CustomScarbWrapper(cliArgs.scarbPath);
-        } else if (hre.config.starknet.scarbPath) {
-            this.instance = new CustomScarbWrapper(hre.config.starknet.scarbPath);
+        } else if (cliArgs.scarbCommand) {
+            this.instance = new CustomScarbWrapper(cliArgs.scarbCommand);
+        } else if (hre.config.starknet.scarbCommand) {
+            this.instance = new CustomScarbWrapper(hre.config.starknet.scarbCommand);
         } else {
             this.instance = new DockerizedScarbWrapper(
                 hre.config.starknet.dockerizedVersion,
@@ -76,14 +76,14 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
 }
 
 export class CustomScarbWrapper extends ScarbWrapper {
-    constructor(private scarbPath: string) {
+    constructor(private scarbCommand: string) {
         super();
 
         // validate
-        const execution = spawnSync(scarbPath, ["--version"]);
+        const execution = spawnSync(scarbCommand, ["--version"]);
         if (execution.status) {
             throw new StarknetPluginError(
-                `Not a legal executable Scarb Path: ${scarbPath}.\n${execution.stderr.toString()}`
+                `Not a legal executable Scarb command: ${scarbCommand}.\n${execution.stderr.toString()}`
             );
         }
 
@@ -93,7 +93,7 @@ export class CustomScarbWrapper extends ScarbWrapper {
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
-        const execution = spawnSync(this.scarbPath, [
+        const execution = spawnSync(this.scarbCommand, [
             ...["--manifest-path", packageConfigPath],
             ...["--target-dir", artifactDirPath],
             "build"

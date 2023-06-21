@@ -1,0 +1,13 @@
+[package]
+name = "sample_package_name"
+version = "0.1.0"
+
+[[target.starknet-contract]]
+# Enable Sierra codegen.
+sierra = true
+
+# Enable CASM codegen.
+casm = false
+
+[dependencies]
+starknet = ">=1.1.0"

@@ -5,6 +5,9 @@ set -o pipefail
 
 trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
+# log versions
+./scripts/versions.sh
+
 ./scripts/ensure-python.sh
 
 # setup example repo
