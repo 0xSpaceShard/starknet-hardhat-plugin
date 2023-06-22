@@ -1,9 +1,6 @@
 import { hardhatStarknetBuild } from "../../utils/cli-functions";
-import { scarbAssertions } from "../../utils/scarb-utils";
 import { assertContains } from "../../utils/utils";
 
 const projectName = "cairo1_sample_project";
-const buildResult = hardhatStarknetBuild([projectName]);
-assertContains(buildResult.stdout, "Starknet plugin using dockerized Scarb");
-
-scarbAssertions(projectName);
+const buildResult = hardhatStarknetBuild([projectName], true);
+assertContains(buildResult.stdout, "Dockerized Scarb is not yet supported");

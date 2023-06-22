@@ -2,8 +2,7 @@ import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import { spawnSync } from "child_process";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { CAIRO_CLI_DOCKER_REPOSITORY, PLUGIN_NAME } from "./constants";
-import { getCairoCliImageTagByArch } from "./utils";
+import { PLUGIN_NAME } from "./constants";
 import path from "path";
 import os from "os";
 
@@ -35,11 +34,17 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
     constructor(imageTag: string, private projectRootPath: string) {
         super();
 
-        const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = getCairoCliImageTagByArch(imageTag);
-        this.formattedImage = `${repository}:${tag}`;
+        throw new StarknetPluginError(
+            "Dockerized Scarb is not yet supported. " +
+                "If you have Scarb installed on your machine, provide its path via scarbCommand in hardhat config, " +
+                "or via --scarb-command of hardhat starknet-build"
+        );
+        // UNCOMMENT THIS WHEN DOCKERIZED SCARB SUPPORTED
+        // const repository = CAIRO_CLI_DOCKER_REPOSITORY;
+        // const tag = getCairoCliImageTagByArch(imageTag);
+        // this.formattedImage = `${repository}:${tag}`;
 
-        console.log(`${PLUGIN_NAME} plugin using dockerized Scarb (${this.formattedImage})`);
+        // console.log(`${PLUGIN_NAME} plugin using dockerized Scarb (${this.formattedImage})`);
     }
 
     public override build(packageConfigPath: string, artifactDirPath: string): ProcessResult {
