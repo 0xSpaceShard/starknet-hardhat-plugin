@@ -51,10 +51,10 @@ function run_test() {
         return 0
     fi
 
-    # validate config file
-    npx hardhat --typecheck --config "$config_file_path"
     # replace the dummy config (CONFIG_FILE_NAME) with the one used by this test
     /bin/cp "$config_file_path" "$CONFIG_FILE_NAME"
+    # validate config file
+    npx hardhat --typecheck --config "$CONFIG_FILE_NAME"
 
     # check if test_case/check.ts exists
     if [ -f "$test_case/check.ts" ]; then
