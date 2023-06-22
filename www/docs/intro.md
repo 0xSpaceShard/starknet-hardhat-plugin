@@ -96,13 +96,13 @@ Each project must specify a Scarb.toml file with `sierra` and `casm` set to `tru
 
 In code, load the generated contracts with an underscore-separated string:
 
-```js
+```typescript
 starknet.getContractFactory("<PACKAGE_NAME>_<CONTRACT_NAME>");
 ```
 
 E.g. if your Scarb.toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:
 
-```js
+```typescript
 starknet.getContractFactory("MyPackage_FooContract");
 ```
 
