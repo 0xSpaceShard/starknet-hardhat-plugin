@@ -34,9 +34,9 @@ import {
 import {
     adaptPath,
     getAccountPath,
+    getCairoCliImageTagByArch,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
-    getImageTagByArch,
     getNetwork
 } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -195,7 +195,7 @@ extendEnvironment((hre) => {
         setVenvWrapper(hre, venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = getImageTagByArch(hre.config.starknet.dockerizedVersion);
+        const tag = getCairoCliImageTagByArch(hre.config.starknet.dockerizedVersion);
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);

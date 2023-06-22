@@ -3,7 +3,7 @@ import { spawnSync } from "child_process";
 import { HardhatRuntimeEnvironment, TaskArguments } from "hardhat/types";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { CAIRO_CLI_DOCKER_REPOSITORY, PLUGIN_NAME } from "./constants";
-import { getImageTagByArch } from "./utils";
+import { getCairoCliImageTagByArch } from "./utils";
 import path from "path";
 import os from "os";
 
@@ -36,7 +36,7 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
         super();
 
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = getImageTagByArch(imageTag);
+        const tag = getCairoCliImageTagByArch(imageTag);
         this.formattedImage = `${repository}:${tag}`;
 
         console.log(`${PLUGIN_NAME} plugin using dockerized Scarb (${this.formattedImage})`);
