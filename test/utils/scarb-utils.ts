@@ -38,7 +38,7 @@ function assertDeclarable(
         const oldEnvVarValue = process.env.DECLARABLE_CONTRACT;
         process.env.DECLARABLE_CONTRACT = compoundContractName;
         try {
-            hardhatStarknetRun(["scripts/declare.ts"]);
+            hardhatStarknetRun(["scripts/declare.ts", "--no-compile"]);
         } finally {
             // restore
             process.env.DECLARABLE_CONTRACT = oldEnvVarValue;
@@ -58,5 +58,5 @@ export function scarbAssertions(projectName: string, packageName = DEFAULT_PACKA
 
     // attempt full declare+deploy+call on FibContract
     // if it was declared earlier with the rest, this script would fail
-    hardhatStarknetTest(["test/cairo1/fib-contract.test.ts"]);
+    hardhatStarknetTest(["test/cairo1/fib-contract.test.ts", "--no-compile"]);
 }
