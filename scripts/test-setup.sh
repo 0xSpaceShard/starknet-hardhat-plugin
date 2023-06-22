@@ -35,5 +35,5 @@ fi
 ../scripts/setup-venv.sh
 
 # install scarb
-SCARB_VERSION=$(jq -r ".SCARB_VERSION" config.json)
+SCARB_VERSION=$(jq -r ".SCARB_VERSION" ../config.json)
 curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | bash -s -- -v SCARB_VERSION
