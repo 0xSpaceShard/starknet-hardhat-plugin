@@ -37,3 +37,5 @@ fi
 # install scarb
 SCARB_VERSION=$(jq -r ".SCARB_VERSION" ../config.json)
 curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | bash -s -- -v "$SCARB_VERSION"
+echo "Using Scarb version:"
+scarb --version
