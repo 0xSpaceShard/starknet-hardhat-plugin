@@ -48,7 +48,7 @@ export class DockerizedScarbWrapper extends ScarbWrapper {
         // If not specified, inside the container it tries to write cache to /.cache
         // which is not allowed for a non-root user. So here we are setting it to the path used by Scarb
         // in many non-docker environments
-        const globalCacheDir = path.join(os.homedir(), ".cache", "scarb");
+        const globalCacheDir = path.join(os.tmpdir(), ".cache", "scarb");
         const execution = spawnSync("docker", [
             "run",
             "--rm",
