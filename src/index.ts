@@ -250,7 +250,8 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
             "Each of the provided paths is recursively looked into while searching for source files.\n" +
-            "If no paths are provided, the default contracts directory is traversed."
+            "If no paths are provided, the default contracts directory is traversed.\n" +
+            "To build more complex Cairo 1 projects, read about `hardhat starknet-build`"
     )
     .addOptionalParam(
         "cairo1BinDir",
@@ -271,7 +272,15 @@ task("starknet-build", "Builds Scarb projects")
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
             "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
-            "If no paths are provided, the default contracts directory is traversed."
+            "If no paths are provided, the default contracts directory is traversed.\n" +
+            "Each project must specify a Scarb.toml file with `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
+            "In code, load the generated contracts with an underscore-separated string:\n" +
+            "\tstarknet.getContractFactory('<PACKAGE_NAME>_<CONTRACT_NAME>')\n" +
+            "E.g. if your Scarb.toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
+            "\tstarknet.getContractFactory('MyPackage_FooContract')\n" +
+            "The name of the file where the contract was defined doesn't play a role.\n" +
+            "If you do not provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, " +
+            "you may specify (and even override) it via `--scarb-command <COMMAND>`."
     )
     .addOptionalParam(
         "scarbCommand",
