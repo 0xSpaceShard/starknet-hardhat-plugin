@@ -201,9 +201,7 @@ jobs:
                   steps:
                       - run:
                             name: Add file permissions
-                            command: |
-                                sudo chown -R circleci /usr/local/bin
-                                sudo chown -R circleci /tmp
+                            command: sudo chown -R circleci /usr/local/bin
 
             # Retrieve the latest versions of the dependencies
             - fetch_dependecies_version

@@ -591,7 +591,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
     } else {
         // struct
         if (!(type in abi)) {
-            throw new StarknetPluginError(`Type ${type} not present in ABI.` + JSON.stringify(abi));
+            throw new StarknetPluginError(`Type ${type} not present in ABI.`);
         }
 
         generatedComplex = {};

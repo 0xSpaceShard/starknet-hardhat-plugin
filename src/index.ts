@@ -273,7 +273,7 @@ task("starknet-build", "Builds Scarb projects")
         "The paths are source files of contracts to be compiled.\n" +
             "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
             "If no paths are provided, the default contracts directory is traversed.\n" +
-            "Each project must specify a Scarb.toml file with `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
+            "Each project must specify a Scarb.toml file in its root with `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
             "In code, load the generated contracts with an underscore-separated string:\n" +
             "\tstarknet.getContractFactory('<PACKAGE_NAME>_<CONTRACT_NAME>')\n" +
             "E.g. if your Scarb.toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
