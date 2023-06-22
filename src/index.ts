@@ -29,7 +29,8 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL,
     VOYAGER_GOERLI_2_CONTRACT_API_URL,
     VOYAGER_GOERLI_2_VERIFIED_URL,
-    StarknetChainId
+    StarknetChainId,
+    SUPPORTED_SCARB_VERSION
 } from "./constants";
 import {
     adaptPath,
@@ -273,10 +274,11 @@ task("starknet-build", "Builds Scarb projects")
         "The paths are source files of contracts to be compiled.\n" +
             "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
             "If no paths are provided, the default contracts directory is traversed.\n" +
-            "Each project must specify a Scarb.toml file in its root with `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
+            `Each project must be a valid Scarb ${SUPPORTED_SCARB_VERSION} project with lib.cairo and Scarb.toml in its root.\n` +
+            "The toml file must have `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
             "In code, load the generated contracts with an underscore-separated string:\n" +
             "\tstarknet.getContractFactory('<PACKAGE_NAME>_<CONTRACT_NAME>')\n" +
-            "E.g. if your Scarb.toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
+            "E.g. if your toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
             "\tstarknet.getContractFactory('MyPackage_FooContract')\n" +
             "The name of the file where the contract was defined doesn't play a role.\n" +
             "If you do not provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, " +
