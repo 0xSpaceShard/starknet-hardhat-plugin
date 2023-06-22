@@ -384,8 +384,8 @@ export class StarknetContractFactory {
         }
 
         const casmJson = JSON.parse(fs.readFileSync(this.casmPath, "utf-8"));
-        if (casmJson?.compiler_version.split(".")[0] !== "1") {
-            const msg = ".CASM json has to contain compiler_version '1.*.*'";
+        if (casmJson?.compiler_version.split(".")[0] === "0") {
+            const msg = ".CASM json should have been generated with a compiler version >= 1";
             throw new StarknetPluginError(msg);
         }
 
