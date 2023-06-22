@@ -81,9 +81,10 @@ export class CustomScarbWrapper extends ScarbWrapper {
 
         // validate
         const execution = spawnSync(scarbCommand, ["--version"]);
-        if (execution.status) {
+        // on mac, properties of spawnSync result can be null if invalid command
+        if (execution.status !== 0) {
             throw new StarknetPluginError(
-                `Not a legal executable Scarb command: ${scarbCommand}.\n${execution.stderr.toString()}`
+                `Not a legal executable Scarb command: ${scarbCommand}.\n${execution?.stderr.toString()}`
             );
         }
 

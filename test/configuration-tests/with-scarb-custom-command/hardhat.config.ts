@@ -3,7 +3,7 @@ import "@shardlabs/starknet-hardhat-plugin";
 module.exports = {
     starknet: {
         network: process.env.NETWORK,
-        scarbCommand: "scarb"
+        scarbCommand: `${process.env.HOME}/.local/bin/scarb`
     },
     networks: {
         devnet: {

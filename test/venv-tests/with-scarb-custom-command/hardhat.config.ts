@@ -4,7 +4,7 @@ module.exports = {
     starknet: {
         venv: "../my-venv",
         network: process.env.NETWORK,
-        scarbCommand: "scarb"
+        scarbCommand: `${process.env.HOME}/.local/bin/scarb`
     },
     networks: {
         devnet: {
