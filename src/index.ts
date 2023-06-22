@@ -281,8 +281,9 @@ task("starknet-build", "Builds Scarb projects")
             "E.g. if your toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
             "\tstarknet.getContractFactory('MyPackage_FooContract')\n" +
             "The name of the file where the contract was defined doesn't play a role.\n" +
-            "If you do not provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, " +
-            "you may specify (and even override) it via `--scarb-command <COMMAND>`."
+            "The plugin doesn't have a default Scarb command yet (a dockerized wrapper will be supported soon).\n" +
+            "You need to provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, " +
+            "or you can override that via `--scarb-command <COMMAND>`."
     )
     .addOptionalParam(
         "scarbCommand",

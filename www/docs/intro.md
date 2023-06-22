@@ -92,7 +92,7 @@ Builds Scarb projects.
 
 Each of the provided paths is recursively looked into while searching for Scarb projects. If no paths are provided, the default contracts directory is traversed.
 
-Each project must be a valid Scarb 0.4.0 project with lib.cairo and Scarb.toml in its root. The toml file must have `sierra` and `casm` set to `true` under `[[target.starknet-contract]]`. If you know what you are doing, you can skip the validation by providing `--skip-validate`.
+Each project must be a valid Scarb project with lib.cairo and Scarb.toml in its root. The toml file must have `sierra` and `casm` set to `true` under `[[target.starknet-contract]]`. If you know what you are doing, you can skip the validation by providing `--skip-validate`.
 
 In code, load the generated contracts with an underscore-separated string:
 
@@ -103,12 +103,13 @@ starknet.getContractFactory("<PACKAGE_NAME>_<CONTRACT_NAME>");
 E.g. if your toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:
 
 ```typescript
+// alternatively prepend the directory name to avoid ambiguity, but be sure to apply the underscore syntax
 starknet.getContractFactory("MyPackage_FooContract");
 ```
 
 The name of the file where the contract was defined doesn't play a role.
 
-If you do not provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, you may specify (and even override) it via `--scarb-command <COMMAND>`.
+The plugin doesn't have a default Scarb command yet (a dockerized wrapper will be supported soon). You need to provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, or you can override that via `--scarb-command <COMMAND>`.
 
 ### `starknet-verify`
 
