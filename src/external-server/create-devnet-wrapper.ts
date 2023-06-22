@@ -2,7 +2,7 @@ import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
 import { StarknetPluginError } from "../starknet-plugin-error";
 
 import { DEVNET_DOCKER_REPOSITORY, INTEGRATED_DEVNET, INTEGRATED_DEVNET_URL } from "../constants";
-import { getCairoCliImageTagByArch, getDevnetImageTagByArch, getNetwork } from "../utils";
+import { getDevnetImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
 import { ExternalServer } from "./external-server";
