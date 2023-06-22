@@ -90,7 +90,7 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const binDirPath = getCompilerBinDir(hre.config.starknet, args);
+    const binDirPath = getCompilerBinDir(args, hre.config.starknet);
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
