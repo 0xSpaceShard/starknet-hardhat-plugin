@@ -35,6 +35,7 @@
     "author": "SpaceShard",
     "license": "MIT",
     "dependencies": {
+        "@iarna/toml": "^2.2.5",
         "@nomiclabs/hardhat-docker": "^2.0.2",
         "axios": "^1.0.0",
         "axios-retry": "^3.5.0",

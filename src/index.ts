@@ -15,7 +15,6 @@ import "./type-extensions";
 import {
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
-    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
     CAIRO_CLI_DOCKER_REPOSITORY,
     AMARNA_DOCKER_REPOSITORY,
     AMARNA_DOCKER_IMAGE_TAG,
@@ -30,14 +29,15 @@ import {
     VOYAGER_MAINNET_VERIFIED_URL,
     VOYAGER_GOERLI_2_CONTRACT_API_URL,
     VOYAGER_GOERLI_2_VERIFIED_URL,
-    StarknetChainId
+    StarknetChainId,
+    SUPPORTED_SCARB_VERSION
 } from "./constants";
 import {
     adaptPath,
     getAccountPath,
+    getCairoCliImageTagByArch,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
-    getImageTagByArch,
     getNetwork
 } from "./utils";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
@@ -51,7 +51,8 @@ import {
     starknetMigrateAction,
     starknetNewAccountAction,
     starknetDeployAccountAction,
-    starknetCompileCairo1Action
+    starknetCompileCairo1Action,
+    starknetBuildAction
 } from "./task-actions";
 import {
     bigIntToShortStringUtil,
@@ -195,9 +196,7 @@ extendEnvironment((hre) => {
         setVenvWrapper(hre, venvPath);
     } else {
         const repository = CAIRO_CLI_DOCKER_REPOSITORY;
-        const tag = getImageTagByArch(
-            hre.config.starknet.dockerizedVersion || CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
-        );
+        const tag = getCairoCliImageTagByArch(hre.config.starknet.dockerizedVersion);
 
         const image = { repository, tag };
         const accountPaths = extractAccountPaths(hre);
@@ -235,7 +234,7 @@ task("starknet-compile-deprecated", "Compiles Starknet (Cairo 0) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths to be used for compilation.\n" +
-            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
+            "Each of the provided paths is recursively looked into while searching for source files.\n" +
             "If no paths are provided, the default contracts directory is traversed."
     )
     .addOptionalParam(
@@ -251,8 +250,9 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addOptionalVariadicPositionalParam(
         "paths",
         "The paths are source files of contracts to be compiled.\n" +
-            "Each of the provided paths is recursively looked into while searching for compilation artifacts.\n" +
-            "If no paths are provided, the default contracts directory is traversed."
+            "Each of the provided paths is recursively looked into while searching for source files.\n" +
+            "If no paths are provided, the default contracts directory is traversed.\n" +
+            "To build more complex Cairo 1 projects, read about `hardhat starknet-build`"
     )
     .addOptionalParam(
         "cairo1BinDir",
@@ -267,6 +267,33 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     .addOptionalParam("allowedLibfuncsListFile", "A file of the allowed libfuncs list to use.")
     .addFlag("addPythonicHints", "Add pythonic hints.")
     .setAction(starknetCompileCairo1Action);
+
+task("starknet-build", "Builds Scarb projects")
+    .addOptionalVariadicPositionalParam(
+        "paths",
+        "The paths are source files of contracts to be compiled.\n" +
+            "Each of the provided paths is recursively looked into while searching for Scarb projects.\n" +
+            "If no paths are provided, the default contracts directory is traversed.\n" +
+            `Each project must be a valid Scarb ${SUPPORTED_SCARB_VERSION} project with lib.cairo and Scarb.toml in its root.\n` +
+            "The toml file must have `sierra` and `casm` set to `true` under [[target.starknet-contract]].\n" +
+            "In code, load the generated contracts with an underscore-separated string:\n" +
+            "\tstarknet.getContractFactory('<PACKAGE_NAME>_<CONTRACT_NAME>')\n" +
+            "E.g. if your toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:\n" +
+            "\tstarknet.getContractFactory('MyPackage_FooContract')\n" +
+            "The name of the file where the contract was defined doesn't play a role.\n" +
+            "If you do not provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, " +
+            "you may specify (and even override) it via `--scarb-command <COMMAND>`."
+    )
+    .addOptionalParam(
+        "scarbCommand",
+        "Your local Scarb command or path to the executable file. Overrides the one set in the hardhat config file"
+    )
+    .addFlag(
+        "skipValidate",
+        "By default, your TOML config file will be validated to ensure it generates the artifacts required for later contract loading.\n" +
+            "Set this flag to skip the validation."
+    )
+    .setAction(starknetBuildAction);
 
 extendEnvironment((hre) => {
     hre.starknet = {

@@ -67,8 +67,7 @@ $ npm run test-general-tests -- declare-test
 
 ### Executing individual tests with dockerized environnement
 
-If you only use dockerized environnement you don't need to install dependencies locally.
-Therefore you can run `declare-test` test case in `general-tests` test group from `starknet-hardhat-example` directory like this :
+If you are only running Devnet in dockerized mode, you don't need to install all the dev tools locally. With a properly set up `starknet-hardhat-example` (read more [here](#Set-up-the-example-repository)), you can position yourself in that repository and to execute the `declare-test` case of the `general-tests` group, you can run:
 
 ```sh
 $ npx ts-node STARKNET_HARDHAT_PLUGIN_PATH/test/general-tests/declare-test/check.ts

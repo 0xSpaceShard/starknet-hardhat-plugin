@@ -3,7 +3,6 @@ import axios from "axios";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import path from "path";
 import { hash, number } from "starknet";
-
 import { DockerCairo1Compiler, exec } from "./cairo1-compiler";
 import {
     CAIRO1_COMPILE_BIN,
