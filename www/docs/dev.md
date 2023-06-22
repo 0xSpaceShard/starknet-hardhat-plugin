@@ -162,11 +162,13 @@ $ npm version <NEW_VERSION>
 
 This will also update `package-lock.json`, create a new commit, and create a new git tag.
 
+You may want your version-bumping commit to contain the `[skip testnet]` string (documented [here](#testing-network)) to avoid testing on alpha-goerli (may postpone the version release significantly, if it will ever pass at all).
+
 If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
 Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/0xSpaceShard/starknet-hardhat-plugin/releases) with [git tags](https://github.com/0xSpaceShard/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
 
-When the tag is pushed:
+After the npm package is released and the tag is pushed:
 
 ```bash
 $ git push origin <TAG_NAME>
@@ -178,7 +180,7 @@ Users should be notified about the usage related changes. This can be done on Te
 
 ### Docs
 
-New documentation is **automatically** deployed after publishing a new version with `scripts/npm-publish.sh`.
+New documentation is **automatically** deployed after publishing a new version with `scripts/npm-publish.sh` (also part of CI/CD).
 
 To manually deploy new documentation, run:
 
