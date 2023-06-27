@@ -1,9 +1,9 @@
+import { Block, HardhatNetworkConfig, NetworkConfig, Transaction } from "hardhat/types";
+
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from ".";
 import { Devnet } from "./devnet";
-import { Transaction, TransactionReceipt, Block, TransactionTrace } from "../starknet-types";
-import {} from "../account";
-import { HardhatNetworkConfig, NetworkConfig } from "hardhat/types/config";
 import { ArgentAccount, OpenZeppelinAccount } from "../account";
+import { TransactionReceipt, TransactionTrace } from "../starknet-types";
 
 export interface Starknet {
     /**
