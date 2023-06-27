@@ -406,3 +406,7 @@ task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
 task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
     .addFlag("script", "Run ./amarna.sh file to use Amarna with custom args.")
     .setAction(amarnaAction);
+
+export * from "./types";
+export * from "./starknet-types";
+export * from "./starknet-plugin-error";
