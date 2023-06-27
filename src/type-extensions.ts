@@ -1,13 +1,16 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
-import { StarknetWrapper } from "./starknet-wrappers";
-import * as DevnetTypes from "./types/devnet";
-import * as StarknetTypes from "./types/starknet";
+import { GetBlockResponse } from "starknet";
+
 import { Account } from "./account";
-import { Transaction, TransactionReceipt, Block, TransactionTrace } from "./starknet-types";
 import { StarknetChainId } from "./constants";
 import { AmarnaDocker } from "./external-server/docker-amarna";
+import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
+import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
+import { StarknetWrapper } from "./starknet-wrappers";
+import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import * as DevnetTypes from "./types/devnet";
+import * as StarknetTypes from "./types/starknet";
 
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
@@ -79,7 +82,7 @@ type AccountType = Account;
 type TransactionReceiptType = TransactionReceipt;
 type TransactionTraceType = TransactionTrace;
 type TransactionType = Transaction;
-type BlockType = Block;
+type BlockType = GetBlockResponse;
 
 declare module "hardhat/types/runtime" {
     export interface Devnet extends DevnetTypes.Devnet {}
@@ -87,6 +90,7 @@ declare module "hardhat/types/runtime" {
         starknetWrapper: StarknetWrapper;
         amarnaDocker: AmarnaDocker;
         starknet: StarknetTypes.Starknet;
+        starknetJs: StarknetLegacyWrapper;
     }
 
     type StarknetContract = StarknetContractType;

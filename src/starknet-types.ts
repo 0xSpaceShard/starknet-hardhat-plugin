@@ -131,20 +131,6 @@ export interface TransactionTrace {
     fee_transfer_invocation?: FunctionInvocation;
 }
 
-export interface Block {
-    block_hash: string;
-    parent_block_hash: string;
-    block_number: number;
-    gas_price: string;
-    sequencer_address: string;
-    state_root: string;
-    status: string;
-    timestamp: number;
-    transaction_receipts: TransactionReceipt[];
-    transactions: TransactionData[];
-    starknet_version: string;
-}
-
 export interface MintResponse {
     new_balance: number;
     unit: string;

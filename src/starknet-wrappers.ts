@@ -10,15 +10,14 @@ import {
     CAIRO1_SIERRA_COMPILE_BIN,
     DOCKER_HOST_BIN_PATH,
     DOCKER_HOST,
-    PLUGIN_NAME,
-    StarknetChainId
+    PLUGIN_NAME
 } from "./constants";
 import { ExternalServer } from "./external-server";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { FeeEstimation } from "./starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
-import { BlockNumber, InteractChoice } from "./types";
+import { BlockNumber } from "./types";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
 interface CompileWrapperOptions {
@@ -55,18 +54,6 @@ interface DeclareWrapperOptions {
     token?: string;
     sender?: string;
     nonce?: string;
-}
-
-interface InteractWrapperOptions {
-    maxFee: string;
-    nonce: string;
-    choice: InteractChoice;
-    address: string;
-    abi?: string;
-    functionName: string;
-    inputs?: string[];
-    signature?: string[];
-    blockNumber?: BlockNumber;
 }
 
 interface TxHashQueryWrapperOptions {
@@ -117,17 +104,8 @@ export abstract class StarknetWrapper {
         return url;
     }
 
-    private get chainID(): StarknetChainId {
-        return this.hre.starknet.networkConfig.starknetChainId;
-    }
-
-    private get networkID(): string {
-        return this.hre.starknet.network;
-    }
-
     public async execute(
         command:
-            | "starknet"
             | "starknet-compile-deprecated"
             | "get_class_hash"
             | "cairo-migrate"
@@ -173,51 +151,6 @@ export abstract class StarknetWrapper {
     public abstract compileCairoToSierra(options: CairoToSierraOptions): Promise<ProcessResult>;
 
     public abstract compileSierraToCasm(options: SierraToCasmOptions): Promise<ProcessResult>;
-
-    public prepareDeclareOptions(options: DeclareWrapperOptions): string[] {
-        const prepared = [
-            "declare",
-            "--deprecated",
-            "--contract",
-            options.contract,
-            "--gateway_url",
-            this.gatewayUrl,
-            "--feeder_gateway_url",
-            this.gatewayUrl,
-            "--no_wallet"
-        ];
-
-        if (options.signature && options.signature.length) {
-            prepared.push("--signature", ...options.signature);
-        }
-
-        if (options.token) {
-            prepared.push("--token", options.token);
-        }
-
-        if (options.sender) {
-            prepared.push("--sender", options.sender);
-        }
-
-        if (options.maxFee == null) {
-            throw new StarknetPluginError("No maxFee provided for declare tx");
-        }
-
-        prepared.push("--chain_id", this.chainID);
-        prepared.push("--max_fee", options.maxFee);
-
-        if (options.nonce) {
-            prepared.push("--nonce", options.nonce);
-        }
-
-        return prepared;
-    }
-
-    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareDeclareOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
 
     protected prepareCairoToSierraOptions(options: CairoToSierraOptions): string[] {
         const args = [];
@@ -278,139 +211,41 @@ export abstract class StarknetWrapper {
         return [cairo1Bin, ...args];
     }
 
-    protected prepareInteractOptions(options: InteractWrapperOptions): string[] {
-        const prepared = [
-            ...options.choice.cliCommand,
-            "--feeder_gateway_url",
-            this.gatewayUrl,
-            "--gateway_url",
-            this.gatewayUrl,
-            "--function",
-            options.functionName,
-            "--address",
-            options.address,
-            "--no_wallet"
-        ];
-
-        if (options.abi) {
-            prepared.push("--abi", options.abi);
-        }
-
-        if (options.inputs && options.inputs.length) {
-            prepared.push("--inputs", ...options.inputs);
-        }
-
-        if (options.signature && options.signature.length) {
-            prepared.push("--signature", ...options.signature);
-        }
-
-        if (options.blockNumber != null) {
-            prepared.push("--block_number", options.blockNumber.toString());
-        }
-
-        prepared.push("--chain_id", this.chainID);
-
-        if (options.choice.allowsMaxFee && options.maxFee) {
-            prepared.push("--max_fee", options.maxFee);
-        }
-
-        if (options.nonce) {
-            prepared.push("--nonce", options.nonce);
-        }
-
-        return prepared;
-    }
-
-    public abstract interact(options: InteractWrapperOptions): Promise<ProcessResult>;
-
-    protected prepareTxQueryOptions(command: string, options: TxHashQueryWrapperOptions): string[] {
-        return [
-            command,
-            "--hash",
-            options.hash,
-            "--gateway_url",
-            this.gatewayUrl,
-            "--feeder_gateway_url",
-            this.gatewayUrl
-        ];
+    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
+        return this.hre.starknetJs.declare(
+            options.contract,
+            options.sender,
+            options.signature,
+            options.nonce,
+            options.maxFee
+        );
     }
 
     public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions("tx_status", options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
+        return this.hre.starknetJs.getTxStatus(options.hash);
     }
 
     public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions("get_transaction_trace", options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
+        return this.hre.starknetJs.getTransactionTrace(options.hash);
     }
 
     public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions("get_transaction_receipt", options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
+        return this.hre.starknetJs.getTransactionReceipt(options.hash);
     }
 
     public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareTxQueryOptions("get_transaction", options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    protected prepareBlockQueryOptions(options: BlockQueryWrapperOptions): string[] {
-        const commandArr = [
-            "get_block",
-            "--gateway_url",
-            this.gatewayUrl,
-            "--feeder_gateway_url",
-            this.gatewayUrl
-        ];
-
-        if (options?.hash) {
-            commandArr.push("--hash");
-            commandArr.push(options.hash);
-        }
-
-        if (options?.number) {
-            commandArr.push("--number");
-            commandArr.push(options.number.toString());
-        }
-
-        return commandArr;
+        return await this.hre.starknetJs.getTransaction(options.hash);
     }
 
     public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareBlockQueryOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
-    }
-
-    protected prepareNonceQueryOptions(options: NonceQueryWrapperOptions): string[] {
-        const commandArr = [
-            "get_nonce",
-            "--feeder_gateway_url",
-            this.gatewayUrl,
-            "--contract_address",
-            options.address
-        ];
-
-        if (options.blockHash) {
-            commandArr.push("--block_hash", options.blockHash);
-        }
-
-        if (options.blockNumber != null) {
-            commandArr.push("--block_number", options.blockNumber.toString());
-        }
-
-        return commandArr;
+        return this.hre.starknetJs.getBlock(options.hash ?? options.number);
     }
 
     public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareNonceQueryOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
-        return executed;
+        return this.hre.starknetJs.getNonce(
+            options.address,
+            options.blockHash ?? options.blockNumber
+        );
     }
 
     public async getClassHash(artifactPath: string): Promise<string> {
@@ -515,12 +350,6 @@ export class DockerWrapper extends StarknetWrapper {
 
         return await externalServer.compileCairo1();
     }
-
-    public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareInteractOptions(options);
-        const executed = this.execute("starknet", preparedOptions);
-        return executed;
-    }
 }
 
 export class VenvWrapper extends StarknetWrapper {
@@ -555,12 +384,6 @@ export class VenvWrapper extends StarknetWrapper {
         const command = this.getCairo1Command(options.binDirPath, CAIRO1_SIERRA_COMPILE_BIN, args);
 
         const executed = exec(command.join(" "));
-        return executed;
-    }
-
-    public async interact(options: InteractWrapperOptions): Promise<ProcessResult> {
-        const preparedOptions = this.prepareInteractOptions(options);
-        const executed = await this.execute("starknet", preparedOptions);
         return executed;
     }
 }
