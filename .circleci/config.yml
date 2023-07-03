@@ -116,7 +116,6 @@ aliases:
                       name: "Save cairo-lang Cache"
                       key: cairo-lang-cache-{{ arch }}-v1-{{ checksum "/tmp/cairo-lang-version" }}
                       paths:
-                          - /usr/python3.8/dist-packages/cairo-lang
                           - /usr/python3.9/dist-packages/cairo-lang
                           - /usr/local/bin/starknet
                           - /usr/local/bin/starknet-compile
@@ -133,7 +132,6 @@ aliases:
                 - /opt/circleci/.pyenv/versions
                 - /opt/circleci/.pyenv/shims/starknet-devnet
                 - /usr/local/bin/starknet-devnet
-                - /usr/local/lib/python3.8/site-packages
                 - /usr/local/lib/python3.9/site-packages
 
 # Commands

@@ -26,7 +26,9 @@ import {
     INTEGRATED_DEVNET,
     INTEGRATED_DEVNET_INTERNALLY,
     StarknetChainId,
-    UDC_ADDRESS
+    UDC_ADDRESS,
+    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
+    DEFAULT_DEVNET_DOCKER_IMAGE_TAG
 } from "./constants";
 import { getContractFactoryUtil } from "./extend-utils";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -232,13 +234,21 @@ export function copyWithBigint<T>(object: unknown): T {
     );
 }
 
-export function getImageTagByArch(tag: string): string {
+function getImageTagByArch(tag: string): string {
     // Check CPU architecture
     const arch = process.arch;
     if (arch === "arm64" && !tag.endsWith("-arm")) {
         tag = `${tag}-arm`;
     }
     return tag;
+}
+
+export function getCairoCliImageTagByArch(tag = CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG): string {
+    return getImageTagByArch(tag);
+}
+
+export function getDevnetImageTagByArch(tag = DEFAULT_DEVNET_DOCKER_IMAGE_TAG): string {
+    return getImageTagByArch(tag);
 }
 
 export function sleep(ms: number) {

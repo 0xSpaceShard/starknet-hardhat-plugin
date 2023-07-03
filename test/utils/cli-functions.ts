@@ -40,3 +40,7 @@ export const hardhatStarknetMigrate = (args: Array<string>, expectFailure = fals
 export const hardhatStarknetPluginVersion = () => {
     return exec("npx hardhat starknet-plugin-version");
 };
+
+export const hardhatStarknetBuild = (args: Array<string>, expectFailure = false) => {
+    return exec(`npx hardhat starknet-build ${args.join(" ")}`, expectFailure);
+};

@@ -1,6 +1,6 @@
 {
     "name": "@shardlabs/starknet-hardhat-plugin",
-    "version": "0.8.0-alpha.2",
+    "version": "0.8.0-alpha.3",
     "description": "Plugin for using Starknet tools within Hardhat projects",
     "main": "dist/src/index.js",
     "files": [
@@ -35,6 +35,7 @@
     "author": "SpaceShard",
     "license": "MIT",
     "dependencies": {
+        "@iarna/toml": "^2.2.5",
         "@nomiclabs/hardhat-docker": "^2.0.2",
         "axios": "^1.0.0",
         "axios-retry": "^3.5.0",

@@ -24,14 +24,14 @@ export interface Starknet {
      * @param input the input short string
      * @returns the numeric equivalent of the input short string, wrapped in a `BigInt`
      */
-    shortStringToBigInt: (convertableString: string) => bigint;
+    shortStringToBigInt: (convertibleString: string) => bigint;
 
     /**
      * Converts a BigInt to a string. The opposite of {@link shortStringToBigInt}.
      * @param input the input BigInt
      * @returns a string which is the result of converting a BigInt's hex value to its ASCII equivalent
      */
-    bigIntToShortString: (convertableBigInt: bigint) => string;
+    bigIntToShortString: (convertibleBigInt: bigint) => string;
 
     /**
      * The selected starknet-network name.
@@ -91,6 +91,7 @@ export type StarknetConfig = {
     networkUrl?: string;
     networkConfig?: NetworkConfig;
     recompile?: boolean;
+    scarbCommand?: string;
     cairo1BinDir?: string;
     requestTimeout?: number;
 };

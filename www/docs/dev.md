@@ -65,6 +65,16 @@ To run a specific test case in the test group you can pass in the name of direct
 $ npm run test-general-tests -- declare-test
 ```
 
+### Executing individual tests with dockerized environnement
+
+If you are only running Devnet in dockerized mode, you don't need to install all the dev tools locally. With a properly set up `starknet-hardhat-example` (read more [here](#Set-up-the-example-repository)), you can position yourself in that repository and to execute the `declare-test` case of the `general-tests` group, you can run:
+
+```sh
+$ npx ts-node STARKNET_HARDHAT_PLUGIN_PATH/test/general-tests/declare-test/check.ts
+```
+
+Using this command will use the starknet-hardhat-example hardhat.config.ts. You can make modifications to make it match the config file in the test directory `STARKNET_HARDHAT_PLUGIN_PATH/test/general-tests/declare-test/hardhat.config.ts`
+
 ### Running tests in dev mode
 
 To run tests locally with test-dev. This is designed to run same tests repeatedly while developing.
@@ -130,7 +140,7 @@ There are two wrappers around Starknet CLI. They are defined in [starknet-wrappe
 
 ### Accessing HardhatRuntimeEnvironment (hre)
 
-Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting clases has become a possibility:
+Before v0.7.0 we didn't know how to export classes to users, since every class needed to have access to `hre`, which was passed on in `extendEnvironment`. After introducing dynamic `hre` importing, exporting classes has become a possibility:
 
 ```typescript
 const hre = await import("hardhat");
@@ -152,11 +162,13 @@ $ npm version <NEW_VERSION>
 
 This will also update `package-lock.json`, create a new commit, and create a new git tag.
 
+You may want your version-bumping commit to contain the `[skip testnet]` string (documented [here](#testing-network)) to avoid testing on alpha-goerli (may postpone the version release significantly, if it will ever pass at all).
+
 If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
 Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/0xSpaceShard/starknet-hardhat-plugin/releases) with [git tags](https://github.com/0xSpaceShard/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
 
-When the tag is pushed:
+After the npm package is released and the tag is pushed:
 
 ```bash
 $ git push origin <TAG_NAME>
@@ -168,7 +180,7 @@ Users should be notified about the usage related changes. This can be done on Te
 
 ### Docs
 
-New documentation is **automatically** deployed after publishing a new version with `scripts/npm-publish.sh`.
+New documentation is **automatically** deployed after publishing a new version with `scripts/npm-publish.sh` (also part of CI/CD).
 
 To manually deploy new documentation, run:
 

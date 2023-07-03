@@ -62,7 +62,7 @@ export interface StringMap {
 }
 
 /**
- * Object holding the event name and have a proprety data of type StingMap.
+ * Object holding the event name and have a property data of type StingMap.
  */
 export interface DecodedEvent {
     name: string;
@@ -341,13 +341,13 @@ export interface BlockIdentifier {
     blockHash?: string;
 }
 
-export type SieraEntryPointsByType = {
-    CONSTRUCTOR: SieraContractEntryPointFields[];
-    EXTERNAL: SieraContractEntryPointFields[];
-    L1_HANDLER: SieraContractEntryPointFields[];
+export type SierraEntryPointsByType = {
+    CONSTRUCTOR: SierraContractEntryPointFields[];
+    EXTERNAL: SierraContractEntryPointFields[];
+    L1_HANDLER: SierraContractEntryPointFields[];
 };
 
-export type SieraContractEntryPointFields = {
+export type SierraContractEntryPointFields = {
     selector: string;
     function_idx: number;
 };
@@ -370,11 +370,11 @@ export class StarknetContractFactory {
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
 
-        const constructorPredicate = this.resolveContructorPredicate();
+        const constructorPredicate = this.resolveConstructorPredicate();
         this.constructorAbi = findConstructor(this.abi, constructorPredicate);
     }
 
-    private resolveContructorPredicate(): (abiEntry: starknet.AbiEntry) => boolean {
+    private resolveConstructorPredicate(): (abiEntry: starknet.AbiEntry) => boolean {
         if (!this.isCairo1()) {
             return (abiEntry: starknet.AbiEntry): boolean => {
                 return abiEntry.type === "constructor";
@@ -382,8 +382,8 @@ export class StarknetContractFactory {
         }
 
         const casmJson = JSON.parse(fs.readFileSync(this.casmPath, "utf-8"));
-        if (casmJson?.compiler_version.split(".")[0] !== "1") {
-            const msg = ".CASM json has to contain compiler_version '1.*.*'";
+        if (casmJson?.compiler_version.split(".")[0] === "0") {
+            const msg = ".CASM json should have been generated with a compiler version >= 1";
             throw new StarknetPluginError(msg);
         }
 
@@ -774,13 +774,13 @@ export class StarknetContract {
 export interface ContractClassConfig extends StarknetContractConfig {
     sierraProgram: string;
     contractClassVersion: string;
-    entryPointsByType: SieraEntryPointsByType;
+    entryPointsByType: SierraEntryPointsByType;
 }
 
 export class Cairo1ContractClass extends StarknetContract {
     protected sierraProgram: string;
     protected contractClassVersion: string;
-    protected entryPointsByType: SieraEntryPointsByType;
+    protected entryPointsByType: SierraEntryPointsByType;
 
     constructor(config: ContractClassConfig) {
         super(config);
@@ -807,4 +807,22 @@ export class Cairo1ContractClass extends StarknetContract {
         const abiArr = Object.values(this.getAbi());
         return formatSpaces(JSON.stringify(abiArr));
     }
+}
+
+export interface ScarbConfig {
+    package: {
+        name: string;
+        version: string;
+    };
+    target: {
+        "starknet-contract": {
+            name?: string;
+            sierra?: boolean;
+            casm?: boolean;
+            "casm-add-pythonic-hints"?: boolean;
+            "allowed-libfuncs"?: boolean;
+            "allowed-libfuncs-deny"?: boolean;
+        }[];
+    };
+    dependencies: StringMap;
 }

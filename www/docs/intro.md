@@ -80,10 +80,41 @@ Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and
 
 By default, the dockerized Cairo 1 compiler is used. In [venv mode](#existing-virtual-environment), you can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your hardhat config file. Other CLI options are the same as in the [native Cairo compiler](https://github.com/starkware-libs/cairo).
 
+To build more complex Cairo 1 projects, read about `hardhat starknet-build`.
+
+### `starknet-build`
+
+```
+$ npx hardhat starknet-build [PATH...] [--scarb-command <STRING>] [--skip-validate]
+```
+
+Builds Scarb projects.
+
+Each of the provided paths is recursively looked into while searching for Scarb projects. If no paths are provided, the default contracts directory is traversed.
+
+Each project must be a valid Scarb project with lib.cairo and Scarb.toml in its root. The toml file must have `sierra` and `casm` set to `true` under `[[target.starknet-contract]]`. If you know what you are doing, you can skip the validation by providing `--skip-validate`.
+
+In code, load the generated contracts with an underscore-separated string:
+
+```typescript
+starknet.getContractFactory("<PACKAGE_NAME>_<CONTRACT_NAME>");
+```
+
+E.g. if your toml specifies `name = MyPackage` and there is a contract called FooContract in your source files, you would load it with:
+
+```typescript
+// alternatively prepend the directory name to avoid ambiguity, but be sure to apply the underscore syntax
+starknet.getContractFactory("MyPackage_FooContract");
+```
+
+The name of the file where the contract was defined doesn't play a role.
+
+The plugin doesn't have a default Scarb command yet (a dockerized wrapper will be supported soon). You need to provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, or you can override that via `--scarb-command <COMMAND>`.
+
 ### `starknet-verify`
 
 ```
-$ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--acount-contract]
+$ npx hardhat starknet-verify [--starknet-network <NAME>] [--path <PATH>] [<DEPENDENCY_PATH> ...] [--address <CONTRACT_ADDRESS>] [--compiler-version <COMPILER_VERSION>] [--license <LICENSE_SCHEME>] [--contract-name <CONTRACT_NAME>] [--account-contract]
 ```
 
 Queries [Voyager](https://voyager.online/) to [verify the contract](https://voyager.online/verifyContract) deployed at `<CONTRACT_ADDRESS>` using the source files at `<PATH>` and any number of `<DEPENDENCY_PATH>`.
@@ -92,7 +123,7 @@ Like in the previous command, this plugin relies on `--starknet-network`, but wi
 
 The verifier expects `<COMPILER_VERSION>` to be passed on request. Supported compiler versions are listed [here](https://voyager.online/verifyContract) in the dropdown menu.
 
-We pass `--acount-contract` to tell the verifier that the contract is of type account.
+We pass `--account-contract` to tell the verifier that the contract is of type account.
 
 For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
@@ -509,15 +540,29 @@ module.exports = {
 };
 ```
 
-### Custom Cairo 1 compilation
+### Single Cairo 1 file compilation
 
-If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version (currently alpha.6). To specify your custom Cairo 1 compiler, you need to provide the path to the directory with its binary executables (likely a subdirectory of the target directory of your compiler repo). This can be configured in `hardhat.config.ts` or in [the CLI](#starknet-compile).
+If you're looking for a way to compile simple Cairo 1 contracts, read on. If you want to build more complex projects, read about [Building Cairo 1 projects](#building-cairo-1-projects)
+
+If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version (currently 1.1.0). To specify your custom Cairo 1 compiler, you need to provide the path to the directory with its binary executables (likely a subdirectory of the target directory of your compiler repo). This can be configured in `hardhat.config.ts` or in [the CLI](#starknet-compile).
 
 ```typescript
 module.exports = {
     starknet: {
         // if you build with `cargo build --bin starknet-compile --bin starknet-sierra-compile --release`
         cairo1BinDir: "path/to/compiler/target/release/"
+    }
+};
+```
+
+### Building Cairo 1 projects
+
+This plugin comes with a Scarb wrapper. Read about how to use it in [this section](#starknet-build). If not via CLI, you may specify the Scarb command via:
+
+```typescript
+module.exports = {
+    starknet: {
+        scarbCommand: "scarb" // or alternatively an exact path to the desired command
     }
 };
 ```
@@ -666,7 +711,7 @@ pip install openzeppelin-cairo-contracts
 ```typescript
 paths: {
     // this directory contains the openzeppelin directory
-    cairoPaths: ["path/to/cairo_venv/lib/python3.8/site-packages"],
+    cairoPaths: ["path/to/cairo_venv/lib/python3.9/site-packages"],
 }
 ```
 

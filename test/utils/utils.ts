@@ -1,6 +1,6 @@
 import axios from "axios";
 import assert, { AssertionError } from "assert";
-import { existsSync, rmSync } from "fs";
+import { existsSync, rmSync, statSync } from "fs";
 import shell from "shelljs";
 import { DEVNET_URL } from "../constants/constants";
 
@@ -50,7 +50,7 @@ export function rmrfSync(path: string) {
 }
 
 export function assertEqual(val1: unknown, val2: unknown, msg?: string) {
-    assert.equal(val1, val2, msg);
+    assert.strictEqual(val1, val2, msg);
 }
 
 export function assertNotEqual(val1: unknown, val2: unknown, msg?: string) {
@@ -60,6 +60,14 @@ export function assertNotEqual(val1: unknown, val2: unknown, msg?: string) {
 export function assertExistence(path: string, expected = true) {
     if (existsSync(path) !== expected) {
         const message = `Expected ${path} to ${expected ? "" : "not "}exist`;
+        throw new AssertionError({ message });
+    }
+}
+
+export function assertNotEmpty(path: string) {
+    const stat = statSync(path);
+    if (stat.size <= 0) {
+        const message = `Size of ${path} expected to be > 0`;
         throw new AssertionError({ message });
     }
 }
