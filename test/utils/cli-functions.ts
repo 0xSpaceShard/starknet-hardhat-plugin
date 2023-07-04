@@ -21,14 +21,6 @@ export const hardhatStarknetCompile = (args: Array<string>, expectFailure = fals
     return exec(`npx hardhat starknet-compile ${args.join(" ")}`, expectFailure);
 };
 
-export const hardhatStarknetNewAccount = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-new-account ${args.join(" ")}`, expectFailure);
-};
-
-export const hardhatStarknetDeployAccount = (args: Array<string>, expectFailure = false) => {
-    return exec(`npx hardhat starknet-deploy-account ${args.join(" ")}`, expectFailure);
-};
-
 export const hardhatStarknetRun = (args: Array<string>, expectFailure = false) => {
     return exec(`npx hardhat run ${args.join(" ")}`, expectFailure);
 };

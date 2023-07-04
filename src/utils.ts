@@ -46,8 +46,6 @@ export function adaptLog(msg: string): string {
         .replace("--network", "--starknet-network")
         .replace("gateway_url", "gateway-url")
         .replace("--account_contract", "--account-contract")
-        .replace("the 'starknet deploy_account' command", "'hardhat starknet-deploy-account'")
-        .replace("the 'new_account' command", "'hardhat starknet-new-account'")
         .split(".\nTraceback (most recent call last)")[0] // remove duplicated log
         .replace(/\\n/g, "\n"); // use newlines from json response for formatting
 }

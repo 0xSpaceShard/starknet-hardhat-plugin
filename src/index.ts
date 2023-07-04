@@ -34,7 +34,6 @@ import {
 } from "./constants";
 import {
     adaptPath,
-    getAccountPath,
     getCairoCliImageTagByArch,
     getDefaultHardhatNetworkConfig,
     getDefaultHttpNetworkConfig,
@@ -49,8 +48,6 @@ import {
     starknetRunAction,
     starknetPluginVersionAction,
     starknetMigrateAction,
-    starknetNewAccountAction,
-    starknetDeployAccountAction,
     starknetCompileCairo1Action,
     starknetBuildAction
 } from "./task-actions";
@@ -59,7 +56,6 @@ import {
     getContractFactoryUtil,
     getTransactionUtil,
     getTransactionReceiptUtil,
-    getWalletUtil,
     shortStringToBigIntUtil,
     getBlockUtil,
     getNonceUtil,
@@ -176,19 +172,6 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
     hre.starknetWrapper = new VenvWrapper(venvPath, hre);
 }
 
-function extractAccountPaths(hre: HardhatRuntimeEnvironment): string[] {
-    const accountPaths = new Set<string>();
-    const wallets = hre.config.starknet.wallets || {};
-    for (const walletName in wallets) {
-        const wallet = wallets[walletName];
-        if (wallet.accountPath) {
-            const normalizedPath = getAccountPath(wallet.accountPath, hre);
-            accountPaths.add(normalizedPath);
-        }
-    }
-    return [...accountPaths];
-}
-
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment((hre) => {
     const venvPath = hre.config.starknet.venv;
@@ -199,19 +182,12 @@ extendEnvironment((hre) => {
         const tag = getCairoCliImageTagByArch(hre.config.starknet.dockerizedVersion);
 
         const image = { repository, tag };
-        const accountPaths = extractAccountPaths(hre);
         const cairoPaths = [];
         for (const cairoPath of hre.config.paths.cairoPaths || []) {
             cairoPaths.push(adaptPath(hre.config.paths.root, cairoPath));
         }
 
-        hre.starknetWrapper = new DockerWrapper(
-            image,
-            hre.config.paths.root,
-            accountPaths,
-            cairoPaths,
-            hre
-        );
+        hre.starknetWrapper = new DockerWrapper(image, hre.config.paths.root, cairoPaths, hre);
 
         const amarnaImage = { repository: AMARNA_DOCKER_REPOSITORY, tag: AMARNA_DOCKER_IMAGE_TAG };
         hre.amarnaDocker = new AmarnaDocker(
@@ -313,11 +289,6 @@ extendEnvironment((hre) => {
             return convertedBigInt;
         },
 
-        getWallet: (name) => {
-            const wallet = getWalletUtil(name, hre);
-            return wallet;
-        },
-
         devnet: lazyObject(() => new DevnetUtils(hre)),
 
         getTransaction: async (txHash) => {
@@ -372,16 +343,6 @@ task("starknet-verify", "Verifies a contract on a Starknet network.")
             "e.g. path/to/dependency1 path/to/dependency2"
     )
     .setAction(starknetVoyagerAction);
-
-task("starknet-new-account", "Initializes a new account according to the parameters.")
-    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
-    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .setAction(starknetNewAccountAction);
-
-task("starknet-deploy-account", "Deploys a new account according to the parameters.")
-    .addParam("wallet", "The wallet object to use, defined in the 'hardhat.config' file")
-    .addParam("starknetNetwork", "The network version to be used (e.g. alpha)")
-    .setAction(starknetDeployAccountAction);
 
 function addStarknetNetworkParam(task: ConfigurableTaskDefinition): ConfigurableTaskDefinition {
     return task.addOptionalParam(

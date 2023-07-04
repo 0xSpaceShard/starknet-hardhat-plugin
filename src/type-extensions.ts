@@ -92,7 +92,6 @@ declare module "hardhat/types/runtime" {
     type StarknetContract = StarknetContractType;
     type StarknetContractFactory = StarknetContractFactoryType;
     type StringMap = StringMapType;
-    type Wallet = StarknetTypes.WalletConfig;
     type Account = AccountType;
     type Transaction = TransactionType;
     type TransactionReceipt = TransactionReceiptType;

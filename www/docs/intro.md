@@ -127,28 +127,6 @@ We pass `--account-contract` to tell the verifier that the contract is of type a
 
 For `<LICENSE_SCHEME>` the command takes [_No License (None)_](https://github.com/github/choosealicense.com/blob/a40ef42140d137770161addf4fefc715709d8ccd/no-permission.md) as default license scheme. [Here](https://goerli.voyager.online/cairo-licenses) is a list of available options.
 
-### `starknet-new-account`
-
-**ATTENTION!** Use this only if you want to achieve compatibility with the wallet used in Starknet CLI. For all other uses, [these accounts](#account) should suffice.
-
-```
-$ npx hardhat starknet-new-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
-```
-
-Initializes a wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file, which should then be followed by the command `starknet-deploy-account`. Uses the modified OZ implementation used by Starknet CLI.
-
-### `starknet-deploy-account`
-
-```
-$ npx hardhat starknet-deploy-account [--starknet-network <NAME>] [--wallet <WALLET_NAME>]
-```
-
-Deploys the wallet `wallets["WALLET_NAME"]` configured in the `hardhat.config` file. Uses the modified OZ implementation used by Starknet CLI. _Needs to be funded before deploying it._
-
-```
-$ npx hardhat starknet-deploy-account --starknet-network myNetwork --wallet MyWallet
-```
-
 ### `starknet-plugin-version`
 
 ```
@@ -383,7 +361,7 @@ it("should return transaction data and transaction receipt", async function () {
 });
 ```
 
-For more usage examples, including tuple, array and struct support, as well as Starknet CLI wallet support, check [sample-test.ts](https://github.com/0xSpaceShard/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/0xSpaceShard/starknet-hardhat-example).
+For more usage examples, including tuple, array and struct support check [sample-test.ts](https://github.com/0xSpaceShard/starknet-hardhat-example/blob/master/test/sample-test.ts) of [starknet-hardhat-example](https://github.com/0xSpaceShard/starknet-hardhat-example).
 
 ### Devnet examples
 
@@ -770,51 +748,6 @@ $ npx hardhat starknet-compile-deprecated node_modules/openzeppelin__cairo_contr
 const contractFactory = await starknet.getContractFactory(
     "node_modules/openzeppelin__cairo_contracts/src/openzeppelin/token/erc20/presets/ERC20"
 );
-```
-
-### Wallet - Starknet CLI
-
-**ATTENTION!** Use this only if you want to achieve compatibility with the wallet used in Starknet CLI. For all other uses, [these accounts](#account) should suffice.
-
-To configure a wallet for your project, specify it by adding an entry to `wallets` in your hardhat config file.
-You can specify multiple wallets/accounts.
-
-The parameters for the wallet are:
-
--   `accountName`: The name to give the account. If omitted, the default value `__default__` will be used;
--   `modulePath`: The python module and wallet class of your chosen wallet provider;
--   `accountPath`: The path where your wallet information will be saved.
-
-```javascript
-module.exports = {
-  starknet: {
-    wallets: {
-      MyWallet: {
-        accountName: "OpenZeppelin",
-        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-        accountPath: "~/.starknet_accounts"
-      },
-      AnotherWallet: {
-        accountName: "AnotherOpenZeppelin",
-        modulePath: "starkware.starknet.wallets.open_zeppelin.OpenZeppelinAccount",
-        accountPath: "~/.starknet_accounts"
-      }
-    }
-  }
-  ...
-};
-```
-
-Accounts are deployed in the same network as the one passed as an argument to the `npx hardhat starknet-deploy-account` CLI command.
-
-To use the wallet in your scripts, use the `getWallet` utility function (using `Account.getAccountFromAddress(...)` will probably not work):
-
-```typescript
-import { starknet } from "hardhat";
-...
-const wallet = starknet.getWallet("MyWallet");
-const contract = ...;
-await contract.invoke("increase_balance", { amount: 1 }, { wallet });
 ```
 
 ## Recompilation

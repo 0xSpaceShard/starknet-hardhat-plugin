@@ -44,12 +44,6 @@ export interface Starknet {
      */
     networkConfig: HardhatNetworkConfig;
 
-    /**
-     * @param name the name of the wallet to get
-     * @returns a wallet
-     */
-    getWallet: (name: string) => WalletConfig;
-
     devnet: Devnet;
 
     getTransaction: (txHash: string) => Promise<Transaction>;
@@ -93,7 +87,6 @@ export interface Starknet {
 export type StarknetConfig = {
     dockerizedVersion?: string;
     venv?: string;
-    wallets?: WalletUserConfig;
     network?: string;
     networkUrl?: string;
     networkConfig?: NetworkConfig;
@@ -101,14 +94,4 @@ export type StarknetConfig = {
     scarbCommand?: string;
     cairo1BinDir?: string;
     requestTimeout?: number;
-};
-
-export type WalletUserConfig = {
-    [walletName: string]: WalletConfig | undefined;
-};
-
-export type WalletConfig = {
-    modulePath: string;
-    accountName?: string;
-    accountPath?: string;
 };
