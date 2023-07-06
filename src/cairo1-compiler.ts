@@ -2,6 +2,8 @@ import { BindsMap, HardhatDocker, ProcessResult } from "@nomiclabs/hardhat-docke
 import shell from "shelljs";
 import { Image } from "@nomiclabs/hardhat-docker";
 
+// TODO potentially move this to cairo-wrapper.ts
+
 export const exec = (args: string) => {
     const result = shell.exec(args, {
         silent: true
