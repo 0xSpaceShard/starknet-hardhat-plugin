@@ -3,32 +3,30 @@
 set -eu
 
 if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
-    CAIRO_1_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
+    CAIRO_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
 
     echo "Installing cairo compiler $CAIRO_1_COMPILER_TARGET_TAG"
-    # need rust to install cairo-rs-py dependency of devnet
-    # need rust to install cairo compiler
-    if rustc --version; then
-        echo "rustc installed"
-    else
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-        source ~/.cargo/env
+
+    CAIRO_COMPILER_ASSET_NAME="release-x86_64-unknown-linux-musl.tar.gz"
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        CAIRO_COMPILER_ASSET_NAME="release-aarch64-apple-darwin.tar"
     fi
 
+    COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/$CAIRO_COMPILER_TARGET_TAG/$CAIRO_COMPILER_ASSET_NAME"
+
     if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
-        # setup cairo1 compiler
-        mkdir cairo-compiler
-        git clone git@github.com:starkware-libs/cairo.git cairo-compiler \
-            --branch $CAIRO_1_COMPILER_TARGET_TAG \
-            --single-branch
-
-        cargo build \
-            --bin starknet-compile \
-            --bin starknet-sierra-compile \
-            --manifest-path cairo-compiler/Cargo.toml \
-            --release
-
-        export CAIRO_1_COMPILER_DIR=$(realpath "cairo-compiler/target/release")
+        # Setup cairo1 compiler
+        echo $COMPILER_BINARY_URL
+        mkdir -p cairo-compiler/target/release
+        curl --location -O --request GET "$COMPILER_BINARY_URL"
+        # Unzip asset and move to correct target
+        tar -zxvf $CAIRO_COMPILER_ASSET_NAME -C cairo-compiler --strip-components=1
+        mv cairo-compiler/bin/* cairo-compiler/target/release/
+        mv cairo-compiler/corelib cairo-compiler/target/corelib
+        # Remove empty directory and asset
+        rm -rf $CAIRO_COMPILER_ASSET_NAME cairo-compiler/bin
+        export CAIRO_1_COMPILER_DIR="$(realpath "cairo-compiler/target/release")"
     fi
 
     $CAIRO_1_COMPILER_DIR/starknet-compile --version
