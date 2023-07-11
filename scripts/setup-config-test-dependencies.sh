@@ -5,7 +5,7 @@ set -eu
 if [ "$TEST_SUBDIR" == "configuration-tests" ]; then
     CAIRO_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
 
-    echo "Installing cairo compiler $CAIRO_1_COMPILER_TARGET_TAG"
+    echo "Installing cairo compiler $CAIRO_COMPILER_TARGET_TAG"
 
     CAIRO_COMPILER_ASSET_NAME="release-x86_64-unknown-linux-musl.tar.gz"
 
