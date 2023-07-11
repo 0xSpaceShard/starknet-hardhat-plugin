@@ -26,7 +26,7 @@ if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
     mv cairo-compiler/corelib cairo-compiler/target/corelib
     # Remove empty directory and asset
     rm -rf $CAIRO_COMPILER_ASSET_NAME cairo-compiler/bin
-    export CAIRO_1_COMPILER_DIR="$(realpath "cairo-compiler/target/release")"
+    export CAIRO_1_COMPILER_DIR="$(readlink -f  "cairo-compiler/target/release")"
 fi
 
 $CAIRO_1_COMPILER_DIR/starknet-compile --version
