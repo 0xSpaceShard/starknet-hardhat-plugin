@@ -6,7 +6,7 @@ if [[ -z "${STARKNET_HARDHAT_DEV:-}" ]]; then
     ./scripts/test-setup.sh
     ./scripts/install-devnet.sh
 fi
-source ./scripts/setup-config-test-dependencies.sh
+source ./scripts/setup-compiler.sh
 
 cd ./starknet-hardhat-example
 
