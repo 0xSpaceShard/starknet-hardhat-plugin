@@ -5,3 +5,4 @@ starknet-hardhat-example-link
 cache
 .vscode
 my-venv
+cairo-compiler

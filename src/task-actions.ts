@@ -116,7 +116,7 @@ function loadScarbTomlFromPath(tomlPath: string, validate: boolean): ScarbConfig
         if (!contractTargetConfig || !contractTargetConfig.sierra || !contractTargetConfig.casm) {
             throw new ScarbConfigValidationError(
                 tomlPath,
-                "To allow later loading of this projet's contracts, " +
+                "To allow later loading of this project's contracts, " +
                     "your TOML file must set 'sierra' and 'casm' to `true` under [[target.starknet-contract]]"
             );
         }
@@ -367,7 +367,7 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
             const ourArtifactDirPath = path.join(artifactDirPath, `${fileName}.cairo`);
             fs.mkdirSync(ourArtifactDirPath, { recursive: true });
 
-            // We want to create artifacts compatible with our contract loading mehacnims.
+            // We want to create artifacts compatible with our contract loading mechanisms.
             // To achieve this, we will now copy scarb artifacts
 
             // this is false if user skipped validation
