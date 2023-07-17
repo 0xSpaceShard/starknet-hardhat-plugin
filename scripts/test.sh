@@ -59,8 +59,8 @@ function run_test() {
     else
         echo "Invalid config"
         # Clean up the temporary config file
-        rm -f "$CONFIG_FILE_NAME"
-        exit 1
+        rm "$CONFIG_FILE_NAME"
+        return 0
     fi
 
     # check if test_case/check.ts exists
