@@ -47,6 +47,9 @@ export const VOYAGER_GOERLI_2_VERIFIED_URL = "https://goerli-2.voyager.online/co
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
 
+export const CAIRO_COMPILER_BINARY_URL =
+    "https://github.com/starkware-libs/cairo/releases/download";
+
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms
 

@@ -1,6 +1,17 @@
-import { BindsMap, HardhatDocker, ProcessResult } from "@nomiclabs/hardhat-docker";
+import fs, { renameSync, rmSync } from "fs";
+import os from "os";
+import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
-import { Image } from "@nomiclabs/hardhat-docker";
+import path from "path";
+import axios from "axios";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { CAIRO_COMPILER_BINARY_URL } from "./constants";
+
+export enum FileName {
+    LINUX = "release-x86_64-unknown-linux-musl.tar.gz",
+    MACOS = "release-aarch64-apple-darwin.tar"
+}
 
 export const exec = (args: string) => {
     const result = shell.exec(args, {
@@ -14,48 +25,87 @@ export const exec = (args: string) => {
     } as ProcessResult;
 };
 
-export class DockerCairo1Compiler {
-    image: Image;
-    sources: string[];
-    compilerArgs: string[];
+export class Cairo1CompilerDownloader {
+    compilerDownloadPath: string;
+    compilerVersion: string;
 
-    constructor(image: Image, sources: string[], cairo1CompilerArgs?: string[]) {
-        this.image = image;
-        this.sources = sources;
-        this.compilerArgs = cairo1CompilerArgs;
+    constructor(protected hre: HardhatRuntimeEnvironment) {
+        this.initialize(hre);
     }
 
-    protected getDockerArgs(): BindsMap {
-        const binds: BindsMap = {};
-        for (const source of this.sources) {
-            binds[source] = source;
+    async initialize(hre: HardhatRuntimeEnvironment) {
+        this.compilerVersion =
+            hre.config.starknet?.compilerVersion || (await this.getCompilerVersion());
+        this.compilerDownloadPath = hre.config.starknet?.cairo1BinDir || "cairo-compiler";
+    }
+
+    async handleCompilerDownload(): Promise<void> {
+        // Check if binary is installed Install
+        const binPath = path.join(this.hre.config.paths.root, this.compilerDownloadPath);
+        // Installed =>
+        if (fs.existsSync(binPath)) {
+            // Warn if version is older
+            return;
         }
 
-        return binds;
+        // Check machine type
+        const fileName = os.platform() === "linux" ? FileName.LINUX : FileName.MACOS;
+        await this.download(fileName);
+        await this.extractZipFile(fileName);
     }
 
-    protected getContainerArgs(): string[] {
-        return ["/bin/sh", "-c", this.compilerArgs.join(" ")];
-    }
+    async download(fileName: string): Promise<void> {
+        const url = `${CAIRO_COMPILER_BINARY_URL}/${this.compilerVersion}/${fileName}`;
+        try {
+            console.log("Downloading compiler...");
+            const response = await axios(url, {
+                responseType: "stream"
+            });
 
-    async compileCairo1(): Promise<ProcessResult> {
-        const docker = await HardhatDocker.create();
-        if (!(await docker.hasPulledImage(this.image))) {
-            await docker.pullImage(this.image);
+            const destinationPath = path.join(
+                this.compilerDownloadPath,
+                `${fileName}-${this.compilerVersion}.tar`
+            );
+
+            const writer = fs.createWriteStream(destinationPath);
+            response.data.pipe(writer);
+
+            await new Promise<void>((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
+
+            console.log("File downloaded successfully!");
+        } catch (error) {
+            const parent = error instanceof Error && error;
+            throw new StarknetPluginError("Error downloading file:", parent);
         }
+    }
 
-        const { statusCode, stdout, stderr } = await docker.runContainer(
-            this.image,
-            this.getContainerArgs(),
-            {
-                binds: this.getDockerArgs()
-            }
-        );
+    async extractZipFile(fileName: FileName): Promise<void> {
+        try {
+            const zipFile = path.join(this.compilerDownloadPath, fileName);
 
-        return {
-            statusCode,
-            stdout: Buffer.from(stdout.toString()),
-            stderr: Buffer.from(stderr.toString())
-        } as ProcessResult;
+            // Execute the tar command to extract the tar/gz file
+            exec(`tar -xvf ${zipFile} -C ${this.compilerDownloadPath} --strip-components=1`);
+            renameSync(
+                `${this.compilerDownloadPath}/bin*`,
+                `${this.compilerDownloadPath}/target/release/`
+            );
+            renameSync(
+                `${this.compilerDownloadPath}/corelib`,
+                `${this.compilerDownloadPath}/corelib`
+            );
+            // Remove zip file
+            rmSync(zipFile);
+        } catch (error) {
+            const parent = error instanceof Error && error;
+            throw new StarknetPluginError("Error extracting tar file:", parent);
+        }
+    }
+
+    public async getCompilerVersion(): Promise<string> {
+        const config = await import("../config.json");
+        return config["CAIRO_COMPILER"];
     }
 }

@@ -26,6 +26,7 @@ import { StarknetConfig } from "./types/starknet";
 import * as toml from "@iarna/toml";
 import { ScarbWrapper } from "./scarb-wrapper";
 import { ScarbConfig } from "./types";
+import { Cairo1CompilerDownloader } from "./cairo1-compiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -190,7 +191,8 @@ export async function starknetCompileCairo1Action(
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
-
+            // Downloads compiler
+            new Cairo1CompilerDownloader(hre).handleCompilerDownload();
             // Compile to sierra representation
             {
                 const executed = await hre.starknetWrapper.compileCairoToSierra({
