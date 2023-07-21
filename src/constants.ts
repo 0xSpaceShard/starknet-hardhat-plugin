@@ -8,7 +8,6 @@ export const CAIRO1_ASSEMBLY_SUFFIX = ".casm";
 export const CAIRO1_SIERRA_SUFFIX = ".json";
 export const CAIRO1_COMPILE_BIN = "starknet-compile";
 export const CAIRO1_SIERRA_COMPILE_BIN = "starknet-sierra-compile";
-export const DOCKER_HOST_BIN_PATH = "/usr/local/bin/target/release";
 export const SUPPORTED_SCARB_VERSION = config["SCARB_VERSION"];
 
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";

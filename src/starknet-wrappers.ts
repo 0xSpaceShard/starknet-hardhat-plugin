@@ -277,13 +277,6 @@ export abstract class StarknetWrapper {
     }
 
     protected getCairo1Command(binDirPath: string, binCommand: string, args: string[]): string[] {
-        if (!binDirPath) {
-            const msg =
-                "No compiler bin directory specified\n" +
-                "Specify one of {dockerizedVersion,cairo1BinDir} in the hardhat config file OR --cairo1-bin-dir in the CLI";
-            throw new StarknetPluginError(msg);
-        }
-
         const cairo1Bin = path.join(binDirPath, binCommand);
         return [cairo1Bin, ...args];
     }

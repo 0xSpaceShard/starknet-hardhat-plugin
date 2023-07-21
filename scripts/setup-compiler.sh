@@ -13,7 +13,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     CAIRO_COMPILER_ASSET_NAME="release-aarch64-apple-darwin.tar"
 fi
 
-COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/$CAIRO_COMPILER_TARGET_TAG/$CAIRO_COMPILER_ASSET_NAME"
+COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/v$CAIRO_COMPILER_TARGET_TAG/$CAIRO_COMPILER_ASSET_NAME"
 
 if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
     # Setup cairo1 compiler

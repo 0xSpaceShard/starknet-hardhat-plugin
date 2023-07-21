@@ -26,7 +26,7 @@ import { StarknetConfig } from "./types/starknet";
 import * as toml from "@iarna/toml";
 import { ScarbWrapper } from "./scarb-wrapper";
 import { ScarbConfig } from "./types";
-import { Cairo1CompilerDownloader } from "./cairo1-compiler";
+import { CairoCompilerDownloader } from "./cairo1-compiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -165,7 +165,12 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const binDirPath = getCompilerBinDir(args, hre.config.starknet);
+    let binDirPath = getCompilerBinDir(args, hre.config.starknet);
+    if (!binDirPath) {
+        const downloader = new CairoCompilerDownloader(hre.config.paths.root, hre.config.starknet);
+        await downloader.handleCompilerDownload();
+        binDirPath = downloader.getBinDirPath();
+    }
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);
@@ -191,8 +196,7 @@ export async function starknetCompileCairo1Action(
 
             fs.mkdirSync(dirPath, { recursive: true });
             initializeFile(outputPath);
-            // Downloads compiler
-            new Cairo1CompilerDownloader(hre).handleCompilerDownload();
+
             // Compile to sierra representation
             {
                 const executed = await hre.starknetWrapper.compileCairoToSierra({
