@@ -86,7 +86,7 @@ To use a specific version of [cairo compiler](https://github.com/starkware-libs/
 module.exports = {
   starknet: {
     dockerizedVersion: "0.8.1",
-    compilerVersion: "1.1.1",
+    compilerVersion: "1.1.1"
     ...
   }
   ...
