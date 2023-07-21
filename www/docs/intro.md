@@ -78,7 +78,22 @@ $ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--replace-ids] 
 
 Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. Currently, contracts importing other contracts are not supported (until this is supported, you may try to use [Scarb](https://github.com/software-mansion/scarb) and modifying its artifacts to be compatible with this plugin).
 
-By default, the dockerized Cairo 1 compiler is used. In [venv mode](#existing-virtual-environment), you can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your hardhat config file. Other CLI options are the same as in the [native Cairo compiler](https://github.com/starkware-libs/cairo).
+In [venv mode](#existing-virtual-environment), you can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your `hardhat.config.ts` file. If neither `--cairo1-bin-dir` nor `cairo1BinDir` is set, the plugin will automatically download and utilize a compiler suitable for its requirements.
+
+To use a specific version of [cairo compiler](https://github.com/starkware-libs/cairo/releases), you can provide `compilerVersion` in `hardhat.config.ts` file.
+
+```typescript
+module.exports = {
+  starknet: {
+    dockerizedVersion: "0.8.1",
+    compilerVersion: "1.1.1",
+    ...
+  }
+  ...
+};
+```
+
+Other CLI options are the same as in the [native Cairo compiler](https://github.com/starkware-libs/cairo).
 
 To build more complex Cairo 1 projects, read about `hardhat starknet-build`.
 
