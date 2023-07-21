@@ -65,10 +65,8 @@ export class CairoCompilerDownloader {
                     const totalLength = progressEvent.total;
                     const downloadedLength = progressEvent.loaded;
                     const percentage = Math.round((downloadedLength / totalLength) * 100);
-                    process.stdout.clearLine(0);
-                    process.stdout.cursorTo(0);
                     process.stdout.write(
-                        `Downloading cairo compiler version: ${this.compilerVersion} ... ${percentage}%`
+                        `Downloading cairo compiler version: ${this.compilerVersion} ... ${percentage}%\r`
                     );
                 }
             });
