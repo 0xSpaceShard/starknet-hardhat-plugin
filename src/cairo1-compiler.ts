@@ -110,7 +110,8 @@ export class CairoCompilerDownloader {
             fs.renameSync(path.join(this.compilerDownloadPath, "corelib"), corelibPath);
             fs.renameSync(path.join(this.compilerDownloadPath, "bin"), this.getBinDirPath());
 
-            // maybe remove zip file after extracting it?
+            // Remove zip file after successfully extracting it
+            fs.rmSync(zipFile);
         } catch (error) {
             const parent = error instanceof Error && error;
             throw new StarknetPluginError("Error extracting tar file:", parent);
