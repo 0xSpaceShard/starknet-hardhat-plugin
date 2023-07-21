@@ -559,13 +559,14 @@ module.exports = {
 
 If you're looking for a way to compile simple Cairo 1 contracts, read on. If you want to build more complex projects, read about [Building Cairo 1 projects](#building-cairo-1-projects)
 
-If you're using `dockerizedVersion`, it will also use the dockerized Cairo 1 compiler version (currently 1.1.0). To specify your custom Cairo 1 compiler, you need to provide the path to the directory with its binary executables (likely a subdirectory of the target directory of your compiler repo). This can be configured in `hardhat.config.ts` or in [the CLI](#starknet-compile).
+To [compile](#starknet-compile) Cairo 1 files the plugin will download a compiler it's adapted to. You can also specify your custom Cairo 1 compiler, you need to provide the path to the directory with its binary executables (likely a subdirectory of the target directory of your compiler repo) or simply provide the version of the compiler you need and continue with compilation. This can be configured in `hardhat.config.ts` or in [the CLI](#starknet-compile).
 
 ```typescript
 module.exports = {
     starknet: {
         // if you build with `cargo build --bin starknet-compile --bin starknet-sierra-compile --release`
-        cairo1BinDir: "path/to/compiler/target/release/"
+        cairo1BinDir: "path/to/compiler/target/release/", // Plugin will prioritize this
+        compilerVersion: "1.1.0"
     }
 };
 ```
