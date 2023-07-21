@@ -29,7 +29,7 @@ for (const contractName of contractNames) {
 const contract1Path = path.join(sourcesPath, duplicateConstructorContract);
 const expectedErrorMsg = "Error: Expected at most one constructor.";
 const execution = hardhatStarknetCompile([contract1Path], true);
-assertContains(execution.stderr, expectedErrorMsg);
+assertContains(execution.stdout, expectedErrorMsg);
 rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
