@@ -124,7 +124,7 @@ export class CairoCompilerDownloader {
     }
 
     public getBinDirPath(): string {
-        return path.join(this.compilerDownloadPath, "target/release");
+        return path.join(this.compilerDownloadPath, "target", "release");
     }
 
     public isDirEmpty(dirPath: string): boolean {
