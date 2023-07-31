@@ -8,6 +8,7 @@ import { StarknetPluginError } from "./starknet-plugin-error";
 import { CAIRO_COMPILER_BINARY_URL } from "./constants";
 import { StarknetConfig } from "./types/starknet";
 import config from "../config.json";
+import tar from "tar";
 
 export enum FileName {
     LINUX = "release-x86_64-unknown-linux-musl.tar.gz",
@@ -97,8 +98,12 @@ export class CairoCompilerDownloader {
         try {
             const zipFile = path.join(this.compilerDownloadPath, fileName);
             const corelibPath = path.join(this.compilerDownloadPath, "target/corelib");
-            // Execute the tar command to extract the tar/gz file
-            exec(`tar -xvf ${zipFile} -C ${this.compilerDownloadPath} --strip-components=1`);
+            // Extract the tar/gz file
+            await tar.extract({
+                file: zipFile,
+                C: this.compilerDownloadPath,
+                strip: 1
+            });
             fs.mkdirSync(this.getBinDirPath(), { recursive: true });
             fs.mkdirSync(corelibPath, { recursive: true });
 
@@ -118,7 +123,6 @@ export class CairoCompilerDownloader {
             throw new StarknetPluginError("Error extracting tar file:", parent);
         }
     }
-
 
     getOsSpecificFileName(): FileName {
         const platform = os.platform();
