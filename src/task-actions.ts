@@ -166,7 +166,7 @@ export async function starknetCompileCairo1Action(
     hre: HardhatRuntimeEnvironment
 ) {
     if (hre.config.starknet?.cairo1BinDir && hre.config.starknet?.compilerVersion) {
-        const msg = 
+        const msg =
             "Error in config file. Only one of (starknet.cairo1BinDir, starknet.compilerVersion) can be specified.";
         throw new StarknetPluginError(msg);
     }
@@ -174,8 +174,7 @@ export async function starknetCompileCairo1Action(
     let binDirPath = getCompilerBinDir(args, hre.config.starknet);
     if (!binDirPath) {
         const downloader = new CairoCompilerDownloader(hre.config.paths.root, hre.config.starknet);
-        await downloader.handleCompilerDownload();
-        binDirPath = downloader.getBinDirPath();
+        binDirPath = await downloader.ensureCompilerVersionPresent();
     }
 
     const root = hre.config.paths.root;

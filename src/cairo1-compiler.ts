@@ -40,15 +40,15 @@ export class CairoCompilerDownloader {
         this.compilerVersion = starknet?.compilerVersion || config.CAIRO_COMPILER;
     }
 
-    async handleCompilerDownload(): Promise<void> {
+    async ensureCompilerVersionPresent(): Promise<string> {
         if (fs.existsSync(this.getBinDirPath())) {
             // Checks if installed binary version is same as version set on hardhat config file
-            const isSameVersion = exec(
-                `${path.join(this.getBinDirPath(), "starknet-compile")}  --version`
-            )
-                .stderr.toString()
-                .includes(this.compilerVersion);
-            if (isSameVersion) return;
+            const isSameVersion =
+                exec(`${path.join(this.getBinDirPath(), "starknet-compile")}  --version`)
+                    .stderr.toString()
+                    .trim()
+                    .split(" ")[1] === this.compilerVersion;
+            if (isSameVersion) return this.getBinDirPath();
         }
 
         // Check machine type
@@ -56,6 +56,7 @@ export class CairoCompilerDownloader {
         // Download compiler
         await this.download(fileName);
         await this.extractZipFile(fileName);
+        return this.getBinDirPath();
     }
 
     async download(fileName: string): Promise<void> {
