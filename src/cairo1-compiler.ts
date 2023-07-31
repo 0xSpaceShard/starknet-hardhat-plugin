@@ -7,6 +7,7 @@ import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { CAIRO_COMPILER_BINARY_URL } from "./constants";
 import { StarknetConfig } from "./types/starknet";
+import config from "../config.json";
 
 export enum FileName {
     LINUX = "release-x86_64-unknown-linux-musl.tar.gz",
@@ -26,21 +27,19 @@ export const exec = (args: string) => {
 };
 
 export class CairoCompilerDownloader {
-    private isInitialized: Promise<void>;
     compilerDownloadPath: string;
     compilerVersion: string;
 
     constructor(rootPath: string, starknet: StarknetConfig) {
-        this.isInitialized = this.initialize(rootPath, starknet);
+        this.initialize(rootPath, starknet);
     }
 
     async initialize(rootPath: string, starknet: StarknetConfig) {
         this.compilerDownloadPath = starknet?.cairo1BinDir || path.join(rootPath, "cairo-compiler");
-        this.compilerVersion = starknet?.compilerVersion || (await this.getCompilerVersion());
+        this.compilerVersion = starknet?.compilerVersion || config.CAIRO_COMPILER;
     }
 
     async handleCompilerDownload(): Promise<void> {
-        await this.isInitialized;
         if (fs.existsSync(this.getBinDirPath())) {
             // Checks if installed binary version is same as version set on hardhat config file
             const isSameVersion = exec(
@@ -118,11 +117,6 @@ export class CairoCompilerDownloader {
             const parent = error instanceof Error && error;
             throw new StarknetPluginError("Error extracting tar file:", parent);
         }
-    }
-
-    public async getCompilerVersion(): Promise<string> {
-        const config = await import("../config.json");
-        return config["CAIRO_COMPILER"];
     }
 
     public getBinDirPath(): string {
