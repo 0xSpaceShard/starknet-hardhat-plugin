@@ -43,7 +43,7 @@ export class CairoCompilerDownloader {
         await this.isInitialized;
         if (fs.existsSync(this.getBinDirPath())) {
             // Checks if installed binary version is same as version set on hardhat config file
-            const isSameVersion = exec(`${this.getBinDirPath()}/starknet-compile --version`)
+            const isSameVersion = exec(`${path.join(this.getBinDirPath(), "starknet-compile")}  --version`)
                 .stderr.toString()
                 .includes(this.compilerVersion);
             if (isSameVersion) return;
