@@ -127,7 +127,7 @@ export class CairoCompilerDownloader {
         return path.join(this.compilerDownloadPath, "target", "release");
     }
 
-    public isDirEmpty(dirPath: string): boolean {
+    private isDirEmpty(dirPath: string) {
         const files = fs.readdirSync(dirPath);
         return files.length === 0;
     }
