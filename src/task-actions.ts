@@ -165,6 +165,12 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
+    if (hre.config.starknet?.cairo1BinDir && hre.config.starknet?.compilerVersion) {
+        const msg = 
+            "Error in config file. Only one of (starknet.cairo1BinDir, starknet.compilerVersion) can be specified.";
+        throw new StarknetPluginError(msg);
+    }
+
     let binDirPath = getCompilerBinDir(args, hre.config.starknet);
     if (!binDirPath) {
         const downloader = new CairoCompilerDownloader(hre.config.paths.root, hre.config.starknet);
