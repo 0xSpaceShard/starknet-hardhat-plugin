@@ -51,7 +51,7 @@ export class CairoCompilerDownloader {
         }
 
         // Check machine type
-        const fileName = os.platform() === "linux" ? FileName.LINUX : FileName.MACOS;
+        const fileName = this.getOsSpecificFileName();
         // Download compiler
         await this.download(fileName);
         await this.extractZipFile(fileName);
@@ -116,6 +116,19 @@ export class CairoCompilerDownloader {
         } catch (error) {
             const parent = error instanceof Error && error;
             throw new StarknetPluginError("Error extracting tar file:", parent);
+        }
+    }
+
+
+    getOsSpecificFileName(): FileName {
+        const platform = os.platform();
+        switch (platform) {
+            case "linux":
+                return FileName.LINUX;
+            case "darwin":
+                return FileName.MACOS;
+            default:
+                throw new Error(`Unsupported OS: ${platform}.`);
         }
     }
 
