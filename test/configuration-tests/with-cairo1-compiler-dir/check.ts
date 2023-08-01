@@ -9,4 +9,4 @@ assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1_a
 
 // Assert cairo0 compilation failure
 const execution = hardhatStarknetCompile("contracts/contract.cairo".split(" "), true);
-assertContains(execution.stdout, "Error: Contract not found");
+assertContains(execution.stderr, "Error: Contract not found");
