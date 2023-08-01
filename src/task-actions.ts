@@ -173,7 +173,7 @@ export async function starknetCompileCairo1Action(
 
     let binDirPath = getCompilerBinDir(args, hre.config.starknet);
     if (!binDirPath) {
-        const downloader = new CairoCompilerDownloader(hre.config.paths.root, hre.config.starknet);
+        const downloader = new CairoCompilerDownloader(hre.config.starknet);
         binDirPath = await downloader.ensureCompilerVersionPresent();
     }
 

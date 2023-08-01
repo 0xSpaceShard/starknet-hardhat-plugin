@@ -31,13 +31,26 @@ export class CairoCompilerDownloader {
     compilerDownloadPath: string;
     compilerVersion: string;
 
-    constructor(rootPath: string, starknet: StarknetConfig) {
-        this.initialize(rootPath, starknet);
+    constructor(starknet: StarknetConfig) {
+        this.initialize(starknet);
     }
 
-    async initialize(rootPath: string, starknet: StarknetConfig) {
-        this.compilerDownloadPath = starknet?.cairo1BinDir || path.join(rootPath, "cairo-compiler");
+    async initialize(starknet: StarknetConfig) {
+        this.compilerDownloadPath = starknet?.cairo1BinDir || this.getDefaultCompilerDownloadPath();
         this.compilerVersion = starknet?.compilerVersion || config.CAIRO_COMPILER;
+    }
+
+    private getDefaultCompilerDownloadPath(): string {
+        const homeDir = os.homedir();
+        const compilerDownloadPath = path.join(
+            homeDir,
+            ".starknet-hardhat-plugin",
+            "cairo-compiler"
+        );
+        if (!fs.existsSync(compilerDownloadPath)) {
+            fs.mkdirSync(compilerDownloadPath, { recursive: true });
+        }
+        return compilerDownloadPath;
     }
 
     async ensureCompilerVersionPresent(): Promise<string> {
