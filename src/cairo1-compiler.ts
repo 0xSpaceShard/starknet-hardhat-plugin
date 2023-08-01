@@ -22,8 +22,8 @@ export const exec = (args: string) => {
 
     return {
         statusCode: result.code,
-        stdout: Buffer.from(result.stderr),
-        stderr: Buffer.from(result.stdout)
+        stdout: Buffer.from(result.stdout),
+        stderr: Buffer.from(result.stderr)
     } as ProcessResult;
 };
 
@@ -58,7 +58,7 @@ export class CairoCompilerDownloader {
             // Checks if installed binary version is same as version set on hardhat config file
             const isSameVersion =
                 exec(`${path.join(this.getBinDirPath(), "starknet-compile")}  --version`)
-                    .stderr.toString()
+                    .stdout.toString()
                     .trim()
                     .split(" ")[1] === this.compilerVersion;
             if (isSameVersion) return this.getBinDirPath();
