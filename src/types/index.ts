@@ -634,7 +634,7 @@ export class StarknetContract {
                 adaptedOptions.blockNumber
             );
             // align to legacy stdout output
-            const response = result.map((x) => formatFelt(BigInt(x)).toString()).join(" ");
+            const response = result.map(formatFelt).join(" ");
 
             if (options.rawOutput) {
                 return { response };

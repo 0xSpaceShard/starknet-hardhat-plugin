@@ -1,3 +1,5 @@
+import { BigNumberish, num } from "starknet";
+
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HEXADECIMAL_REGEX, LEN_SUFFIX_DEPRECATED } from "./constants";
 import * as starknet from "./starknet-types";
@@ -614,8 +616,10 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
  * Reproduces felt response formating corresponding to the Starknet CLI contract call.
  * Based on https://github.com/starkware-libs/cairo-lang/blob/v0.12.1a0/src/starkware/cairo/lang/tracer/tracer_data.py#L261.
  */
-export function formatFelt(value: bigint) {
-    const shiftedValue = ((value + PRIME_FLOOR) % PRIME) - PRIME_FLOOR;
+export function formatFelt(value: BigNumberish): string {
+    const shiftedValue = ((BigInt(value) + PRIME_FLOOR) % PRIME) - PRIME_FLOOR;
     const shiftedAbs = shiftedValue < 0n ? -shiftedValue : shiftedValue;
-    return shiftedAbs < 2 ** 100 ? shiftedValue : value;
+    if (shiftedAbs < 2 ** 40) return shiftedValue.toString();
+    if (shiftedAbs < 2 ** 100) return num.toHex(shiftedValue);
+    return num.toHex(value);
 }

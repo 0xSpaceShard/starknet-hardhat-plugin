@@ -127,9 +127,11 @@ Change the version in `hardhat.config.ts`. Recompile the contracts (only importa
 
 ### Wrapper
 
-This plugin is a wrapper around Starknet CLI (tool installed with cairo-lang). E.g. when you do `hardhat starknet-compile-deprecated` in a shell or `contractFactory.deploy()` in a Hardhat JS/TS script, you are making a subprocess that executes Starknet CLI's `starknet deploy`.
+This plugin was created as a wrapper for Starknet CLI (tool installed with cairo-lang) along with some compilation and hashing utilities. E.g. running `hardhat starknet-compile-deprecated` in a shell would create a subprocess that uses the corresponding compilation utility, while running `contractFactory.deploy()` in a Hardhat JS/TS script would create a subprocess that executes Starknet CLI's `starknet deploy`.
 
-There are two wrappers around Starknet CLI. They are defined in [starknet-wrapper.ts](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts) and both rely on a [proxy server](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile-deprecated` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
+With the Starknet CLI deprecation for Starknet v0.13.0 the plugin's usages of the CLI core commands were replaced with near analogs utilizing `starknet.js`. For the earlier `contractFactory.deploy()` example the plugin no longer executes Starknet CLI's `starknet deploy` itself, instead it executes the equivalent HTTP requests that the CLI command would do internally.
+
+Two wrapper implementations are used that are defined in [starknet-wrapper.ts](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet-wrappers.ts). Both rely on a [proxy server](https://github.com/0xSpaceShard/starknet-hardhat-plugin/blob/master/src/starknet_cli_wrapper.py) that imports `main` methods of `starknet` and `starknet-compile-deprecated` and uses them to execute commands (this is a speedup since a subprocess importing the whole Starknet doesn't have to be spawned for each request).
 
 -   Docker wrapper:
     -   runs Starknet CLI in a Docker container
