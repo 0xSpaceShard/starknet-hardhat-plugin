@@ -1,6 +1,8 @@
-import * as fs from "fs";
-import * as starknet from "../starknet-types";
-import { StarknetPluginError } from "../starknet-plugin-error";
+import fs from "fs";
+import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { SequencerProvider, selector } from "starknet";
+
+import { adaptInputUtil, adaptOutputUtil, formatFelt } from "../adapt";
 import {
     CHECK_STATUS_RECOVER_TIMEOUT,
     QUERY_VERSION,
@@ -8,11 +10,10 @@ import {
     HEXADECIMAL_REGEX,
     CHECK_STATUS_TIMEOUT
 } from "../constants";
-import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
-import { adaptInputUtil, adaptOutputUtil } from "../adapt";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { hash } from "starknet";
+import { StarknetPluginError } from "../starknet-plugin-error";
+import * as starknet from "../starknet-types";
 import { StarknetWrapper } from "../starknet-wrappers";
+import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -246,7 +247,7 @@ function extractEventSpecifications(abi: starknet.Abi) {
     for (const abiEntryName in abi) {
         if (abi[abiEntryName].type === "event") {
             const event = <starknet.EventSpecification>abi[abiEntryName];
-            const encodedEventName = hash.getSelectorFromName(event.name);
+            const encodedEventName = selector.getSelectorFromName(event.name);
             events[encodedEventName] = event;
         }
     }
@@ -400,9 +401,9 @@ export class StarknetContractFactory {
 
         // Can be simplified once starkware fixes multiple constructor issue.
         // Precomputed selector can be used if only 'constructor' name allowed
-        const selector = constructors[0].selector;
+        const constructorSelector = constructors[0].selector;
         return (abiEntry: starknet.AbiEntry): boolean => {
-            return hash.getSelectorFromName(abiEntry.name) === selector;
+            return selector.getSelectorFromName(abiEntry.name) === constructorSelector;
         };
     }
 
@@ -524,6 +525,10 @@ export class StarknetContract {
         return;
     }
 
+    get provider(): SequencerProvider {
+        return this.hre.starknetJs.provider;
+    }
+
     /**
      * Set a custom abi and abi path to the contract
      * @param implementation the contract factory of the implementation to be set
@@ -531,50 +536,6 @@ export class StarknetContract {
     setImplementation(implementation: StarknetContractFactory): void {
         this.abi = implementation.abi;
         this.abiPath = implementation.abiPath;
-    }
-
-    private async interact(
-        choice: InteractChoice,
-        functionName: string,
-        args?: StringMap,
-        options: InteractOptions = {}
-    ) {
-        if (!this.address) {
-            throw new StarknetPluginError("Contract not deployed");
-        }
-
-        const adaptedInput = options.rawInput
-            ? <string[]>args
-            : this.adaptInput(functionName, args);
-
-        // omit cairo 1.0 ABIs as it's not supported by the cairo-lang parser.
-        const abi =
-            this.abiPath && !fs.readFileSync(this.abiPath, "utf8").includes("core::")
-                ? this.abiPath
-                : undefined;
-        const executed = await this.hre.starknetWrapper.interact({
-            choice,
-            address: this.address,
-            abi,
-            functionName: functionName,
-            inputs: adaptedInput,
-            signature: handleSignature(options.signature),
-            blockNumber: "blockNumber" in options ? options.blockNumber : undefined,
-            maxFee: options.maxFee?.toString(),
-            nonce: options.nonce?.toString()
-        });
-
-        if (executed.statusCode) {
-            const msg =
-                `Could not perform ${choice.internalCommand} on ${functionName}.\n` +
-                executed.stderr.toString() +
-                "\n" +
-                "Make sure to `invoke` and `estimateFee` through account, and `call` directly through contract.";
-            const replacedMsg = adaptLog(msg);
-            throw new StarknetPluginError(replacedMsg);
-        }
-
-        return executed;
     }
 
     /**
@@ -590,19 +551,40 @@ export class StarknetContract {
         args?: StringMap,
         options: InvokeOptions = {}
     ): Promise<InvokeResponse> {
-        const executed = await this.interact(InteractChoice.INVOKE, functionName, args, options);
-        const txHash = extractTxHash(executed.stdout.toString());
+        try {
+            const adaptedInput = options.rawInput
+                ? <string[]>args
+                : this.adaptInput(functionName, args);
 
-        return new Promise<string>((resolve, reject) => {
-            iterativelyCheckStatus(
-                txHash,
-                this.hre.starknetWrapper,
-                () => resolve(txHash),
-                (error) => {
-                    reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
+            const { transaction_hash: txHash } = await this.provider.invokeFunction(
+                {
+                    contractAddress: this.address,
+                    entrypoint: functionName,
+                    calldata: adaptedInput,
+                    signature: options.signature.map(String)
+                },
+                {
+                    nonce: options.nonce ?? (await this.provider.getNonceForAddress(this.address)),
+                    maxFee: options.maxFee,
+                    version: InteractChoice.INVOKE.transactionVersion
                 }
             );
-        });
+
+            return new Promise<string>((resolve, reject) => {
+                iterativelyCheckStatus(
+                    txHash,
+                    this.hre.starknetWrapper,
+                    () => resolve(txHash),
+                    (error) => {
+                        reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
+                    }
+                );
+            });
+        } catch (error) {
+            if (!(error instanceof Error)) throw error;
+
+            throw new StarknetPluginError(error.message, error);
+        }
     }
 
     /**
@@ -637,17 +619,32 @@ export class StarknetContract {
         args?: StringMap,
         options: CallOptions = {}
     ): Promise<StringMap> {
-        const adaptedOptions = defaultToPendingBlock(options);
-        const executed = await this.interact(
-            InteractChoice.CALL,
-            functionName,
-            args,
-            adaptedOptions
-        );
-        if (options.rawOutput) {
-            return { response: executed.stdout.toString().split(" ") };
+        try {
+            const adaptedOptions = defaultToPendingBlock(options);
+            const adaptedInput = adaptedOptions.rawInput
+                ? <string[]>args
+                : this.adaptInput(functionName, args);
+
+            const { result } = await this.provider.callContract(
+                {
+                    contractAddress: this.address,
+                    entrypoint: functionName,
+                    calldata: adaptedInput
+                },
+                adaptedOptions.blockNumber
+            );
+            // align to legacy stdout output
+            const response = result.map(formatFelt).join(" ");
+
+            if (options.rawOutput) {
+                return { response };
+            }
+            return this.adaptOutput(functionName, response);
+        } catch (error) {
+            if (!(error instanceof Error)) throw error;
+
+            throw new StarknetPluginError(error.message, error);
         }
-        return this.adaptOutput(functionName, executed.stdout.toString());
     }
 
     /**
@@ -688,14 +685,33 @@ export class StarknetContract {
         args?: StringMap,
         options: EstimateFeeOptions = {}
     ): Promise<starknet.FeeEstimation> {
-        const adaptedOptions = defaultToPendingBlock(options);
-        const executed = await this.interact(
-            InteractChoice.ESTIMATE_FEE,
-            functionName,
-            args,
-            adaptedOptions
-        );
-        return parseFeeEstimation(executed.stdout.toString());
+        try {
+            const { nonce, maxFee, signature } = defaultToPendingBlock(options);
+            const result = await this.provider.getInvokeEstimateFee(
+                {
+                    contractAddress: this.address,
+                    calldata: args,
+                    signature: signature.map(String)
+                },
+                {
+                    nonce: nonce ?? (await this.provider.getNonceForAddress(this.address)),
+                    maxFee: maxFee,
+                    version: InteractChoice.ESTIMATE_FEE.transactionVersion
+                },
+                options.blockNumber
+            );
+
+            return {
+                amount: result.overall_fee,
+                unit: "wei",
+                gas_price: result.gas_price,
+                gas_usage: result.gas_consumed
+            };
+        } catch (error) {
+            if (!(error instanceof Error)) throw error;
+
+            throw new StarknetPluginError(error.message, error);
+        }
     }
 
     /**
