@@ -36,6 +36,7 @@ interface CairoToSierraOptions {
     replaceIds?: boolean;
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
+    singleFile?: boolean;
 }
 
 interface SierraToCasmOptions {
@@ -45,7 +46,6 @@ interface SierraToCasmOptions {
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
     addPythonicHints?: boolean;
-    singleFile?: boolean;
 }
 
 interface DeclareWrapperOptions {
@@ -168,6 +168,10 @@ export abstract class StarknetWrapper {
             args.push("--allowed-libfuncs-list-file", options.allowedLibfuncsListFile);
         }
 
+        if (options?.singleFile === true) {
+            args.push("--single-file");
+        }
+
         args.push(options.path);
 
         if (options.output) {
@@ -189,10 +193,6 @@ export abstract class StarknetWrapper {
 
         if (options?.addPythonicHints === true) {
             args.push("--add-pythonic-hints");
-        }
-
-        if (options?.singleFile === true) {
-            args.push("--single-file");
         }
 
         args.push(options.file);
