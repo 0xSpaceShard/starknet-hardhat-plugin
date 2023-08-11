@@ -73,7 +73,7 @@ Compiles Starknet Cairo 0 contracts. If no paths are provided, all Starknet cont
 ### `starknet-compile`
 
 ```
-$ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--replace-ids] [--allowed-libfuncs-list-file] [--allowed-libfuncs-list-name] [--cairo1-bin-dir <PATH>]
+$ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--single-file] [--replace-ids] [--allowed-libfuncs-list-file] [--allowed-libfuncs-list-name] [--cairo1-bin-dir <PATH>]
 ```
 
 Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. Currently, contracts importing other contracts are not supported (until this is supported, you may try to use [Scarb](https://github.com/software-mansion/scarb) and modifying its artifacts to be compatible with this plugin).

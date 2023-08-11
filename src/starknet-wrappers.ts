@@ -45,6 +45,7 @@ interface SierraToCasmOptions {
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
     addPythonicHints?: boolean;
+    singleFile?: boolean;
 }
 
 interface DeclareWrapperOptions {
@@ -188,6 +189,10 @@ export abstract class StarknetWrapper {
 
         if (options?.addPythonicHints === true) {
             args.push("--add-pythonic-hints");
+        }
+
+        if (options?.singleFile === true) {
+            args.push("--single-file");
         }
 
         args.push(options.file);

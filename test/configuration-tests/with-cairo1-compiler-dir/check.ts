@@ -8,5 +8,5 @@ assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1.c
 assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1_abi.json");
 
 // Assert cairo0 compilation failure
-const execution = hardhatStarknetCompile("contracts/contract.cairo".split(" "), true);
+const execution = hardhatStarknetCompile(["contracts/contract.cairo", "--single-file"], true);
 assertContains(execution.stdout, "Error: Contract not found");

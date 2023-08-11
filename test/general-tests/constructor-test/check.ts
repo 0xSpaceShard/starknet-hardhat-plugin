@@ -28,10 +28,10 @@ for (const contractName of contractNames) {
 
 const contract1Path = path.join(sourcesPath, duplicateConstructorContract);
 const expectedErrorMsg = "Error: Expected at most one constructor.";
-const execution = hardhatStarknetCompile([contract1Path], true);
+const execution = hardhatStarknetCompile([contract1Path, "--single-file"], true);
 assertContains(execution.stderr, expectedErrorMsg);
 rmrfSync(contract1Path);
 
 // Compile cairo1 contracts
-hardhatStarknetCompile([sourcesPath, "--add-pythonic-hints"]);
+hardhatStarknetCompile([sourcesPath, "--add-pythonic-hints", "--single-file"]);
 hardhatStarknetTest("--no-compile test/constructor.test.ts".split(" "));
