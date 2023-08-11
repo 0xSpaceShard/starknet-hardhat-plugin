@@ -9,4 +9,4 @@ assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1_a
 
 // Assert cairo0 compilation failure
 const execution = hardhatStarknetCompile(["contracts/contract.cairo", "--single-file"], true);
-assertContains(execution.stdout, "Failed compilation of 1 contract");
+assertContains(execution.stderr, "Failed compilation of 1 contract");
