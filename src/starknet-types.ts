@@ -36,11 +36,17 @@ export interface EventSpecification {
     type: "event";
 }
 
+export interface Interface {
+    type: "interface";
+    name: string;
+    items: AbiEntry[];
+}
+
 export interface EventAbi {
     [encodedName: string]: EventSpecification;
 }
 
-export type AbiEntry = CairoFunction | Struct | EventSpecification;
+export type AbiEntry = CairoFunction | Struct | EventSpecification | Interface;
 
 export interface Abi {
     [name: string]: AbiEntry;

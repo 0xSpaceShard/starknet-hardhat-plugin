@@ -218,14 +218,25 @@ function readAbi(abiPath: string): starknet.Abi {
     const abiRaw = fs.readFileSync(abiPath).toString();
     const abiArray = JSON.parse(abiRaw);
     const abi: starknet.Abi = {};
-    for (const abiEntry of abiArray) {
-        if (!abiEntry.name) {
-            const msg = `Abi entry has no name: ${abiEntry}`;
-            throw new StarknetPluginError(msg);
-        }
-        abi[abiEntry.name] = abiEntry;
-    }
+    extractAbiEntries(abiArray, abi);
     return abi;
+}
+
+/**
+ * Recursively extract abi entries and populate the provided `abi` object.
+ */
+function extractAbiEntries(abiArray: starknet.AbiEntry[], abi: starknet.Abi) {
+    for (const abiEntry of abiArray) {
+        if ("items" in abiEntry) {
+            extractAbiEntries(abiEntry.items, abi);
+        } else {
+            if (!abiEntry.name) {
+                const msg = `Abi entry has no name: ${abiEntry}`;
+                throw new StarknetPluginError(msg);
+            }
+            abi[abiEntry.name] = abiEntry;
+        }
+    }
 }
 
 /**
