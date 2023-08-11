@@ -32,6 +32,12 @@ export type TxStatus =
     /** The transaction failed validation and thus was skipped. */
     | "REJECTED"
 
+    /** The transaction passed validation but failed execution, and will be (or was)
+     * included in a block (nonce will be incremented and an execution fee will be charged).
+     * This status does not distinguish between accepted on L2 / accepted on L1 blocks.
+     */
+    | "REVERTED"
+
     /** The transaction passed the validation and entered an actual created block. */
     | "ACCEPTED_ON_L2"
 
@@ -156,7 +162,7 @@ export function isTxAccepted(statusObject: StatusObject): boolean {
     return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
-const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];
+const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED", "REVERTED"];
 function isTxRejected(statusObject: StatusObject): boolean {
     return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
@@ -171,7 +177,7 @@ export async function iterativelyCheckStatus(
     // eslint-disable-next-line no-constant-condition
     while (true) {
         let count = retryCount;
-        let statusObject;
+        let statusObject: StatusObject;
         let error;
         while (count > 0) {
             // This promise is rejected usually if the network is unavailable
@@ -195,12 +201,8 @@ export async function iterativelyCheckStatus(
         } else if (isTxAccepted(statusObject)) {
             return resolve(statusObject.tx_status);
         } else if (isTxRejected(statusObject)) {
-            return reject(
-                new Error(
-                    "Transaction rejected. Error message:\n\n" +
-                        adaptLog(statusObject.tx_failure_reason.error_message)
-                )
-            );
+            const adaptedError = adaptLog(JSON.stringify(statusObject, null, 4));
+            return reject(new Error(adaptedError));
         }
 
         await sleep(CHECK_STATUS_TIMEOUT);
