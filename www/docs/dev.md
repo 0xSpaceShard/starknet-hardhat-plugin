@@ -164,7 +164,7 @@ $ npm version <NEW_VERSION>
 
 This will also update `package-lock.json`, create a new commit, and create a new git tag.
 
-You may want your version-bumping commit to contain the `[skip testnet]` string (documented [here](#testing-network)) to avoid testing on alpha-goerli (may postpone the version release significantly, if it will ever pass at all).
+You may want your version-bumping commit to contain the `[skip testnet]` string (documented [here](#testing-network)) to avoid testing on alpha-goerli (testing on testnet may postpone the version release significantly, if it will ever pass at all).
 
 If for whatever reason the publishing workflow in CI/CD cannot be executed, the version can be released manually via `scripts/npm-publish.sh`, just be sure to have an NPM access token and that you have the rights to publish.
 
