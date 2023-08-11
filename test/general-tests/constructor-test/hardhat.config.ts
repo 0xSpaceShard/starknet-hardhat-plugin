@@ -2,7 +2,9 @@ import "@shardlabs/starknet-hardhat-plugin";
 
 module.exports = {
     starknet: {
-        network: "devnet"
+        network: "devnet",
+        cairo1BinDir: process.env.CAIRO_1_COMPILER_DIR
+
     },
     networks: {
         devnet: {

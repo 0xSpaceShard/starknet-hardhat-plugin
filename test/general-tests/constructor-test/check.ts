@@ -1,7 +1,7 @@
 import path from "path";
 import { hardhatStarknetCompile, hardhatStarknetTest } from "../../utils/cli-functions";
 import { copyFileSync } from "fs";
-import { assertContains, rmrfSync } from "../../utils/utils";
+import { assertContains, ensureEnvVar, rmrfSync } from "../../utils/utils";
 
 const prefix = path.join(__dirname);
 const sourcesPath = "cairo1-contracts";
@@ -27,6 +27,7 @@ for (const contractName of contractNames) {
 }
 
 const contract1Path = path.join(sourcesPath, duplicateConstructorContract);
+ensureEnvVar("CAIRO_1_COMPILER_DIR");
 const expectedErrorMsg = "Error: Expected at most one constructor.";
 const execution = hardhatStarknetCompile([contract1Path, "--single-file"], true);
 assertContains(execution.stderr, expectedErrorMsg);
