@@ -1,12 +1,12 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { GetBlockResponse } from "starknet";
+import { GetBlockResponse, ProviderInterface } from "starknet";
 
 import { Account } from "./account";
 import { StarknetChainId } from "./constants";
 import { AmarnaDocker } from "./external-server/docker-amarna";
 import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
-import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
+import { StarknetJsWrapper } from "./starknet-js-wrapper";
 import { StarknetWrapper } from "./starknet-wrappers";
 import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
 import * as DevnetTypes from "./types/devnet";
@@ -90,7 +90,9 @@ declare module "hardhat/types/runtime" {
         starknetWrapper: StarknetWrapper;
         amarnaDocker: AmarnaDocker;
         starknet: StarknetTypes.Starknet;
-        starknetJs: StarknetLegacyWrapper;
+
+        starknetJs: StarknetJsWrapper;
+        starknetProvider: ProviderInterface;
     }
 
     type StarknetContract = StarknetContractType;

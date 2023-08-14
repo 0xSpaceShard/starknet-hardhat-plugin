@@ -163,7 +163,7 @@ export async function sendDeployAccountTx(
     return new Promise<string>((resolve, reject) => {
         iterativelyCheckStatus(
             resp.data.transaction_hash,
-            hre.starknetWrapper,
+            hre,
             () => resolve(resp.data.transaction_hash),
             reject
         );
@@ -199,7 +199,7 @@ export async function sendDeclareV2Tx(
     return new Promise<string>((resolve, reject) => {
         iterativelyCheckStatus(
             resp.data.transaction_hash,
-            hre.starknetWrapper,
+            hre,
             () => resolve(resp.data.transaction_hash),
             reject
         );

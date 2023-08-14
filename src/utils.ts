@@ -1,4 +1,3 @@
-import fs from "fs";
 import { glob } from "glob";
 import {
     HardhatNetworkConfig,
@@ -9,8 +8,15 @@ import {
     ProjectPathsConfig,
     VmLang
 } from "hardhat/types";
-import path from "path";
-import { json, stark, LegacyCompiledContract, hash } from "starknet";
+import fs, { promises as fsp } from "node:fs";
+import path from "node:path";
+import {
+    CompiledSierra,
+    LegacyCompiledContract,
+    hash,
+    json,
+    stark
+} from "starknet";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -302,10 +308,16 @@ export class UDC {
     }
 }
 
+export function readContractSync(filePath: string, encoding: BufferEncoding = "ascii") {
+    return json.parse(fs.readFileSync(filePath, encoding));
+}
+
+export async function readContractAsync(filePath: string, encoding: BufferEncoding = "ascii") {
+    return json.parse(await fsp.readFile(filePath, encoding));
+}
+
 export function readContract(contractPath: string) {
-    const parsedContract = json.parse(
-        fs.readFileSync(contractPath).toString("ascii")
-    ) as LegacyCompiledContract;
+    const parsedContract = readContractSync(contractPath) as LegacyCompiledContract;
     return {
         ...parsedContract,
         program: stark.compressProgram(parsedContract.program)
@@ -313,7 +325,7 @@ export function readContract(contractPath: string) {
 }
 
 export function readCairo1Contract(contractPath: string) {
-    const parsedContract = json.parse(fs.readFileSync(contractPath).toString("ascii"));
+    const parsedContract = readContractSync(contractPath) as CompiledSierra;
     const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
 
     const contract = new Cairo1ContractClass({

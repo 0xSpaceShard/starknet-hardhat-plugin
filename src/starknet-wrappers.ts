@@ -16,7 +16,6 @@ import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { FeeEstimation } from "./starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
-import { BlockNumber } from "./types";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
 interface CompileWrapperOptions {
@@ -45,30 +44,6 @@ interface SierraToCasmOptions {
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
     addPythonicHints?: boolean;
-}
-
-interface DeclareWrapperOptions {
-    contract: string;
-    maxFee: string;
-    signature?: string[];
-    token?: string;
-    sender?: string;
-    nonce?: string;
-}
-
-interface TxHashQueryWrapperOptions {
-    hash: string;
-}
-
-interface BlockQueryWrapperOptions {
-    number?: BlockNumber;
-    hash?: string;
-}
-
-interface NonceQueryWrapperOptions {
-    address: string;
-    blockHash?: string;
-    blockNumber?: BlockNumber;
 }
 
 export abstract class StarknetWrapper {
@@ -212,43 +187,6 @@ export abstract class StarknetWrapper {
     protected getCairo1Command(binDirPath: string, binCommand: string, args: string[]): string[] {
         const cairo1Bin = path.join(binDirPath, binCommand);
         return [cairo1Bin, ...args];
-    }
-
-    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.declare(
-            options.contract,
-            options.sender,
-            options.signature,
-            options.nonce,
-            options.maxFee
-        );
-    }
-
-    public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTxStatus(options.hash);
-    }
-
-    public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTransactionTrace(options.hash);
-    }
-
-    public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTransactionReceipt(options.hash);
-    }
-
-    public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return await this.hre.starknetJs.getTransaction(options.hash);
-    }
-
-    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getBlock(options.hash ?? options.number);
-    }
-
-    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getNonce(
-            options.address,
-            options.blockHash ?? options.blockNumber
-        );
     }
 
     public async getClassHash(artifactPath: string): Promise<string> {

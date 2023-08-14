@@ -65,7 +65,7 @@ import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { ArgentAccount, OpenZeppelinAccount } from "./account";
 import { AmarnaDocker } from "./external-server/docker-amarna";
-import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
+import { StarknetJsWrapper } from "./starknet-js-wrapper";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -171,7 +171,7 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
 
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment((hre) => {
-    hre.starknetJs = new StarknetLegacyWrapper(hre.config.starknet.networkConfig);
+    hre.starknetJs = new StarknetJsWrapper(hre);
 
     const venvPath = hre.config.starknet.venv;
     if (venvPath) {

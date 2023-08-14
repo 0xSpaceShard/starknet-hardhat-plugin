@@ -1,6 +1,17 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import fs from "node:fs";
-import { CallData, SequencerProvider, events as eventUtil, hash, json, selector } from "starknet";
+import {
+    CallData,
+    DeclareContractTransaction,
+    InvocationsDetailsWithNonce,
+    ProviderInterface,
+    SequencerProvider,
+    events as eventUtil,
+    hash,
+    json,
+    provider as providerUtil,
+    selector
+} from "starknet";
 
 import { adaptInputUtil, adaptOutputUtil, formatFelt } from "../adapt";
 import {
@@ -12,8 +23,15 @@ import {
 } from "../constants";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import * as starknet from "../starknet-types";
-import { StarknetWrapper } from "../starknet-wrappers";
-import { adaptLog, copyWithBigint, findConstructor, sleep, warn } from "../utils";
+import {
+    adaptLog,
+    copyWithBigint,
+    findConstructor,
+    readContractAsync,
+    readContractSync,
+    sleep,
+    warn
+} from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -113,24 +131,6 @@ export class InteractChoice {
     ) {}
 }
 
-export function extractClassHash(response: string) {
-    return extractFromResponse(response, /^Contract class hash: (.*)$/m);
-}
-
-function extractTxHash(response: string) {
-    return extractFromResponse(response, /^Transaction hash: (.*)$/m);
-}
-
-function extractFromResponse(response: string, regex: RegExp) {
-    const matched = response.match(regex);
-    if (!matched || !matched[1]) {
-        throw new StarknetPluginError(
-            `Could not parse response. Check that you're using the correct network. Response received: ${response}`
-        );
-    }
-    return matched[1];
-}
-
 /**
  * The object returned by starknet tx_status.
  */
@@ -139,23 +139,6 @@ type StatusObject = {
     tx_status: TxStatus;
     tx_failure_reason?: starknet.TxFailureReason;
 };
-
-async function checkStatus(hash: string, starknetWrapper: StarknetWrapper): Promise<StatusObject> {
-    const executed = await starknetWrapper.getTxStatus({
-        hash
-    });
-    if (executed.statusCode) {
-        throw new StarknetPluginError(executed.stderr.toString());
-    }
-
-    const response = executed.stdout.toString();
-    try {
-        const responseParsed = JSON.parse(response);
-        return responseParsed;
-    } catch (err) {
-        throw new StarknetPluginError(`Cannot interpret the following: ${response}`);
-    }
-}
 
 const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
 export function isTxAccepted(statusObject: StatusObject): boolean {
@@ -169,7 +152,7 @@ function isTxRejected(statusObject: StatusObject): boolean {
 
 export async function iterativelyCheckStatus(
     txHash: string,
-    starknetWrapper: StarknetWrapper,
+    hre: HardhatRuntimeEnvironment,
     resolve: (status: string) => void,
     reject: (reason: Error) => void,
     retryCount = 10
@@ -181,10 +164,13 @@ export async function iterativelyCheckStatus(
         let error;
         while (count > 0) {
             // This promise is rejected usually if the network is unavailable
-            statusObject = await checkStatus(txHash, starknetWrapper).catch((reason) => {
-                error = reason;
-                return undefined;
-            });
+            statusObject = await (hre.starknetProvider as SequencerProvider)
+                .getTransactionStatus(txHash)
+                .catch((err) => {
+                    error = new StarknetPluginError(err);
+                    return undefined;
+                });
+
             // Check count at 1 to avoid unnecessary waiting(sleep) in the last iteration
             if (statusObject || count === 1) {
                 break;
@@ -401,7 +387,7 @@ export class StarknetContractFactory {
             };
         }
 
-        const casmJson = JSON.parse(fs.readFileSync(this.casmPath, "utf-8"));
+        const casmJson = readContractSync(this.casmPath, "utf-8");
         if (casmJson?.compiler_version.split(".")[0] === "0") {
             const msg = ".CASM json should have been generated with a compiler version >= 1";
             throw new StarknetPluginError(msg);
@@ -432,26 +418,30 @@ export class StarknetContractFactory {
      * @returns transaction hash as a hex string
      */
     async declare(options: DeclareOptions = {}): Promise<string> {
-        const executed = await this.hre.starknetWrapper.declare({
-            contract: this.metadataPath,
-            maxFee: (options.maxFee || 0).toString(),
-            token: options.token,
-            signature: handleSignature(options.signature),
-            sender: options.sender,
-            nonce: options.nonce?.toString()
-        });
-        if (executed.statusCode) {
-            const msg = `Could not declare class: ${executed.stderr.toString()}`;
-            throw new StarknetPluginError(msg);
-        }
+        const contractJson = await readContractAsync(this.metadataPath);
+        const contract = providerUtil.parseContract(contractJson);
 
-        const executedOutput = executed.stdout.toString();
-        const txHash = extractTxHash(executedOutput);
+        const transaction: DeclareContractTransaction = {
+            contract,
+            senderAddress: options.sender,
+            signature: handleSignature(options.signature)
+        };
+        const details: InvocationsDetailsWithNonce = {
+            maxFee: options.maxFee,
+            nonce: options.nonce
+        };
+        const contractResponse = await this.hre.starknetProvider
+            .declareContract(transaction, details)
+            .catch((error) => {
+                const msg = `Could not declare class: ${error}`;
+                throw new StarknetPluginError(msg);
+            });
 
+        const txHash = contractResponse.transaction_hash;
         return new Promise((resolve, reject) => {
             iterativelyCheckStatus(
                 txHash,
-                this.hre.starknetWrapper,
+                this.hre,
                 () => resolve(txHash),
                 (error) => {
                     reject(new StarknetPluginError(`Declare transaction ${txHash}: ${error}`));
@@ -546,8 +536,8 @@ export class StarknetContract {
         return;
     }
 
-    get provider(): SequencerProvider {
-        return this.hre.starknetJs.provider;
+    get provider(): ProviderInterface {
+        return this.hre.starknetProvider;
     }
 
     /**
@@ -594,7 +584,7 @@ export class StarknetContract {
             return new Promise<string>((resolve, reject) => {
                 iterativelyCheckStatus(
                     txHash,
-                    this.hre.starknetWrapper,
+                    this.hre,
                     () => resolve(txHash),
                     (error) => {
                         reject(new StarknetPluginError(`Invoke transaction ${txHash}: ${error}`));
