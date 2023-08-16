@@ -1,6 +1,6 @@
-import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SequencerProvider, selector } from "starknet";
+import fs from "node:fs";
+import { SequencerProvider, hash, json, selector } from "starknet";
 
 import { adaptInputUtil, adaptOutputUtil, formatFelt } from "../adapt";
 import {
@@ -13,7 +13,7 @@ import {
 import { StarknetPluginError } from "../starknet-plugin-error";
 import * as starknet from "../starknet-types";
 import { StarknetWrapper } from "../starknet-wrappers";
-import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
+import { adaptLog, copyWithBigint, findConstructor, sleep, warn } from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -210,13 +210,17 @@ export async function iterativelyCheckStatus(
 }
 
 /**
- * Reads ABI from `abiPath` and converts it to an object for lookup by name.
- * @param abiPath the path where ABI is stored on disk
- * @returns an object mapping ABI entry names with their values
+ * Reads the ABI from `abiPath`
  */
-function readAbi(abiPath: string): starknet.Abi {
-    const abiRaw = fs.readFileSync(abiPath).toString();
-    const abiArray = JSON.parse(abiRaw);
+function readAbi(abiPath: string): string {
+    return hash.formatSpaces(fs.readFileSync(abiPath).toString("ascii").trim());
+}
+
+/**
+ * Converts `rawAbi` to an object for lookup by name
+ */
+function mapAbi(rawAbi: string): starknet.Abi {
+    const abiArray = json.parse(rawAbi);
     const abi: starknet.Abi = {};
     extractAbiEntries(abiArray, abi);
     return abi;
@@ -372,6 +376,7 @@ export class StarknetContractFactory {
     private hre: HardhatRuntimeEnvironment;
     public abi: starknet.Abi;
     public abiPath: string;
+    public abiRaw: string;
     private constructorAbi: starknet.CairoFunction;
     public metadataPath: string;
     public casmPath: string;
@@ -380,7 +385,8 @@ export class StarknetContractFactory {
     constructor(config: StarknetContractFactoryConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
-        this.abi = readAbi(this.abiPath);
+        this.abiRaw = readAbi(this.abiPath);
+        this.abi = mapAbi(this.abiRaw);
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
 
@@ -514,18 +520,20 @@ export class StarknetContractFactory {
 
 export class StarknetContract {
     private hre: HardhatRuntimeEnvironment;
-    private abi: starknet.Abi;
+    protected abi: starknet.Abi;
+    protected abiPath: string;
+    protected abiRaw: string;
     private isCairo1: boolean;
     private eventsSpecifications: starknet.EventAbi;
-    private abiPath: string;
     private _address: string;
     public deployTxHash: string;
 
     constructor(config: StarknetContractConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
+        this.abiRaw = readAbi(this.abiPath);
+        this.abi = mapAbi(this.abiRaw);
         this.isCairo1 = config.isCairo1;
-        this.abi = readAbi(this.abiPath);
         this.eventsSpecifications = extractEventSpecifications(this.abi);
     }
 
@@ -826,15 +834,10 @@ export class Cairo1ContractClass extends StarknetContract {
     getCompiledClass() {
         return {
             sierra_program: this.sierraProgram,
-            entry_points_by_type: this.entryPointsByType,
             contract_class_version: this.contractClassVersion,
-            abi: this.getFormattedAbi()
+            entry_points_by_type: this.entryPointsByType,
+            abi: this.abiRaw
         };
-    }
-
-    getFormattedAbi() {
-        const abiArr = Object.values(this.getAbi());
-        return formatSpaces(JSON.stringify(abiArr));
     }
 }
 

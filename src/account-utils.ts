@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
-import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { ec, hash, stark } from "starknet";
 
 import {
@@ -9,8 +9,7 @@ import {
     INTERNAL_ARTIFACTS_DIR,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    StarknetChainId,
-    DECLARE_VERSION
+    StarknetChainId
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as starknet from "./starknet-types";
@@ -169,26 +168,6 @@ export async function sendDeployAccountTx(
             reject
         );
     });
-}
-
-export function calculateDeclareV2TxHash(
-    accountAddress: string,
-    callData: string[],
-    maxFee: string,
-    chainId: StarknetChainId,
-    additionalData: string[]
-) {
-    const calldataHash = hash.computeHashOnElements(callData);
-    return hash.computeHashOnElements([
-        TransactionHashPrefix.DECLARE,
-        numericToHexString(DECLARE_VERSION),
-        accountAddress,
-        0, // entrypoint selector is implied
-        calldataHash,
-        maxFee,
-        chainId,
-        ...additionalData
-    ]);
 }
 
 export async function sendDeclareV2Tx(
