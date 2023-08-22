@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import fs from "node:fs";
-import { SequencerProvider, hash, json, selector } from "starknet";
+import { CallData, SequencerProvider, events as eventUtil, hash, json, selector } from "starknet";
 
 import { adaptInputUtil, adaptOutputUtil, formatFelt } from "../adapt";
 import {
@@ -782,28 +782,16 @@ export class StarknetContract {
      * @throws if no events decoded
      */
     decodeEvents(events: starknet.Event[]): DecodedEvent[] {
-        const decodedEvents: DecodedEvent[] = [];
-        for (const event of events) {
-            // skip events originating from other contracts, e.g. fee token
-            if (parseInt(event.from_address, 16) !== parseInt(this.address, 16)) continue;
+        const abi = json.parse(this.abiRaw);
+        const abiEvents = eventUtil.getAbiEvents(abi);
+        const abiStructs = CallData.getAbiStruct(abi);
 
-            const rawEventData = event.data.map(BigInt).join(" ");
-            // encoded event name guaranteed to be at index 0
-            const eventSpecification = this.eventsSpecifications[event.keys[0]];
-            if (!eventSpecification) {
-                const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
-                throw new StarknetPluginError(msg);
-            }
-
-            const inputSpecs = this.isCairo1 ? eventSpecification.inputs : eventSpecification.data;
-            const adapted = adaptOutputUtil(rawEventData, inputSpecs, this.abi);
-            decodedEvents.push({ name: eventSpecification.name, data: adapted });
-        }
-
-        if (decodedEvents.length === 0) {
-            const msg = `No events were decoded. You might be using a wrong contract. ABI used for decoding: ${this.abiPath}`;
-            throw new StarknetPluginError(msg);
-        }
+        const decodedEvents = eventUtil
+            .parseEvents(events, abiEvents, abiStructs, {})
+            .map((event) => {
+                const [name, data] = Object.entries(event)[0];
+                return { name, data };
+            });
         return decodedEvents;
     }
 }
