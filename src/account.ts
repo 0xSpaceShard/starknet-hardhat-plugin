@@ -1,7 +1,6 @@
-import { ec, hash, selector, BigNumberish, Call, RawCalldata } from "starknet";
+import { constants, ec, hash, selector, BigNumberish, Call, RawCalldata } from "starknet";
 
 import {
-    calculateDeclareV2TxHash,
     calculateDeployAccountHash,
     CallParameters,
     generateKeys,
@@ -12,7 +11,6 @@ import {
     signMultiCall
 } from "./account-utils";
 import {
-    DECLARE_VERSION,
     QUERY_VERSION,
     StarknetChainId,
     TransactionHashPrefix,
@@ -181,7 +179,7 @@ export abstract class Account {
         options: EstimateFeeOptions = {}
     ): Promise<starknet.FeeEstimation> {
         const maxFee = (options.maxFee || 0).toString();
-        const version = DECLARE_VERSION;
+        const version = hash.feeTransactionVersion_2;
         const nonce = options.nonce == null ? await this.getNonce() : options.nonce;
 
         const hre = await import("hardhat");
@@ -195,16 +193,17 @@ export abstract class Account {
             contractFactory.metadataPath
         );
 
-        const calldata = [classHash];
-        const messageHash = calculateDeclareV2TxHash(
+        const messageHash = hash.calculateDeclareTransactionHash(
+            classHash,
             this.address,
-            calldata,
-            maxFee.toString(),
-            chainId,
-            [nonce.toString(), compiledClassHash]
+            version,
+            maxFee,
+            chainId as unknown as constants.StarknetChainId,
+            nonce,
+            compiledClassHash
         );
-
         const signatures = this.getSignatures(messageHash);
+
         const data = {
             type: "DECLARE",
             sender_address: this.address,
@@ -519,7 +518,7 @@ export abstract class Account {
             maxFee = estimatedFeeToMaxFee(estimatedDeclareFee.amount, options?.overhead);
         }
 
-        const version = DECLARE_VERSION;
+        const version = hash.transactionVersion_2;
         const hre = await import("hardhat");
         const chainId = hre.starknet.networkConfig.starknetChainId;
 
@@ -530,16 +529,17 @@ export abstract class Account {
             contractFactory.metadataPath
         );
 
-        const calldata = [classHash];
-        const messageHash = calculateDeclareV2TxHash(
+        const messageHash = hash.calculateDeclareTransactionHash(
+            classHash,
             this.address,
-            calldata,
-            maxFee.toString(),
-            chainId,
-            [nonce.toString(), compiledClassHash]
+            version,
+            maxFee,
+            chainId as unknown as constants.StarknetChainId,
+            nonce,
+            compiledClassHash
         );
-
         const signatures = this.getSignatures(messageHash);
+
         return sendDeclareV2Tx(
             bnToDecimalStringArray(signatures),
             compiledClassHash,

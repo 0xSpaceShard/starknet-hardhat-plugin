@@ -57,7 +57,7 @@ function run_test() {
     if npx hardhat --typecheck --config "$CONFIG_FILE_NAME" 1>/dev/null; then
         echo "Config file is valid"
     else
-        echo "Invalid config"
+        echo "Invalid config! Test failed!"
         # Clean up the temporary config file
         rm "$CONFIG_FILE_NAME"
         return 0

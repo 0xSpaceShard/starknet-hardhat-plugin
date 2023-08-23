@@ -1,6 +1,6 @@
-import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SequencerProvider, selector } from "starknet";
+import fs from "node:fs";
+import { CallData, SequencerProvider, events as eventUtil, hash, json, selector } from "starknet";
 
 import { adaptInputUtil, adaptOutputUtil, formatFelt } from "../adapt";
 import {
@@ -13,7 +13,7 @@ import {
 import { StarknetPluginError } from "../starknet-plugin-error";
 import * as starknet from "../starknet-types";
 import { StarknetWrapper } from "../starknet-wrappers";
-import { adaptLog, copyWithBigint, findConstructor, formatSpaces, sleep, warn } from "../utils";
+import { adaptLog, copyWithBigint, findConstructor, sleep, warn } from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -31,6 +31,12 @@ export type TxStatus =
 
     /** The transaction failed validation and thus was skipped. */
     | "REJECTED"
+
+    /** The transaction passed validation but failed execution, and will be (or was)
+     * included in a block (nonce will be incremented and an execution fee will be charged).
+     * This status does not distinguish between accepted on L2 / accepted on L1 blocks.
+     */
+    | "REVERTED"
 
     /** The transaction passed the validation and entered an actual created block. */
     | "ACCEPTED_ON_L2"
@@ -156,7 +162,7 @@ export function isTxAccepted(statusObject: StatusObject): boolean {
     return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
 
-const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED"];
+const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED", "REVERTED"];
 function isTxRejected(statusObject: StatusObject): boolean {
     return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
 }
@@ -171,7 +177,7 @@ export async function iterativelyCheckStatus(
     // eslint-disable-next-line no-constant-condition
     while (true) {
         let count = retryCount;
-        let statusObject;
+        let statusObject: StatusObject;
         let error;
         while (count > 0) {
             // This promise is rejected usually if the network is unavailable
@@ -195,12 +201,8 @@ export async function iterativelyCheckStatus(
         } else if (isTxAccepted(statusObject)) {
             return resolve(statusObject.tx_status);
         } else if (isTxRejected(statusObject)) {
-            return reject(
-                new Error(
-                    "Transaction rejected. Error message:\n\n" +
-                        adaptLog(statusObject.tx_failure_reason.error_message)
-                )
-            );
+            const adaptedError = adaptLog(JSON.stringify(statusObject, null, 4));
+            return reject(new Error(adaptedError));
         }
 
         await sleep(CHECK_STATUS_TIMEOUT);
@@ -208,22 +210,37 @@ export async function iterativelyCheckStatus(
 }
 
 /**
- * Reads ABI from `abiPath` and converts it to an object for lookup by name.
- * @param abiPath the path where ABI is stored on disk
- * @returns an object mapping ABI entry names with their values
+ * Reads the ABI from `abiPath`
  */
-function readAbi(abiPath: string): starknet.Abi {
-    const abiRaw = fs.readFileSync(abiPath).toString();
-    const abiArray = JSON.parse(abiRaw);
+function readAbi(abiPath: string): string {
+    return hash.formatSpaces(fs.readFileSync(abiPath).toString("ascii").trim());
+}
+
+/**
+ * Converts `rawAbi` to an object for lookup by name
+ */
+function mapAbi(rawAbi: string): starknet.Abi {
+    const abiArray = json.parse(rawAbi);
     const abi: starknet.Abi = {};
-    for (const abiEntry of abiArray) {
-        if (!abiEntry.name) {
-            const msg = `Abi entry has no name: ${abiEntry}`;
-            throw new StarknetPluginError(msg);
-        }
-        abi[abiEntry.name] = abiEntry;
-    }
+    extractAbiEntries(abiArray, abi);
     return abi;
+}
+
+/**
+ * Recursively extract abi entries and populate the provided `abi` object.
+ */
+function extractAbiEntries(abiArray: starknet.AbiEntry[], abi: starknet.Abi) {
+    for (const abiEntry of abiArray) {
+        if ("items" in abiEntry) {
+            extractAbiEntries(abiEntry.items, abi);
+        } else {
+            if (!abiEntry.name) {
+                const msg = `Abi entry has no name: ${abiEntry}`;
+                throw new StarknetPluginError(msg);
+            }
+            abi[abiEntry.name] = abiEntry;
+        }
+    }
 }
 
 /**
@@ -359,6 +376,7 @@ export class StarknetContractFactory {
     private hre: HardhatRuntimeEnvironment;
     public abi: starknet.Abi;
     public abiPath: string;
+    public abiRaw: string;
     private constructorAbi: starknet.CairoFunction;
     public metadataPath: string;
     public casmPath: string;
@@ -367,7 +385,8 @@ export class StarknetContractFactory {
     constructor(config: StarknetContractFactoryConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
-        this.abi = readAbi(this.abiPath);
+        this.abiRaw = readAbi(this.abiPath);
+        this.abi = mapAbi(this.abiRaw);
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
 
@@ -501,18 +520,20 @@ export class StarknetContractFactory {
 
 export class StarknetContract {
     private hre: HardhatRuntimeEnvironment;
-    private abi: starknet.Abi;
+    protected abi: starknet.Abi;
+    protected abiPath: string;
+    protected abiRaw: string;
     private isCairo1: boolean;
     private eventsSpecifications: starknet.EventAbi;
-    private abiPath: string;
     private _address: string;
     public deployTxHash: string;
 
     constructor(config: StarknetContractConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
+        this.abiRaw = readAbi(this.abiPath);
+        this.abi = mapAbi(this.abiRaw);
         this.isCairo1 = config.isCairo1;
-        this.abi = readAbi(this.abiPath);
         this.eventsSpecifications = extractEventSpecifications(this.abi);
     }
 
@@ -761,28 +782,16 @@ export class StarknetContract {
      * @throws if no events decoded
      */
     decodeEvents(events: starknet.Event[]): DecodedEvent[] {
-        const decodedEvents: DecodedEvent[] = [];
-        for (const event of events) {
-            // skip events originating from other contracts, e.g. fee token
-            if (parseInt(event.from_address, 16) !== parseInt(this.address, 16)) continue;
+        const abi = json.parse(this.abiRaw);
+        const abiEvents = eventUtil.getAbiEvents(abi);
+        const abiStructs = CallData.getAbiStruct(abi);
 
-            const rawEventData = event.data.map(BigInt).join(" ");
-            // encoded event name guaranteed to be at index 0
-            const eventSpecification = this.eventsSpecifications[event.keys[0]];
-            if (!eventSpecification) {
-                const msg = `Event "${event.keys[0]}" doesn't exist in ${this.abiPath}.`;
-                throw new StarknetPluginError(msg);
-            }
-
-            const inputSpecs = this.isCairo1 ? eventSpecification.inputs : eventSpecification.data;
-            const adapted = adaptOutputUtil(rawEventData, inputSpecs, this.abi);
-            decodedEvents.push({ name: eventSpecification.name, data: adapted });
-        }
-
-        if (decodedEvents.length === 0) {
-            const msg = `No events were decoded. You might be using a wrong contract. ABI used for decoding: ${this.abiPath}`;
-            throw new StarknetPluginError(msg);
-        }
+        const decodedEvents = eventUtil
+            .parseEvents(events, abiEvents, abiStructs, {})
+            .map((event) => {
+                const [name, data] = Object.entries(event)[0];
+                return { name, data };
+            });
         return decodedEvents;
     }
 }
@@ -813,15 +822,10 @@ export class Cairo1ContractClass extends StarknetContract {
     getCompiledClass() {
         return {
             sierra_program: this.sierraProgram,
-            entry_points_by_type: this.entryPointsByType,
             contract_class_version: this.contractClassVersion,
-            abi: this.getFormattedAbi()
+            entry_points_by_type: this.entryPointsByType,
+            abi: this.abiRaw
         };
-    }
-
-    getFormattedAbi() {
-        const abiArr = Object.values(this.getAbi());
-        return formatSpaces(JSON.stringify(abiArr));
     }
 }
 

@@ -10,7 +10,7 @@ import {
     VmLang
 } from "hardhat/types";
 import path from "path";
-import { json, stark, LegacyCompiledContract } from "starknet";
+import { json, stark, LegacyCompiledContract, hash } from "starknet";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -322,34 +322,12 @@ export function readCairo1Contract(contractPath: string) {
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`
         ),
-        sierraProgram: stark.compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        sierraProgram: stark.compressProgram(hash.formatSpaces(json.stringify(sierra_program))),
         entryPointsByType: entry_points_by_type,
         contractClassVersion: contract_class_version
     } as ContractClassConfig);
 
     return contract;
-}
-
-/**
- * Json string is transformed into a formatted string without newlines.
- * @param json string
- * @returns string
- */
-export function formatSpaces(json: string): string {
-    let insideQuotes = false;
-    let newString = "";
-    for (const char of json) {
-        // eslint-disable-next-line
-        if (char === '"' && newString.endsWith("\\") === false) {
-            insideQuotes = !insideQuotes;
-        }
-        if (insideQuotes) {
-            newString += char;
-        } else {
-            newString += char === ":" ? ": " : char === "," ? ", " : char;
-        }
-    }
-    return newString;
 }
 
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {

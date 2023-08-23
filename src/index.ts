@@ -242,6 +242,7 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     )
     .addOptionalParam("allowedLibfuncsListFile", "A file of the allowed libfuncs list to use.")
     .addFlag("addPythonicHints", "Add pythonic hints.")
+    .addFlag("singleFile", "Compile single file.")
     .setAction(starknetCompileCairo1Action);
 
 task("starknet-build", "Builds Scarb projects")
