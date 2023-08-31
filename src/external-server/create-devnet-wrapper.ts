@@ -6,6 +6,28 @@ import { getDevnetImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
 import { ExternalServer } from "./external-server";
+import { Image } from "@nomiclabs/hardhat-docker";
+
+function getDevnetImage(dockerizedVersion: string): Image {
+    let repository: string = undefined;
+    let tag: string = undefined;
+    // check if image:tag
+    if (dockerizedVersion.includes(":")) {
+        const imageParts = dockerizedVersion.split(":");
+        if (imageParts.length !== 2) {
+            const msg = `Invalid dockerizedVersion: "${dockerizedVersion}". Expected <tag> or <image>:<tag>`;
+            throw new StarknetPluginError(msg);
+        }
+        repository = imageParts[0];
+        tag = imageParts[1];
+    } else {
+        // treat as just tag
+        repository = DEVNET_DOCKER_REPOSITORY;
+        tag = getDevnetImageTagByArch(dockerizedVersion);
+    }
+
+    return { repository, tag };
+}
 
 export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): ExternalServer {
     const devnetNetwork = getNetwork<HardhatNetworkConfig>(
@@ -37,12 +59,10 @@ export function createIntegratedDevnet(hre: HardhatRuntimeEnvironment): External
         );
     }
 
-    const tag = getDevnetImageTagByArch(devnetNetwork.dockerizedVersion);
+    const image = getDevnetImage(devnetNetwork.dockerizedVersion);
+
     return new DockerDevnet(
-        {
-            repository: DEVNET_DOCKER_REPOSITORY,
-            tag
-        },
+        image,
         hostname,
         port,
         devnetNetwork?.args,
