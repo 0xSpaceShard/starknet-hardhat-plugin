@@ -1,18 +1,24 @@
 import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from "hardhat/types";
 import { StarknetPluginError } from "../starknet-plugin-error";
 
-import { DEVNET_DOCKER_REPOSITORY, INTEGRATED_DEVNET, INTEGRATED_DEVNET_URL } from "../constants";
+import {
+    DEFAULT_DEVNET_DOCKER_IMAGE_TAG,
+    DEVNET_DOCKER_REPOSITORY,
+    INTEGRATED_DEVNET,
+    INTEGRATED_DEVNET_URL
+} from "../constants";
 import { getDevnetImageTagByArch, getNetwork } from "../utils";
 import { DockerDevnet } from "./docker-devnet";
 import { VenvDevnet } from "./venv-devnet";
 import { ExternalServer } from "./external-server";
 import { Image } from "@nomiclabs/hardhat-docker";
 
-function getDevnetImage(dockerizedVersion: string): Image {
+function getDevnetImage(dockerizedVersion: string = DEFAULT_DEVNET_DOCKER_IMAGE_TAG): Image {
     let repository: string = undefined;
     let tag: string = undefined;
+
     // check if image:tag
-    if (dockerizedVersion.includes(":")) {
+    if (dockerizedVersion ?? dockerizedVersion.includes(":")) {
         const imageParts = dockerizedVersion.split(":");
         if (imageParts.length !== 2) {
             const msg = `Invalid dockerizedVersion: "${dockerizedVersion}". Expected <tag> or <image>:<tag>`;
@@ -21,7 +27,7 @@ function getDevnetImage(dockerizedVersion: string): Image {
         repository = imageParts[0];
         tag = imageParts[1];
     } else {
-        // treat as just tag
+        // treat as a devnet-py tag
         repository = DEVNET_DOCKER_REPOSITORY;
         tag = getDevnetImageTagByArch(dockerizedVersion);
     }
