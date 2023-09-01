@@ -18,7 +18,7 @@ function getDevnetImage(dockerizedVersion: string = DEFAULT_DEVNET_DOCKER_IMAGE_
     let tag: string = undefined;
 
     // check if image:tag
-    if (dockerizedVersion ?? dockerizedVersion.includes(":")) {
+    if (dockerizedVersion.includes(":")) {
         const imageParts = dockerizedVersion.split(":");
         if (imageParts.length !== 2) {
             const msg = `Invalid dockerizedVersion: "${dockerizedVersion}". Expected <tag> or <image>:<tag>`;
