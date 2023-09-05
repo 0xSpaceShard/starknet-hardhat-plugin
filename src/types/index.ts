@@ -4,8 +4,10 @@ import {
     CallData,
     DeclareContractTransaction,
     InvocationsDetailsWithNonce,
+    LegacyContractClass,
     ProviderInterface,
     SequencerProvider,
+    SierraContractClass,
     events as eventUtil,
     hash,
     json,
@@ -23,15 +25,7 @@ import {
 } from "../constants";
 import { StarknetPluginError } from "../starknet-plugin-error";
 import * as starknet from "../starknet-types";
-import {
-    adaptLog,
-    copyWithBigint,
-    findConstructor,
-    readContractAsync,
-    readContractSync,
-    sleep,
-    warn
-} from "../utils";
+import { adaptLog, copyWithBigint, findConstructor, readContractSync, sleep, warn } from "../utils";
 
 /**
  * According to: https://starknet.io/docs/hello_starknet/intro.html#interact-with-the-contract
@@ -65,17 +59,25 @@ export type TxStatus =
 export type InvokeResponse = string;
 
 export type StarknetContractFactoryConfig = {
-    abiPath: string;
+    abiPath?: string;
     casmPath?: string;
     metadataPath: string;
     hre: HardhatRuntimeEnvironment;
 };
 
-export interface StarknetContractConfig {
-    abiPath: string;
+export type StarknetContractConfig = {
     hre: HardhatRuntimeEnvironment;
     isCairo1: boolean;
-}
+} & (
+    | {
+          abiPath: string;
+          abiRaw?: undefined;
+      }
+    | {
+          abiPath?: undefined;
+          abiRaw: string;
+      }
+);
 
 export type Numeric = number | bigint;
 
@@ -200,6 +202,15 @@ export async function iterativelyCheckStatus(
  */
 function readAbi(abiPath: string): string {
     return hash.formatSpaces(fs.readFileSync(abiPath).toString("ascii").trim());
+}
+
+/**
+ * Extracts the ABI from the contract
+ */
+function getFallbackAbi(contract: LegacyContractClass | SierraContractClass): string {
+    return hash.formatSpaces(
+        typeof contract.abi === "string" ? contract.abi : json.stringify(contract.abi)
+    );
 }
 
 /**
@@ -359,19 +370,26 @@ export type SierraContractEntryPointFields = {
 export type NonceQueryOptions = BlockIdentifier;
 
 export class StarknetContractFactory {
-    private hre: HardhatRuntimeEnvironment;
-    public abi: starknet.Abi;
-    public abiPath: string;
-    public abiRaw: string;
+    private classHash: string;
     private constructorAbi: starknet.CairoFunction;
+    private contract: LegacyContractClass | SierraContractClass;
+    private hre: HardhatRuntimeEnvironment;
+
+    public abi: starknet.Abi;
+    public abiPath?: string;
+    public abiRaw: string;
     public metadataPath: string;
     public casmPath: string;
-    private classHash: string;
 
     constructor(config: StarknetContractFactoryConfig) {
         this.hre = config.hre;
+        this.metadataPath = config.metadataPath;
+        this.contract = providerUtil.parseContract(readContractSync(this.metadataPath));
+
         this.abiPath = config.abiPath;
-        this.abiRaw = readAbi(this.abiPath);
+        this.abiRaw = this.abiPath
+            ? readAbi(this.abiPath)
+            : getFallbackAbi(this.retrieveContract());
         this.abi = mapAbi(this.abiRaw);
         this.metadataPath = config.metadataPath;
         this.casmPath = config.casmPath;
@@ -412,17 +430,19 @@ export class StarknetContractFactory {
         };
     }
 
+    private retrieveContract() {
+        this.contract ??= providerUtil.parseContract(readContractSync(this.metadataPath));
+        return this.contract;
+    }
+
     /**
      * Declare a contract class.
      * @param options optional arguments to class declaration
      * @returns transaction hash as a hex string
      */
     async declare(options: DeclareOptions = {}): Promise<string> {
-        const contractJson = await readContractAsync(this.metadataPath);
-        const contract = providerUtil.parseContract(contractJson);
-
         const transaction: DeclareContractTransaction = {
-            contract,
+            contract: this.retrieveContract(),
             senderAddress: options.sender,
             signature: handleSignature(options.signature)
         };
@@ -485,6 +505,7 @@ export class StarknetContractFactory {
         }
         const contract = new StarknetContract({
             abiPath: this.abiPath,
+            abiRaw: this.abiRaw as undefined,
             hre: this.hre,
             isCairo1: this.isCairo1()
         });
@@ -521,7 +542,7 @@ export class StarknetContract {
     constructor(config: StarknetContractConfig) {
         this.hre = config.hre;
         this.abiPath = config.abiPath;
-        this.abiRaw = readAbi(this.abiPath);
+        this.abiRaw = config.abiRaw ?? readAbi(this.abiPath);
         this.abi = mapAbi(this.abiRaw);
         this.isCairo1 = config.isCairo1;
         this.eventsSpecifications = extractEventSpecifications(this.abi);
@@ -786,11 +807,11 @@ export class StarknetContract {
     }
 }
 
-export interface ContractClassConfig extends StarknetContractConfig {
+export type ContractClassConfig = StarknetContractConfig & {
     sierraProgram: string;
     contractClassVersion: string;
     entryPointsByType: SierraEntryPointsByType;
-}
+};
 
 export class Cairo1ContractClass extends StarknetContract {
     protected sierraProgram: string;

@@ -10,13 +10,7 @@ import {
 } from "hardhat/types";
 import fs, { promises as fsp } from "node:fs";
 import path from "node:path";
-import {
-    CompiledSierra,
-    LegacyCompiledContract,
-    hash,
-    json,
-    stark
-} from "starknet";
+import { CompiledSierra, LegacyCompiledContract, hash, json, stark } from "starknet";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -326,13 +320,14 @@ export function readContract(contractPath: string) {
 
 export function readCairo1Contract(contractPath: string) {
     const parsedContract = readContractSync(contractPath) as CompiledSierra;
-    const { contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
+    const { abi, contract_class_version, entry_points_by_type, sierra_program } = parsedContract;
 
     const contract = new Cairo1ContractClass({
         abiPath: path.join(
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`
         ),
+        abiRaw: hash.formatSpaces(json.stringify(abi)),
         sierraProgram: stark.compressProgram(hash.formatSpaces(json.stringify(sierra_program))),
         entryPointsByType: entry_points_by_type,
         contractClassVersion: contract_class_version
