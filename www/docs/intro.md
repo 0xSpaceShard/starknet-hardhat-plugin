@@ -640,8 +640,8 @@ By defining/modifying `networks["integratedDevnet"]` in your hardhat config file
 Dockerized integrated-devnet is the default mode, but can be specified via the `dockerizedVersion` property of `integratedDevnet`:
 
 -   the full image can be provided:
-    -   `shardlabs/starknet-devnet:<TAG>` (Pythonic Devnet) - [Docker image info](https://github.com/0xSpaceShard/starknet-devnet-rs#run-with-docker)
-    -   `shardlabs/starknet-devnet-rs:<TAG>` (Rust Devnet) - [Docker image info](https://0xspaceshard.github.io/starknet-devnet/docs/guide/run/#run-with-docker)
+    -   `shardlabs/starknet-devnet:<TAG>` (Pythonic Devnet) - [Docker image info](https://0xspaceshard.github.io/starknet-devnet/docs/guide/run/#run-with-docker)
+    -   `shardlabs/starknet-devnet-rs:<TAG>` (Rust Devnet) - [Docker image info](https://github.com/0xSpaceShard/starknet-devnet-rs#run-with-docker)
 -   if just `<TAG>` is provided, it defaults to Pythonic Devnet
 
 #### Integrated Devnet config example
