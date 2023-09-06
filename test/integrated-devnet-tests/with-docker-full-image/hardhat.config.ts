@@ -9,8 +9,5 @@ module.exports = {
             dockerizedVersion: process.env.STARKNET_DEVNET,
             url: "http://127.0.0.1:5050"
         }
-    },
-    mocha: {
-        timeout: 1 // ms
     }
 };

@@ -659,7 +659,8 @@ module.exports = {
       // venv: "path/to/venv" <- for env with installed starknet-devnet (created with e.g. `python -m venv path/to/venv`)
       venv: "<VENV_PATH>",
 
-      // This section covers the VM selection in Pythonic Devnet (starknet-devnet): either Python VM or Rust VM
+      // This section covers the VM selection in Pythonic Devnet (starknet-devnet): Python VM or Rust VM
+      // This is distinct from selecting between Pythonic Devnet and Rust Devnet, which can be done via `dockerizedVersion`
       // vmLang: "python" <- use python vm (default value)
       // vmLang: "rust" <- use rust vm
       // (rust vm is available out of the box using dockerized integrated-devnet)

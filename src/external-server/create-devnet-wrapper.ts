@@ -17,7 +17,7 @@ function getDevnetImage(dockerizedVersion: string = DEFAULT_DEVNET_DOCKER_IMAGE_
     let repository: string = undefined;
     let tag: string = undefined;
 
-    // check if image:tag
+    // check if of format <image>:<tag>
     if (dockerizedVersion.includes(":")) {
         const imageParts = dockerizedVersion.split(":");
         if (imageParts.length !== 2) {
