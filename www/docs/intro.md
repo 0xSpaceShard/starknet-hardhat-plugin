@@ -630,10 +630,21 @@ Predefined networks include `alpha-goerli`, `alpha-goerli2`, `alpha-mainnet` and
 
 By defining/modifying `networks["integratedDevnet"]` in your hardhat config file, you can specify:
 
--   the version of Devnet to use (effectively specifying the version of the underlying Docker image)
+-   the version of dockerized Devnet to use
 -   a Python environment with installed starknet-devnet (can be active environment); this will avoid using the dockerized version
 -   CLI arguments to be used on Devnet startup: [options](https://0xspaceshard.github.io/starknet-devnet/docs/guide/run)
 -   where output should be flushed _(either to the terminal or to a file)_.
+
+#### Dockerized Integrated Devnet
+
+Dockerized integrated-devnet is the default mode, but can be specified via the `dockerizedVersion` property of `integratedDevnet`:
+
+-   the full image can be provided:
+    -   `shardlabs/starknet-devnet:<TAG>` (Pythonic Devnet) - [Docker image info](https://github.com/0xSpaceShard/starknet-devnet-rs#run-with-docker)
+    -   `shardlabs/starknet-devnet-rs:<TAG>` (Rust Devnet) - [Docker image info](https://0xspaceshard.github.io/starknet-devnet/docs/guide/run/#run-with-docker)
+-   if just `<TAG>` is provided, it defaults to Pythonic Devnet
+
+#### Integrated Devnet config example
 
 ```javascript
 module.exports = {
@@ -648,7 +659,7 @@ module.exports = {
       // venv: "path/to/venv" <- for env with installed starknet-devnet (created with e.g. `python -m venv path/to/venv`)
       venv: "<VENV_PATH>",
 
-      // use python or rust vm implementation
+      // This section covers the VM selection in Pythonic Devnet (starknet-devnet): either Python VM or Rust VM
       // vmLang: "python" <- use python vm (default value)
       // vmLang: "rust" <- use rust vm
       // (rust vm is available out of the box using dockerized integrated-devnet)
@@ -656,8 +667,10 @@ module.exports = {
       // read more here : https://0xspaceshard.github.io/starknet-devnet/docs/guide/run/#run-with-the-rust-implementation-of-cairo-vm
       vmLang: "<VM_LANG>",
 
-      // or specify Docker image tag
+      // or use dockerized Devnet by specifying [IMAGE:]<TAG> (if IMAGE omitted - defaults to "shardlabs/starknet-devnet")
       dockerizedVersion: "<DEVNET_VERSION>",
+      // dockerizedVersion: "shardlabs/starknet-devnet:<TAG>",
+      // dockerizedVersion: "shardlabs/starknet-devnet-rs:<TAG>",
 
       // optional devnet CLI arguments, read more here: https://0xspaceshard.github.io/starknet-devnet/docs/guide/run
       args: ["--gas-price", "2000000000", "--fork-network", "alpha-goerli"],
