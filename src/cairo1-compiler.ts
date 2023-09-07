@@ -74,6 +74,7 @@ export class CairoCompilerDownloader {
 
     async download(fileName: string): Promise<void> {
         const url = `${CAIRO_COMPILER_BINARY_URL}/v${this.compilerVersion}/${fileName}`;
+        // TODO perhaps reduce the scope of this try block (and the one in the other method)
         try {
             const response = await axios.get(url, {
                 responseType: "stream",
@@ -96,6 +97,7 @@ export class CairoCompilerDownloader {
             const writer = fs.createWriteStream(destinationPath);
             response.data.pipe(writer);
 
+            // TODO why would this need to be a Promise?
             await new Promise<void>((resolve, reject) => {
                 writer.on("finish", resolve);
                 writer.on("error", reject);
