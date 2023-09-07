@@ -1,4 +1,4 @@
-import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
+import { Block, HardhatRuntimeEnvironment, Transaction } from "hardhat/types";
 import path from "path";
 import { uint256 } from "starknet";
 
@@ -10,7 +10,7 @@ import {
     SHORT_STRING_MAX_CHARACTERS
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
+import { TransactionReceipt, TransactionTrace } from "./starknet-types";
 import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
 import { checkArtifactExists, findPath } from "./utils";
 
@@ -194,7 +194,5 @@ export async function getBalanceUtil(
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
     const result = await ethContract.call("balanceOf", { account: address });
-    const convertedBalance = uint256.uint256ToBN(result.balance).toString();
-
-    return BigInt(convertedBalance);
+    return uint256.uint256ToBN(result.balance);
 }

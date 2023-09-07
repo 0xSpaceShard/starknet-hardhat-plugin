@@ -1,3 +1,5 @@
+import { BigNumberish, num } from "starknet";
+
 import { StarknetPluginError } from "./starknet-plugin-error";
 import { HEXADECIMAL_REGEX, LEN_SUFFIX_DEPRECATED } from "./constants";
 import * as starknet from "./starknet-types";
@@ -32,6 +34,7 @@ function isNumeric(value: { toString: () => string }) {
 }
 
 const PRIME = BigInt(2) ** BigInt(251) + BigInt(17) * BigInt(2) ** BigInt(192) + BigInt(1);
+const PRIME_FLOOR = BigInt("0x400000000000008800000000000000000000000000000000000000000000000"); // Math.floor(PRIME / 2)
 
 function toNumericString(value: { toString: () => string }) {
     const num = BigInt(value.toString());
@@ -607,4 +610,16 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
         generatedComplex,
         newRawIndex: rawIndex
     };
+}
+
+/**
+ * Reproduces felt response formating corresponding to the Starknet CLI contract call.
+ * Based on https://github.com/starkware-libs/cairo-lang/blob/v0.12.1a0/src/starkware/cairo/lang/tracer/tracer_data.py#L261.
+ */
+export function formatFelt(value: BigNumberish): string {
+    const shiftedValue = ((BigInt(value) + PRIME_FLOOR) % PRIME) - PRIME_FLOOR;
+    const shiftedAbs = shiftedValue < 0n ? -shiftedValue : shiftedValue;
+    if (shiftedAbs < 2 ** 40) return shiftedValue.toString();
+    if (shiftedAbs < 2 ** 100) return num.toHex(shiftedValue);
+    return num.toHex(value);
 }

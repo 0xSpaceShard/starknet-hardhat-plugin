@@ -36,11 +36,17 @@ export interface EventSpecification {
     type: "event";
 }
 
+export interface Interface {
+    type: "interface";
+    name: string;
+    items: AbiEntry[];
+}
+
 export interface EventAbi {
     [encodedName: string]: EventSpecification;
 }
 
-export type AbiEntry = CairoFunction | Struct | EventSpecification;
+export type AbiEntry = CairoFunction | Struct | EventSpecification | Interface;
 
 export interface Abi {
     [name: string]: AbiEntry;
@@ -129,20 +135,6 @@ export interface TransactionTrace {
     signature: string[];
     validate_invocation?: FunctionInvocation;
     fee_transfer_invocation?: FunctionInvocation;
-}
-
-export interface Block {
-    block_hash: string;
-    parent_block_hash: string;
-    block_number: number;
-    gas_price: string;
-    sequencer_address: string;
-    state_root: string;
-    status: string;
-    timestamp: number;
-    transaction_receipts: TransactionReceipt[];
-    transactions: TransactionData[];
-    starknet_version: string;
 }
 
 export interface MintResponse {

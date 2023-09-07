@@ -10,7 +10,7 @@ import {
     VmLang
 } from "hardhat/types";
 import path from "path";
-import { json, stark, CompiledContract } from "starknet";
+import { json, stark, LegacyCompiledContract, hash } from "starknet";
 
 import { handleInternalContractArtifacts } from "./account-utils";
 import {
@@ -27,8 +27,7 @@ import {
     INTEGRATED_DEVNET_INTERNALLY,
     StarknetChainId,
     UDC_ADDRESS,
-    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG,
-    DEFAULT_DEVNET_DOCKER_IMAGE_TAG
+    CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
 } from "./constants";
 import { getContractFactoryUtil } from "./extend-utils";
 import { StarknetPluginError } from "./starknet-plugin-error";
@@ -237,7 +236,7 @@ export function copyWithBigint<T>(object: unknown): T {
 function getImageTagByArch(tag: string): string {
     // Check CPU architecture
     const arch = process.arch;
-    if (arch === "arm64" && !tag.endsWith("-arm")) {
+    if (arch === "arm64" && !tag.endsWith("-arm") && !tag.endsWith("-arm-seed0")) {
         tag = `${tag}-arm`;
     }
     return tag;
@@ -247,7 +246,7 @@ export function getCairoCliImageTagByArch(tag = CAIRO_CLI_DEFAULT_DOCKER_IMAGE_T
     return getImageTagByArch(tag);
 }
 
-export function getDevnetImageTagByArch(tag = DEFAULT_DEVNET_DOCKER_IMAGE_TAG): string {
+export function getDevnetImageTagByArch(tag: string): string {
     return getImageTagByArch(tag);
 }
 
@@ -306,7 +305,7 @@ export class UDC {
 export function readContract(contractPath: string) {
     const parsedContract = json.parse(
         fs.readFileSync(contractPath).toString("ascii")
-    ) as CompiledContract;
+    ) as LegacyCompiledContract;
     return {
         ...parsedContract,
         program: stark.compressProgram(parsedContract.program)
@@ -322,34 +321,12 @@ export function readCairo1Contract(contractPath: string) {
             path.dirname(contractPath),
             `${path.parse(contractPath).name}${ABI_SUFFIX}`
         ),
-        sierraProgram: stark.compressProgram(formatSpaces(JSON.stringify(sierra_program))),
+        sierraProgram: stark.compressProgram(hash.formatSpaces(json.stringify(sierra_program))),
         entryPointsByType: entry_points_by_type,
         contractClassVersion: contract_class_version
     } as ContractClassConfig);
 
     return contract;
-}
-
-/**
- * Json string is transformed into a formatted string without newlines.
- * @param json string
- * @returns string
- */
-export function formatSpaces(json: string): string {
-    let insideQuotes = false;
-    let newString = "";
-    for (const char of json) {
-        // eslint-disable-next-line
-        if (char === '"' && newString.endsWith("\\") === false) {
-            insideQuotes = !insideQuotes;
-        }
-        if (insideQuotes) {
-            newString += char;
-        } else {
-            newString += char === ":" ? ": " : char === "," ? ", " : char;
-        }
-    }
-    return newString;
 }
 
 export function bnToDecimalStringArray(rawCalldata: bigint[]) {

@@ -1,18 +1,15 @@
 import axios, { AxiosError } from "axios";
-import crypto from "crypto";
-import { ec } from "elliptic";
-import fs from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import path from "path";
-import { ec as ellipticCurve, hash, number } from "starknet";
+import fs from "node:fs";
+import path from "node:path";
+import { ec, hash, stark } from "starknet";
 
 import {
     ABI_SUFFIX,
     INTERNAL_ARTIFACTS_DIR,
     TransactionHashPrefix,
     TRANSACTION_VERSION,
-    StarknetChainId,
-    DECLARE_VERSION
+    StarknetChainId
 } from "./constants";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import * as starknet from "./starknet-types";
@@ -34,31 +31,15 @@ export type CallParameters = {
 type KeysType = {
     publicKey: string;
     privateKey: string;
-    keyPair: ec.KeyPair;
 };
 
-/*
- * Helper cryptography functions for Key generation and message signing
- */
-
-export function generateRandomStarkPrivateKey(length = 63) {
-    const characters = "0123456789ABCDEF";
-    let result = "";
-    for (let i = 0; i < length; ++i) {
-        result += characters.charAt(crypto.randomInt(characters.length));
-    }
-    return number.toBN(result, "hex");
-}
-
-export function signMultiCall(
-    publicKey: string,
-    keyPair: ec.KeyPair,
-    messageHash: string
-): bigint[] {
+export function signMultiCall(messageHash: string, privateKey: string): bigint[] {
+    const publicKey = ec.starkCurve.getStarkKey(privateKey);
     if (publicKey === "0x0") {
         return [BigInt(0), BigInt(0)];
     }
-    return ellipticCurve.sign(keyPair, BigInt(messageHash).toString(16)).map(BigInt);
+    const signature = ec.starkCurve.sign(BigInt(messageHash).toString(16), privateKey);
+    return [signature.r, signature.s];
 }
 
 /**
@@ -127,13 +108,9 @@ function ensureArtifact(fileName: string, artifactsTargetPath: string, artifactS
  * @returns an object with public, private key and key pair
  */
 export function generateKeys(providedPrivateKey?: string): KeysType {
-    const starkPrivateKey = providedPrivateKey
-        ? number.toBN(providedPrivateKey.replace(/^0x/, ""), 16)
-        : generateRandomStarkPrivateKey();
-    const keyPair = ellipticCurve.getKeyPair(starkPrivateKey);
-    const publicKey = ellipticCurve.getStarkKey(keyPair);
-    const privateKey = "0x" + starkPrivateKey.toString(16);
-    return { publicKey, privateKey, keyPair };
+    const privateKey = providedPrivateKey ?? stark.randomAddress();
+    const publicKey = ec.starkCurve.getStarkKey(privateKey);
+    return { publicKey, privateKey };
 }
 
 const INITIAL_NONCE = "0x0";
@@ -191,26 +168,6 @@ export async function sendDeployAccountTx(
             reject
         );
     });
-}
-
-export function calculateDeclareV2TxHash(
-    accountAddress: string,
-    callData: string[],
-    maxFee: string,
-    chainId: StarknetChainId,
-    additionalData: string[]
-) {
-    const calldataHash = hash.computeHashOnElements(callData);
-    return hash.computeHashOnElements([
-        TransactionHashPrefix.DECLARE,
-        numericToHexString(DECLARE_VERSION),
-        accountAddress,
-        0, // entrypoint selector is implied
-        calldataHash,
-        maxFee,
-        chainId,
-        ...additionalData
-    ]);
 }
 
 export async function sendDeclareV2Tx(

@@ -210,7 +210,8 @@ export async function starknetCompileCairo1Action(
                     binDirPath,
                     replaceIds: args.replaceIds,
                     allowedLibfuncsListName: args.allowedLibfuncsListName,
-                    allowedLibfuncsListFile: args.allowedLibfuncsListFile
+                    allowedLibfuncsListFile: args.allowedLibfuncsListFile,
+                    singleFile: args.singleFile
                 });
                 statusCode += processExecuted(executed, true);
 
@@ -583,6 +584,8 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
 
     hre.starknet.network = networkName;
     hre.starknet.networkConfig = networkConfig;
+
+    hre.starknetJs.setProvider(hre.starknet.networkConfig);
 
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkConfig.url}`);
 }

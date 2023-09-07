@@ -66,6 +66,7 @@ import { DevnetUtils } from "./devnet-utils";
 import { ExternalServer } from "./external-server";
 import { ArgentAccount, OpenZeppelinAccount } from "./account";
 import { AmarnaDocker } from "./external-server/docker-amarna";
+import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -150,11 +151,8 @@ extendConfig((config: HardhatConfig) => {
 
 // set network as specified in userConfig
 extendConfig((config: HardhatConfig, userConfig: Readonly<HardhatUserConfig>) => {
-    if (userConfig.starknet && userConfig.starknet.network) {
-        config.starknet.network = userConfig.starknet.network;
-    } else {
-        config.starknet.network = DEFAULT_STARKNET_NETWORK;
-    }
+    config.starknet.network = userConfig.starknet?.network || DEFAULT_STARKNET_NETWORK;
+
     const networkConfig = getNetwork(
         config.starknet.network,
         config.networks,
@@ -174,6 +172,8 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
 
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment((hre) => {
+    hre.starknetJs = new StarknetLegacyWrapper(hre.config.starknet.networkConfig);
+
     const venvPath = hre.config.starknet.venv;
     if (venvPath) {
         setVenvWrapper(hre, venvPath);
@@ -242,6 +242,7 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     )
     .addOptionalParam("allowedLibfuncsListFile", "A file of the allowed libfuncs list to use.")
     .addFlag("addPythonicHints", "Add pythonic hints.")
+    .addFlag("singleFile", "Compile single file.")
     .setAction(starknetCompileCairo1Action);
 
 task("starknet-build", "Builds Scarb projects")

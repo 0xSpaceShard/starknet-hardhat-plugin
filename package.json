@@ -1,6 +1,6 @@
 {
     "name": "@shardlabs/starknet-hardhat-plugin",
-    "version": "0.8.0-alpha.3",
+    "version": "0.8.0-alpha.4",
     "description": "Plugin for using Starknet tools within Hardhat projects",
     "main": "dist/src/index.js",
     "files": [
@@ -43,7 +43,7 @@
         "form-data": "^4.0.0",
         "glob": "^10.0.0",
         "shelljs": "^0.8.5",
-        "starknet": "^4.22.0",
+        "starknet": "~5.19.3",
         "tar": "^6.1.15"
     },
     "peerDependencies": {
