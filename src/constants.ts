@@ -25,6 +25,7 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
 export const INTERNAL_ARTIFACTS_DIR = "contract-artifacts";
+export const HIDDEN_PLUGIN_DIR = ".starknet-hardhat-plugin";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_2 = "alpha-goerli2";

@@ -19,6 +19,8 @@ If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starkn
 -   [More examples](#more-examples)
 -   [Contribute](#contribute)
 
+TODO - check if table is synced with actual paragraphs
+
 ## Install
 
 ```
@@ -78,6 +80,7 @@ $ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--single-file] 
 
 Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. Currently, contracts importing other contracts are not supported (until this is supported, you may try to use [Scarb](https://github.com/software-mansion/scarb) and modifying its artifacts to be compatible with this plugin).
 
+TODO
 In [venv mode](#existing-virtual-environment), you can use a custom compiler by providing the path of the directory of its binary executable to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your `hardhat.config.ts` file. If neither `--cairo1-bin-dir` nor `cairo1BinDir` is set, the plugin will automatically download and utilize a compiler suitable for its requirements.
 
 To use a specific version of [cairo compiler](https://github.com/starkware-libs/cairo/releases), you can provide `compilerVersion` in `hardhat.config.ts` file.

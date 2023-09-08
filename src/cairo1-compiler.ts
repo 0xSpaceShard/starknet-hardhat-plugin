@@ -1,19 +1,15 @@
-import fs from "fs";
 import os from "os";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
 import path from "path";
 import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { CAIRO_COMPILER_BINARY_URL } from "./constants";
+import { CAIRO_COMPILER_BINARY_URL, HIDDEN_PLUGIN_DIR } from "./constants";
 import { StarknetConfig } from "./types/starknet";
 import config from "../config.json";
-import tar from "tar";
-
-export enum FileName {
-    LINUX = "release-x86_64-unknown-linux-musl.tar.gz",
-    MACOS = "release-aarch64-apple-darwin.tar"
-}
+import tar from "tar-fs";
+import zlib from "zlib";
+import { TaskArguments } from "hardhat/types";
 
 export const exec = (args: string) => {
     const result = shell.exec(args, {
@@ -27,137 +23,82 @@ export const exec = (args: string) => {
     } as ProcessResult;
 };
 
-export class CairoCompilerDownloader {
-    compilerDownloadPath: string;
-    compilerVersion: string;
+function getCompilerAssetName(): string {
+    const platform = os.platform();
+    switch (os.platform()) {
+        case "linux":
+            return "release-x86_64-unknown-linux-musl.tar.gz";
+        case "darwin":
+            return "release-aarch64-apple-darwin.tar";
+        default:
+            throw new Error(`Unsupported OS: ${platform}.`);
+    }
+}
 
-    constructor(starknet: StarknetConfig) {
-        this.initialize(starknet);
+export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig: StarknetConfig) {
+    if (starknetConfig?.cairo1BinDir && starknetConfig?.compilerVersion) {
+        const msg =
+            "Error in config file. Only one of (starknet.cairo1BinDir, starknet.compilerVersion) can be specified.";
+        throw new StarknetPluginError(msg);
     }
 
-    async initialize(starknet: StarknetConfig) {
-        this.compilerDownloadPath = starknet?.cairo1BinDir || this.getDefaultCompilerDownloadPath();
-        this.compilerVersion = starknet?.compilerVersion || config.CAIRO_COMPILER;
+    // give precedence to CLI specification
+    const customCairo1BinDir = cliArgs?.cairo1BinDir || starknetConfig?.cairo1BinDir;
+    if (customCairo1BinDir) {
+        return customCairo1BinDir; // _TODO add check?
     }
 
-    private getDefaultCompilerDownloadPath(): string {
-        const homeDir = os.homedir();
-        const compilerDownloadPath = path.join(
-            homeDir,
-            ".starknet-hardhat-plugin",
-            "cairo-compiler"
-        );
-        if (!fs.existsSync(compilerDownloadPath)) {
-            fs.mkdirSync(compilerDownloadPath, { recursive: true });
-        }
-        return compilerDownloadPath;
+    // default to downloaded binary
+    const compilerVersion = starknetConfig?.compilerVersion || config.CAIRO_COMPILER;
+    const downloadDistDir = getDownloadDistDir(compilerVersion);
+
+    // download if not present
+    const downloadBinDir = path.join(downloadDistDir, "cairo", "bin");
+    if (
+        !(
+            isBinaryExecutable(path.join(downloadBinDir, "starknet-compile")) &&
+            isBinaryExecutable(path.join(downloadBinDir, "starknet-sierra-compile"))
+        )
+    ) {
+        await downloadAsset(compilerVersion, downloadDistDir);
     }
 
-    async ensureCompilerVersionPresent(): Promise<string> {
-        if (fs.existsSync(this.getBinDirPath())) {
-            // Checks if installed binary version is same as version set on hardhat config file
-            const isSameVersion =
-                exec(`${path.join(this.getBinDirPath(), "starknet-compile")}  --version`)
-                    .stdout.toString()
-                    .trim()
-                    .split(" ")[1] === this.compilerVersion;
-            if (isSameVersion) return this.getBinDirPath();
-        }
+    return path.join(downloadDistDir, "cairo", "bin");
+}
 
-        // Check machine type
-        const fileName = this.getOsSpecificFileName();
-        // Download compiler
-        await this.download(fileName);
-        await this.extractZipFile(fileName);
-        return this.getBinDirPath();
-    }
+function isBinaryExecutable(binaryPath: string): boolean {
+    return exec([binaryPath, "--version"].join(" ")).statusCode === 0;
+}
 
-    async download(fileName: string): Promise<void> {
-        const url = `${CAIRO_COMPILER_BINARY_URL}/v${this.compilerVersion}/${fileName}`;
-        // TODO perhaps reduce the scope of this try block (and the one in the other method)
-        try {
-            const response = await axios.get(url, {
-                responseType: "stream",
-                onDownloadProgress: (progressEvent) => {
-                    const totalLength = progressEvent.total;
-                    const downloadedLength = progressEvent.loaded;
-                    const percentage = Math.round((downloadedLength / totalLength) * 100);
-                    process.stdout.write(
-                        `Downloading cairo compiler version: ${this.compilerVersion} ... ${percentage}%\r`
-                    );
-                }
-            });
-
-            const destinationPath = path.join(this.compilerDownloadPath, fileName);
-
-            if (!fs.existsSync(this.compilerDownloadPath)) {
-                fs.mkdirSync(this.compilerDownloadPath, { recursive: true });
+async function downloadAsset(version: string, distDir: string): Promise<void> {
+    const assetUrl = `${CAIRO_COMPILER_BINARY_URL}/v${version}/${getCompilerAssetName()}`;
+    const resp = await axios
+        .get(assetUrl, {
+            responseType: "stream",
+            onDownloadProgress: (progressEvent) => {
+                const totalLength = progressEvent.total;
+                const downloadedLength = progressEvent.loaded;
+                const percentage = Math.round((downloadedLength / totalLength) * 100);
+                process.stdout.write(
+                    `Downloading cairo compiler version: ${version} ... ${percentage}%\r`
+                );
+                // _TODO preserve last log line?
             }
-
-            const writer = fs.createWriteStream(destinationPath);
-            response.data.pipe(writer);
-
-            // TODO why would this need to be a Promise?
-            await new Promise<void>((resolve, reject) => {
-                writer.on("finish", resolve);
-                writer.on("error", reject);
-            });
-
-            console.log("\nFile downloaded successfully!");
-        } catch (error) {
+        })
+        .catch((error) => {
             const parent = error instanceof Error && error;
-            throw new StarknetPluginError("Error downloading file:", parent);
-        }
-    }
+            throw new Error(`Error downloading cairo ${version} from ${assetUrl}: ${parent}`);
+        });
 
-    async extractZipFile(fileName: FileName): Promise<void> {
-        try {
-            const zipFile = path.join(this.compilerDownloadPath, fileName);
-            const corelibPath = path.join(this.compilerDownloadPath, "target/corelib");
-            // Extract the tar/gz file
-            await tar.extract({
-                file: zipFile,
-                C: this.compilerDownloadPath,
-                strip: 1
-            });
-            fs.mkdirSync(this.getBinDirPath(), { recursive: true });
-            fs.mkdirSync(corelibPath, { recursive: true });
+    const extract = tar.extract(distDir);
+    resp.data.pipe(zlib.createGunzip()).pipe(extract);
+    return new Promise((resolve, _reject) => {
+        extract.on("finish", resolve);
+    });
+}
 
-            if (!this.isDirEmpty(corelibPath) || !this.isDirEmpty(this.getBinDirPath())) {
-                fs.rmSync(corelibPath, { recursive: true });
-                fs.rmSync(this.getBinDirPath(), { recursive: true });
-            }
-
-            // Move contents to correct target
-            fs.renameSync(path.join(this.compilerDownloadPath, "corelib"), corelibPath);
-            fs.renameSync(path.join(this.compilerDownloadPath, "bin"), this.getBinDirPath());
-
-            // Remove zip file after successfully extracting it
-            fs.rmSync(zipFile);
-        } catch (error) {
-            const parent = error instanceof Error && error;
-            throw new StarknetPluginError("Error extracting tar file:", parent);
-        }
-    }
-
-    getOsSpecificFileName(): FileName {
-        const platform = os.platform();
-        switch (platform) {
-            case "linux":
-                return FileName.LINUX;
-            case "darwin":
-                return FileName.MACOS;
-            default:
-                throw new Error(`Unsupported OS: ${platform}.`);
-        }
-    }
-
-    public getBinDirPath(): string {
-        return path.join(this.compilerDownloadPath, "target", "release");
-    }
-
-    private isDirEmpty(dirPath: string) {
-        const files = fs.readdirSync(dirPath);
-        return files.length === 0;
-    }
+function getDownloadDistDir(version: string): string {
+    const homeDir = os.homedir();
+    const compilerDownloadPath = path.join(homeDir, HIDDEN_PLUGIN_DIR, "cairo-compiler", version);
+    return compilerDownloadPath;
 }
