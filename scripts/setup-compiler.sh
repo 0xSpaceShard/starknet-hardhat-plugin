@@ -16,12 +16,13 @@ COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/v
 echo "Downloading $COMPILER_BINARY_URL"
 curl --location -O "$COMPILER_BINARY_URL"
 
-# Unzip asset and move to correct target
+# Unpack and remove archive
 tar -zxvf "$CAIRO_COMPILER_ASSET_NAME"
 rm -rf "$CAIRO_COMPILER_ASSET_NAME"
 
 # For verification and future use
-export CAIRO_1_COMPILER_DIR="cairo/bin"
+# Using absolute path to make it usable everywhere
+export CAIRO_1_COMPILER_DIR=$(readlink -f "cairo/bin")
 
 # Verify
 echo "Verifying compiler binaries"
