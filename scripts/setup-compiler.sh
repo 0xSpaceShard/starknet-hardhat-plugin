@@ -2,9 +2,7 @@
 
 set -eu
 
-
-CAIRO_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
-
+CAIRO_COMPILER_TARGET_TAG=$CAIRO_COMPILER
 echo "Installing cairo compiler $CAIRO_COMPILER_TARGET_TAG"
 
 CAIRO_COMPILER_ASSET_NAME="release-x86_64-unknown-linux-musl.tar.gz"
@@ -22,12 +20,11 @@ if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
     curl --location -O --request GET "$COMPILER_BINARY_URL"
     # Unzip asset and move to correct target
     tar -zxvf $CAIRO_COMPILER_ASSET_NAME -C cairo-compiler --strip-components=1
-    mv cairo-compiler/bin/* cairo-compiler/target/release/
+    mv cairo-compiler/bin/* cairo-compiler/target/release/ # TODO unnecessarily complicated path
     mv cairo-compiler/corelib cairo-compiler/target/corelib
     # Remove empty directory and asset
     rm -rf $CAIRO_COMPILER_ASSET_NAME cairo-compiler/bin
-    export CAIRO_1_COMPILER_DIR="$(readlink -f  "cairo-compiler/target/release")"
+    export CAIRO_1_COMPILER_DIR="$(readlink -f "cairo-compiler/target/release")"
 fi
 
 $CAIRO_1_COMPILER_DIR/starknet-compile --version
-

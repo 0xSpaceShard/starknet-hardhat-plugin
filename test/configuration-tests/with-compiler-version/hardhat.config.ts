@@ -4,7 +4,7 @@ module.exports = {
     starknet: {
         venv: "active",
         network: process.env.NETWORK,
-        compilerVersion: "1.1.1"
+        compilerVersion: process.env.CAIRO_COMPILER
     },
     networks: {
         devnet: {
