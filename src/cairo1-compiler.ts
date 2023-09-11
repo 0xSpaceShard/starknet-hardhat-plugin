@@ -1,3 +1,4 @@
+import fs from "fs";
 import os from "os";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
@@ -45,7 +46,9 @@ export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig:
     // give precedence to CLI specification
     const customCairo1BinDir = cliArgs?.cairo1BinDir || starknetConfig?.cairo1BinDir;
     if (customCairo1BinDir) {
-        return customCairo1BinDir; // _TODO add check?
+        assertValidCompilerBinary(customCairo1BinDir, "starknet-compile");
+        assertValidCompilerBinary(customCairo1BinDir, "starknet-sierra-compile");
+        return customCairo1BinDir;
     }
 
     // default to downloaded binary
@@ -56,8 +59,8 @@ export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig:
     const downloadBinDir = path.join(downloadDistDir, "cairo", "bin");
     if (
         !(
-            isBinaryExecutable(path.join(downloadBinDir, "starknet-compile")) &&
-            isBinaryExecutable(path.join(downloadBinDir, "starknet-sierra-compile"))
+            isValidCompilerBinary(path.join(downloadBinDir, "starknet-compile")) &&
+            isValidCompilerBinary(path.join(downloadBinDir, "starknet-sierra-compile"))
         )
     ) {
         await downloadAsset(compilerVersion, downloadDistDir);
@@ -66,7 +69,18 @@ export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig:
     return path.join(downloadDistDir, "cairo", "bin");
 }
 
-function isBinaryExecutable(binaryPath: string): boolean {
+function assertValidCompilerBinary(binDirPath: string, command: string): void {
+    const compilerBinaryPath = path.join(binDirPath, command);
+    if (!fs.existsSync(compilerBinaryPath)) {
+        throw new StarknetPluginError(`${compilerBinaryPath} not found`);
+    }
+
+    if (!isValidCompilerBinary(compilerBinaryPath)) {
+        throw new StarknetPluginError(`${compilerBinaryPath} is not a valid compiler binary`);
+    }
+}
+
+function isValidCompilerBinary(binaryPath: string): boolean {
     return exec([binaryPath, "--version"].join(" ")).statusCode === 0;
 }
 
@@ -76,19 +90,15 @@ async function downloadAsset(version: string, distDir: string): Promise<void> {
         .get(assetUrl, {
             responseType: "stream",
             onDownloadProgress: (progressEvent) => {
-                const totalLength = progressEvent.total;
-                const downloadedLength = progressEvent.loaded;
-                const percentage = Math.round((downloadedLength / totalLength) * 100);
-                process.stdout.write(
-                    `Downloading cairo compiler version: ${version} ... ${percentage}%\r`
-                );
-                // _TODO preserve last log line?
+                const percentage = Math.round((progressEvent.loaded / progressEvent.total) * 100);
+                process.stdout.write(`Downloading cairo compiler: ${version} ... ${percentage}%\r`);
             }
         })
         .catch((error) => {
             const parent = error instanceof Error && error;
             throw new Error(`Error downloading cairo ${version} from ${assetUrl}: ${parent}`);
         });
+    console.log(`Downloaded cairo compiler ${version}`);
 
     const extract = tar.extract(distDir);
     resp.data.pipe(zlib.createGunzip()).pipe(extract);
