@@ -48,12 +48,14 @@ export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig:
     if (customCairo1BinDir) {
         assertValidCompilerBinary(customCairo1BinDir, "starknet-compile");
         assertValidCompilerBinary(customCairo1BinDir, "starknet-sierra-compile");
+        console.log(`Using cairo compiler at ${customCairo1BinDir}`);
         return customCairo1BinDir;
     }
 
     // default to downloaded binary
     const compilerVersion = starknetConfig?.compilerVersion || config.CAIRO_COMPILER;
     const downloadDistDir = getDownloadDistDir(compilerVersion);
+    console.log(`Using downloaded cairo compiler ${compilerVersion}`);
 
     // download if not present
     const downloadBinDir = path.join(downloadDistDir, "cairo", "bin");
@@ -66,7 +68,7 @@ export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig:
         await downloadAsset(compilerVersion, downloadDistDir);
     }
 
-    return path.join(downloadDistDir, "cairo", "bin");
+    return downloadBinDir;
 }
 
 function assertValidCompilerBinary(binDirPath: string, command: string): void {
