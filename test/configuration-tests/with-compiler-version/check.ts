@@ -9,7 +9,8 @@ import {
     rmrfSync
 } from "../../utils/utils";
 import { HIDDEN_PLUGIN_DIR } from "../../../src/constants";
-import { CAIRO_COMPILER } from "../../../config.json";
+
+/* Helper functions and constants */
 
 function compile() {
     hardhatStarknetCompile(["cairo1-contracts/contract1.cairo", "--single-file"]);
@@ -26,16 +27,21 @@ function invalidate(invalidablePath: string) {
     fs.writeFileSync(invalidablePath, "garbage");
 }
 
+// read the env var and make sure it's readable in hardhat.config.ts
+const compilerVersion = ensureEnvVar("CAIRO_COMPILER");
+
 const EXPECTED_COMPILER_BIN = path.join(
     ensureEnvVar("HOME"),
     HIDDEN_PLUGIN_DIR,
     "cairo-compiler",
-    CAIRO_COMPILER,
+    compilerVersion,
     "cairo",
     "bin"
 );
 const EXPECTED_COMPILER_PATH = path.join(EXPECTED_COMPILER_BIN, "starknet-compile");
 const EXPECTED_SIERRA_COMPILER_PATH = path.join(EXPECTED_COMPILER_BIN, "starknet-sierra-compile");
+
+/* Testing procedure */
 
 // clear before any tests, just in case
 rmrfSync(EXPECTED_COMPILER_BIN);
