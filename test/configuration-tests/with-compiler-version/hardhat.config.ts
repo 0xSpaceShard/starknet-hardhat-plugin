@@ -1,10 +1,11 @@
 import "@shardlabs/starknet-hardhat-plugin";
+import { CAIRO_COMPILER } from "../../../config.json";
 
 module.exports = {
     starknet: {
         venv: "active",
         network: process.env.NETWORK,
-        compilerVersion: process.env.CAIRO_COMPILER
+        compilerVersion: CAIRO_COMPILER
     },
     networks: {
         devnet: {

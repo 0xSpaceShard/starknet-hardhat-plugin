@@ -9,6 +9,7 @@ import {
     rmrfSync
 } from "../../utils/utils";
 import { HIDDEN_PLUGIN_DIR } from "../../../src/constants";
+import { CAIRO_COMPILER } from "../../../config.json";
 
 function compile() {
     hardhatStarknetCompile(["cairo1-contracts/contract1.cairo", "--single-file"]);
@@ -25,13 +26,11 @@ function invalidate(invalidablePath: string) {
     fs.writeFileSync(invalidablePath, "garbage");
 }
 
-const compilerVersion = ensureEnvVar("CAIRO_COMPILER");
-
 const EXPECTED_COMPILER_BIN = path.join(
     ensureEnvVar("HOME"),
     HIDDEN_PLUGIN_DIR,
     "cairo-compiler",
-    compilerVersion,
+    CAIRO_COMPILER,
     "cairo",
     "bin"
 );
