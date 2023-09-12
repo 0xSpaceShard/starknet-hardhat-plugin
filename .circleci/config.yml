@@ -151,6 +151,7 @@ commands:
                       for key in $(jq -r 'keys[]' config.json); do
                           echo $key=$(jq -r .[\""$key"\"] config.json) >> $BASH_ENV
                       done
+                      cat $BASH_ENV
             - run:
                   name: "Fetch Devnet version"
                   command: echo "$STARKNET_DEVNET" > /tmp/devnet-version
