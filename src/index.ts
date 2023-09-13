@@ -196,13 +196,6 @@ extendEnvironment((hre) => {
             hre.config.paths.cairoPaths || [],
             hre
         );
-
-        if (hre.config.starknet.cairo1BinDir) {
-            throw new StarknetPluginError(
-                `cairo1BinDir cannot be used with dockerized plugin.
-Remove cairo1BinDir to use the default dockerized cairo1 compiler OR specify a local venv.`
-            );
-        }
     }
 });
 
@@ -232,8 +225,8 @@ task("starknet-compile", "Compiles Starknet (Cairo 1) contracts")
     )
     .addOptionalParam(
         "cairo1BinDir",
-        "Allows to specify locally installed cairo1 compiler directory.\n" +
-            "e.g. --cairo1-bin-dir 'path/to/binDir' or can also be set on hardhat.config.ts file."
+        "Allows specifying your local cairo compiler target directory; also configurable via `cairo1BinDir` in hardhat.config.ts file.\n" +
+            "e.g. --cairo1-bin-dir 'path/to/cairo/target/release'"
     )
     .addFlag("replaceIds", "Replaces sierra ids with human-readable ones.")
     .addOptionalParam(
