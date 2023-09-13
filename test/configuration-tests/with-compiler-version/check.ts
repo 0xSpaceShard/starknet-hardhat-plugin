@@ -8,7 +8,7 @@ import {
     ensureEnvVar,
     rmrfSync
 } from "../../utils/utils";
-import { HIDDEN_PLUGIN_DIR } from "../../../src/constants";
+import { HIDDEN_PLUGIN_COMPILER_SUBDIR, HIDDEN_PLUGIN_DIR } from "../../../src/constants";
 import { CAIRO_COMPILER as compilerVersion } from "../../../config.json";
 
 /* Helper functions and constants */
@@ -34,7 +34,7 @@ process.env.CAIRO_COMPILER = compilerVersion;
 const EXPECTED_COMPILER_BIN = path.join(
     ensureEnvVar("HOME"),
     HIDDEN_PLUGIN_DIR,
-    "cairo-compiler",
+    HIDDEN_PLUGIN_COMPILER_SUBDIR,
     compilerVersion,
     "cairo",
     "bin"

@@ -26,6 +26,7 @@ export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITO
 
 export const INTERNAL_ARTIFACTS_DIR = "contract-artifacts";
 export const HIDDEN_PLUGIN_DIR = ".starknet-hardhat-plugin";
+export const HIDDEN_PLUGIN_COMPILER_SUBDIR = "cairo-compiler";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_2 = "alpha-goerli2";

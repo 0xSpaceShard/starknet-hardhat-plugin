@@ -5,7 +5,11 @@ import shell from "shelljs";
 import path from "path";
 import axios from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { CAIRO_COMPILER_BINARY_URL, HIDDEN_PLUGIN_DIR } from "./constants";
+import {
+    CAIRO_COMPILER_BINARY_URL,
+    HIDDEN_PLUGIN_COMPILER_SUBDIR,
+    HIDDEN_PLUGIN_DIR
+} from "./constants";
 import { StarknetConfig } from "./types/starknet";
 import config from "../config.json";
 import tar from "tar-fs";
@@ -24,16 +28,30 @@ export const exec = (args: string) => {
     } as ProcessResult;
 };
 
-function getCompilerAssetName(): string {
+interface CompilerAsset {
+    name: string;
+    isGzipped: boolean;
+}
+
+function getCompilerAsset(): CompilerAsset {
     const platform = os.platform();
-    switch (os.platform()) {
-        case "linux":
-            return "release-x86_64-unknown-linux-musl.tar.gz";
-        case "darwin":
-            return "release-aarch64-apple-darwin.tar";
-        default:
-            throw new Error(`Unsupported OS: ${platform}.`);
+    const arch = os.arch();
+
+    if (platform === "linux" && arch === "x64") {
+        return {
+            name: "release-x86_64-unknown-linux-musl.tar.gz",
+            isGzipped: true
+        };
+    } else if (platform === "darwin" && arch === "arm64") {
+        return {
+            name: "release-aarch64-apple-darwin.tar",
+            isGzipped: false
+        };
     }
+
+    throw new Error(
+        `Unsupported combination of platform (${platform}) and architecture (${arch}). Consider using a custom compiler (cairo1BinDir in config).`
+    );
 }
 
 export async function getCairoBinDirPath(cliArgs: TaskArguments, starknetConfig: StarknetConfig) {
@@ -87,11 +105,13 @@ function isValidCompilerBinary(binaryPath: string): boolean {
 }
 
 async function downloadAsset(version: string, distDir: string): Promise<void> {
-    const assetUrl = `${CAIRO_COMPILER_BINARY_URL}/v${version}/${getCompilerAssetName()}`;
+    const compilerAsset = getCompilerAsset();
+    const assetUrl = `${CAIRO_COMPILER_BINARY_URL}/v${version}/${compilerAsset.name}`;
     const resp = await axios
         .get(assetUrl, {
             responseType: "stream",
             onDownloadProgress: (progressEvent) => {
+                // periodically inform the user of download progress (printed on a single line)
                 const percentage = Math.round((progressEvent.loaded / progressEvent.total) * 100);
                 process.stdout.write(`Downloading cairo compiler: ${version} ... ${percentage}%\r`);
             }
@@ -102,15 +122,25 @@ async function downloadAsset(version: string, distDir: string): Promise<void> {
         });
     console.log(`Downloaded cairo compiler ${version}`);
 
+    let pipeline = resp.data;
+    if (compilerAsset.isGzipped) {
+        pipeline = pipeline.pipe(zlib.createGunzip());
+    }
+
     const extract = tar.extract(distDir);
-    resp.data.pipe(zlib.createGunzip()).pipe(extract);
+    pipeline.pipe(extract);
+
     return new Promise((resolve, _reject) => {
         extract.on("finish", resolve);
     });
 }
 
 function getDownloadDistDir(version: string): string {
-    const homeDir = os.homedir();
-    const compilerDownloadPath = path.join(homeDir, HIDDEN_PLUGIN_DIR, "cairo-compiler", version);
+    const compilerDownloadPath = path.join(
+        os.homedir(),
+        HIDDEN_PLUGIN_DIR,
+        HIDDEN_PLUGIN_COMPILER_SUBDIR,
+        version
+    );
     return compilerDownloadPath;
 }
