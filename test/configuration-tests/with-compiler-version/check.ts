@@ -9,6 +9,7 @@ import {
     rmrfSync
 } from "../../utils/utils";
 import { HIDDEN_PLUGIN_DIR } from "../../../src/constants";
+import { CAIRO_COMPILER as compilerVersion } from "../../../config.json";
 
 /* Helper functions and constants */
 
@@ -27,8 +28,8 @@ function invalidate(invalidablePath: string) {
     fs.writeFileSync(invalidablePath, "garbage");
 }
 
-// read the env var and make sure it's readable in hardhat.config.ts
-const compilerVersion = ensureEnvVar("CAIRO_COMPILER");
+// make sure the version is readable in hardhat.config.ts
+process.env.CAIRO_COMPILER = compilerVersion;
 
 const EXPECTED_COMPILER_BIN = path.join(
     ensureEnvVar("HOME"),
