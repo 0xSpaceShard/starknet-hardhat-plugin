@@ -3,13 +3,14 @@ import path from "path";
 import { hardhatStarknetCompile } from "../../utils/cli-functions";
 import {
     assertCompilationArtifactsExist,
+    assertContains,
     assertEqual,
     assertGreater,
     ensureEnvVar,
     rmrfSync
 } from "../../utils/utils";
 import { HIDDEN_PLUGIN_COMPILER_SUBDIR, HIDDEN_PLUGIN_DIR } from "../../../src/constants";
-import { CAIRO_COMPILER as compilerVersion } from "../../../config.json";
+import { CAIRO_COMPILER as validCompilerVersion } from "../../../config.json";
 
 /* Helper functions and constants */
 
@@ -28,14 +29,11 @@ function invalidate(invalidablePath: string) {
     fs.writeFileSync(invalidablePath, "garbage");
 }
 
-// make sure the version is readable in hardhat.config.ts
-process.env.CAIRO_COMPILER = compilerVersion;
-
 const EXPECTED_COMPILER_BIN = path.join(
     ensureEnvVar("HOME"),
     HIDDEN_PLUGIN_DIR,
     HIDDEN_PLUGIN_COMPILER_SUBDIR,
-    compilerVersion,
+    validCompilerVersion,
     "cairo",
     "bin"
 );
@@ -47,7 +45,20 @@ const EXPECTED_SIERRA_COMPILER_PATH = path.join(EXPECTED_COMPILER_BIN, "starknet
 // clear before any tests, just in case
 rmrfSync(EXPECTED_COMPILER_BIN);
 
+// Test case - invalid compiler version
+const nonExistentVersion = "1.123.1"; // doesn't exist and shouldn't ever exist
+process.env.CAIRO_COMPILER = nonExistentVersion;
+const invalidExecution = hardhatStarknetCompile(
+    ["cairo1-contracts/contract1.cairo", "--single-file"],
+    true // expectFailure
+);
+assertContains(
+    invalidExecution.stderr,
+    `Could not download cairo ${nonExistentVersion}. Make sure that it exists.`
+);
+
 // Test case - implicitly download compiler and compile
+process.env.CAIRO_COMPILER = validCompilerVersion;
 compile();
 // assert compiler downloaded and artifacts present
 const compilerStatInitial = fs.statSync(EXPECTED_COMPILER_PATH);

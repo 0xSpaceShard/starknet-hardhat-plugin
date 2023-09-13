@@ -3,7 +3,7 @@ import os from "os";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
 import shell from "shelljs";
 import path from "path";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { StarknetPluginError } from "./starknet-plugin-error";
 import {
     CAIRO_COMPILER_BINARY_URL,
@@ -117,8 +117,11 @@ async function downloadAsset(version: string, distDir: string): Promise<void> {
             }
         })
         .catch((error) => {
-            const parent = error instanceof Error && error;
-            throw new Error(`Error downloading cairo ${version} from ${assetUrl}: ${parent}`);
+            const parent = error instanceof AxiosError && error;
+            if (parent.response?.status === 404) {
+                throw new Error(`\nCould not download cairo ${version}. Make sure that it exists.`);
+            }
+            throw new Error(`\nError downloading cairo ${version} from ${assetUrl}: ${parent}`);
         });
     console.log(`Downloaded cairo compiler ${version}`);
 
