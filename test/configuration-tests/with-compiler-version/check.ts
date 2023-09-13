@@ -47,28 +47,31 @@ const EXPECTED_SIERRA_COMPILER_PATH = path.join(EXPECTED_COMPILER_BIN, "starknet
 // clear before any tests, just in case
 rmrfSync(EXPECTED_COMPILER_BIN);
 
-// initiate compilation; implicitly download compiler
+// Test case - implicitly download compiler and compile
 compile();
 // assert compiler downloaded and artifacts present
 const compilerStatInitial = fs.statSync(EXPECTED_COMPILER_PATH);
 assertArtifacts();
 
+// Test case - invalidate compiler to cause redownload
 invalidate(EXPECTED_COMPILER_PATH);
-compile(); // compile again; implicitly download compiler
+compile();
 // assert compiler redownloaded and artifacts present
 const compilerStatRedownloaded = fs.statSync(EXPECTED_COMPILER_PATH);
 assertGreater(compilerStatRedownloaded.ctime, compilerStatInitial.ctime);
 assertArtifacts();
 
+// Test case - invalidate sierra compiler to cause redownload
 invalidate(EXPECTED_SIERRA_COMPILER_PATH);
-compile(); // compile again; implicitly download compiler
+compile();
 // assert compiler redownloaded and artifacts present
 const compilerStatRedownloaded2 = fs.statSync(EXPECTED_COMPILER_PATH);
 assertGreater(compilerStatRedownloaded2.ctime, compilerStatRedownloaded.ctime);
 assertArtifacts();
 
-compile(); // compile again; compiler should be intact and artifacts present
-// we make no assertions about the age of the artifacts as that is related to
+// Test case - compile again - no compiler change expected
+compile();
+// we make no assertions about the age of contract artifacts as that is related to
 // the recompilation functionality (not the responsibility of this test)
 const compilerStatFinal = fs.statSync(EXPECTED_COMPILER_PATH);
 assertEqual(compilerStatFinal.ctime.getTime(), compilerStatRedownloaded2.ctime.getTime());
