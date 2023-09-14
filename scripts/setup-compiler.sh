@@ -2,9 +2,7 @@
 
 set -eu
 
-
-CAIRO_COMPILER_TARGET_TAG=$(jq -r .CAIRO_COMPILER config.json)
-
+CAIRO_COMPILER_TARGET_TAG=$CAIRO_COMPILER
 echo "Installing cairo compiler $CAIRO_COMPILER_TARGET_TAG"
 
 CAIRO_COMPILER_ASSET_NAME="release-x86_64-unknown-linux-musl.tar.gz"
@@ -13,21 +11,20 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     CAIRO_COMPILER_ASSET_NAME="release-aarch64-apple-darwin.tar"
 fi
 
-COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/$CAIRO_COMPILER_TARGET_TAG/$CAIRO_COMPILER_ASSET_NAME"
+# Download compiler asset
+COMPILER_BINARY_URL="https://github.com/starkware-libs/cairo/releases/download/v$CAIRO_COMPILER_TARGET_TAG/$CAIRO_COMPILER_ASSET_NAME"
+echo "Downloading $COMPILER_BINARY_URL"
+curl --location -O "$COMPILER_BINARY_URL"
 
-if [ -z "${CAIRO_1_COMPILER_DIR+x}" ]; then
-    # Setup cairo1 compiler
-    echo $COMPILER_BINARY_URL
-    mkdir -p cairo-compiler/target/release
-    curl --location -O --request GET "$COMPILER_BINARY_URL"
-    # Unzip asset and move to correct target
-    tar -zxvf $CAIRO_COMPILER_ASSET_NAME -C cairo-compiler --strip-components=1
-    mv cairo-compiler/bin/* cairo-compiler/target/release/
-    mv cairo-compiler/corelib cairo-compiler/target/corelib
-    # Remove empty directory and asset
-    rm -rf $CAIRO_COMPILER_ASSET_NAME cairo-compiler/bin
-    export CAIRO_1_COMPILER_DIR="$(readlink -f  "cairo-compiler/target/release")"
-fi
+# Unpack and remove archive
+tar -zxvf "$CAIRO_COMPILER_ASSET_NAME"
+rm -rf "$CAIRO_COMPILER_ASSET_NAME"
 
+# For verification and future use
+# Using absolute path to make it usable everywhere
+export CAIRO_1_COMPILER_DIR=$(readlink -f "cairo/bin")
+
+# Verify
+echo "Verifying compiler binaries"
 $CAIRO_1_COMPILER_DIR/starknet-compile --version
-
+$CAIRO_1_COMPILER_DIR/starknet-sierra-compile --version

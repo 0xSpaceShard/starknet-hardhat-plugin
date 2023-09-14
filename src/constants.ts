@@ -8,7 +8,6 @@ export const CAIRO1_ASSEMBLY_SUFFIX = ".casm";
 export const CAIRO1_SIERRA_SUFFIX = ".json";
 export const CAIRO1_COMPILE_BIN = "starknet-compile";
 export const CAIRO1_SIERRA_COMPILE_BIN = "starknet-sierra-compile";
-export const DOCKER_HOST_BIN_PATH = "/usr/local/bin/target/release";
 export const SUPPORTED_SCARB_VERSION = config["SCARB_VERSION"];
 
 export const DEFAULT_STARKNET_SOURCES_PATH = "contracts";
@@ -26,6 +25,8 @@ export const INTEGRATED_DEVNET_URL = "http://127.0.0.1:5050";
 export const CAIRO_CLI_DOCKER_REPOSITORY_WITH_TAG = `${CAIRO_CLI_DOCKER_REPOSITORY}:${CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG}`;
 
 export const INTERNAL_ARTIFACTS_DIR = "contract-artifacts";
+export const HIDDEN_PLUGIN_DIR = ".starknet-hardhat-plugin";
+export const HIDDEN_PLUGIN_COMPILER_SUBDIR = "cairo-compiler";
 
 export const ALPHA_TESTNET = "alpha-goerli";
 export const ALPHA_TESTNET_2 = "alpha-goerli2";
@@ -46,6 +47,9 @@ export const VOYAGER_GOERLI_2_CONTRACT_API_URL = "https://goerli-2.voyager.onlin
 export const VOYAGER_GOERLI_2_VERIFIED_URL = "https://goerli-2.voyager.online/contract/";
 export const VOYAGER_MAINNET_CONTRACT_API_URL = "https://voyager.online/api/contract/";
 export const VOYAGER_MAINNET_VERIFIED_URL = "https://voyager.online/contract/";
+
+export const CAIRO_COMPILER_BINARY_URL =
+    "https://github.com/starkware-libs/cairo/releases/download";
 
 export const CHECK_STATUS_TIMEOUT = 5000; // ms
 export const CHECK_STATUS_RECOVER_TIMEOUT = 10000; // ms

@@ -22,10 +22,10 @@ import {
 import { createIntegratedDevnet } from "./external-server";
 import { Recompiler } from "./recompiler";
 import { version } from "../package.json";
-import { StarknetConfig } from "./types/starknet";
 import * as toml from "@iarna/toml";
 import { ScarbWrapper } from "./scarb-wrapper";
 import { ScarbConfig } from "./types";
+import { getCairoBinDirPath } from "./cairo1-compiler";
 
 function checkSourceExists(sourcePath: string): void {
     if (!fs.existsSync(sourcePath)) {
@@ -73,11 +73,6 @@ function initializeFile(filePath: string) {
 
 function getFileName(filePath: string) {
     return path.basename(filePath, path.extname(filePath));
-}
-
-function getCompilerBinDir(args: TaskArguments, config: StarknetConfig): string {
-    // give precedence to CLI input over config file
-    return args?.cairo1BinDir || config.cairo1BinDir;
 }
 
 class ScarbConfigValidationError extends StarknetPluginError {
@@ -164,7 +159,7 @@ export async function starknetCompileCairo1Action(
     args: TaskArguments,
     hre: HardhatRuntimeEnvironment
 ) {
-    const binDirPath = getCompilerBinDir(args, hre.config.starknet);
+    const binDirPath = await getCairoBinDirPath(args, hre.config.starknet);
 
     const root = hre.config.paths.root;
     const rootRegex = new RegExp("^" + root);

@@ -1,6 +1,7 @@
 import axios from "axios";
 import assert, { AssertionError } from "assert";
 import { existsSync, rmSync, statSync } from "fs";
+import path from "path";
 import shell from "shelljs";
 import { DEVNET_URL } from "../constants/constants";
 
@@ -68,6 +69,19 @@ export function assertNotEmpty(path: string) {
     const stat = statSync(path);
     if (stat.size <= 0) {
         const message = `Size of ${path} expected to be > 0`;
+        throw new AssertionError({ message });
+    }
+}
+
+export function assertCompilationArtifactsExist(artifactDir: string, contractName: string) {
+    for (const suffix of [".json", ".casm", "_abi.json"]) {
+        assertExistence(path.join(artifactDir, contractName + suffix));
+    }
+}
+
+export function assertGreater<T>(value1: T, value2: T) {
+    if (!(value1 > value2)) {
+        const message = `${value1} expected to be greater than ${value2}`;
         throw new AssertionError({ message });
     }
 }

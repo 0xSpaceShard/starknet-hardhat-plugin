@@ -1,12 +1,10 @@
 import { hardhatStarknetCompile } from "../../utils/cli-functions";
-import { assertContains, assertExistence, ensureEnvVar } from "../../utils/utils";
+import { assertContains, assertCompilationArtifactsExist, ensureEnvVar } from "../../utils/utils";
 
 ensureEnvVar("CAIRO_1_COMPILER_DIR");
 hardhatStarknetCompile(["cairo1-contracts/contract1.cairo", "--single-file"]);
-assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1.json");
-assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1.casm");
-assertExistence("starknet-artifacts/cairo1-contracts/contract1.cairo/contract1_abi.json");
+assertCompilationArtifactsExist("starknet-artifacts/cairo1-contracts/contract1.cairo", "contract1");
 
 // Assert cairo0 compilation failure
 const execution = hardhatStarknetCompile(["contracts/contract.cairo", "--single-file"], true);
-assertContains(execution.stderr, "Failed compilation of 1 contract");
+assertContains(execution.stderr, "error: Skipped tokens.");

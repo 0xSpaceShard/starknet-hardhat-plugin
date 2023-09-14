@@ -93,5 +93,6 @@ export type StarknetConfig = {
     recompile?: boolean;
     scarbCommand?: string;
     cairo1BinDir?: string;
+    compilerVersion?: string;
     requestTimeout?: number;
 };
