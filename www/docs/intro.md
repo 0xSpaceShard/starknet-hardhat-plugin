@@ -78,7 +78,7 @@ $ npx hardhat starknet-compile [PATH...] [--add-pythonic-hints] [--single-file] 
 
 Compiles Starknet Cairo 1 contracts in the provided path. Paths can be files and directories. Currently, contracts importing other contracts are not supported (until this is supported, you may try to use [Scarb](https://github.com/software-mansion/scarb) and modifying its artifacts to be compatible with this plugin).
 
-In [venv mode](#existing-virtual-environment), you can use a custom compiler by providing the path of the directory holding binaries to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your config file. E.g. if your cairo compiler repository is in `/path/to/cairo` and you built the compiler with `cargo build --bin starknet-compile --bin starknet-sierra-compile --release`, the path should be `/path/to/cairo/target/release`.
+Custom local compiler can be specified by providing the path of the directory holding compiler binaries (`starknet-compile` and `starknet-sierra-compile`) to `--cairo1-bin-dir` or to the `cairo1BinDir` option in your config file. E.g. if your cairo compiler repository is in `/path/to/cairo` and you built the compiler with `cargo build --bin starknet-compile --bin starknet-sierra-compile --release`, the path would be `/path/to/cairo/target/release`.
 
 If neither `--cairo1-bin-dir` nor `cairo1BinDir` is set, the plugin will automatically download a compiler version it is adapted to. To download a specific version, set `compilerVersion` in `hardhat.config.ts` to a semver string matching one of the [official releases](https://github.com/starkware-libs/cairo/releases).
 
