@@ -1,26 +1,21 @@
 import axios, { AxiosError } from "axios";
-import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { HardhatRuntimeEnvironment, StarknetContract, StringMap } from "hardhat/types";
 import fs from "node:fs";
 import path from "node:path";
 import { ec, hash, stark } from "starknet";
 
 import {
-    ABI_SUFFIX,
     INTERNAL_ARTIFACTS_DIR,
+    ABI_SUFFIX,
+    StarknetChainId,
     TransactionHashPrefix,
-    TRANSACTION_VERSION,
-    StarknetChainId
-} from "./constants";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import * as starknet from "./starknet-types";
-import {
-    Cairo1ContractClass,
-    iterativelyCheckStatus,
-    Numeric,
-    StarknetContract,
-    StringMap
-} from "./types";
-import { numericToHexString } from "./utils";
+    TRANSACTION_VERSION
+} from "../../constants";
+import { StarknetPluginError } from "../../starknet-plugin-error";
+import { Numeric, starknetTypes } from "../../types";
+import { numericToHexString } from "../../utils";
+import { Cairo1ContractClass } from "../contract";
+import { iterativelyCheckStatus } from "../utils";
 
 export type CallParameters = {
     toContract: StarknetContract;
@@ -70,8 +65,7 @@ export function handleInternalContractArtifacts(
     const abiArtifact = contractName + ABI_SUFFIX;
 
     const artifactsSourcePath = path.join(
-        __dirname,
-        "..", // necessary since artifact dir is in the root, not in src
+        __dirname.match(/^.*dist\//)[0], // necessary since artifact dir is in the root
         INTERNAL_ARTIFACTS_DIR,
         contractDir,
         artifactsVersion,
@@ -155,7 +149,7 @@ export async function sendDeployAccountTx(
             version: numericToHexString(TRANSACTION_VERSION),
             type: "DEPLOY_ACCOUNT"
         })
-        .catch((error: AxiosError<starknet.StarkError>) => {
+        .catch((error: AxiosError<starknetTypes.StarkError>) => {
             const msg = `Deploying account failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
@@ -191,7 +185,7 @@ export async function sendDeclareV2Tx(
             nonce: numericToHexString(nonce),
             max_fee: numericToHexString(maxFee)
         })
-        .catch((error: AxiosError<starknet.StarkError>) => {
+        .catch((error: AxiosError<starknetTypes.StarkError>) => {
             const msg = `Declaring contract failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
@@ -216,7 +210,7 @@ export async function sendEstimateFeeTx(data: unknown) {
 
     const resp = await axios
         .post(`${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`, data)
-        .catch((error: AxiosError<starknet.StarkError>) => {
+        .catch((error: AxiosError<starknetTypes.StarkError>) => {
             const msg = `Estimating fees failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
         });
@@ -227,5 +221,5 @@ export async function sendEstimateFeeTx(data: unknown) {
         unit,
         gas_price: BigInt(gas_price),
         gas_usage: BigInt(gas_usage)
-    } as starknet.FeeEstimation;
+    } as starknetTypes.FeeEstimation;
 }

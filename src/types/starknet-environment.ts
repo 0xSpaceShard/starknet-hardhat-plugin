@@ -1,11 +1,28 @@
 import { Block, HardhatNetworkConfig, NetworkConfig, Transaction } from "hardhat/types";
 
-import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from ".";
+import { BlockIdentifier } from ".";
+import { StarknetContractFactory } from "../legacy/contract/starknet-contract-factory";
 import { Devnet } from "./devnet";
-import { ArgentAccount, OpenZeppelinAccount } from "../account";
-import { TransactionReceipt, TransactionTrace } from "../starknet-types";
+import { OpenZeppelinAccount } from "../legacy/account/open-zeppelin-account";
+import { ArgentAccount } from "../legacy/account/argent-account";
+import { TransactionReceipt, TransactionTrace } from "./starknet-types";
 
 export interface Starknet {
+    devnet: Devnet;
+
+    /**
+     * The selected starknet-network name.
+     * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
+     */
+    network: string;
+
+    /**
+     * The configuration object of the selected starknet-network.
+     */
+    networkConfig: HardhatNetworkConfig;
+}
+
+export interface StarknetLegacy {
     /**
      * Fetches a compiled contract by name. E.g. if the contract is defined in MyContract.cairo,
      * the provided string should be `MyContract`.
@@ -33,19 +50,6 @@ export interface Starknet {
      */
     bigIntToShortString: (convertibleBigInt: bigint) => string;
 
-    /**
-     * The selected starknet-network name.
-     * Present if the called task relies on `--starknet-network` or `starknet["network"]` in the config object.
-     */
-    network: string;
-
-    /**
-     * The configuration object of the selected starknet-network.
-     */
-    networkConfig: HardhatNetworkConfig;
-
-    devnet: Devnet;
-
     getTransaction: (txHash: string) => Promise<Transaction>;
 
     getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
@@ -70,7 +74,7 @@ export interface Starknet {
      * @param options optional arguments to specify the target
      * @returns the nonce
      */
-    getNonce: (address: string, options?: NonceQueryOptions) => Promise<number>;
+    getNonce: (address: string, options?: BlockIdentifier) => Promise<number>;
 
     /**
      * Return balance of target contract whose `address` is specified.

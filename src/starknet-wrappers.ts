@@ -14,7 +14,7 @@ import {
 import { ExternalServer } from "./external-server";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { FeeEstimation } from "./starknet-types";
+import { FeeEstimation } from "./types/starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 

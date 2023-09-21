@@ -1,9 +1,8 @@
 import { BigNumberish, num } from "starknet";
 
-import { StarknetPluginError } from "./starknet-plugin-error";
-import { HEXADECIMAL_REGEX, LEN_SUFFIX_DEPRECATED } from "./constants";
-import * as starknet from "./starknet-types";
-import { StringMap } from "./types";
+import { StarknetPluginError } from "../../starknet-plugin-error";
+import { HEXADECIMAL_REGEX, LEN_SUFFIX_DEPRECATED } from "../../constants";
+import { StringMap, starknetTypes } from "../../types";
 
 const NAMED_TUPLE_DELIMITER = ": ";
 const ARGUMENTS_DELIMITER = ", ";
@@ -103,7 +102,7 @@ function convertOutputToU256(lo: bigint, hi: bigint): bigint {
 
 // Can't use String.split since ':' also can be inside type
 // Ex: x : (y : felt, z: SomeStruct)
-function parseNamedTuple(namedTuple: string): starknet.Argument {
+function parseNamedTuple(namedTuple: string): starknetTypes.Argument {
     const index = namedTuple.indexOf(NAMED_TUPLE_DELIMITER);
     const name = namedTuple.substring(0, index);
     const type = namedTuple.substring(name.length + NAMED_TUPLE_DELIMITER.length);
@@ -194,8 +193,8 @@ function extractMemberTypes(s: string): string[] {
 export function adaptInputUtil(
     functionName: string,
     input: any,
-    inputSpecs: starknet.Argument[],
-    abi: starknet.Abi,
+    inputSpecs: starknetTypes.Argument[],
+    abi: starknetTypes.Abi,
     isCairo1: boolean
 ): string[] {
     const adapted: string[] = [];
@@ -215,7 +214,7 @@ export function adaptInputUtil(
         throw new StarknetPluginError(msg);
     }
 
-    let lastSpec: starknet.Argument = { type: null, name: null };
+    let lastSpec: starknetTypes.Argument = { type: null, name: null };
     for (let i = 0; i < inputSpecs.length; ++i) {
         const inputSpec = inputSpecs[i];
         const currentValue = input[inputSpec.name];
@@ -310,8 +309,8 @@ export function adaptInputUtil(
  */
 function adaptComplexInput(
     input: any,
-    inputSpec: starknet.Argument,
-    abi: starknet.Abi,
+    inputSpec: starknetTypes.Argument,
+    abi: starknetTypes.Abi,
     adaptedArray: string[]
 ): void {
     const type = inputSpec.type;
@@ -395,8 +394,8 @@ function adaptComplexInput(
 
 function adaptStructInput(
     input: any,
-    inputSpec: starknet.Argument,
-    abi: starknet.Abi,
+    inputSpec: starknetTypes.Argument,
+    abi: starknetTypes.Abi,
     adaptedArray: string[]
 ) {
     const type = inputSpec.type;
@@ -404,7 +403,7 @@ function adaptStructInput(
         throw new StarknetPluginError(`Type ${type} not present in ABI.`);
     }
 
-    const struct = <starknet.Struct>abi[type];
+    const struct = <starknetTypes.Struct>abi[type];
     const countArrays = struct.members.filter((i) => isArrayDeprecated(i.type)).length;
     const expectedInputCount = struct.members.length - countArrays;
 
@@ -428,7 +427,12 @@ function adaptStructInput(
 /**
  * resultIndex initially expected to be at value indicating array length
  */
-function adaptArray(result: bigint[], resultIndex: number, arrayType: string, abi: starknet.Abi) {
+function adaptArray(
+    result: bigint[],
+    resultIndex: number,
+    arrayType: string,
+    abi: starknetTypes.Abi
+) {
     const elementType = arrayType.slice(
         ARRAY_TYPE_PREFIX.length,
         arrayType.length - ARRAY_TYPE_SUFFIX.length
@@ -462,8 +466,8 @@ function adaptArray(result: bigint[], resultIndex: number, arrayType: string, ab
  */
 export function adaptOutputUtil(
     rawResult: string,
-    outputSpecs: starknet.Argument[],
-    abi: starknet.Abi
+    outputSpecs: starknetTypes.Argument[],
+    abi: starknetTypes.Abi
 ): any {
     const splitStr = rawResult.split(" ");
     const result: bigint[] = [];
@@ -472,7 +476,7 @@ export function adaptOutputUtil(
         result.push(parsed);
     }
     let resultIndex = 0;
-    let lastSpec: starknet.Argument = { type: null, name: null };
+    let lastSpec: starknetTypes.Argument = { type: null, name: null };
     const adapted: StringMap = {};
 
     for (const outputSpec of outputSpecs) {
@@ -546,7 +550,12 @@ export function adaptOutputUtil(
  * @param abi the ABI from which types are taken
  * @returns an object consisting of the next unused index and the generated tuple/struct itself
  */
-function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, abi: starknet.Abi) {
+function generateComplexOutput(
+    raw: bigint[],
+    rawIndex: number,
+    type: string,
+    abi: starknetTypes.Abi
+) {
     if (COMMON_NUMERIC_TYPES.includes(type)) {
         return {
             generatedComplex: raw[rawIndex],
@@ -598,7 +607,7 @@ function generateComplexOutput(raw: bigint[], rawIndex: number, type: string, ab
         }
 
         generatedComplex = {};
-        const struct = <starknet.Struct>abi[type];
+        const struct = <starknetTypes.Struct>abi[type];
         for (const member of struct.members) {
             const ret = generateComplexOutput(raw, rawIndex, member.type, abi);
             generatedComplex[member.name] = ret.generatedComplex;

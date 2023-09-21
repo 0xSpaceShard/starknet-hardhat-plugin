@@ -2,10 +2,10 @@ import axios, { AxiosResponse, Method } from "axios";
 import { Devnet, HardhatRuntimeEnvironment } from "hardhat/types";
 import { selector } from "starknet";
 
-import { StarknetPluginError } from "./starknet-plugin-error";
-import { MintResponse, L2ToL1Message } from "./starknet-types";
-import { Numeric } from "./types";
-import { numericToHexString } from "./utils";
+import { StarknetPluginError } from "../starknet-plugin-error";
+import { MintResponse, L2ToL1Message } from "../types/starknet-types";
+import { Numeric } from "../types";
+import { numericToHexString } from "./";
 
 interface L1ToL2Message {
     address: string;

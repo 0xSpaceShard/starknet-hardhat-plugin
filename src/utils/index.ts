@@ -12,7 +12,7 @@ import fs, { promises as fsp } from "node:fs";
 import path from "node:path";
 import { CompiledSierra, LegacyCompiledContract, hash, json, stark } from "starknet";
 
-import { handleInternalContractArtifacts } from "./account-utils";
+import { handleInternalContractArtifacts } from "../legacy";
 import {
     ABI_SUFFIX,
     ALPHA_MAINNET,
@@ -28,11 +28,14 @@ import {
     StarknetChainId,
     UDC_ADDRESS,
     CAIRO_CLI_DEFAULT_DOCKER_IMAGE_TAG
-} from "./constants";
-import { getContractFactoryUtil } from "./extend-utils";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import { Abi, AbiEntry, CairoFunction } from "./starknet-types";
-import { Cairo1ContractClass, ContractClassConfig, Numeric, StarknetContract } from "./types";
+} from "../constants";
+import { getContractFactoryUtil } from "../legacy/extend-utils";
+import { StarknetPluginError } from "../starknet-plugin-error";
+import { Abi, AbiEntry, CairoFunction } from "../types/starknet-types";
+import { Numeric } from "../types";
+import { ContractClassConfig } from "../legacy/types";
+import { Cairo1ContractClass } from "../legacy";
+import { StarknetContract } from "../legacy";
 
 /**
  * Replaces Starknet specific terminology with the terminology used in this plugin.

@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { starknet } from "hardhat";
+import { starknetLegacy as starknet } from "hardhat";
 
 describe("Starknet", function () {
     this.timeout(300_000);

@@ -1,4 +1,4 @@
-import { Numeric } from ".";
+import { Numeric } from "./";
 import {
     FlushResponse,
     IncreaseTimeResponse,
@@ -8,8 +8,8 @@ import {
     L1ToL2MockTxResponse,
     L2ToL1MockTxResponse,
     NewBlockResponse
-} from "../devnet-utils";
-import { MintResponse } from "../starknet-types";
+} from "../utils/devnet-utils";
+import { MintResponse } from "./starknet-types";
 
 export interface Devnet {
     /**

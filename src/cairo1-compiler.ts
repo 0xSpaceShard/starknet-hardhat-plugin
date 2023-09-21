@@ -1,20 +1,21 @@
-import fs from "fs";
-import os from "os";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import shell from "shelljs";
-import path from "path";
 import axios, { AxiosError } from "axios";
-import { StarknetPluginError } from "./starknet-plugin-error";
+import { TaskArguments } from "hardhat/types";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import shell from "shelljs";
+import tar from "tar-fs";
+import zlib from "zlib";
+
+import config from "../config.json";
 import {
     CAIRO_COMPILER_BINARY_URL,
     HIDDEN_PLUGIN_COMPILER_SUBDIR,
     HIDDEN_PLUGIN_DIR
 } from "./constants";
-import { StarknetConfig } from "./types/starknet";
-import config from "../config.json";
-import tar from "tar-fs";
-import zlib from "zlib";
-import { TaskArguments } from "hardhat/types";
+import { StarknetPluginError } from "./starknet-plugin-error";
+import { StarknetConfig } from "./types/starknet-environment";
 
 export const exec = (args: string) => {
     const result = shell.exec(args, {
