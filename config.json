@@ -1,6 +1,6 @@
 {
     "CAIRO_LANG": "0.11.2",
-    "STARKNET_DEVNET": "0.6.0",
+    "STARKNET_DEVNET": "0.6.3",
     "CAIRO_COMPILER": "2.1.0",
     "SCARB_VERSION": "0.7.0"
 }
