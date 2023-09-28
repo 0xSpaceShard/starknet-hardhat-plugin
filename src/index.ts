@@ -47,7 +47,6 @@ import {
     starknetTestAction,
     starknetRunAction,
     starknetPluginVersionAction,
-    starknetMigrateAction,
     starknetCompileCairo1Action,
     starknetBuildAction
 } from "./task-actions";
@@ -352,11 +351,6 @@ addStarknetNetworkParam(task("run")).setAction(starknetRunAction);
 task("starknet-plugin-version", "Prints the version of the starknet plugin.").setAction(
     starknetPluginVersionAction
 );
-
-task("migrate", "Migrates a cairo contract to syntax of cairo-lang v0.10.0.")
-    .addOptionalVariadicPositionalParam("paths", "The name of the contract to migrate")
-    .addFlag("inplace", "Applies changes to the files in place.")
-    .setAction(starknetMigrateAction);
 
 task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
     .addFlag("script", "Run ./amarna.sh file to use Amarna with custom args.")

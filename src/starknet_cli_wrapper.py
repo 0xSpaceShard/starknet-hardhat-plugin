@@ -13,7 +13,6 @@ try:
     from starkware.starknet.compiler.compile import main as starknet_compile_main
     from starkware.starknet.core.os.contract_class.deprecated_class_hash import compute_deprecated_class_hash
     from starkware.starknet.services.api.contract_class.contract_class import DeprecatedCompiledClass
-    from starkware.cairo.lang.migrators.migrator import main as cairo_migrate_main
     from starkware.starknet.services.api.contract_class.contract_class import CompiledClass
     from starkware.starknet.services.api.contract_class.contract_class_utils import load_sierra
     from starkware.starknet.core.os.contract_class.class_hash import compute_class_hash
@@ -68,21 +67,12 @@ async def get_contract_class_hash(args):
     print(hex(compute_class_hash(contract_class)))
     return 0
 
-async def cairo_migrate_main_wrapper(args):
-    sys.argv = [sys.argv[0], *args]
-    try:
-        return cairo_migrate_main()
-    except Exception as err:
-        print(err, file=sys.stderr)
-        return 1
-
 MAIN_MAP = {
     "starknet": starknet_main_wrapper,
     "starknet-compile-deprecated": starknet_compile_main_wrapper,
     "get_class_hash": get_class_hash,
     "get_contract_class_hash": get_contract_class_hash,
     "get_compiled_class_hash": get_compiled_class_hash,
-    "cairo-migrate": cairo_migrate_main_wrapper
 }
 
 class MyRequestHandler(BaseHTTPRequestHandler):

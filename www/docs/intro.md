@@ -151,20 +151,6 @@ $ npx hardhat starknet-plugin-version
 
 Prints the version of the plugin.
 
-### `migrate`
-
-```
-$ npx hardhat migrate [PATH...] [--inplace]
-```
-
-**NOT APPLICABLE TO CAIRO 1**
-
-Converts old syntax to Cairo 0.10 syntax. The `--inplace` flag will change the contract file in place.
-
-```
-$ npx hardhat migrate --inplace contract/contract.cairo
-```
-
 ### `run`
 
 Using `--starknet-network` with `hardhat run` currently does not have effect. Use the `network` property of the `starknet` object in your hardhat config file.
