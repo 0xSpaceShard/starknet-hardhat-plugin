@@ -12,7 +12,7 @@ trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 
 # setup example repo
 rm -rf starknet-hardhat-example
-EXAMPLE_REPO_BRANCH="plugin"
+EXAMPLE_REPO_BRANCH="release-0.8.0-alpha.5"
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
