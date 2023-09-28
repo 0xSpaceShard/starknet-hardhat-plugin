@@ -46,7 +46,7 @@ This plugin was tested with:
 -   Node.js v14.17.3
 -   npm/npx v7.19.1
 -   Docker v20.10.8 (optional):
-    -   Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-version)).
+    -   Since plugin version 0.3.4, Docker is no longer necessary if you opt for a Python environment (more info in [Config](#cairo-0-compilation)).
     -   If you opt for the containerized version, make sure you have a running Docker daemon.
     -   If you're experiencing Docker access issues, check [this](https://stackoverflow.com/questions/52364905/after-executing-following-code-of-dockerode-npm-getting-error-connect-eacces-v).
 -   Linux / macOS:
@@ -125,7 +125,7 @@ starknet.getContractFactory("MyPackage_FooContract");
 
 The name of the file where the contract was defined doesn't play a role.
 
-The plugin doesn't have a default Scarb command yet (a dockerized wrapper will be supported soon). You need to provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, or you can override that via `--scarb-command <COMMAND>`.
+The plugin doesn't have a default Scarb command yet. You need to provide a `scarbCommand` (either an exact command or the path to it) under `starknet` in your hardhat config file, or you can override that via `--scarb-command <COMMAND>`.
 
 ### `starknet-verify`
 
@@ -515,46 +515,36 @@ If you want to have your debug lines printed in the same terminal as your hardha
 
 Specify custom configuration by editing your project's `hardhat.config.ts` (or `hardhat.config.js`).
 
-### Cairo version
+### Cairo 0 compilation
 
-Use this configuration option to select the `cairo-lang`/`starknet` version used by the underlying Docker container.
-
-A Docker image tailored to the machine will be pulled. The `-arm` suffix will be applied to the version name, if it's not applied on `hardhat.config.ts`, if the device's architecture is `arm64`. (e.g. `dockerizedVersion: "0.8.1-arm"` and `dockerizedVersion: "0.8.1"` both will work).
-
-If you specify neither `dockerizedVersion` nor [venv](#existing-virtual-environment), the latest dockerized version is used.
+Cairo 0 compilation is by default done using the latest stable Dockerized compiler.
+If you want to use an older Cairo 0 compiler, specify the full semver string:
 
 A list of available dockerized versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
 
 ```javascript
 module.exports = {
   starknet: {
-    dockerizedVersion: "0.8.1"
+    // Docker image tailored to the machine is pulled. If not applied, the `-arm` suffix is applied to the version name if on an arm64 machine.
+    dockerizedVersion: "0.11.2"
   }
   ...
 };
 ```
 
-### Existing virtual environment
-
-If you want to use an existing Python virtual environment (pyenv, poetry, conda, miniconda), specify it by using `starknet["venv"]`.
-
-To use the currently activated environment (or if you have the starknet commands globally installed), set `venv` to `"active"`.
-
-In any case, the specified environment is expected to contain the `python3` command.
-
-If you are on a Mac, you may experience Docker-related issues, so this may be the only way to run the plugin.
-
-If you specify neither [dockerizedVersion](#cairo-version) nor `venv`, the latest dockerized version is used.
+If you cannot use Docker (e.g. on Mac), you'll need to have the `cairo-lang` Python package installed locally and `python3` command runable. Use one of the following:
 
 ```typescript
 module.exports = {
     starknet: {
-        // venv: "active" <- for the active virtual environment
+        // venv: "active" <- for the active virtual environment or global environment
         // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
         venv: "<VENV_PATH>"
     }
 };
 ```
+
+If you specify neither `dockerizedVersion` nor `venv`, the latest dockerized version is used.
 
 ### Building Cairo 1 projects
 
@@ -768,6 +758,8 @@ const contractFactory = await starknet.getContractFactory(
 ## Recompilation
 
 Recompilation is performed when contracts are updated or when artifacts are missing. A file will be created with the name `cairo-files-cache.json` to handle caching. Recompilation is handled before the following [CLI commands](#cli-commands) are executed.
+
+This feature is **only** guaranteed to work with Cairo 0 contracts.
 
 -   `npx hardhat run`
 -   `npx hardhat test`
