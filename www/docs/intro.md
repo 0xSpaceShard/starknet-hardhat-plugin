@@ -503,10 +503,7 @@ Specify custom configuration by editing your project's `hardhat.config.ts` (or `
 
 ### Cairo 0 compilation
 
-Cairo 0 compilation is by default done using the latest stable Dockerized compiler.
-If you want to use an older Cairo 0 compiler, specify the full semver string:
-
-A list of available dockerized versions can be found [here](https://hub.docker.com/r/shardlabs/cairo-cli/tags).
+Cairo 0 compilation is by default done using the latest stable Dockerized compiler. If you want to use an older Cairo 0 compiler, specify the full semver string ([available versions](https://hub.docker.com/r/shardlabs/cairo-cli/tags)):
 
 ```javascript
 module.exports = {
@@ -525,12 +522,11 @@ module.exports = {
     starknet: {
         // venv: "active" <- for the active virtual environment or global environment
         // venv: "path/to/my-venv" <- for env created with e.g. `python -m venv path/to/my-venv`
+        // Python virtual environment can be created with: pyenv, poetry, conda, miniconda, ...
         venv: "<VENV_PATH>"
     }
 };
 ```
-
-If you specify neither `dockerizedVersion` nor `venv`, the latest dockerized version is used.
 
 ### Building Cairo 1 projects
 
