@@ -170,7 +170,7 @@ If for whatever reason the publishing workflow in CI/CD cannot be executed, the 
 
 Apart from [npm](https://www.npmjs.com/package/@shardlabs/starknet-hardhat-plugin?activeTab=versions), releases are also tracked on [GitHub](https://github.com/0xSpaceShard/starknet-hardhat-plugin/releases) with [git tags](https://github.com/0xSpaceShard/starknet-hardhat-plugin/tags). Notice the prepended `v` in tag names.
 
-After the npm package is released and the tag is pushed:
+After the npm package is released and the tag is pushed with:
 
 ```bash
 $ git push origin <TAG_NAME>
