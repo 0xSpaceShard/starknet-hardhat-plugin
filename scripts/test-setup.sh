@@ -14,6 +14,7 @@ trap 'for killable in $(jobs -p); do kill -9 $killable; done' EXIT
 rm -rf starknet-hardhat-example
 EXAMPLE_REPO_BRANCH="plugin"
 if [[ "$CIRCLE_BRANCH" == "master" ]] && [[ "$EXAMPLE_REPO_BRANCH" != "plugin" ]]; then
+    # prevents using starknet-hardhat-example branch other than "plugin" when starknet-hardhat-plugin PRs are merged
     echo "Invalid example repo branch: $EXAMPLE_REPO_BRANCH"
     exit 1
 fi

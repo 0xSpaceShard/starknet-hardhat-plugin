@@ -71,11 +71,6 @@ interface NonceQueryWrapperOptions {
     blockNumber?: BlockNumber;
 }
 
-interface MigrateContractWrapperOptions {
-    files: string[];
-    inplace: boolean;
-}
-
 export abstract class StarknetWrapper {
     constructor(
         protected externalServer: ExternalServer,
@@ -108,7 +103,6 @@ export abstract class StarknetWrapper {
         command:
             | "starknet-compile-deprecated"
             | "get_class_hash"
-            | "cairo-migrate"
             | "get_contract_class"
             | "get_contract_class_hash"
             | "get_compiled_class_hash",
@@ -279,19 +273,6 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError(executed.stderr.toString());
         }
         return executed.stdout.toString().trim();
-    }
-
-    public async migrateContract(options: MigrateContractWrapperOptions): Promise<ProcessResult> {
-        const commandArr = [...options.files];
-
-        if (options.inplace) {
-            commandArr.push("-i");
-        }
-        const executed = await this.execute("cairo-migrate", commandArr);
-        if (executed.statusCode) {
-            throw new StarknetPluginError(executed.stderr.toString());
-        }
-        return executed;
     }
 
     public async estimateMessageFee(
