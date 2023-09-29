@@ -515,7 +515,7 @@ module.exports = {
 };
 ```
 
-If you cannot use Docker (e.g. on Mac), you'll need to have the `cairo-lang` Python package installed locally and `python3` command runable. Use one of the following:
+If you cannot use Docker (e.g. on Mac), you'll need to have the `cairo-lang` Python package installed locally and `python3` command runnable. Use one of the following:
 
 ```typescript
 module.exports = {
