@@ -20,12 +20,12 @@ if [[ -n "${STARKNET_HARDHAT_DEV:-}" ]]; then
     fi
 
     STARKNET_DEVNET="${STARKNET_DEVNET:=$STARKNET_DEVNET_DEFAULT}"
-    docker pull -q shardlabs/starknet-devnet:$STARKNET_DEVNET
-    container_id=$(docker run --rm --name starknet_hardhat_devnet -d -p 0.0.0.0:$PORT:$PORT shardlabs/starknet-devnet --seed 42)
+    docker pull -q shardlabs/starknet-devnet-rs:$STARKNET_DEVNET
+    container_id=$(docker run --rm --name starknet_hardhat_devnet -d -p 0.0.0.0:$PORT:$PORT shardlabs/starknet-devnet-rs --seed 0)
     echo "Running devnet in container starknet_hardhat_devnet $container_id"
 
 else
-    starknet-devnet --host $HOST --port $PORT --seed 42 >/dev/null 2>&1 &
+    starknet-devnet --host $HOST --port $PORT --seed 0 >/dev/null 2>&1 &
     echo "Spawned devnet with PID $!"
 fi
 

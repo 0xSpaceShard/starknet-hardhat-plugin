@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { SequencerProvider } from "starknet";
+import { RPC, RpcProvider } from "starknet";
 
 import {
     CHECK_STATUS_RECOVER_TIMEOUT,
@@ -8,21 +8,27 @@ import {
     TRANSACTION_VERSION
 } from "../../constants";
 import { StarknetPluginError } from "../../starknet-plugin-error";
-import { Numeric, StatusObject, TxStatus, starknetTypes } from "../../types";
+import { Numeric, starknetTypes } from "../../types";
 import { adaptLog, sleep, warn } from "../../utils";
 import { StarknetContract } from "../contract";
 
 export * from "./abi";
 export * from "./adapt";
 
-const ACCEPTABLE_STATUSES: TxStatus[] = ["PENDING", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
-export function isTxAccepted(statusObject: StatusObject): boolean {
-    return ACCEPTABLE_STATUSES.includes(statusObject.tx_status);
+const ACCEPTABLE_STATUSES = ["SUCCEEDED", "ACCEPTED_ON_L2", "ACCEPTED_ON_L1"];
+export function isTxAccepted(statusObject: RPC.TransactionStatus): boolean {
+    return (
+        ACCEPTABLE_STATUSES.includes(statusObject.execution_status) ||
+        ACCEPTABLE_STATUSES.includes(statusObject.finality_status)
+    );
 }
 
-const UNACCEPTABLE_STATUSES: TxStatus[] = ["REJECTED", "REVERTED"];
-export function isTxRejected(statusObject: StatusObject): boolean {
-    return UNACCEPTABLE_STATUSES.includes(statusObject.tx_status);
+const UNACCEPTABLE_STATUSES = ["REJECTED", "REVERTED"];
+export function isTxRejected(statusObject: RPC.TransactionStatus): boolean {
+    return (
+        UNACCEPTABLE_STATUSES.includes(statusObject.execution_status) ||
+        UNACCEPTABLE_STATUSES.includes(statusObject.finality_status)
+    );
 }
 
 export async function iterativelyCheckStatus(
@@ -35,11 +41,11 @@ export async function iterativelyCheckStatus(
     // eslint-disable-next-line no-constant-condition
     while (true) {
         let count = retryCount;
-        let statusObject: StatusObject;
+        let statusObject: RPC.TransactionStatus;
         let error;
         while (count > 0) {
             // This promise is rejected usually if the network is unavailable
-            statusObject = await (hre.starknetProvider as SequencerProvider)
+            statusObject = await (hre.starknetProvider as RpcProvider)
                 .getTransactionStatus(txHash)
                 .catch((err) => {
                     error = new StarknetPluginError(err);
@@ -59,11 +65,11 @@ export async function iterativelyCheckStatus(
         if (!statusObject) {
             warn("Checking transaction status failed.");
             return reject(error);
-        } else if (isTxAccepted(statusObject)) {
-            return resolve(statusObject.tx_status);
         } else if (isTxRejected(statusObject)) {
             const adaptedError = adaptLog(JSON.stringify(statusObject, null, 4));
             return reject(new Error(adaptedError));
+        } else if (isTxAccepted(statusObject)) {
+            return resolve(statusObject.execution_status ?? statusObject.finality_status);
         }
 
         await sleep(CHECK_STATUS_TIMEOUT);

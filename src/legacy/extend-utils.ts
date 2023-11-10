@@ -1,6 +1,6 @@
-import { Block, HardhatRuntimeEnvironment, Transaction } from "hardhat/types";
+import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
 import path from "node:path";
-import { SequencerProvider, uint256 } from "starknet";
+import { GetTransactionReceiptResponse, RPC, RpcProvider, uint256 } from "starknet";
 
 import { handleInternalContractArtifacts } from "./account";
 import {
@@ -11,7 +11,7 @@ import {
 } from "../constants";
 import { StarknetContractFactory } from "./contract";
 import { StarknetPluginError } from "../starknet-plugin-error";
-import { BlockIdentifier, starknetTypes } from "../types";
+import { BlockIdentifier } from "../types";
 import { checkArtifactExists, findPath } from "../utils";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
@@ -89,10 +89,10 @@ export function bigIntToShortStringUtil(convertibleBigInt: bigint) {
 export async function getTransactionUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<Transaction> {
+): Promise<RPC.TransactionWithHash> {
     try {
         const transaction = await hre.starknetProvider.getTransaction(txHash);
-        return transaction as Transaction;
+        return transaction as RPC.TransactionWithHash;
     } catch (error) {
         const msg = `Could not get the transaction. ${error}`;
         throw new StarknetPluginError(msg);
@@ -102,10 +102,10 @@ export async function getTransactionUtil(
 export async function getTransactionReceiptUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<starknetTypes.TransactionReceipt> {
+): Promise<GetTransactionReceiptResponse> {
     try {
         const receipt = await hre.starknetProvider.getTransactionReceipt(txHash);
-        return receipt as unknown as starknetTypes.TransactionReceipt;
+        return receipt;
     } catch (error) {
         const msg = `Could not get the transaction receipt. Error: ${error}`;
         throw new StarknetPluginError(msg);
@@ -115,10 +115,10 @@ export async function getTransactionReceiptUtil(
 export async function getTransactionTraceUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<starknetTypes.TransactionTrace> {
+): Promise<RPC.TransactionTrace> {
     try {
-        const trace = await (hre.starknetProvider as SequencerProvider).getTransactionTrace(txHash);
-        return trace as starknetTypes.TransactionTrace;
+        const trace = await (hre.starknetProvider as RpcProvider).getTransactionTrace(txHash);
+        return trace;
     } catch (error) {
         const msg = `Could not get the transaction trace. Error: ${error}`;
         throw new StarknetPluginError(msg);

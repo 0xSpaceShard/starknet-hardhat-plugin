@@ -1,5 +1,5 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { ProviderInterface, SequencerProvider } from "starknet";
+import { ProviderInterface, RpcProvider } from "starknet";
 
 export class StarknetJsWrapper {
     public provider: ProviderInterface;
@@ -12,8 +12,8 @@ export class StarknetJsWrapper {
     }
 
     public setProvider() {
-        this.provider = new SequencerProvider({
-            baseUrl: this.hre.config.starknet.networkConfig.url
+        this.provider = new RpcProvider({
+            nodeUrl: this.hre.config.starknet.networkConfig.url
         });
         this.hre.starknetProvider = this.provider;
     }

@@ -15,8 +15,8 @@ import {
     CallParameters,
     generateKeys,
     handleInternalContractArtifacts,
+    mapToLegacyFee,
     sendDeployAccountTx,
-    sendEstimateFeeTx,
     signMultiCall
 } from "./account-utils";
 import { Account } from "./account";
@@ -203,19 +203,22 @@ export class ArgentAccount extends Account {
             hre.starknet.networkConfig.starknetChainId,
             nonce
         ]);
-
         const signature = this.getSignatures(msgHash);
-        const data = {
-            type: "DEPLOY_ACCOUNT",
-            class_hash: ArgentAccount.PROXY_CLASS_HASH,
-            constructor_calldata: constructorCalldata,
-            contract_address_salt: this.salt,
-            signature: bnToDecimalStringArray(signature || []),
-            version: numericToHexString(QUERY_VERSION),
-            nonce
-        };
 
-        return await sendEstimateFeeTx(data);
+        const estimate = await hre.starknetProvider.getDeployAccountEstimateFee(
+            {
+                classHash: ArgentAccount.PROXY_CLASS_HASH,
+                constructorCalldata,
+                addressSalt: this.salt,
+                signature: bnToDecimalStringArray(signature || [])
+            },
+            {
+                maxFee,
+                nonce,
+                version: numericToHexString(QUERY_VERSION)
+            }
+        );
+        return mapToLegacyFee(estimate);
     }
 
     /**

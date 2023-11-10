@@ -1,4 +1,14 @@
-import { constants, ec, hash, selector, BigNumberish, Call, RawCalldata } from "starknet";
+import {
+    constants,
+    ec,
+    hash,
+    selector,
+    BigNumberish,
+    Call,
+    RawCalldata,
+    SierraContractClass,
+    SuccessfulTransactionReceiptResponse
+} from "starknet";
 
 import {
     UDC_DEPLOY_FUNCTION_NAME,
@@ -31,7 +41,7 @@ import {
     DeclareOptions
 } from "../types";
 import { InteractChoice } from "../utils";
-import { sendEstimateFeeTx, CallParameters, sendDeclareV2Tx } from "./account-utils";
+import { CallParameters, mapToLegacyFee, sendDeclareV2Tx } from "./account-utils";
 
 type ExecuteCallParameters = {
     to: bigint;
@@ -121,7 +131,10 @@ export abstract class Account {
         );
 
         const hre = await import("hardhat");
-        const deploymentReceipt = await getTransactionReceiptUtil(deployTxHash, hre);
+        const deploymentReceipt = (await getTransactionReceiptUtil(
+            deployTxHash,
+            hre
+        )) as SuccessfulTransactionReceiptResponse;
         const decodedEvents = udc.decodeEvents(deploymentReceipt.events);
         // the only event should be ContractDeployed
         const deployedContractAddress = numericToHexString(decodedEvents[0].data.address);
@@ -190,18 +203,24 @@ export abstract class Account {
             compiledClassHash
         );
         const signatures = this.getSignatures(messageHash);
+        const contract = readCairo1Contract(
+            contractFactory.metadataPath
+        ).getCompiledClass() as SierraContractClass;
 
-        const data = {
-            type: "DECLARE",
-            sender_address: this.address,
-            compiled_class_hash: compiledClassHash,
-            contract_class: readCairo1Contract(contractFactory.metadataPath).getCompiledClass(),
-            signature: bnToDecimalStringArray(signatures || []),
-            version: numericToHexString(version),
-            nonce: numericToHexString(nonce)
-        };
-
-        return await sendEstimateFeeTx(data);
+        const estimate = await hre.starknetProvider.getDeclareEstimateFee(
+            {
+                compiledClassHash,
+                contract,
+                senderAddress: this.address,
+                signature: bnToDecimalStringArray(signatures || [])
+            },
+            {
+                maxFee,
+                nonce,
+                version: numericToHexString(QUERY_VERSION)
+            }
+        );
+        return mapToLegacyFee(estimate);
     }
 
     async estimateDeclareFee(
@@ -232,17 +251,22 @@ export abstract class Account {
             chainId,
             numericToHexString(nonce)
         ]);
-
         const signature = this.getSignatures(messageHash);
-        const data = {
-            type: "DECLARE",
-            sender_address: this.address,
-            contract_class: readContract(contractFactory.metadataPath),
-            signature: bnToDecimalStringArray(signature || []),
-            version: numericToHexString(QUERY_VERSION),
-            nonce: numericToHexString(nonce)
-        };
-        return await sendEstimateFeeTx(data);
+        const contract = readContract(contractFactory.metadataPath);
+
+        const estimate = await hre.starknetProvider.getDeclareEstimateFee(
+            {
+                contract,
+                senderAddress: this.address,
+                signature: bnToDecimalStringArray(signature || [])
+            },
+            {
+                maxFee,
+                nonce,
+                version: numericToHexString(QUERY_VERSION)
+            }
+        );
+        return mapToLegacyFee(estimate);
     }
 
     async estimateDeployFee(

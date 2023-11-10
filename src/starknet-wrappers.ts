@@ -1,8 +1,6 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import axios from "axios";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import path from "path";
-import { num, selector } from "starknet";
+import path from "node:path";
 
 import { exec } from "./cairo1-compiler";
 import {
@@ -14,7 +12,6 @@ import {
 import { ExternalServer } from "./external-server";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { FeeEstimation } from "./types/starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
@@ -211,33 +208,6 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError(executed.stderr.toString());
         }
         return executed.stdout.toString().trim();
-    }
-
-    public async estimateMessageFee(
-        functionName: string,
-        fromAddress: string,
-        toAddress: string,
-        inputs: string[]
-    ): Promise<FeeEstimation> {
-        const body = {
-            from_address: fromAddress,
-            to_address: toAddress,
-            entry_point_selector: selector.getSelectorFromName(functionName),
-            payload: inputs.map((item) => num.toHex(BigInt(item)))
-        };
-
-        const response = await axios.post(
-            `${this.hre.starknet.networkConfig.url}/feeder_gateway/estimate_message_fee`,
-            body
-        );
-
-        const { gas_price, gas_usage, overall_fee, unit } = response.data;
-        return {
-            amount: BigInt(overall_fee),
-            unit,
-            gas_price: BigInt(gas_price),
-            gas_usage: BigInt(gas_usage)
-        };
     }
 }
 

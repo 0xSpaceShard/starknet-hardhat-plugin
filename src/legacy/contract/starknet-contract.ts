@@ -1,5 +1,12 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { CallData, ProviderInterface, events as eventUtil, json } from "starknet";
+import {
+    CallData,
+    ProviderInterface,
+    RpcProvider,
+    events as eventUtil,
+    json,
+    selector
+} from "starknet";
 
 import { StarknetPluginError } from "../../starknet-plugin-error";
 import {
@@ -204,12 +211,20 @@ export class StarknetContract {
         const adaptedInput = this.adaptInput(functionName, args);
         // Remove value of from_address from the input array
         const fromAddress = adaptedInput.shift();
-        return this.hre.starknetWrapper.estimateMessageFee(
-            functionName,
-            fromAddress,
-            this.address,
-            adaptedInput
-        );
+
+        const estimate = await (this.provider as RpcProvider).estimateMessageFee({
+            from_address: fromAddress,
+            to_address: this.address,
+            entry_point_selector: selector.getSelectorFromName(functionName),
+            payload: adaptedInput
+        });
+
+        return {
+            amount: estimate.overall_fee,
+            unit: "wei",
+            gas_price: estimate.gas_price,
+            gas_usage: estimate.gas_consumed
+        };
     }
 
     /**

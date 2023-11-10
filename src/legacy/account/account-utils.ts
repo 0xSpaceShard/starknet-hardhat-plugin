@@ -1,8 +1,8 @@
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { HardhatRuntimeEnvironment, StarknetContract, StringMap } from "hardhat/types";
 import fs from "node:fs";
 import path from "node:path";
-import { ec, hash, stark } from "starknet";
+import { EstimateFeeResponse, RpcProvider, SierraContractClass, ec, hash, stark } from "starknet";
 
 import {
     INTERNAL_ARTIFACTS_DIR,
@@ -138,17 +138,20 @@ export async function sendDeployAccountTx(
     maxFee: string
 ) {
     const hre = await import("hardhat");
-    const resp = await axios
-        .post(`${hre.starknet.networkConfig.url}/gateway/add_transaction`, {
-            max_fee: maxFee,
-            signature: signatures,
-            nonce: INITIAL_NONCE,
-            class_hash: classHash,
-            contract_address_salt: salt,
-            constructor_calldata: constructorCalldata,
-            version: numericToHexString(TRANSACTION_VERSION),
-            type: "DEPLOY_ACCOUNT"
-        })
+    const response = await (hre.starknetProvider as RpcProvider)
+        .deployAccountContract(
+            {
+                classHash,
+                constructorCalldata,
+                addressSalt: salt,
+                signature: signatures
+            },
+            {
+                maxFee,
+                nonce: INITIAL_NONCE,
+                version: numericToHexString(TRANSACTION_VERSION)
+            }
+        )
         .catch((error: AxiosError<starknetTypes.StarkError>) => {
             const msg = `Deploying account failed: ${error.response.data.message}`;
             throw new StarknetPluginError(msg, error);
@@ -156,9 +159,9 @@ export async function sendDeployAccountTx(
 
     return new Promise<string>((resolve, reject) => {
         iterativelyCheckStatus(
-            resp.data.transaction_hash,
+            response.transaction_hash,
             hre,
-            () => resolve(resp.data.transaction_hash),
+            () => resolve(response.transaction_hash),
             reject
         );
     });
@@ -174,52 +177,40 @@ export async function sendDeclareV2Tx(
     contractClass: Cairo1ContractClass
 ) {
     const hre = await import("hardhat");
-    const resp = await axios
-        .post(`${hre.starknet.networkConfig.url}/gateway/add_transaction`, {
-            type: "DECLARE",
-            contract_class: contractClass.getCompiledClass(),
-            signature: signatures,
-            sender_address: senderAddress,
-            compiled_class_hash: compiledClassHash,
-            version: numericToHexString(version),
-            nonce: numericToHexString(nonce),
-            max_fee: numericToHexString(maxFee)
-        })
-        .catch((error: AxiosError<starknetTypes.StarkError>) => {
-            const msg = `Declaring contract failed: ${error.response.data.message}`;
+    const response = await hre.starknetProvider
+        .declareContract(
+            {
+                compiledClassHash,
+                senderAddress,
+                contract: contractClass.getCompiledClass() as SierraContractClass,
+                signature: signatures
+            },
+            {
+                maxFee,
+                nonce,
+                version
+            }
+        )
+        .catch((error) => {
+            const msg = `Declaring contract failed: ${error.message}`;
             throw new StarknetPluginError(msg, error);
         });
 
     return new Promise<string>((resolve, reject) => {
         iterativelyCheckStatus(
-            resp.data.transaction_hash,
+            response.transaction_hash,
             hre,
-            () => resolve(resp.data.transaction_hash),
+            () => resolve(response.transaction_hash),
             reject
         );
     });
 }
 
-export async function sendEstimateFeeTx(data: unknown) {
-    const hre = await import("hardhat");
-    // To resolve TypeError: Do not know how to serialize a BigInt
-    // coming from axios
-    (BigInt.prototype as any).toJSON = function () {
-        return this.toString();
-    };
-
-    const resp = await axios
-        .post(`${hre.starknet.networkConfig.url}/feeder_gateway/estimate_fee`, data)
-        .catch((error: AxiosError<starknetTypes.StarkError>) => {
-            const msg = `Estimating fees failed: ${error.response.data.message}`;
-            throw new StarknetPluginError(msg, error);
-        });
-
-    const { gas_price, gas_usage, overall_fee, unit } = resp.data;
+export function mapToLegacyFee(estimate: EstimateFeeResponse): starknetTypes.FeeEstimation {
     return {
-        amount: BigInt(overall_fee),
-        unit,
-        gas_price: BigInt(gas_price),
-        gas_usage: BigInt(gas_usage)
-    } as starknetTypes.FeeEstimation;
+        amount: estimate.overall_fee,
+        unit: "wei",
+        gas_price: estimate.gas_price,
+        gas_usage: estimate.gas_consumed
+    };
 }

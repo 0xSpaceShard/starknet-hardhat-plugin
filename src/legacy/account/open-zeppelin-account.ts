@@ -14,8 +14,8 @@ import {
     calculateDeployAccountHash,
     generateKeys,
     handleInternalContractArtifacts,
+    mapToLegacyFee,
     sendDeployAccountTx,
-    sendEstimateFeeTx,
     signMultiCall
 } from "./account-utils";
 import { Account } from "./account";
@@ -141,19 +141,22 @@ export class OpenZeppelinAccount extends Account {
             hre.starknet.networkConfig.starknetChainId,
             nonce
         ]);
-
         const signature = this.getSignatures(msgHash);
-        const data = {
-            type: "DEPLOY_ACCOUNT",
-            class_hash: classHash,
-            constructor_calldata: constructorCalldata,
-            contract_address_salt: this.salt,
-            signature: bnToDecimalStringArray(signature || []),
-            version: numericToHexString(QUERY_VERSION),
-            nonce
-        };
 
-        return await sendEstimateFeeTx(data);
+        const estimate = await hre.starknetProvider.getDeployAccountEstimateFee(
+            {
+                classHash,
+                constructorCalldata,
+                addressSalt: this.salt,
+                signature: bnToDecimalStringArray(signature || [])
+            },
+            {
+                maxFee,
+                nonce,
+                version: numericToHexString(QUERY_VERSION)
+            }
+        );
+        return mapToLegacyFee(estimate);
     }
 
     public override async deployAccount(options: DeployAccountOptions = {}): Promise<string> {

@@ -1,11 +1,11 @@
-import { Block, HardhatNetworkConfig, NetworkConfig, Transaction } from "hardhat/types";
+import { Block, HardhatNetworkConfig, NetworkConfig } from "hardhat/types";
+import { GetTransactionReceiptResponse, RPC } from "starknet";
 
 import { BlockIdentifier } from ".";
 import { StarknetContractFactory } from "../legacy/contract/starknet-contract-factory";
 import { Devnet } from "./devnet";
 import { OpenZeppelinAccount } from "../legacy/account/open-zeppelin-account";
 import { ArgentAccount } from "../legacy/account/argent-account";
-import { TransactionReceipt, TransactionTrace } from "./starknet-types";
 
 export interface Starknet {
     devnet: Devnet;
@@ -50,16 +50,16 @@ export interface StarknetLegacy {
      */
     bigIntToShortString: (convertibleBigInt: bigint) => string;
 
-    getTransaction: (txHash: string) => Promise<Transaction>;
+    getTransaction: (txHash: string) => Promise<RPC.TransactionWithHash>;
 
-    getTransactionReceipt: (txHash: string) => Promise<TransactionReceipt>;
+    getTransactionReceipt: (txHash: string) => Promise<GetTransactionReceiptResponse>;
 
     /**
      * Returns execution information in a nested structure of calls.
      * @param txHash the transaction hash
      * @returns the transaction trace
      */
-    getTransactionTrace: (txHash: string) => Promise<TransactionTrace>;
+    getTransactionTrace: (txHash: string) => Promise<RPC.TransactionTrace>;
 
     /**
      * Returns an entire block and the transactions contained within it.
