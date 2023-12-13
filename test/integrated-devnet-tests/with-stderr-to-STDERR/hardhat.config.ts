@@ -10,7 +10,7 @@ module.exports = {
             url: "http://127.0.0.1:5050",
             stdout: "logs/stdout.log",
             stderr: "STDERR",
-            args: ["--seed", "42"]
+            args: ["--seed", "0"]
         }
     }
 };

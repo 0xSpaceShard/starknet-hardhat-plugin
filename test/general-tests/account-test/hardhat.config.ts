@@ -12,7 +12,7 @@ module.exports = {
             // args: ["--seed", "42", "--fork-network", "alpha-goerli"]
 
             // _TODO: forking is currently not supported because testnet is at cairo-lang v0.12.2
-            args: ["--seed", "42"]
+            args: ["--seed", "0"]
         }
     }
 };

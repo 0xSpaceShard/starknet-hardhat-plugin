@@ -1,6 +1,5 @@
-import * as path from "path";
+import exitHook from "exit-hook";
 import { task, extendEnvironment, extendConfig } from "hardhat/config";
-import { StarknetPluginError } from "./starknet-plugin-error";
 import { lazyObject } from "hardhat/plugins";
 import {
     ConfigurableTaskDefinition,
@@ -9,9 +8,9 @@ import {
     HardhatRuntimeEnvironment,
     HardhatUserConfig
 } from "hardhat/types";
-import exitHook from "exit-hook";
+import * as path from "node:path";
+import * as starknet from "starknet";
 
-import "./type-extensions";
 import {
     DEFAULT_STARKNET_SOURCES_PATH,
     DEFAULT_STARKNET_ARTIFACTS_PATH,
@@ -39,6 +38,8 @@ import {
     getDefaultHttpNetworkConfig,
     getNetwork
 } from "./utils";
+
+import { StarknetPluginError } from "./starknet-plugin-error";
 import { DockerWrapper, VenvWrapper } from "./starknet-wrappers";
 import {
     amarnaAction,
@@ -60,12 +61,14 @@ import {
     getNonceUtil,
     getTransactionTraceUtil,
     getBalanceUtil
-} from "./extend-utils";
-import { DevnetUtils } from "./devnet-utils";
+} from "./legacy/extend-utils";
+import { DevnetUtils } from "./utils/devnet-utils";
 import { ExternalServer } from "./external-server";
-import { ArgentAccount, OpenZeppelinAccount } from "./account";
+import { OpenZeppelinAccount } from "./legacy/account/open-zeppelin-account";
+import { ArgentAccount } from "./legacy/account/argent-account";
 import { AmarnaDocker } from "./external-server/docker-amarna";
-import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
+import { StarknetJsWrapper } from "./starknet-js-wrapper";
+import "./type-extensions";
 
 exitHook(() => {
     ExternalServer.cleanAll();
@@ -171,7 +174,7 @@ function setVenvWrapper(hre: HardhatRuntimeEnvironment, venvPath: string) {
 
 // add venv wrapper or docker wrapper of starknet
 extendEnvironment((hre) => {
-    hre.starknetJs = new StarknetLegacyWrapper(hre.config.starknet.networkConfig);
+    hre.starknetJs = new StarknetJsWrapper(hre);
 
     const venvPath = hre.config.starknet.venv;
     if (venvPath) {
@@ -267,6 +270,13 @@ task("starknet-build", "Builds Scarb projects")
 
 extendEnvironment((hre) => {
     hre.starknet = {
+        ...starknet,
+        devnet: lazyObject(() => new DevnetUtils(hre)),
+        network: hre.config.starknet.network,
+        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig
+    };
+
+    hre.starknetLegacy = {
         getContractFactory: async (contractPath) => {
             const contractFactory = await getContractFactoryUtil(hre, contractPath);
             return contractFactory;
@@ -281,8 +291,6 @@ extendEnvironment((hre) => {
             const convertedBigInt = bigIntToShortStringUtil(convertibleBigInt);
             return convertedBigInt;
         },
-
-        devnet: lazyObject(() => new DevnetUtils(hre)),
 
         getTransaction: async (txHash) => {
             const transaction = await getTransactionUtil(txHash, hre);
@@ -313,9 +321,6 @@ extendEnvironment((hre) => {
             const balance = await getBalanceUtil(address, hre);
             return balance;
         },
-
-        network: hre.config.starknet.network,
-        networkConfig: hre.config.starknet.networkConfig as HardhatNetworkConfig,
 
         OpenZeppelinAccount: OpenZeppelinAccount,
         ArgentAccount: ArgentAccount
@@ -357,5 +362,5 @@ task("amarna", "Runs Amarna, the static-analyzer and linter for Cairo.")
     .setAction(amarnaAction);
 
 export * from "./types";
-export * from "./starknet-types";
+export * from "./types/starknet-types";
 export * from "./starknet-plugin-error";

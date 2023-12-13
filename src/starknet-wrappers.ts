@@ -1,8 +1,6 @@
 import { Image, ProcessResult } from "@nomiclabs/hardhat-docker";
-import axios from "axios";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import path from "path";
-import { num, selector } from "starknet";
+import path from "node:path";
 
 import { exec } from "./cairo1-compiler";
 import {
@@ -14,9 +12,7 @@ import {
 import { ExternalServer } from "./external-server";
 import { StarknetDockerProxy } from "./starknet-docker-proxy";
 import { StarknetPluginError } from "./starknet-plugin-error";
-import { FeeEstimation } from "./starknet-types";
 import { StarknetVenvProxy } from "./starknet-venv-proxy";
-import { BlockNumber } from "./types";
 import { getPrefixedCommand, normalizeVenvPath } from "./utils/venv";
 
 interface CompileWrapperOptions {
@@ -45,30 +41,6 @@ interface SierraToCasmOptions {
     allowedLibfuncsListName?: string;
     allowedLibfuncsListFile?: string;
     addPythonicHints?: boolean;
-}
-
-interface DeclareWrapperOptions {
-    contract: string;
-    maxFee: string;
-    signature?: string[];
-    token?: string;
-    sender?: string;
-    nonce?: string;
-}
-
-interface TxHashQueryWrapperOptions {
-    hash: string;
-}
-
-interface BlockQueryWrapperOptions {
-    number?: BlockNumber;
-    hash?: string;
-}
-
-interface NonceQueryWrapperOptions {
-    address: string;
-    blockHash?: string;
-    blockNumber?: BlockNumber;
 }
 
 export abstract class StarknetWrapper {
@@ -214,43 +186,6 @@ export abstract class StarknetWrapper {
         return [cairo1Bin, ...args];
     }
 
-    public async declare(options: DeclareWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.declare(
-            options.contract,
-            options.sender,
-            options.signature,
-            options.nonce,
-            options.maxFee
-        );
-    }
-
-    public async getTxStatus(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTxStatus(options.hash);
-    }
-
-    public async getTransactionTrace(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTransactionTrace(options.hash);
-    }
-
-    public async getTransactionReceipt(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getTransactionReceipt(options.hash);
-    }
-
-    public async getTransaction(options: TxHashQueryWrapperOptions): Promise<ProcessResult> {
-        return await this.hre.starknetJs.getTransaction(options.hash);
-    }
-
-    public async getBlock(options: BlockQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getBlock(options.hash ?? options.number);
-    }
-
-    public async getNonce(options: NonceQueryWrapperOptions): Promise<ProcessResult> {
-        return this.hre.starknetJs.getNonce(
-            options.address,
-            options.blockHash ?? options.blockNumber
-        );
-    }
-
     public async getClassHash(artifactPath: string): Promise<string> {
         const executed = await this.execute("get_class_hash", [artifactPath]);
         if (executed.statusCode) {
@@ -273,33 +208,6 @@ export abstract class StarknetWrapper {
             throw new StarknetPluginError(executed.stderr.toString());
         }
         return executed.stdout.toString().trim();
-    }
-
-    public async estimateMessageFee(
-        functionName: string,
-        fromAddress: string,
-        toAddress: string,
-        inputs: string[]
-    ): Promise<FeeEstimation> {
-        const body = {
-            from_address: fromAddress,
-            to_address: toAddress,
-            entry_point_selector: selector.getSelectorFromName(functionName),
-            payload: inputs.map((item) => num.toHex(BigInt(item)))
-        };
-
-        const response = await axios.post(
-            `${this.hre.starknet.networkConfig.url}/feeder_gateway/estimate_message_fee`,
-            body
-        );
-
-        const { gas_price, gas_usage, overall_fee, unit } = response.data;
-        return {
-            amount: BigInt(overall_fee),
-            unit,
-            gas_price: BigInt(gas_price),
-            gas_usage: BigInt(gas_usage)
-        };
     }
 }
 

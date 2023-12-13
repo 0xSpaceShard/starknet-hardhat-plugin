@@ -1,18 +1,18 @@
-import { Block, HardhatRuntimeEnvironment, Transaction } from "hardhat/types";
-import path from "path";
-import { uint256 } from "starknet";
+import { Block, HardhatRuntimeEnvironment } from "hardhat/types";
+import path from "node:path";
+import { GetTransactionReceiptResponse, RPC, RpcProvider, uint256 } from "starknet";
 
-import { handleInternalContractArtifacts } from "./account-utils";
+import { handleInternalContractArtifacts } from "./account";
 import {
     ABI_SUFFIX,
     CAIRO1_ASSEMBLY_SUFFIX,
     ETH_ADDRESS,
     SHORT_STRING_MAX_CHARACTERS
-} from "./constants";
-import { StarknetPluginError } from "./starknet-plugin-error";
-import { TransactionReceipt, TransactionTrace } from "./starknet-types";
-import { BlockIdentifier, NonceQueryOptions, StarknetContractFactory } from "./types";
-import { checkArtifactExists, findPath } from "./utils";
+} from "../constants";
+import { StarknetContractFactory } from "./contract";
+import { StarknetPluginError } from "../starknet-plugin-error";
+import { BlockIdentifier } from "../types";
+import { checkArtifactExists, findPath } from "../utils";
 
 export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, contractPath: string) {
     const artifactsPath = hre.config.paths.starknetArtifacts;
@@ -42,11 +42,6 @@ export async function getContractFactoryUtil(hre: HardhatRuntimeEnvironment, con
         `${path.basename(contractPath)}${ABI_SUFFIX}`
     );
     const abiPath = await findPath(artifactsPath, abiSearchTarget);
-    if (!abiPath) {
-        throw new StarknetPluginError(
-            `Could not find ABI JSON artifact for "${contractPath}.cairo". Consider recompiling your contracts.`
-        );
-    }
 
     return new StarknetContractFactory({
         metadataPath,
@@ -94,95 +89,74 @@ export function bigIntToShortStringUtil(convertibleBigInt: bigint) {
 export async function getTransactionUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<Transaction> {
-    const executed = await hre.starknetWrapper.getTransaction({
-        hash: txHash
-    });
-    if (executed.statusCode) {
-        const msg = `Could not get the transaction. ${executed.stderr.toString()}`;
+): Promise<RPC.TransactionWithHash> {
+    try {
+        const transaction = await hre.starknetProvider.getTransaction(txHash);
+        return transaction as RPC.TransactionWithHash;
+    } catch (error) {
+        const msg = `Could not get the transaction. ${error}`;
         throw new StarknetPluginError(msg);
     }
-    const txReceipt = JSON.parse(executed.stdout.toString()) as Transaction;
-    return txReceipt;
 }
 
 export async function getTransactionReceiptUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<TransactionReceipt> {
-    const executed = await hre.starknetWrapper.getTransactionReceipt({
-        hash: txHash
-    });
-    if (executed.statusCode) {
-        const msg = `Could not get the transaction receipt. Error: ${executed.stderr.toString()}`;
+): Promise<GetTransactionReceiptResponse> {
+    try {
+        const receipt = await hre.starknetProvider.getTransactionReceipt(txHash);
+        return receipt;
+    } catch (error) {
+        const msg = `Could not get the transaction receipt. Error: ${error}`;
         throw new StarknetPluginError(msg);
     }
-    const txReceipt = JSON.parse(executed.stdout.toString()) as TransactionReceipt;
-    return txReceipt;
 }
 
 export async function getTransactionTraceUtil(
     txHash: string,
     hre: HardhatRuntimeEnvironment
-): Promise<TransactionTrace> {
-    const executed = await hre.starknetWrapper.getTransactionTrace({
-        hash: txHash
-    });
-
-    if (executed.statusCode) {
-        const msg = `Could not get the transaction trace. Error: ${executed.stderr.toString()}`;
+): Promise<RPC.TransactionTrace> {
+    try {
+        const trace = await (hre.starknetProvider as RpcProvider).getTransactionTrace(txHash);
+        return trace;
+    } catch (error) {
+        const msg = `Could not get the transaction trace. Error: ${error}`;
         throw new StarknetPluginError(msg);
     }
-    const txTrace = JSON.parse(executed.stdout.toString()) as TransactionTrace;
-    return txTrace;
 }
 
 export async function getBlockUtil(
     hre: HardhatRuntimeEnvironment,
     identifier?: BlockIdentifier
 ): Promise<Block> {
-    const blockOptions = {
-        feederGatewayUrl: hre.starknet.networkConfig.url,
-        gatewayUrl: hre.starknet.networkConfig.url,
-        number: identifier?.blockNumber,
-        hash: identifier?.blockHash
-    };
-
     if (identifier && typeof identifier !== "object") {
         const msg = `Invalid identifier provided to getBlock: ${identifier}`;
         throw new StarknetPluginError(msg);
     }
 
-    if (blockOptions.number == null && !blockOptions.hash) {
-        blockOptions.number = "latest";
-    }
-
-    const executed = await hre.starknetWrapper.getBlock(blockOptions);
-
-    if (executed.statusCode) {
-        const msg = `Could not get block. Error: ${executed.stderr.toString()}`;
+    try {
+        const blockIdentifier = identifier?.blockHash ?? identifier?.blockNumber;
+        const block = hre.starknetProvider.getBlock(blockIdentifier);
+        return block;
+    } catch (error) {
+        const msg = `Could not get block. Error: ${error}`;
         throw new StarknetPluginError(msg);
     }
-    const block = JSON.parse(executed.stdout.toString()) as Block;
-    return block;
 }
 
 export async function getNonceUtil(
     hre: HardhatRuntimeEnvironment,
     address: string,
-    options: NonceQueryOptions
+    options: BlockIdentifier
 ): Promise<number> {
-    const executed = await hre.starknetWrapper.getNonce({
-        address,
-        ...options
-    });
-
-    if (executed.statusCode) {
-        const msg = `Could not get nonce. Error: ${executed.stderr.toString()}`;
+    try {
+        const blockIdentifier = options?.blockHash ?? options?.blockNumber;
+        const nonce = await hre.starknetProvider.getNonceForAddress(address, blockIdentifier);
+        return parseInt(nonce);
+    } catch (error) {
+        const msg = `Could not get nonce. Error: ${error}`;
         throw new StarknetPluginError(msg);
     }
-
-    return parseInt(executed.stdout.toString());
 }
 
 export async function getBalanceUtil(
@@ -190,7 +164,7 @@ export async function getBalanceUtil(
     hre: HardhatRuntimeEnvironment
 ): Promise<bigint> {
     const contractPath = handleInternalContractArtifacts("Token", "ERC20", "", hre);
-    const contractFactory = await hre.starknet.getContractFactory(contractPath);
+    const contractFactory = await hre.starknetLegacy.getContractFactory(contractPath);
     const ethContract = contractFactory.getContractAt(ETH_ADDRESS);
 
     const result = await ethContract.call("balanceOf", { account: address });

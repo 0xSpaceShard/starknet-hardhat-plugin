@@ -1,16 +1,16 @@
 import "hardhat/types/config";
 import "hardhat/types/runtime";
-import { GetBlockResponse } from "starknet";
+import type * as starknet from "starknet";
 
-import { Account } from "./account";
 import { StarknetChainId } from "./constants";
 import { AmarnaDocker } from "./external-server/docker-amarna";
-import { Transaction, TransactionReceipt, TransactionTrace } from "./starknet-types";
-import { StarknetLegacyWrapper } from "./starknet-js-wrapper";
+import { Account, StarknetContractFactory, StarknetContract } from "./legacy";
+import { Transaction, TransactionReceipt, TransactionTrace } from "./types/starknet-types";
+import { StarknetJsWrapper } from "./starknet-js-wrapper";
 import { StarknetWrapper } from "./starknet-wrappers";
-import { StarknetContract, StarknetContractFactory, StringMap } from "./types";
+import { StringMap } from "./types";
 import * as DevnetTypes from "./types/devnet";
-import * as StarknetTypes from "./types/starknet";
+import * as StarknetEnvironment from "./types/starknet-environment";
 
 declare module "hardhat/types/config" {
     export interface ProjectPathsUserConfig {
@@ -26,11 +26,11 @@ declare module "hardhat/types/config" {
     }
 
     export interface HardhatConfig {
-        starknet: StarknetTypes.StarknetConfig;
+        starknet: StarknetEnvironment.StarknetConfig;
     }
 
     export interface HardhatUserConfig {
-        starknet?: StarknetTypes.StarknetConfig;
+        starknet?: StarknetEnvironment.StarknetConfig;
     }
 
     export interface NetworksConfig {
@@ -82,15 +82,26 @@ type AccountType = Account;
 type TransactionReceiptType = TransactionReceipt;
 type TransactionTraceType = TransactionTrace;
 type TransactionType = Transaction;
-type BlockType = GetBlockResponse;
+type BlockType = starknet.GetBlockResponse;
 
 declare module "hardhat/types/runtime" {
     export interface Devnet extends DevnetTypes.Devnet {}
     interface HardhatRuntimeEnvironment {
         starknetWrapper: StarknetWrapper;
         amarnaDocker: AmarnaDocker;
-        starknet: StarknetTypes.Starknet;
-        starknetJs: StarknetLegacyWrapper;
+
+        starknet: typeof starknet & StarknetEnvironment.Starknet;
+        /** @deprecated 
+         * The legacy utilities are meant to simplify the migration towards directly using `starknet.js` and will be removed in the future.
+         * 
+         * If there is a functionality that you find difficult to replace, let us know in the corresponding Discord channels: 
+         * - hardhat-plugin https://discord.com/channels/793094838509764618/912735106899275856
+         * - starknet.js https://discord.com/channels/793094838509764618/927918707613786162
+         */
+        starknetLegacy: StarknetEnvironment.StarknetLegacy;
+
+        starknetJs: StarknetJsWrapper;
+        starknetProvider: starknet.ProviderInterface;
     }
 
     type StarknetContract = StarknetContractType;

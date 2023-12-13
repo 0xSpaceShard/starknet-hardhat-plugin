@@ -11,7 +11,15 @@ import {
     DEFAULT_STARKNET_NETWORK
 } from "./constants";
 import { ProcessResult } from "@nomiclabs/hardhat-docker";
-import { adaptLog, traverseFiles, getNetwork, isStarknetDevnet, adaptPath } from "./utils";
+import {
+    adaptLog,
+    adaptPath,
+    getNetwork,
+    isStarknetDevnet,
+    readContractAsync,
+    readContractSync,
+    traverseFiles
+} from "./utils";
 import {
     HardhatNetworkConfig,
     HardhatRuntimeEnvironment,
@@ -128,7 +136,7 @@ function loadScarbMainArtifact(scarbArtifactDirPath: string, packageName: string
         const msg = `Error in building ${packageName}, could not find ${mainPackageArtifactPath}`;
         throw new StarknetPluginError(msg);
     }
-    return JSON.parse(fs.readFileSync(mainPackageArtifactPath, "utf-8").toString());
+    return readContractSync(mainPackageArtifactPath, "utf-8");
 }
 
 async function findPackageConfigPaths(
@@ -209,7 +217,7 @@ export async function starknetCompileCairo1Action(
             const abiOutput = path.join(dirPath, `${fileName}${ABI_SUFFIX}`);
             initializeFile(abiOutput);
 
-            const outputJson = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
+            const outputJson = await readContractAsync(outputPath, "utf-8");
             fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
 
             const casmOutput = path.join(dirPath, `${fileName}${CAIRO1_ASSEMBLY_SUFFIX}`);
@@ -382,7 +390,7 @@ export async function starknetBuildAction(args: TaskArguments, hre: HardhatRunti
                 const abiOutput = path.join(ourArtifactDirPath, `${fileName}${ABI_SUFFIX}`);
                 initializeFile(abiOutput);
 
-                const outputJson = JSON.parse(fs.readFileSync(scarbSierraPath, "utf-8"));
+                const outputJson = readContractSync(scarbSierraPath, "utf-8");
                 fs.writeFileSync(abiOutput, JSON.stringify(outputJson.abi) + "\n");
             }
 
@@ -569,7 +577,7 @@ function setRuntimeNetwork(args: TaskArguments, hre: HardhatRuntimeEnvironment) 
     hre.starknet.network = networkName;
     hre.starknet.networkConfig = networkConfig;
 
-    hre.starknetJs.setProvider(hre.starknet.networkConfig);
+    hre.starknetJs.setProvider();
 
     console.log(`Using network ${hre.starknet.network} at ${hre.starknet.networkConfig.url}`);
 }

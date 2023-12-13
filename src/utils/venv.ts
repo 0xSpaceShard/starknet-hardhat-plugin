@@ -1,5 +1,7 @@
-import path from "path";
-import { checkCommandPath } from "./check-command-path";
+import fs from "node:fs";
+import path from "node:path";
+
+import { StarknetPluginError } from "../starknet-plugin-error";
 
 export function normalizeVenvPath(venvPath: string): string {
     if (venvPath[0] === "~") {
@@ -7,6 +9,12 @@ export function normalizeVenvPath(venvPath: string): string {
     }
 
     return path.normalize(venvPath);
+}
+
+export function checkCommandPath(commandPath: string): void {
+    if (!fs.existsSync(commandPath)) {
+        throw new StarknetPluginError(`Command ${commandPath} not found.`);
+    }
 }
 
 export function getPrefixedCommand(venvPath: string, command: string): string {

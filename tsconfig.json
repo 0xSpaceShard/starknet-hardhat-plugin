@@ -11,7 +11,8 @@
         "declaration": true,
         "module": "commonjs",
         "noImplicitOverride": true,
-        "typeRoots": ["./node_modules/@types"]
+        "typeRoots": ["./node_modules/@types"],
+        "skipLibCheck": true
     },
     "include": ["./src", "config.json", "contract-artifacts/**/*.json"]
 }
