@@ -61,7 +61,7 @@
         "@typescript-eslint/parser": "^5.8.1",
         "chai": "^4.3.7",
         "eslint": "^8.5.0",
-        "hardhat": "^2.19.4",
+        "hardhat": "^2.19.5",
         "mocha": "^10.0.0",
         "prettier-eslint-cli": "^7.0.0",
         "ts-node": "^10.4.0",
