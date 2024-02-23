@@ -37,7 +37,7 @@
     "dependencies": {
         "@iarna/toml": "^2.2.5",
         "@nomiclabs/hardhat-docker": "^2.0.2",
-        "axios": "^1.6.5",
+        "axios": "^1.6.7",
         "axios-retry": "^3.9.1",
         "exit-hook": "2.2.1",
         "form-data": "^4.0.0",
