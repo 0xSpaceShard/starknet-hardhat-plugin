@@ -8,6 +8,10 @@
 
 If you've used Hardhat 👷‍♀️👷‍♂️ and want to develop for Starknet <img src="https://starkware.co/wp-content/uploads/2021/07/Group-177.svg" alt="starknet" width="18"/>, this plugin might come in hand. If you've never set up a Hardhat project, check out [this guide](https://hardhat.org/tutorial/creating-a-new-hardhat-project.html).
 
+## Starknet Devnet JS
+
+You might be more interested in a better-maintained repository that provides Starknet Devnet interaction. Check out [starknet-devnet.js](https://github.com/0xspaceShard/starknet-devnet-js).
+
 ## 🌐 Docs
 
 On the following links you can find the documentation of:
