@@ -37,7 +37,7 @@
     "dependencies": {
         "@iarna/toml": "^2.2.5",
         "@nomiclabs/hardhat-docker": "^2.0.2",
-        "axios": "^1.6.5",
+        "axios": "^1.6.8",
         "axios-retry": "^3.9.1",
         "exit-hook": "2.2.1",
         "form-data": "^4.0.0",
@@ -61,7 +61,7 @@
         "@typescript-eslint/parser": "^5.8.1",
         "chai": "^4.3.7",
         "eslint": "^8.5.0",
-        "hardhat": "^2.19.4",
+        "hardhat": "^2.21.0",
         "mocha": "^10.0.0",
         "prettier-eslint-cli": "^7.0.0",
         "ts-node": "^10.4.0",
